@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+
 """Setup the Rosenberg-NMS application"""
 
 import logging
 from tg import config
 from rnms import model
+from rnms.websetup import database_data
 import transaction
 
 def bootstrap(command, conf, vars):
@@ -50,5 +52,76 @@ def bootstrap(command, conf, vars):
         print traceback.format_exc()
         transaction.abort()
         print 'Continuing with bootstrapping...'
+
+    try:
+        for row in database_data.alarm_states:
+            a = model.AlarmState()
+            (a.display_name, a.alarm_level, a.sound_in, a.sound_out, a.internal_state) = row
+            model.DBSession.add(a)
+
+        for row in database_data.attribute_types:
+            at = model.AttributeType()
+            (at.display_name, at.ad_validate, at.ad_enabled, at.ad_function,
+                    at.ad_parameters, at.default_poller_id, 
+                    at.rra_cf, at.rra_rows, ignore_step, at.default_graph_id,
+                    at.break_by_card, ignore_handler, at.permit_manual_add,
+                    at.default_sla_id, ignore_tools, at.required_sysobjid, fields, rrds
+                    ) = row
+            for field in fields:
+                f = model.AttributeTypeField()
+                print(field)
+                (f.display_name, f.tag, f.position, f.description,f.showable_edit, f.showable_discovery, f.overwritable, f.tracked, f.default, f.parameters, f.backend) = field
+                at.fields.append(f)
+            # FIXME needs to process fields and rrds
+            model.DBSession.add(at)
+
+
+        for row in database_data.config_transfers:
+            ct = model.ConfigTransfer(row[0], row[1])
+            model.DBSession.add(ct)
+
+        for row in database_data.autodiscovery_policies:
+            p = model.AutodiscoveryPolicy()
+            (p.display_name,p.default_poller,p.permit_add,p.permit_delete,
+                    p.alert_delete,p.permit_modify,p.permit_disable,
+                    p.skip_loopback,p.check_state,p.check_address)=row
+            model.DBSession.add(p)
+
+        for severity in database_data.event_severities:
+            sv = model.EventSeverity(severity[0],severity[1],severity[2],severity[3])
+            model.DBSession.add(sv)
+
+        for row in database_data.event_types:
+            et = model.EventType()
+            (et.display_name, severity, et.text, et.showable, et.generate_id, et.up_event_id, et.alarm_duration, et.show_host) = row
+            et.severity = model.EventSeverity.by_name(severity)
+            #print("eseverity %s is %s" % (severity, et.severity))
+            model.DBSession.add(et)
+
+        for row in database_data.slas:
+            s = model.Sla()
+            (s.display_name, s.alarm_state_id, s.event_text, s.event_id, s.threshold, s.attribute_type_id) = row
+            model.DBSession.add(s)
+
+        ps = model.PollerSet(u'No Polling')
+        model.DBSession.add(ps)
+
+        # Default Single Setup
+        zone = model.Zone(u'Default Zone',u'default')
+        model.DBSession.add(zone)
+        host = model.Host('0.0.0.0','No Host')
+        host.zone = zone
+        model.DBSession.add(host)
+
+
+
+        model.DBSession.flush()
+        transaction.commit()
+    except IntegrityError:
+        print 'Warning, there was a problem adding your base data'
+        import traceback
+        print traceback.format_exc()
+        transaction.abort()
+
 
     # <websetup.bootstrap.after.auth>

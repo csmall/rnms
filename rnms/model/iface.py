@@ -17,25 +17,27 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-#
-"""Sample model module."""
+""" Physical and Logical Interface model """
 
 from sqlalchemy import *
 from sqlalchemy.orm import mapper, relation
 from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode
+from sqlalchemy.types import Integer, String
 #from sqlalchemy.orm import relation, backref
 
 from rnms.model import DeclarativeBase, metadata, DBSession
 
 
-class SampleModel(DeclarativeBase):
-    __tablename__ = 'sample_model'
+class Iface(DeclarativeBase):
+    __tablename__ = 'interfaces'
     
     #{ Columns
-    
-    id = Column(Integer, primary_key=True)
-    
-    data = Column(Unicode(255), nullable=False)
-    
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    host_id = Column(Integer, nullable=False, ForeignKey("hosts.id"))
+    ifindex = Column(Integer, nullable=False) #ifIndex
+    display_name = Column(Unicode(30)) #ifDescr or idXName
+    iftype = Column(Integer, nullable=False,default=1) # other
+    speed = Column(Integer)
+    physaddr = Column(String(30)) #MAC address usually
+    stacklower = Column(Integer, nullable=False,default=0) # ifStackLowerLayer
     #}

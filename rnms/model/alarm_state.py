@@ -17,11 +17,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-#
-"""Sample model module."""
 
+""" Alarm states """
 from sqlalchemy import *
-from sqlalchemy.orm import mapper, relation
+from sqlalchemy.orm import mapper, relationship
 from sqlalchemy import Table, ForeignKey, Column
 from sqlalchemy.types import Integer, Unicode
 #from sqlalchemy.orm import relation, backref
@@ -29,13 +28,20 @@ from sqlalchemy.types import Integer, Unicode
 from rnms.model import DeclarativeBase, metadata, DBSession
 
 
-class SampleModel(DeclarativeBase):
-    __tablename__ = 'sample_model'
+class AlarmState(DeclarativeBase):
+    __tablename__ = 'alarm_states'
     
     #{ Columns
-    
-    id = Column(Integer, primary_key=True)
-    
-    data = Column(Unicode(255), nullable=False)
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    display_name = Column(Unicode(40),nullable=False, unique=True)
+    alarm_level = Column(SmallInteger,nullable=False,default=100)
+    sound_in = Column(String(40))
+    sound_out = Column(String(40))
+    internal_state = Column(SmallInteger,nullable=False)
     
     #}
+    @classmethod
+    def by_name(cls, display_name):
+        """ Return the alarm_state with display_name given. """
+        return DBSession.query(cls).filter(
+                cls.display_name == display_name).first()

@@ -17,26 +17,24 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-#
-"""Sample controller module"""
 
-# turbogears imports
-from tg import expose
-#from tg import redirect, validate, flash
+""" Template of one of the rnms.models"""
+from sqlalchemy import *
+from sqlalchemy.orm import mapper, relationship
+from sqlalchemy import Table, ForeignKey, Column
+from sqlalchemy.types import Integer, Unicode
+#from sqlalchemy.orm import relation, backref
 
-# third party imports
-#from tg.i18n import ugettext as _
-#from repoze.what import predicates
-
-# project specific imports
-from rnms.lib.base import BaseController
-#from rnms.model import DBSession, metadata
+from rnms.model import DeclarativeBase, metadata, DBSession
 
 
-class SampleController(BaseController):
-    #Uncomment this line if your controller requires an authenticated user
-    #allow_only = authorize.not_anonymous()
+class Action(DeclarativeBase):
+    __tablename__ = 'actions'
     
-    @expose('rnms.templates.index')
-    def index(self):
-        return dict(page='index')
+    #{ Columns
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    display_name = Column(Unicode(40))
+    plugin_name = Column(String(40),nullable=False)
+    internal_parameters = Column(String(120))
+    user_parameters = Column(String(120))
+    #}

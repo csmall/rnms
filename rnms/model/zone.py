@@ -17,9 +17,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-#
-"""Sample model module."""
 
+""" Template of one of the rnms.models"""
 from sqlalchemy import *
 from sqlalchemy.orm import mapper, relation
 from sqlalchemy import Table, ForeignKey, Column
@@ -29,13 +28,32 @@ from sqlalchemy.types import Integer, Unicode
 from rnms.model import DeclarativeBase, metadata, DBSession
 
 
-class SampleModel(DeclarativeBase):
-    __tablename__ = 'sample_model'
-    
+class Zone(DeclarativeBase):
+    __tablename__ = 'zones'
+
     #{ Columns
-    
-    id = Column(Integer, primary_key=True)
-    
-    data = Column(Unicode(255), nullable=False)
-    
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    display_name = Column(Unicode(60), nullable=False, unique=True)
+    short_name = Column(Unicode(10), nullable=False, unique=True)
+    icon = Column(String(30))
+    showable = Column(Boolean,nullable=False, default=True)
     #}
+
+    def __init__(self, display_name=False, short_name=False, icon=False):
+        if display_name:
+            self.display_name=display_name
+        if short_name:
+            self.short_name = short_name
+        if icon:
+            self.icon = icon
+
+
+    @classmethod
+    def by_name(cls, name):
+        """ Return the zone whose disply_name is ``name''."""
+        return DBSession.query(cls).filter(cls.display_name==name).first()
+
+    @classmethod
+    def default(cls):
+        """ Return the default Zone. """
+        return DBSession.query(cls).order_by('zones.id').first()

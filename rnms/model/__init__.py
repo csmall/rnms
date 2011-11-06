@@ -60,3 +60,14 @@ def init_model(engine):
 
 # Import your model modules here.
 from rnms.model.auth import User, Group, Permission
+
+from rnms.model.alarm_state import AlarmState
+from rnms.model.attribute import Attribute, AttributeType, AttributeTypeRRD, AttributeTypeField, DiscoveredAttribute, AttributeField
+from rnms.model.autodiscovery_policy import AutodiscoveryPolicy
+from rnms.model.event import Event, EventType, EventField, EventSeverity
+from rnms.model.graph_type import GraphTypeGraph
+#from rnms.model.host import Host, Iface, ConfigTransfer
+from rnms.model.host import *
+from rnms.model.poller import PollerSet, Poller, Backend, PollerRow
+from rnms.model.sla import Sla, SlaCondition, SlaGroup
+from rnms.model.zone import Zone

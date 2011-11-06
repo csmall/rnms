@@ -17,26 +17,20 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-#
-"""Sample controller module"""
-
-# turbogears imports
-from tg import expose
-#from tg import redirect, validate, flash
-
-# third party imports
-#from tg.i18n import ugettext as _
-#from repoze.what import predicates
-
-# project specific imports
-from rnms.lib.base import BaseController
-#from rnms.model import DBSession, metadata
+from rnms.lib import snmp
+from pyasn1.type import univ as pyasn_types
+from pyasn1.error import PyAsn1Error
 
 
-class SampleController(BaseController):
-    #Uncomment this line if your controller requires an authenticated user
-    #allow_only = authorize.not_anonymous()
-    
-    @expose('rnms.templates.index')
-    def index(self):
-        return dict(page='index')
+def poll_snmpget(poller, attribute):
+    """
+    Generic SNMP get that is used for counters
+    Returns: single value for the OID or None
+    Parameters: the OID in dotted decimal e.g. '1.3.6.1.1.9'
+    """
+    try:
+        oid = pyasn_types.ObjectIdentifier(poller.parameters)
+    except PyAsn1Error:
+        return None
+    return snmp.get(attribute.host, tuple(oid))
+
