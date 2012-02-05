@@ -25,6 +25,7 @@ from rnms.tests.models import ModelTest
 
 class TestPoller(ModelTest):
     klass = model.Poller
+    attribute = model.Attribute(display_name=u'Test Attribute')
     attrs = dict(
             display_name = (u'Test Poller'),
             plugin_name = ('test_poller')
@@ -37,6 +38,12 @@ class TestPoller(ModelTest):
     def test_poller_init_plugin(self):
         """Poller init sets plugin name correctly"""
         eq_(self.obj.plugin_name,'test_poller') 
+
+    def test_poller_run(self):
+        """ Poller run command works"""
+        poller_output = self.obj.run(self.attribute)
+        eq_(poller_output, "FIXME")
+
 
 class TestBackend(ModelTest):
     klass = model.Backend

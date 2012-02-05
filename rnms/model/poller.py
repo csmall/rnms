@@ -19,6 +19,7 @@
 #
 #
 """Poller model module."""
+import time
 
 from sqlalchemy import *
 from sqlalchemy.orm import mapper, relationship
@@ -27,6 +28,7 @@ from sqlalchemy.types import Integer, Unicode
 #from sqlalchemy.orm import relation, backref
 
 from rnms.model import DeclarativeBase, metadata, DBSession
+from rnms.lib import pollers
 
 __all__ = [ 'PollerSet', 'Poller', 'Backend', 'PollerRow']
 
@@ -51,6 +53,13 @@ class Poller(DeclarativeBase):
     def __unicode__(self):
         return self.display_name
 
+    def run(self, attribute):
+        """ Run the actual poller process
+        Returns the output of poller or None on error
+        """
+        return "FIXME"
+
+
 class Backend(DeclarativeBase):
     __tablename__ = 'backends'
     
@@ -71,6 +80,10 @@ class Backend(DeclarativeBase):
         return '<Backend name=%s plugin=%s>' % (self.display_name, self.plugin_name)
     def __unicode__(self):
         return self.display_name
+
+    def run(self, attribute, poller_output):
+        """ Run the actual backend process """
+        pass #FIXME
 
 class PollerSet(DeclarativeBase):
     __tablename__ = 'poller_sets'
@@ -136,6 +149,13 @@ class PollerSet(DeclarativeBase):
                         return True
         return False
 
+    def run(self, attribute):
+        """ Run the poller->backend rows in order for this attribute
+        """
+        for row in self.poller_rows:
+            row.run(attribute)
+
+
 class PollerRow(DeclarativeBase):
     __tablename__ = 'poller_rows'
     
@@ -165,3 +185,30 @@ class PollerRow(DeclarativeBase):
         else:
             backend_name = 'None'
         return '<PollerRow position=%d poller=%s backend=%s>' % (self.position, poller_name, backend_name)
+
+    def run(self, attribute):
+        """
+        Run the actual polling process for this poller row
+        Requires the attribute that calls the poller
+        Returns True if it worked or False if not
+        """
+        if self.poller is None or self.backend is None:
+            return False
+        start_time = time.time()
+        poller_output = self.poller.run(attribute)
+        poller_time = int((time.time() - start_time)*1000)
+        if poller_output is None:
+            return False
+        start_time = time.time()
+        backend_output =  self.backend.run(attribute, poller_output)
+        backend_time = int((time.time() - start_time )*1000)
+        if backend_output is None:
+            return False
+        logging.info("H:%d A:%d P:%d %s() -> %s() (Time P:%0.0f B:%0.0f)" % (
+            attribute.host_id, attribute.id, self.position, poller, backend,
+            poller_time, backend_time))
+
+        return True
+        
+
+

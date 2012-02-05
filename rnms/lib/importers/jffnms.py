@@ -113,20 +113,24 @@ class JffnmsImporter(object):
             print 'All imports NOT committed'
         return True
 
-    def _delete_all(self,del_model, del_name, del_id):
+    def _delete_all(self,del_model, del_id):
+        """ Delete all items of del_model with an ID higher than del_id 
+            Returns number of deleted items
+        """
+        deleted_items=0
         if self.delete != True:
-            return
+            return 0
         try:
             deleted_items = DBSession.query(del_model).filter(del_model.id>del_id).delete()
         except IntegrityError as err:
-            print 'Error deleting %s: %s'  % (del_name,err)
-        else:
-            if self.verbose == True:
-                print '%d %s pre-deleted.' % (deleted_items, del_name)
+            print '(Error deleting:  {0})'.format(err),
+        if deleted_items is None:
+            return 0
+        return deleted_items
 
     def _import_zones(self):
-        self._delete_all(model.Zone, 'Zones', 1)
-        zone_count=0
+        delete_count = self._delete_all(model.Zone, 1)
+        add_count=0
         try:
             result = self.dbhandle.execute("SELECT id,zone,shortname,image,show_zone FROM zones WHERE id > 1 ORDER BY id")
             for row in result:
@@ -136,14 +140,14 @@ class JffnmsImporter(object):
                 DBSession.add(zone)
                 DBSession.flush()
                 self.zones[row[0]] = zone.id
-                zone_count += 1
+                add_count += 1
         except IntegrityError as foo:
             print 'Error importing zones: %s'  % foo
             transaction.abort()
             return False
         else:
             if self.verbose:
-                print 'Imported %d zones.' % zone_count
+                print 'Zones: {0} deleted, {0} added.'.format(delete_count, add_count)
         return True
 
     def zone_id(self,jffnms_id):
@@ -152,13 +156,10 @@ class JffnmsImporter(object):
     def _import_users(self):
         if self.delete == True:
             try:
-                deleted_users = DBSession.query(model.User).filter(model.User.user_id>2).delete()
+                delete_count = DBSession.query(model.User).filter(model.User.user_id>2).delete()
             except IntegrityError as err:
                 print 'Error deleting users: %s'  % err
-            else:
-                if self.verbose == True:
-                    print '%d users pre-deleted.' % deleted_users
-        user_count=0
+        add_count=0
         try:
             result = self.dbhandle.execute("SELECT id,username,name FROM clients WHERE id > 1 ORDER BY id")
             for row in result:
@@ -170,14 +171,14 @@ class JffnmsImporter(object):
                 DBSession.add(user)
                 DBSession.flush()
                 self.users[row[0]] = user.user_id
-                user_count += 1
+                add_count += 1
         except IntegrityError as err:
             print 'Error importing users: %s'  % err
             transaction.abort()
             return False
         else:
             if self.verbose:
-                print 'Imported %d users.' % user_count
+                print 'Users: {0} deleted, {0} added.'.format(delete_count, add_count)
         return True
 
     def user_id(self,jffnms_id):
@@ -194,25 +195,38 @@ class JffnmsImporter(object):
             return None
 
     def _import_hosts(self):
-        result = self.dbhandle.execute('SELECT id,ip,name,rocommunity,rwcommunity,zone,tftp,autodiscovery,autodiscovery_default_customer,show_host,poll,creation_date,modification_date,last_poll_date,sysobjectid,config_type FROM hosts WHERE id>1 ORDER by id')
-        for row in result:
-            host = model.Host(mgmt_address=row[1],display_name=row[2])
-            host.community_ro = self.import_snmp(row[3])
-            host.zone_id = self.zone_id(row[5])
-            host.tftp_server = row[6]
-            host.autodiscovery_policy_id = row[7]
-            host.default_user_id = self.user_id(row[8])
-            host.show_host = (row[9] == 1)
-            host.pollable = (row[10] == 1)
-            host.created = date.fromtimestamp(row[11])
-            host.updated = date.fromtimestamp(row[12])
-            host.polled = date.fromtimestamp(row[13])
-            host.sysobjid = row[14]
-            host.config_transfer_id = row[15]
+        delete_count = self._delete_all(model.Host, 1)
+        add_count=0
+        try:
+            result = self.dbhandle.execute('SELECT id,ip,name,rocommunity,rwcommunity,zone,tftp,autodiscovery,autodiscovery_default_customer,show_host,poll,creation_date,modification_date,last_poll_date,sysobjectid,config_type FROM hosts WHERE id>1 ORDER by id')
+            for row in result:
+                host = model.Host(mgmt_address=row[1],display_name=row[2])
+                host.community_ro = self.import_snmp(row[3])
+                host.zone_id = self.zone_id(row[5])
+                host.tftp_server = row[6]
+                host.autodiscovery_policy_id = row[7]
+                host.default_user_id = self.user_id(row[8])
+                host.show_host = (row[9] == 1)
+                host.pollable = (row[10] == 1)
+                host.created = date.fromtimestamp(row[11])
+                host.updated = date.fromtimestamp(row[12])
+                host.polled = date.fromtimestamp(row[13])
+                host.sysobjid = row[14]
+                host.config_transfer_id = row[15]
 
-            DBSession.add(host)
-            DBSession.flush()
-            self.hosts[row[0]] = host.id
+                DBSession.add(host)
+                DBSession.flush()
+                self.hosts[row[0]] = host.id
+                add_count += 1
+
+        except IntegrityError as err:
+            print 'Error importing users: %s'  % err
+            transaction.abort()
+            return False
+        else:
+            if self.verbose:
+                print 'Hosts: {0} deleted, {0} added.'.format(delete_count, add_count)
+        return True
 
     def host_id(self,jffnms_id):
         return self.hosts.get(jffnms_id,1)
@@ -238,54 +252,68 @@ class JffnmsImporter(object):
         return ''
 
     def _import_interfaces(self):
-        iface_count=0
-        result = self.dbhandle.execute('SELECT i.id,i.host,f.field,f.value FROM interfaces AS i, interfaces_values AS f WHERE i.type=4 and i.id=f.interface AND f.field IN (3,4,6)')
-        ifaces={}
-        for row in result:
-            ifid = row[0]
-            if ifid not in ifaces:
-                ifaces[ifid] = model.Iface()
-                ifaces[ifid].host_id = self.host_id(row[1])
-            if row[2] == 3:
-                ifaces[ifid].ifindex = int(row[3])
-            elif row[2] == 4:
-                ifaces[ifid].display_name = unicode(row[3])
-            elif row[2] == 6:
-                ifaces[ifid].speed = int(row[3])
-        for iface in ifaces.values():
-            DBSession.add(iface)
-            DBSession.flush()
-            iface_count += 1
-        if self.verbose:
-            print 'Imported %d interfaces.' % iface_count
+        delete_count = self._delete_all(model.Iface,0)
+        add_count=0
+        try:
+            result = self.dbhandle.execute('SELECT i.id,i.host,f.field,f.value FROM interfaces AS i, interfaces_values AS f WHERE i.type=4 and i.id=f.interface AND f.field IN (3,4,6)')
+            ifaces={}
+            for row in result:
+                ifid = row[0]
+                if ifid not in ifaces:
+                    ifaces[ifid] = model.Iface()
+                    ifaces[ifid].host_id = self.host_id(row[1])
+                if row[2] == 3:
+                    ifaces[ifid].ifindex = int(row[3])
+                elif row[2] == 4:
+                    ifaces[ifid].display_name = unicode(row[3])
+                elif row[2] == 6:
+                    ifaces[ifid].speed = int(row[3])
+            for iface in ifaces.values():
+                DBSession.add(iface)
+                DBSession.flush()
+                add_count += 1
+        except IntegrityError as err:
+            print 'Error importing interfaces: %s'  % err
+            transaction.abort()
+            return False
+        else:
+            if self.verbose:
+                print 'Interfaces: {0} deleted, {0} added.'.format(delete_count, add_count)
         return True
 
+
     def _import_attributes(self):
-        self._delete_all(model.Attribute, 'Attributes', 1)
-        #self._delete_all(model.AttributeField, 'AttributeFields', 0)
+        delete_count = self._delete_all(model.Attribute, 1)
         attribute_count=0
         field_count=0
-        result = self.dbhandle.execute('SELECT interfaces.*,interface_types.description as itype FROM interfaces,interface_types WHERE host > 1 AND interfaces.type=interface_types.id ORDER BY interfaces.id')
-        for row in result:
-            att = model.Attribute()
-            att.display_name=unicode(row[2])
-            att.host_id = self.hosts.get(row[3],1)
-            att.index = self.get_interface_index(row[0])
-            att.user_id = self.user_id(row[4])
-            att.attribute_type = DBSession.query(model.AttributeType).filter(model.AttributeType.display_name==unicode(row[15])).first()
-            #FIXME sla poll group
-            att.make_sound = row[7]
-            att.show_rootmap = row[8]
-            att.created = date.fromtimestamp(row[10])
-            att.updated = date.fromtimestamp(row[11])
-            att.polled = date.fromtimestamp(row[12])
-            model.DBSession.add(att)
-            field_count += self._import_attribute_fields(att,row[0])
-            model.DBSession.flush()
-            self.attributes[row[0]] = att.id
-            attribute_count += 1
-        if self.verbose == True:
-            print 'Imported %d attributes and %d fields.' % (attribute_count,field_count)
+        try:
+            result = self.dbhandle.execute('SELECT interfaces.*,interface_types.description as itype FROM interfaces,interface_types WHERE host > 1 AND interfaces.type=interface_types.id ORDER BY interfaces.id')
+            for row in result:
+                att = model.Attribute()
+                att.display_name=unicode(row[2])
+                att.host_id = self.hosts.get(row[3],1)
+                att.index = self.get_interface_index(row[0])
+                att.user_id = self.user_id(row[4])
+                att.attribute_type = DBSession.query(model.AttributeType).filter(model.AttributeType.display_name==unicode(row[15])).first()
+                #FIXME sla poll group
+                att.make_sound = row[7]
+                att.show_rootmap = row[8]
+                att.created = date.fromtimestamp(row[10])
+                att.updated = date.fromtimestamp(row[11])
+                att.polled = date.fromtimestamp(row[12])
+                model.DBSession.add(att)
+                field_count += self._import_attribute_fields(att,row[0])
+                model.DBSession.flush()
+                self.attributes[row[0]] = att.id
+                attribute_count += 1
+        except IntegrityError as err:
+            print 'Error importing attributes: %s'  % err
+            transaction.abort()
+            return False
+        else:
+            if self.verbose:
+                print 'Attributes: {0} deleted, {0} added.'.format(delete_count, attribute_count)
+                print 'Attribute Fields: 0 deleted, {0} added.'.format(field_count)
         return True
 
     def attribute_id(self,jffnms_id):
@@ -312,50 +340,56 @@ class JffnmsImporter(object):
         return field_count
 
     def _import_events(self):
-        event_count=0
-        result = self.dbhandle.execute('SELECT e.id,e.date, e.host, e.interface, e.state, e.username, e.info, e.referer, e.ack, e.analized, et.description FROM events e, types et WHERE e.type = et.id ORDER by e.id')
-        for row in result:
-            ev = model.Event()
-            ev.host_id = self.host_id(row[2])
-            #alarm_state_id
-            ev.acknowledged = (row[8] == 1)
-            ev.analyzed = (row[9] == 1)
-            ev.created = row[1]
-            ev.event_type = model.EventType.by_name(unicode(row[10]))
-            if ev.event_type is None:
-                ev.event_type = model.EventType.by_id(1)
-                print(row[10])
-                print('not foun')
+        delete_count = self._delete_all(model.Event,0)
+        add_count=0
+        try:
+            result = self.dbhandle.execute('SELECT e.id,e.date, e.host, e.interface, e.state, e.username, e.info, e.referer, e.ack, e.analized, et.description FROM events e, types et WHERE e.type = et.id ORDER by e.id')
+            for row in result:
+                ev = model.Event()
+                ev.host_id = self.host_id(row[2])
+                ev.acknowledged = (row[8] == 1)
+                ev.analyzed = (row[9] == 1)
+                ev.created = row[1]
+                ev.event_type = model.EventType.by_name(unicode(row[10]))
+                if ev.event_type is None:
+                    ev.event_type = model.EventType.by_id(1)
+                    print 'Event Type {0} unable to be found by name.'.format(row[10])
+                    continue
             
-            # Interface could either be referencing a real attribute or
-            # a field called that
-            ev.attribute = DBSession.query(model.Attribute).filter(
-                model.Attribute.host_id == ev.host_id).filter(
-                model.Attribute.display_name == unicode(row[3])).first()
-            if ev.attribute is None:
-                interface_field= model.EventField('interface', unicode(row[3]))
-                ev.fields.append(interface_field)
-                DBSession.add(interface_field)
+                # Interface could either be referencing a real attribute or
+                # a field called that
+                ev.attribute = DBSession.query(model.Attribute).filter(
+                    model.Attribute.host_id == ev.host_id).filter(
+                    model.Attribute.display_name == unicode(row[3])).first()
+                if ev.attribute is None:
+                    interface_field= model.EventField('interface', unicode(row[3]))
+                    ev.fields.append(interface_field)
+                    DBSession.add(interface_field)
                 
-            # Alarm can be a state, or just a field called 'state'
-            ev.alarm_state = model.AlarmState.by_name(unicode(row[4]))
-            if ev.alarm_state is None:
-                state_field = model.EventField('state', unicode(row[4]))
-                ev.fields.append(state_field)
-                DBSession.add(state_field)
-            # username and info are just fields
-            if row[5] != '':
-                username_field = model.EventField('user', unicode(row[5]))
-                ev.fields.append(username_field)
-                DBSession.add(username_field)
-            if row[6] != '':
-                info_field = model.EventField('info', unicode(row[6]))
-                ev.fields.append(info_field)
-                DBSession.add(info_field)
-            model.DBSession.add(ev)
-            model.DBSession.flush()
-            self.events[row[0]] = ev.id
-            event_count += 1
-        if self.verbose == True:
-            print 'Imported %d Events.' % event_count
+                # Alarm can be a state, or just a field called 'state'
+                ev.alarm_state = model.AlarmState.by_name(unicode(row[4]))
+                if ev.alarm_state is None:
+                    state_field = model.EventField('state', unicode(row[4]))
+                    ev.fields.append(state_field)
+                    DBSession.add(state_field)
+                # username and info are just fields
+                if row[5] != '':
+                    username_field = model.EventField('user', unicode(row[5]))
+                    ev.fields.append(username_field)
+                    DBSession.add(username_field)
+                if row[6] != '':
+                    info_field = model.EventField('info', unicode(row[6]))
+                    ev.fields.append(info_field)
+                    DBSession.add(info_field)
+                model.DBSession.add(ev)
+                model.DBSession.flush()
+                self.events[row[0]] = ev.id
+                add_count += 1
+        except IntegrityError as err:
+            print 'Error importing events: %s'  % err
+            transaction.abort()
+            return False
+        else:
+            if self.verbose:
+                print 'Events: {0} deleted, {0} added.'.format(delete_count, add_count)
         return True

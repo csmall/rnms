@@ -57,11 +57,12 @@ class Event(DeclarativeBase):
     host = relationship('Host', backref='events', order_by='Host.id')
     attribute_id = Column(Integer, ForeignKey('attributes.id'))
     attribute = relationship('Attribute', backref='events')
-    state = Column(Unicode(40))
+    alarm_state_id = Column(Integer, ForeignKey('alarm_states.id'))
+    alarm_state = relationship('AlarmState')
     acknowledged = Column(Boolean, nullable=False, default=False)
     analyzed = Column(Boolean, nullable=False, default=False)
     created = Column(DateTime, nullable=False, default=datetime.datetime.now)
-    fields = relationship('EventField', backref='event', order_by='EventField.tag')
+    fields = relationship('EventField', backref='event', order_by='EventField.tag', cascade='all, delete, delete-orphan')
 
     def __init__(self, event_type=None, host=None, attribute=None, field_list=None):
         self.event_type = event_type
@@ -86,25 +87,25 @@ class Event(DeclarativeBase):
           attribute-description   All Attribute.fields joined
           client     User.display_name
           host       Host.display_name
-          state      Event.state
+          state      AlarmState.display_name
           
           info       event field (from JFFNMS)
           user       event field (from JFFNMS)
+
+          Other fields are just event fields
         """
         text_template = EventTextTemplate(self.event_type.text)
-        subs = { 'attribute': '', 'client':'', 'host':'', 'state':self.state,
+        subs = { 'attribute': '', 'client':'', 'host':'', 'state':'',
                 'info':'', 'user':''}
         if self.host:
             subs['host'] = self.host.display_name
-        if self.attribute_id > 1: #FIXME this should be available
-            attribute = Attribute.by_id(self.attribute_id)
-            if attribute is None:
-                print "Cannot find attribute %d" % self.attribute_id
-            else:
-                subs['attribute'] = attribute.display_name
-                subs['client'] = attribute.user.display_name
+        if self.alarm_state:
+            subs['state'] = self.alarm_state.display_name
+        if self.attribute is not None:
+                subs['attribute'] = self.attribute.display_name
+                subs['client'] = self.attribute.user.display_name
                 subs['interface-description'] = ' '.join(
-                        [af.value for af in attribute.fields if af.attribute_type_field.description==True])
+                        [af.value for af in self.attribute.fields if af.attribute_type_field.description==True])
         subs.update(dict([ef.tag,ef.data] for ef in self.fields))
         return text_template.safe_substitute(subs)
 
@@ -138,6 +139,10 @@ class EventType(DeclarativeBase):
     severity_id = Column(Integer, ForeignKey('event_severities.id'))
     severity = relationship('EventSeverity', order_by='EventSeverity.id', backref='event_types')
     #}
+
+    def __init__(self, display_name=None):
+        if display_name is not None:
+            self.display_name=display_name
 
     @classmethod
     def by_name(cls, name):

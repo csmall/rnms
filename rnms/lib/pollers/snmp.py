@@ -34,3 +34,43 @@ def poll_snmpget(poller, attribute):
         return None
     return snmp.get(attribute.host, tuple(oid))
 
+def poll_snmpstatus(poller, attribute):
+    """
+    Generic SNMP get that returns a status string
+    Returns: a string based upon the SNMP value returned
+    Parameters: <oid>|<val1>=<ret1>,...,<valN>=<retN>|<default ret>
+    OID is in dotted decimal to get the value.
+    The values are compared in the commar separated list and if
+    a match return the corresponding ret
+    An optional default return value can be used, returns None if
+    there is an error
+    """
+    params = poller.parameters.split('|')
+    param_count = len(params)
+    if param_count < 2:
+        return None
+    default_ret = None
+    if param_count > 2:
+        default_ret = params[2]
+
+    try:
+        oid = pyasn_types.ObjectIdentifier(params[0])
+    except PyAsn1Error:
+        return None
+    snmp_value = snmp.get(attribute.host, tuple(oid))
+    if snmp_value is None:
+        return None
+
+    try:
+        for item in params[1].split(","):
+            matchret = item.split("=")
+            if len(matchret) != 2:
+                return None
+            if snmp_value == matchret[0]:
+                return matchret[1]
+    except:
+        return None
+    return default_ret
+
+
+    

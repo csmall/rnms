@@ -1,0 +1,64 @@
+
+#eventtable {
+    width: 100%;
+    border-collapse: collapse
+}
+#tableheader {
+    background-color: #AAAAAA;
+    border-bottom: 1px solid black;
+    border-top: 1px solid black;
+    color: black;
+    font-weight: bold;
+    height: 20px;
+    text-align: center;
+}
+
+#eventtable tr {
+    border-bottom: 1px dashed #AAAAAA;
+    font-size: 11px;
+    white-space: nowrap;
+}
+#eventtable td {
+   padding: 5px 0px 5px 0px;
+}
+
+/* Pagination functions */
+span.table_controls {
+  border-top: 1px solid #333333;
+  border-bottom: 1px solid #333333;
+  border-left: none;
+  border-right: none;
+  background-color: #cccccc;
+  padding: 10px 0px 10px 0px;
+  width: 100%;
+  text-align: right;
+  float: right;
+}
+
+a.prevPage, a.nextPage, a.pager_link, span.pager_curpage {
+  border: 1px solid #333333;
+  padding: 5px;
+  margin-right: 5px;
+  background-color: #ffffff;
+  color: #6666ff;
+  text-decoration: none;
+}
+
+span.pager_curpage {
+  background-color: #eea117;
+  color: #ffffff;
+}
+
+span.pager_dotdot {
+  background-color: inherit;
+  color: #000000;
+  border: none;
+}
+
+span#span_control {
+  color: #000000;
+  position: absolute;
+  margin: -5px;
+  padding: 5px;
+  left: 20%;
+}

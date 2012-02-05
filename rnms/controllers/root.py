@@ -12,6 +12,7 @@ from tgext.admin.controller import AdminController
 
 from rnms.lib.base import BaseController
 from rnms.controllers.error import ErrorController
+from rnms.controllers.events import EventsController
 
 __all__ = ['RootController']
 
@@ -32,6 +33,7 @@ class RootController(BaseController):
     """
     secc = SecureController()
     admin = AdminController(model, DBSession, config_type=TGAdminConfig)
+    events = EventsController()
 
     error = ErrorController()
 
