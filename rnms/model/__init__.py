@@ -19,7 +19,7 @@ DeclarativeBase = declarative_base()
 
 # There are two convenient ways for you to spare some typing.
 # You can have a query property on all your model classes by doing this:
-# DeclarativeBase.query = DBSession.query_property()
+DeclarativeBase.query = DBSession.query_property()
 # Or you can use a session-aware mapper as it was used in TurboGears 1:
 # DeclarativeBase = declarative_base(mapper=DBSession.mapper)
 
@@ -68,6 +68,7 @@ from rnms.model.event import Event, EventType, EventField, EventSeverity
 from rnms.model.graph_type import GraphTypeGraph
 #from rnms.model.host import Host, Iface, ConfigTransfer
 from rnms.model.host import *
+from rnms.model.logfile import Logfile, LogmatchSet, LogmatchRow, LogmatchField
 from rnms.model.poller import PollerSet, Poller, Backend, PollerRow
 from rnms.model.sla import Sla, SlaCondition, SlaGroup
 from rnms.model.zone import Zone

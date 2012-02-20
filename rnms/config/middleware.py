@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """WSGI middleware initialization for the Rosenberg-NMS application."""
 
+import tw2.core as twc
 from rnms.config.app_cfg import base_config
 from rnms.config.environment import load_environment
 
@@ -32,7 +33,10 @@ def make_app(global_conf, full_stack=True, **app_conf):
     
    
     """
-    app = make_base_app(global_conf, full_stack=True, **app_conf)
+#    app = make_base_app(global_conf, full_stack=True, **app_conf)
+    custom = lambda app : twc.make_middleware(app, default_engine='mako')
+    app = make_base_app(global_conf, wrap_app=custom, full_stack=True, **app_conf)
+
     
     # Wrap your base TurboGears 2 application with custom middleware here
     

@@ -1,3 +1,4 @@
 *.pyc
 devdata.db
 *.swp
+.coverage

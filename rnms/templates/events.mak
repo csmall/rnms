@@ -41,7 +41,7 @@ the entries as JSON.  Here, try it out: <a href="/data.html?a=1&b=2">/data.html?
         <tr class="severity${event.event_type.severity_id}" onClick="location.href='${tg.url('/events/')}${event.id}'">
             <td>${event.created}</td>
             <td>${event.event_type.display_name}</td>
-			<td>${event.host.display_name}</td>
+			<td><a href="${tg.url('/hosts/')}${event.host.id}">${event.host.display_name}</a></td>
 			<td>${event.text()}</td>
         </tr>
         %endfor

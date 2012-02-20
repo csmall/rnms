@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2011 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,8 @@ class TestZone(ModelTest):
     klass = model.Zone
     attrs = dict(
             display_name = (u'Test Zone'),
-            short_name = (u'test')
+            short_name = (u'test'),
+            icon = ('test.png')
             )
 
     def test_obj_creation_displayname(self):
@@ -38,13 +39,17 @@ class TestZone(ModelTest):
         """The obj constructor must set the short name right"""
         eq_(self.obj.short_name, u'test')
 
+    def test_obj_creation_icon(self):
+        """The obj constructor must set the icon correctly"""
+        eq_(self.obj.icon, 'test.png')
+
     def test_getting_by_name(self):
         """ Zone must be fetchable by its display name"""
         test_zone = model.Zone.by_name(u'Test Zone')
         eq_(test_zone, self.obj)
 
-#    def test_getting_default(self):
-#        """ Default Zone must be fetchable. """
-#        default_zone = model.Zone.default()
-#        eq_(default_zone, self.obj)
+    def test_getting_default(self):
+        """ Default Zone must be fetchable. """
+        default_zone = model.Zone.default()
+        eq_(default_zone, self.obj)
 

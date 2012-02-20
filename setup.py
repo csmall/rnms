@@ -37,6 +37,12 @@ install_requires=[
     "repoze.what-quickstart",
     "repoze.what.plugins.sql",
     "tw.forms",
+    "tw2.jqplugins.jqplot",
+    "tw2.jqplugins.jqgrid",
+    "tw2.jqplugins.portlets",
+    "tw2.core",
+    "tw2.rrd",
+    "tw.dojo",
     ]
 
 if sys.version_info[:2] == (2,4):

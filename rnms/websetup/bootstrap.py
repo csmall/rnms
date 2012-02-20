@@ -3,6 +3,7 @@
 """Setup the Rosenberg-NMS application"""
 
 import logging
+import re
 from tg import config
 from rnms import model
 from rnms.websetup import database_data
@@ -69,7 +70,6 @@ def bootstrap(command, conf, vars):
                     ) = row
             for field in fields:
                 f = model.AttributeTypeField()
-                print(field)
                 (f.display_name, f.tag, f.position, f.description,f.showable_edit, f.showable_discovery, f.overwritable, f.tracked, f.default, f.parameters, f.backend) = field
                 at.fields.append(f)
             # FIXME needs to process fields and rrds
@@ -97,6 +97,36 @@ def bootstrap(command, conf, vars):
             et.severity = model.EventSeverity.by_name(severity)
             #print("eseverity %s is %s" % (severity, et.severity))
             model.DBSession.add(et)
+
+        # Logmatches
+        logmatch_set = model.LogmatchSet(display_name=u'Default')
+        model.DBSession.add(logmatch_set)
+
+        for row in database_data.logfiles:
+            lf = model.Logfile(row[0],row[1])
+            lf.logmatchset = logmatch_set
+            model.DBSession.add(lf)
+
+        for row in database_data.logmatch_default_rows:
+            try:
+                lmr = model.LogmatchRow()
+                (lmr.match_text, lmr.match_start, lmr.host_match, 
+                    lmr.attribute_match, lmr.state_match, lmr.event_type_id,
+                    fields) = row
+                try:
+                  lmr.match_sre = re.compile(row[0])
+                except re.error as errmsg:
+                    print "Cannot compile message \"%s\": %s" % (row[0],errmsg)
+                    exit()
+                lmr.logmatch_set = logmatch_set
+                for field in fields:
+                    lmf = model.LogmatchField()
+                    (lmf.event_field_tag, lmf.field_match)=field
+                    lmr.fields.append(lmf)
+                model.DBSession.add(lmr)
+            except Exception as errmsg:
+                print "Cannot add row \"%s\": %s.\n" % (row[0], errmsg)
+                exit()
 
         for row in database_data.slas:
             s = model.Sla()

@@ -68,6 +68,14 @@ class Attribute(DeclarativeBase):
                 cls.id == attribute_id).first()
 
     @classmethod
+    def by_display_name(cls, host, display_name):
+        """" Return the attibute for a host matching display_name """
+        if host is None or display_name is None:
+            return None
+        return DBSession.query(cls).filter(
+                cls.host == host).filter(cls.display_name == display_name).first()
+
+    @classmethod
     def from_discovered(cls, discovered_attribute):
         a = cls()
         a.host_id = discovered_attribute.host_id
@@ -120,6 +128,9 @@ class Attribute(DeclarativeBase):
                 return field.value
         return default
 
+    def query(self):
+        return DBSession
+        
 
 class AttributeField(DeclarativeBase):
     __tablename__ = 'attribute_fields'
@@ -203,7 +214,7 @@ class AttributeTypeField(DeclarativeBase):
         return DBSession.query(cls).filter(and_(
                 cls.attribute_type_id == attribute_type,
                 cls.tag==tag)).first()
-        
+
         
 
 class AttributeTypeRRD(DeclarativeBase):

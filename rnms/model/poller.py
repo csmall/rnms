@@ -29,6 +29,7 @@ from sqlalchemy.types import Integer, Unicode
 
 from rnms.model import DeclarativeBase, metadata, DBSession
 from rnms.lib import pollers
+from rnms.lib.genericset import GenericSet
 
 __all__ = [ 'PollerSet', 'Poller', 'Backend', 'PollerRow']
 
@@ -85,7 +86,7 @@ class Backend(DeclarativeBase):
         """ Run the actual backend process """
         pass #FIXME
 
-class PollerSet(DeclarativeBase):
+class PollerSet(DeclarativeBase, GenericSet):
     __tablename__ = 'poller_sets'
 
     #{ Columns
@@ -97,57 +98,23 @@ class PollerSet(DeclarativeBase):
 
     def __init__(self, display_name=None):
         self.display_name = display_name
+        self.rows = self.poller_rows
 
     def __repr__(self):
         return '<PollerSet name=%s rows=%d>' % (self.display_name,len(self.poller_rows))
+
+    def insert(self, new_pos, new_row):
+        new_row.poller_set = self
+        GenericSet.insert(self,new_pos, new_row)
+
+    def append(self, new_row):
+        new_row.poller_set = self
+        GenericSet.append(self,new_row)
 
     @classmethod
     def no_polling(cls):
         return DBSession.query(cls).order_by(id).first()
     
-    def insert_first(self, new_row):
-        """ Add new PollerRow to PollerSet at the top of the set"""
-        for row in self.poller_rows:
-            if new_row is not row:
-                row.position=row.position+1
-        new_row.position=1
-        new_row.poller_set = self
-        self.poller_rows.insert(0,new_row)
-
-    def insert_last(self, new_row):
-        """ Add new PollerRow to PollerSet at the bottom of the Set"""
-        new_position=1
-        for row in self.poller_rows:
-            if new_row is not row:
-                new_position=row.position+1
-        new_row.position=new_position
-        new_row.poller_set = self
-        self.poller_rows.append(new_row)
-
-
-    def row_to(self, moving_row, position):
-        """
-        Move existing PollerRow in PollerSet to be at new position in Set.
-        Renumbers subsequent PolleRow positions down one.
-        Does not add PollerRow to set, assume its already there.
-        """
-        for row in self.poller_rows:
-            if moving_row is not row and row.position >= position:
-                row.position=row.position+1
-        moving_row.position=position
-
-    def row_swap(self, position_a, position_b):
-        """ Swap position of rows that are the specified positions. If the
-        positions don't exist then dont do anything
-        """
-        for row_a in self.poller_rows:
-            if row_a.position == position_a:
-                for row_b in self.poller_rows:
-                    if row_b.position == position_b:
-                        row_a.position = position_b
-                        row_b.position = position_a
-                        return True
-        return False
 
     def run(self, attribute):
         """ Run the poller->backend rows in order for this attribute

@@ -233,6 +233,64 @@ event_severities = [
     [u'Service',35, '0090f0', 'ffffff']
     ]
 
+logfiles = [
+    [u'Database', u''],
+    [u'Messages', u'/var/log/messages'],
+    ]
+
+logmatch_default_rows = [
+        #text,start,host,attr,state,event_id,[fields]
+        [u'%BGP-5-ADJCHANGE: neighbour (\S+) (\S+)$',
+            True,None,1,2,6,[]],
+        [u'%BGP-3-NOTIFICATION: (\S+ \S+) neighbor (\S+) \S+ (\S+ \S+ \S+) \S+ \S+',
+            True,None,2,1,36,[['info',3]]],
+        [u'%CDP-4-DUPLEX_MISMATCH: duplex mismatch discovered on (\S+)',
+            True,None,1,None,34,[]],
+        [u'%CLEAR-5-COUNTERS: Clear counter on \S+ (\S+) by (\S+)',
+            True,None,1,None,17,[['user',2,]]],
+
+        [u'%CONTROLLER-5-UPDOWN: Controller \S+ (\S+), changed state to (\S+) \([^)]+\)$',
+            True,None,1,2,5,[['info',3]]],
+        [u'%ISDN-6-CONNECT: Interface (\S+) is now (\S+) (.+)$',
+            True,None,1,2,72,[['info',3]]],
+        [u'%LINK-3-UPDOWN: Interface (\S+), changed state to (\S+)',
+            True,None,1,2,4,[]],
+        [u'%LINK-5-CHANGED: Interface (\S+) changed state to (\S+)',
+            True,None,1,2,7,[]],
+        [u'%LINEPROTO-5-UPDOWN: Line protocol on Interface (\S+), changed to (\S+)',
+            True,None,1,2,3,[]],
+        [u'%SYS-5-CONFIG-(?:_I|): Configured from (\S+) by (\S+)$',
+            True,None,None,None,2,[['source',1],['proto',2]]],
+
+        [u'%SYS-5-(?:RESTART|RELOAD): (.+)$',
+            True,None,None,None,26,[['info',1]]],
+        [u'%SEC-6-IPACCESSLOG(?:DP|P|NP|S): list (.+)$',
+            True,None,None,None,35,[['info',1]]],
+        [u'EXCESSCOLL: (\S+)',
+            False,None,1,None,37,[]],
+        [u'WebOS <slb>: No services are available for Virtual Server\d+:(\S+)',
+            True,None,1,'down',70,[]],
+        [u'%ISDN-6-DISCONNECT: Interface (\S+) (\S+) (.+)$',
+            True,None,1,2,72,[['info',3]]],
+        [u'%PIX-4-106023: (.+)$',
+            True,None,None,None,29,[['info',1]]],
+        [u'UPS: ([^.]+)\. (.+)$',
+            True,None,'UPS',None,26,[['info',1]]],
+        [u'WebOS <slb>: real server (\S+) operational',
+            True,None,1,'up',68,[]],
+        [u'WebOS <slb>: cannot contact real server (\S+)',
+            True,None,1,'down',68,[]],
+        [u'WebOS <slb>: Services are available for Virtual Server\d+:(\S+)',
+            True,None,1,'up',70,[]],
+        [u'WebOS <slb>: real service (\S+) operational',
+            True,None,1,'up',69,[]],
+        [u'WebOS <slb>: cannot contact real service (\S+)',
+            True,None,1,'down',69,[]],
+        [u'%RCMD-4-RSHPORTATTEMPT: Attempted to connect to RSHELL from (\S+)',
+            True,None,None,None,9,[['source',1]]],
+
+    ]
+
 slas = [
         [u'No SLA',3, u'No SLA',12,100,1],
         [u'Customer Satellite Link',3, u'Customer Sat Link:',12,75,4],
