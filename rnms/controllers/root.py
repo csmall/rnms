@@ -14,6 +14,7 @@ from rnms.lib.base import BaseController
 from rnms.controllers.error import ErrorController
 from rnms.controllers.events import EventsController
 from rnms.controllers.attributes import AttributesController
+from rnms.controllers.hosts import HostsController
 
 __all__ = ['RootController']
 
@@ -36,6 +37,7 @@ class RootController(BaseController):
     admin = AdminController(model, DBSession, config_type=TGAdminConfig)
     events = EventsController()
     attributes = AttributesController()
+    hosts = HostsController()
 
     error = ErrorController()
 

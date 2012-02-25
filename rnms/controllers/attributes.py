@@ -33,8 +33,8 @@ import tw2.sqla
 
 # project specific imports
 from rnms.lib.base import BaseController
-from rnms.model import DBSession, metadata, Event, EventSeverity,EventType
-from rnms.widgets import AttributeGrid, RRDWidget
+#from rnms.model import DBSession, metadata, Event, EventSeverity,EventType, DeclarativeBase
+from rnms.widgets import AttributeGrid, RRDWidget, AttributeGrid2
 from rnms import model
 
 def recursive_update(d1, d2):
@@ -59,31 +59,35 @@ def recursive_update(d1, d2):
    
       return d1
 
-class AttributeIndex(tw2.sqla.DbListPage):
-    entity = model.Attribute
-    title = 'Attribute'
-
-
 class AttributesController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = authorize.not_anonymous()
     
     @expose('rnms.templates.widget')
-    def index(self, **named):
-        w = AttributeIndex.req()
-        w.fetch_data(request)
-        return dict(widget=w, page='attribute')
-
-    @expose('rnms.templates.widget')
-    def grid(self, *args, **kw):
-        mw = tw2.core.core.request_local()['middleware']
-        mw.controllers.register(AttributeGrid, 'db_jqgrid')
-        return dict(widget=AttributeGrid, page='attribute')
+    def index(self, *args, **kw):
+        return dict(widget=AttributeGrid2, page='attribute')
 
     @expose('json')
-    def griddata(self, *args, **kwargs):
-        #return dict(page=1, records=1, total=1, rows=[{"cell": [1, 'display_name', 'foo', 'dd', 'dd'], 'id': 1},])
-        return AttributeGrid.request(request).body
+    def jqsumdata(self, page=1, rows=1, *args, **kw):
+        rows = int(rows)
+        page = int(page)
+        start_row = page * rows
+        end_row = (page+1) * rows
+
+        attributes =model.DBSession.query(model.Attribute)
+        row_count = attributes.count()
+        data=[]
+        for attribute in attributes[start_row:end_row]:
+            data.append({
+                'cell' : [ attribute.display_name,
+                attribute.oper_state_name(),
+                attribute.admin_state_name(),
+                ],
+                'id': attribute.id})
+        return dict(page=page,records=row_count,total=row_count/rows, rows=data)
+    @expose('json')
+    def jqgrid(self, *args, **kwargs):
+        return AttributeGrid2.request(request).body
 
     @expose('rnms.templates.attribute.graph')
     def graph(self, graphid):

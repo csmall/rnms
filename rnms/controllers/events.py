@@ -20,10 +20,11 @@
 #
 """Sample controller module"""
 import datetime
-from sqlalchemy import select,func
+from sqlalchemy import select,func,or_
 
 # turbogears imports
 from tg import expose, tmpl_context
+import tg
 #from tg import redirect, validate, flash
 
 # third party imports
@@ -31,23 +32,21 @@ from tg import expose, tmpl_context
 #from repoze.what import predicates
 from sprox.dojo.tablebase import DojoTableBase as TableBase
 from sprox.dojo.fillerbase import DojoTableFiller as TableFiller
+import tw2.core as twc
+import tw2.jqplugins.jqgrid
+
 
 # project specific imports
 from rnms.lib.base import BaseController
 from rnms.model import DBSession, metadata, Event, EventSeverity,EventType
 from rnms.widgets import LogPlot,RRDWidget
-
-class EventTableFiller(TableFiller):
-    __model__ = Event
-
-event_filler = EventTableFiller(DBSession)
-
-class EventTable(TableBase):
+class EventTable2(TableBase):
     __model__ = Event
     __omit_fields__ = ['event_id', '__actions__']
     __url__ = "/events/blah.json"
 
-event_table = EventTable(DBSession)
+class EventsWidget(twc.Widget):
+    template = 'rnms.templates.eventswidget'
 
 def recursive_update(d1, d2):
       """ Little helper function that does what d1.update(d2) does,
@@ -71,6 +70,46 @@ def recursive_update(d1, d2):
    
       return d1
 
+class GridWidget(tw2.jqplugins.jqgrid.jqGridWidget):
+    id = 'grid_widget'
+    entity = Event
+    excluded_columns = ['id']
+    prmFilter = {'stringResult': True, 'searchOnEnter': False}
+    pager_options = { "search" : True, "refresh" : True, "add" : False, }
+
+    options = {
+            'pager': 'event-grid_pager',
+    #        'url': '/tw2_controllers/db_jqgrid/',
+            'colNames':[ 'Date', 'Type', 'Host', 'Description'],
+            'colModel' : [
+                {
+                    'name': 'created',
+                    'width': 75,
+                    'align': 'right',
+                },{
+                    'name': 'event_type',
+                    'width': 75,
+                    'align': 'right',
+                },{
+                    'name': 'host_display_name',
+                    'width': 75,
+                    'align': 'right',
+                },{
+                    'name': 'event_description',
+                    'width': 75,
+                    'align': 'left',
+                },
+            ],
+            'url' : '/events/griddata',
+            'rowNum':15,
+            'rowList':[15,30,50],
+            'viewrecords':True,
+            'imgpath': 'scripts/jqGrid/themes/green/images',
+            'width': 900,
+            'height': 'auto',
+            }
+
+
 
 class EventsController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
@@ -83,10 +122,49 @@ class EventsController(BaseController):
                 severities=severities,
                 )
 
+    @expose('rnms.templates.widget')
+    def test3(self, *args, **kw):
+        myw = EventsWidget()
+        from webhelpers import paginate
+        conditions = []
+        copy_args=[]
+        if 't' in kw:
+            conditions.append(Event.event_type_id==kw['t'])
+            copy_args.append('t')
+        if 'h' in kw:
+            conditions.append(Event.host_id==kw['h'])
+            copy_args.append('h')
+
+        condition = or_(*conditions)
+        events = DBSession.query(Event).filter(condition).order_by(Event.id.desc())
+        count = events.count()
+        page = int(kw.get('page', '1'))
+        span = int(kw.get('span', '20'))
+        myw.currentPage = paginate.Page(
+                events, page, item_count=count,
+                items_per_page=span,
+                )
+        for arg in copy_args:
+            myw.currentPage.kwargs[arg] = str(kw[arg])
+        
+        myw.events = myw.currentPage.items
+        myw.tgurl = tg.url
+        return dict(widget=myw, page='attribute')
+
     @expose('rnms.templates.events')
     def index(self, **named):
-        events = DBSession.query(Event).order_by(Event.id.desc())
         from webhelpers import paginate
+        conditions = []
+        copy_args=[]
+        if 'type' in named:
+            conditions.append(Event.event_type_id==named['type'])
+            copy_args.append('type')
+        if 'host_id' in named:
+            conditions.append(Event.host_id==named['host_id'])
+            copy_args.append('host_id')
+
+        condition = or_(*conditions)
+        events = DBSession.query(Event).filter(condition).order_by(Event.id.desc())
         count = events.count()
         page = int(named.get('page', '1'))
         span = int(named.get('span', '20'))
@@ -94,12 +172,24 @@ class EventsController(BaseController):
                 events, page, item_count=count,
                 items_per_page=span,
                 )
+        for arg in copy_args:
+            currentPage.kwargs[arg] = str(named[arg])
+        
         events = currentPage.items
         return dict(
-                page='index',
-                events=events,
-                currentPage=currentPage,
-                )
+               page='events',
+               events=events,
+               currentPage=currentPage,
+               )
+
+    @expose('json')
+    def griddata(self):
+        events =DBSession.query(Event)
+        data=[]
+        for event in events:
+            data.append({'created': event.created,})
+        return dict(data=data)
+
 
     @expose('json')
     def blah(self):
@@ -153,3 +243,10 @@ class EventsController(BaseController):
         tmpl_context.widget = event_table
         value = event_filler.get_value(dict(limit=10))
         return dict(value=value)
+
+    @expose('rnms.templates.widget')
+    def grid(self, *args, **kw):
+        mw = twc.core.request_local()['middleware']
+        mw.controllers.register(GridWidget, 'db_jqgrid')
+        return dict(widget=GridWidget, page='events')
+

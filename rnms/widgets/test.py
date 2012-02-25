@@ -6,15 +6,17 @@ from tw2.core import JSSymbol
 from tw2 import rrd
 from tw2.jqplugins.jqgrid import SQLAjqGridWidget
 
-class AttributeGrid(SQLAjqGridWidget):
+class AttributeGrid2(SQLAjqGridWidget):
     id = 'attribute-grid'
     entity = model.Attribute
+    entity.query = model.DBSession.query_property()
     excluded_columns = ['id']
 
-    prmFilter = {'stringResult': True, 'searchOnEnter': True}
+    prmFilter = {'stringResult': True, 'searchOnEnter': False}
 
+    events = {'loadComplete': 'alert("ff")',}
     options = {
-            'url': '/tw2_controllers/db_jqgrid/',
+            'url': '/attributes/jqgrid/',
             'rowNum': 15,
             'viewrecords': True,
             'imgpath': 'scripts/jqGrid/themes/green/images',

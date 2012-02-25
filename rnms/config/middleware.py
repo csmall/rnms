@@ -33,9 +33,9 @@ def make_app(global_conf, full_stack=True, **app_conf):
     
    
     """
-#    app = make_base_app(global_conf, full_stack=True, **app_conf)
-    custom = lambda app : twc.make_middleware(app, default_engine='mako')
-    app = make_base_app(global_conf, wrap_app=custom, full_stack=True, **app_conf)
+    app = make_base_app(global_conf, full_stack=True, **app_conf)
+    #custom = lambda app : twc.make_middleware(app, default_engine='mako')
+    #app = make_base_app(global_conf, wrap_app=custom, full_stack=True, **app_conf)
 
     
     # Wrap your base TurboGears 2 application with custom middleware here
