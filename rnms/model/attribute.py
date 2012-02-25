@@ -31,6 +31,7 @@ from rnms.model import DeclarativeBase, metadata, DBSession
 
 __all__ = ['Attribute', 'AttributeField', 'AttributeType', 'AttributeTypeField', 'AttributeTypeRRD', 'DiscoveredAttribute']
 
+snmp_state_names = {1:'up', 2:'down', 3:'testing', 4:'unknown'}
 class Attribute(DeclarativeBase):
     __tablename__ = 'attributes'
     
@@ -131,6 +132,18 @@ class Attribute(DeclarativeBase):
     def query(self):
         return DBSession
         
+    def oper_state_name(self):
+        """ Return string representation of operational state"""
+        if self.oper_state in snmp_state_names:
+            return snmp_state_names[self.oper_state]
+        return u"Unknown {0}".format(self.oper_state)
+
+    def admin_state_name(self):
+        """ Return string representation of admin state"""
+        if self.admin_state in snmp_state_names:
+            return snmp_state_names[self.admin_state]
+        return u"Unknown {0}".format(self.admin_state)
+
 
 class AttributeField(DeclarativeBase):
     __tablename__ = 'attribute_fields'
