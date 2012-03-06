@@ -2,3 +2,5 @@
 devdata.db
 *.swp
 .coverage
+.dist
+.build

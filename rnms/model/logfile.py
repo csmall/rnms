@@ -23,6 +23,7 @@
 import datetime
 import os
 import transaction
+import re 
 
 from sqlalchemy import *
 from sqlalchemy.orm import mapper, relationship
@@ -31,9 +32,10 @@ from sqlalchemy.types import Integer, Unicode, PickleType
 
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, metadata, DBSession, Attribute
+from rnms.model import DeclarativeBase, metadata, DBSession, Attribute, AlarmState
 from rnms.lib.genericset import GenericSet
 
+syslog_host_match = re.compile(r'\w{3} [ :0-9]{11} ([._[a-z0-9]-]+)\s+',re.IGNORECASE)
 
 class Logfile(DeclarativeBase):
     """
@@ -54,6 +56,7 @@ class Logfile(DeclarativeBase):
     logmatchset = relationship('LogmatchSet')
     #}
 
+    
     def __init__(self, display_name=None, pathname=None):
         if display_name is not None:
             self.display_name = display_name
@@ -114,11 +117,11 @@ class LogmatchSet(DeclarativeBase,GenericSet):
         """
         self.cached_matches = [ row for row in self.logmatch_rows]
 
-    def _match_get_fields(self, match, logfile_row):
+    def _match_get_fields(self, match, logfile_row, syslog_host):
         """
         Return a dictionary of fields that are extracted from the match
         """
-        host=logfile_row.matched_host(match)
+        host=logfile_row.matched_host(match, syslog_host)
         return dict(event_type_id=logfile_row.event_type_id,
                 host=host,
                 attribute=logfile_row.matched_attribute(match,host),
@@ -126,22 +129,31 @@ class LogmatchSet(DeclarativeBase,GenericSet):
                 fields = logfile_row.matched_fields(match)
                 )
 
-    def find(self, text):
+    def find(self, text, is_syslog=True):
         """
         Try to match "text" with any of the match rows
         returns None if not found otherwise a dictionary 
         """
+
+        syslog_match = syslog_host_match.match(text)
+        syslog_host = None
+        if is_syslog and syslog_match is None:
+            return False
+        syslog_host = syslog_match.group(1)
+
         if self.cached_matches is None:
             self.prime_cache()
 
         for row in self.cached_matches:
+            #print "trymatch: %s " % (row.match_text)
             if row.match_start:
                 match = row.match_sre.match(text)
             else:
                 match = row.match_sre.search(text)
+            match = re.search(row.match_text, text)
             if match is not None: #we have a match!!
                 print "match"
-                return (self._match_get_fields(match, row))
+                return (self._match_get_fields(match, row, syslog_host))
 
 
 
@@ -172,22 +184,30 @@ class LogmatchRow(DeclarativeBase):
     event_type_id = Column(Integer, ForeignKey('event_types.id'), nullable=False, default=0)
     fields = relationship('LogmatchField', backref='logmatch_row', cascade='all, delete, delete-orphan')
 
-    def matched_host(self, match):
+    def matched_host(self, match, syslog_host):
         """
         Return the matched host
         """
-        if self.host_match is None:
-            return None
-        try:
-            groupid=int(self.host_match)
-        except ValueError:
-            return None
+        if syslog_host is not None:
+            address = syslog_host
 
-        try:
-            address = match.group(groupid)
-        except IndexError:
+        if self.host_match is not None:
+            try:
+                groupid=int(self.host_match)
+                address = match.group(groupid)
+            except:
+                pass
+        if address is None:
             return None
-        return Host.by_address(address)
+        try:
+            for addr in set([ai[4][0] for ai in socket.getaddrinfo(address,0)]):
+                host = Host.by_address(addr)
+                if host is not None:
+                    return host
+        except:
+            pass
+        return None
+
 
 
     def matched_attribute(self, match,host):
@@ -221,7 +241,7 @@ class LogmatchRow(DeclarativeBase):
             display_name = match.group(groupid)
         except IndexError:
             return None
-        return AlarmState.by_display_name(host,display_name)
+        return AlarmState.by_name(display_name)
 
     def matched_fields(self,match):
         """

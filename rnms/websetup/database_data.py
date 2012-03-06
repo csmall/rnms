@@ -258,7 +258,7 @@ logmatch_default_rows = [
         [u'%LINK-5-CHANGED: Interface (\S+) changed state to (\S+)',
             True,None,1,2,7,[]],
         [u'%LINEPROTO-5-UPDOWN: Line protocol on Interface (\S+), changed to (\S+)',
-            True,None,1,2,3,[]],
+            False,None,1,2,3,[]],
         [u'%SYS-5-CONFIG-(?:_I|): Configured from (\S+) by (\S+)$',
             True,None,None,None,2,[['source',1],['proto',2]]],
 

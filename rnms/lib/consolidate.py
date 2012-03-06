@@ -57,7 +57,6 @@ class Consolidator():
         lfile = open(logfile.pathname, "r")
         lfile.seek(logfile.file_offset)
         for line in lfile:
-            print(line)
             f = logfile.logmatchset.find(line)
             if f is not None:
                 print(f)

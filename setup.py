@@ -42,7 +42,8 @@ install_requires=[
     "tw2.jqplugins.portlets",
     "tw2.core",
     "tw2.rrd",
-    "tw.dojo",
+    "pysnmp",
+    "mysql-python",
     ]
 
 if sys.version_info[:2] == (2,4):

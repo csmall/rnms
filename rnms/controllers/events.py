@@ -30,8 +30,6 @@ import tg
 # third party imports
 #from tg.i18n import ugettext as _
 #from repoze.what import predicates
-from sprox.dojo.tablebase import DojoTableBase as TableBase
-from sprox.dojo.fillerbase import DojoTableFiller as TableFiller
 import tw2.core as twc
 import tw2.jqplugins.jqgrid
 
@@ -40,10 +38,6 @@ import tw2.jqplugins.jqgrid
 from rnms.lib.base import BaseController
 from rnms.model import DBSession, metadata, Event, EventSeverity,EventType
 from rnms.widgets import LogPlot,RRDWidget
-class EventTable2(TableBase):
-    __model__ = Event
-    __omit_fields__ = ['event_id', '__actions__']
-    __url__ = "/events/blah.json"
 
 class EventsWidget(twc.Widget):
     template = 'rnms.templates.eventswidget'
@@ -231,12 +225,6 @@ class EventsController(BaseController):
         return dict(item_id=event.id,
                 item_type='Event',
                 attribs=attribs)
-
-    @expose('rnms.templates.event_sprox')
-    def test2(self):
-        tmpl_context.widget = event_table
-        value = event_filler.get_value(dict(limit=10))
-        return dict(value=value)
 
     @expose('rnms.templates.events_get_one')
     def get_one(self):
