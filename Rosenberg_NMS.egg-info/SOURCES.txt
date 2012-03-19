@@ -13,7 +13,6 @@ Rosenberg_NMS.egg-info/top_level.txt
 migration/__init__.py
 migration/versions/__init__.py
 rnms/__init__.py
-rnms/widgets.py
 rnms/config/__init__.py
 rnms/config/app_cfg.py
 rnms/config/environment.py
@@ -22,6 +21,7 @@ rnms/controllers/__init__.py
 rnms/controllers/attributes.py
 rnms/controllers/error.py
 rnms/controllers/events.py
+rnms/controllers/hosts.py
 rnms/controllers/root.py
 rnms/controllers/secure.py
 rnms/controllers/template.py
@@ -30,6 +30,8 @@ rnms/lib/__init__.py
 rnms/lib/app_globals.py
 rnms/lib/backends.py
 rnms/lib/base.py
+rnms/lib/consolidate.py
+rnms/lib/genericset.py
 rnms/lib/helpers.py
 rnms/lib/snmp.py
 rnms/lib/importers/__init__.py
@@ -45,6 +47,7 @@ rnms/model/event.py
 rnms/model/graph_type.py
 rnms/model/host.py
 rnms/model/iface.py
+rnms/model/logfile.py
 rnms/model/poller.py
 rnms/model/sla.py
 rnms/model/trigger.py
@@ -86,14 +89,22 @@ rnms/templates/environ.mak
 rnms/templates/error.mak
 rnms/templates/event_chart.mak
 rnms/templates/event_detail.mak
+rnms/templates/event_sprox.mak
 rnms/templates/events.mak
+rnms/templates/eventswidget.mak
+rnms/templates/eventswidget2.mak
 rnms/templates/header.mak
+rnms/templates/host.mak
 rnms/templates/index.mak
 rnms/templates/login.mak
 rnms/templates/master.mak
 rnms/templates/movie.mak
 rnms/templates/severitycss.mak
 rnms/templates/simple_mako.mak
+rnms/templates/widget.mak
+rnms/templates/attribute/__init__.py
+rnms/templates/attribute/__init__.pyc
+rnms/templates/attribute/graph.mak
 rnms/tests/__init__.py
 rnms/tests/functional/__init__.py
 rnms/tests/functional/test_authentication.py
@@ -110,3 +121,7 @@ rnms/websetup/__init__.py
 rnms/websetup/bootstrap.py
 rnms/websetup/database_data.py
 rnms/websetup/schema.py
+rnms/widgets/__init__.py
+rnms/widgets/attribute.py
+rnms/widgets/event.py
+rnms/widgets/test.py

@@ -4,3 +4,5 @@ devdata.db
 .coverage
 .dist
 .build
+build
+dist

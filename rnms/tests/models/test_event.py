@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2011 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@ class TestEvent(ModelTest):
 
     attrs = dict(
             event_type = test_event_type,
-        #    attribute = test_attribute
             )
 
     def do_get_dependencies(self):
@@ -40,24 +39,28 @@ class TestEvent(ModelTest):
         test_user.email_address = 'test@email'
         test_host = model.Host(display_name=u'Test Host')
         
-        test_attribute = model.Attribute(display_name='TestAtt')
+        test_attribute = model.Attribute(display_name='Test Attribute')
 
         test_attribute.user = test_user
+        test_attribute.host = test_host
+        #model.DBSession.add(test_attribute)
+        #model.DBSession.add(test_host)
+        #model.DBSession.add(test_user)
         return{'attribute': test_attribute, 'host': test_host}
 
     def test_text_simple(self):
         """ Event simple text test """
-        self.test_event_type.text = u'test text'
+        self.obj.event_type.text = u'test text'
         eq_(self.obj.text(), u'test text')
 
     def test_text_subs(self):
         """ Event text with attribute and host shows display name. """
-        self.test_event_type.text = u'start <host> <attribute> end'
-        eq_(self.obj.text(), u'start Test Host TestAtt end')
+        self.obj.event_type.text = u'start <host> <attribute> end'
+        eq_(self.obj.text(), u'start Test Host Test Attribute end')
 
     def test_text_client(self):
         """ Event text with client shows user display name. """
-        self.test_event_type.text = u'start <client> end'
+        self.obj.event_type.text = u'start <client> end'
         eq_(self.obj.text(), u'start Test User end')
 
 
