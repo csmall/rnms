@@ -31,7 +31,7 @@ from rnms.model import DeclarativeBase, metadata, DBSession
 from rnms.lib import pollers
 from rnms.lib.genericset import GenericSet
 
-__all__ = [ 'PollerSet', 'Poller', 'Backend', 'PollerRow']
+__all__ = [ 'PollerSet', 'Poller', 'PollerRow']
 
 class Poller(DeclarativeBase):
     __tablename__ = 'pollers'
@@ -39,8 +39,8 @@ class Poller(DeclarativeBase):
     #{ Columns
     id = Column(Integer, primary_key=True, nullable=False)
     display_name = Column(Unicode(40), nullable=False, unique=True)
-    plugin_name = Column(String(60), nullable=False, default='none')
-    tag = Column(String(20))
+    command = Column(String(60), nullable=False, default='none')
+    field = Column(String(20))
     parameters = Column(String(250), nullable=False, default='')
 
     def __init__(self,display_name=None, plugin_name='none', tag='', parameters=''):
@@ -54,37 +54,20 @@ class Poller(DeclarativeBase):
     def __unicode__(self):
         return self.display_name
 
-    def run(self, attribute):
-        """ Run the actual poller process
-        Returns the output of poller or None on error
+    def run(self, attribute, poller_buffer):
+        """ 
+        Run the real poller method "_run_BLAH" based upon the command
+        field for this poller.
         """
-        return "FIXME"
+        if self.command is None or self.command=='none':
+            return None
+        try:
+            real_poller = getattr(pollers, "run_"+self.command)
+        except AttributeError:
+            logging.error("Poller {0} does not exist.".format(self.command))
+            return None
+        return real_poller(self,attribute,poller_buffer)
 
-
-class Backend(DeclarativeBase):
-    __tablename__ = 'backends'
-    
-    #{ Columns
-    id = Column(Integer, primary_key=True, nullable=False)
-    display_name = Column(Unicode(40), nullable=False, unique=True)
-    plugin_name = Column(String(60), nullable=False)
-    tag = Column(String(20))
-    parameters = Column(String(250), nullable=False)
-
-    def __init__(self,display_name=None, plugin_name='none', tag='', parameters=''):
-        self.display_name = display_name
-        self.plugin_name = plugin_name
-        self.tag = tag
-        self.parameters = parameters
-
-    def __repr__(self):
-        return '<Backend name=%s plugin=%s>' % (self.display_name, self.plugin_name)
-    def __unicode__(self):
-        return self.display_name
-
-    def run(self, attribute, poller_output):
-        """ Run the actual backend process """
-        pass #FIXME
 
 class PollerSet(DeclarativeBase, GenericSet):
     __tablename__ = 'poller_sets'
@@ -117,10 +100,14 @@ class PollerSet(DeclarativeBase, GenericSet):
     
 
     def run(self, attribute):
-        """ Run the poller->backend rows in order for this attribute
         """
+        Run all of the PollerRows within this PollerSet for the
+        given attribute.  A buffer is kept between each rows and
+        may contain data out of each poller
+        """
+        poller_buffer={}
         for row in self.poller_rows:
-            row.run(attribute)
+            row.run(attribute, poller_buffer)
 
 
 class PollerRow(DeclarativeBase):
@@ -153,7 +140,7 @@ class PollerRow(DeclarativeBase):
             backend_name = 'None'
         return '<PollerRow position=%d poller=%s backend=%s>' % (self.position, poller_name, backend_name)
 
-    def run(self, attribute):
+    def run(self, attribute, poller_buffer):
         """
         Run the actual polling process for this poller row
         Requires the attribute that calls the poller
@@ -162,12 +149,20 @@ class PollerRow(DeclarativeBase):
         if self.poller is None or self.backend is None:
             return False
         start_time = time.time()
-        poller_output = self.poller.run(attribute)
+        poller_result = self.poller.run(attribute, poller_buffer)
         poller_time = int((time.time() - start_time)*1000)
         if poller_output is None:
             return False
+        # Stash everything that comes out of the poller into the buffer
+        if type(poller_result)==dict:
+            for (k,v) in poller_result:
+                if k not in poller_buffer:
+                    poller_buffer[k]=v
+        elif self.poller.field is not None and self.poller.field not in poller_buffer:
+            poller_buffer[self.poller.field] = unicode(poller_result)
+
         start_time = time.time()
-        backend_output =  self.backend.run(attribute, poller_output)
+        backend_output =  self.backend.run(attribute, poller_result)
         backend_time = int((time.time() - start_time )*1000)
         if backend_output is None:
             return False

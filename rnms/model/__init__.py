@@ -65,12 +65,13 @@ from rnms.model.action import Action, ActionField
 from rnms.model.alarm import Alarm, AlarmState
 from rnms.model.attribute import Attribute, AttributeType, AttributeTypeRRD, AttributeTypeField, DiscoveredAttribute, AttributeField
 from rnms.model.autodiscovery_policy import AutodiscoveryPolicy
+from rnms.model.backend import Backend
 from rnms.model.event import Event, EventType, EventField, EventSeverity
 from rnms.model.graph_type import GraphTypeGraph
 #from rnms.model.host import Host, Iface, ConfigTransfer
 from rnms.model.host import *
 from rnms.model.logfile import Logfile, LogmatchSet, LogmatchRow, LogmatchField
-from rnms.model.poller import PollerSet, Poller, Backend, PollerRow
+from rnms.model.poller import PollerSet, Poller, PollerRow
 from rnms.model.sla import Sla, SlaCondition, SlaGroup
 from rnms.model.trigger import Trigger, TriggerRule, TriggerField
 from rnms.model.zone import Zone

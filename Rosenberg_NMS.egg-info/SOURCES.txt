@@ -37,12 +37,15 @@ rnms/lib/snmp.py
 rnms/lib/importers/__init__.py
 rnms/lib/importers/jffnms.py
 rnms/lib/pollers/__init__.py
+rnms/lib/pollers/apache.py
 rnms/lib/pollers/snmp.py
 rnms/model/__init__.py
-rnms/model/alarm_state.py
+rnms/model/action.py
+rnms/model/alarm.py
 rnms/model/attribute.py
 rnms/model/auth.py
 rnms/model/autodiscovery_policy.py
+rnms/model/backend.py
 rnms/model/event.py
 rnms/model/graph_type.py
 rnms/model/host.py
@@ -50,6 +53,7 @@ rnms/model/iface.py
 rnms/model/logfile.py
 rnms/model/poller.py
 rnms/model/sla.py
+rnms/model/snmptrap.py
 rnms/model/trigger.py
 rnms/model/zone.py
 rnms/public/favicon.ico

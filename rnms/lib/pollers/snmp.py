@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2011 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ from pyasn1.type import univ as pyasn_types
 from pyasn1.error import PyAsn1Error
 
 
-def poll_snmpget(poller, attribute):
+def run_snmpget(poller, attribute,poller_buffer):
     """
     Generic SNMP get that is used for counters
     Returns: single value for the OID or None
@@ -34,7 +34,7 @@ def poll_snmpget(poller, attribute):
         return None
     return snmp.get(attribute.host, tuple(oid))
 
-def poll_snmpstatus(poller, attribute):
+def run_snmp_status(poller, attribute,poller_buffer):
     """
     Generic SNMP get that returns a status string
     Returns: a string based upon the SNMP value returned

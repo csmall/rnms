@@ -30,18 +30,21 @@ from rnms.config.environment import load_environment
 from rnms import model
 from rnms.lib.consolidate import Consolidator
 
+logger = None
 
 def load_config(filename):
     conf = appconfig('config:' + os.path.abspath(filename))
     load_environment(conf.global_conf, conf.local_conf)
 
-def log_level(loglevel):
-    if loglevel is None:
-        return
-    numeric_level = getattr(logging, loglevel.upper(), None)
-    if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % loglevel)
-    logging.basicConfig(level=numeric_level)
+def get_logger(loglevel):
+    logging.basicConfig(format='%(asctime)-6s: %(name)s - %(levelname)s - %(message)s')
+    if loglevel is not None:
+        numeric_level = getattr(logging, loglevel.upper(), None)
+        if not isinstance(numeric_level, int):
+            raise ValueError('Invalid log level: %s' % loglevel)
+    logger = logging.getLogger('Cons')
+    logger.setLevel(numeric_level)
+    return logger
 
 
 def parse_args():
@@ -52,7 +55,7 @@ def parse_args():
 
 args = parse_args()
 load_config(args.conf_file)
-log_level(args.log)
+logger = get_logger(args.log)
 
 con = Consolidator()
 con.consolidate()
