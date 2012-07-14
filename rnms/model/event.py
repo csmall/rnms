@@ -19,32 +19,15 @@
 #
 
 """ Event Handling """
+from rnms.lib.parsers import RnmsTextTemplate
 from sqlalchemy import *
 from sqlalchemy.orm import mapper, relationship
 from sqlalchemy import Table, ForeignKey, Column
 from sqlalchemy.types import Integer, Unicode, String, Boolean
 #from sqlalchemy.orm import relation, backref
 import datetime
-from string import Template
 
 from rnms.model import DeclarativeBase, metadata, DBSession, Attribute
-
-class EventTextTemplate(Template):
-    """ Sub-class of Template to parse the event type strings """
-#    pattern = r"""
-#     <(?P.*)>  # Replace anything between <>
-#     (?P)(?P)(?P)"""
-    delimiter = '<'
-    pattern = r'''
-     <(?:
-     (?P<escaped><)|
-     (?P<named>[a-z][a-z0-9-]*)>|
-     {(?P<braced>[a-z][a-z0-9-]*)}|
-     (?P<invalid>)
-     )
-     '''
-
-
 
 class Event(DeclarativeBase):
     """
@@ -96,7 +79,7 @@ class Event(DeclarativeBase):
         the blanks. The text template comes from the EventType.text field
         and has fields <likethis> replaced:
           attribute  Attribute.display_name
-          attribute-description   All Attribute.fields joined
+          attribute-description   Attribute.description
           client     User.display_name
           host       Host.display_name OR Attribute.host.display_name
           state      AlarmState.display_name
@@ -106,16 +89,15 @@ class Event(DeclarativeBase):
 
           Other fields are just event fields
         """
-        text_template = EventTextTemplate(self.event_type.text)
+        text_template = RnmsTextTemplate(self.event_type.text)
         subs = { 'attribute': '', 'client':'', 'host':'', 'state':'',
-                'info':'', 'user':''}
+                'info':'', 'user':'', 'attribute-description':'',}
         if self.alarm_state:
             subs['state'] = self.alarm_state.display_name
         if self.attribute is not None:
             subs['attribute'] = self.attribute.display_name
+            subs['attribute-description'] = self.attribute.description
             subs['client'] = self.attribute.user.display_name
-            subs['interface-description'] = ' '.join(
-                    [af.value for af in self.attribute.fields if af.attribute_type_field.description==True])
             subs['host'] = self.attribute.host.display_name
         elif self.host:
             subs['host'] = self.host.display_name

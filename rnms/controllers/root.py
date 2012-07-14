@@ -15,6 +15,7 @@ from rnms.controllers.error import ErrorController
 from rnms.controllers.events import EventsController
 from rnms.controllers.attributes import AttributesController
 from rnms.controllers.hosts import HostsController
+from rnms.controllers.layouts import LayoutsController
 
 __all__ = ['RootController']
 
@@ -38,13 +39,18 @@ class RootController(BaseController):
     events = EventsController()
     attributes = AttributesController()
     hosts = HostsController()
+    layouts = LayoutsController()
 
     error = ErrorController()
 
     @expose('rnms.templates.index')
     def index(self):
         """Handle the front-page."""
-        return dict(page='index')
+        rows=(
+                ('Hosts', 'hosts', model.DBSession.query(model.Host).count()),
+                ('Attributes', 'attributes', model.DBSession.query(model.Attribute).count()),
+                )
+        return dict(page='index',rows=rows)
 
     @expose('rnms.templates.about')
     def about(self):

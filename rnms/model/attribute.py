@@ -22,12 +22,13 @@ import datetime
 import logging
 
 from sqlalchemy import *
-from sqlalchemy.orm import mapper, relationship
-from sqlalchemy import Table, ForeignKey, Column
+from sqlalchemy.orm import mapper, relationship, subqueryload
+from sqlalchemy import Table, ForeignKey, Column, and_
 from sqlalchemy.types import Integer, Unicode
 #from sqlalchemy.orm import relation, backref
 
 from rnms.model import DeclarativeBase, metadata, DBSession
+from rnms.model.host import Host
 
 __all__ = ['Attribute', 'AttributeField', 'AttributeType', 'AttributeTypeField', 'AttributeTypeRRD', 'DiscoveredAttribute']
 
@@ -38,6 +39,7 @@ class Attribute(DeclarativeBase):
     #{ Columns
     id = Column(Integer, autoincrement=True,primary_key=True)
     display_name = Column(Unicode(40))
+    description = Column(Unicode(200))
     oper_state = Column(SmallInteger, nullable=False) #IF-MIB
     admin_state = Column(SmallInteger, nullable=False) #IF-MIB
     attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'))
@@ -47,7 +49,8 @@ class Attribute(DeclarativeBase):
     use_iface = Column(Boolean, nullable=False)
     user_id = Column(Integer, ForeignKey('tg_user.user_id'),nullable=False)
     user = relationship('User', backref='attributes')
-    sla_id = Column(Integer, ForeignKey('slas.id'),nullable=False)
+    sla_id = Column(Integer, ForeignKey('slas.id', use_alter=True, name='fk_sla'),nullable=False)
+    sla = relationship('Sla', primaryjoin='Attribute.sla_id==Sla.id', post_update=True)
     index = Column(String(40), nullable=False) # Unique for host
     make_sound = Column(Boolean,nullable=False)
     show_rootmap = Column(SmallInteger,nullable=False)
@@ -90,6 +93,15 @@ class Attribute(DeclarativeBase):
             print "Field is %s" % field
         return a
 
+    @classmethod
+    def have_sla(cls, attribute_id=None):
+        """ Return attributes have have a SLA set plus polling """
+        return DBSession.query(cls).options(subqueryload('sla')).filter(cls.sla_id > 1)
+        if attribute_id is None:
+            return DBSession.query(cls).join(Host).filter(and_( (cls.poller_set_id > 1),(Host.pollable==True)))
+        else:
+            return DBSession.query(cls).join(Host).filter(and_( (cls.poller_set_id > 1),(Host.pollable==True), (cls.id == attribute_id)))
+
     def __init__(self, host=None, attribute_type=None, display_name=None, index=''):
         self.host=host
         self.attribute_type=attribute_type
@@ -119,19 +131,27 @@ class Attribute(DeclarativeBase):
         new_field = AttributeField(self,type_field)
         new_field.value = value
 
-    def get_field(self, tag, default=None):
-        """ Get value of field for this attribute with tag='tag'. """
-        type_field = AttributeTypeField.by_tag(self.attribute_type, tag)
-        if type_field is None:
-            return default
-        for field in self.fields:
-            if field.attribute_type_field_id == type_field.id:
-                return field.value
-        return default
+    def get_fields(self):
+        """ Return a dictionary of all fields for this attribute"""
+        fields={}
+        for at_field in self.attribute_type.fields:
+            fields[at_field.tag]=self.field(id=at_field.id)
+        return fields
 
-    def query(self):
-        return DBSession
-        
+    def field(self, tag=None, id=None):
+        """ Get value of field for this attribute with tag='tag'. """
+        at_field = None
+        if tag is not None:
+            at_field = AttributeTypeField.by_tag(self.attribute_type, tag)
+        elif id is not None:
+            at_field = AttributeTypeField.by_id(id)
+        if at_field is None:
+            return None
+        for field in self.fields:
+            if field.attribute_type_field_id == at_field.id:
+                return field.value
+        return at_field.default_value
+
     def oper_state_name(self):
         """ Return string representation of operational state"""
         if self.oper_state in snmp_state_names:
@@ -144,6 +164,26 @@ class Attribute(DeclarativeBase):
             return snmp_state_names[self.admin_state]
         return u"Unknown {0}".format(self.admin_state)
 
+    def is_down(self):
+        """
+        Return true if this attribute is down. A down interface is one that
+        has current down alarms"""
+        for alarm in self.alarms:
+            if alarm.is_down():
+                return True
+        return False
+
+    def fetch_rrd_value(self, start_time, end_time, rrd_name):
+        """
+        Return rrd value for the given time
+        """
+        # FIXME
+        at_rrd = AttributeTypeRRD.by_name(self.attribute_type,rrd_name)
+        if at_rrd is None:
+            return None
+        print "interface-{0}-{1}\n".format(self.id,at_rrd.position)
+        print "fetch rrd name {0}\n".format(rrd_name)
+        return 42
 
 class AttributeField(DeclarativeBase):
     __tablename__ = 'attribute_fields'
@@ -184,13 +224,15 @@ class AttributeType(DeclarativeBase):
     #FIXME circular default_poller = relationship('PollerSet')
     rra_cf = Column(String(10), nullable=False, default='AVERAGE')
     rra_rows = Column(Integer, nullable=False, default=103680)
-    #default_graph_id = Column(Integer, ForeignKey('graph_type_graphs.id'))
-    #FIXME circular default_graph = relationship('GraphTypeGraph')
+    #default_graph_id = Column(Integer, ForeignKey('graph_type_graphs.id', use_alter=True, name='fk_default_graph'))
+    #default_graph = relationship('GraphTypeGraph', primaryjoin='AttributeType.id==Graph.attribute_type_id', post_update=True)
     break_by_card = Column(Boolean, nullable=False, default=False)
     permit_manual_add = Column(Boolean, nullable=False, default=False)
-    #default_sla_id = Column(Integer, ForeignKey('slas.id'))
     required_sysobjid = Column(String(250), nullable=False)
-    slas = relationship('Sla', order_by='Sla.id', backref='attribute_type')
+    default_sla_id = Column(Integer, ForeignKey('slas.id', use_alter=True, name='fk_default_sla'))
+    default_sla = relationship('Sla', primaryjoin='AttributeType.default_sla_id==Sla.id', post_update=True)
+    slas = relationship('Sla', order_by='Sla.id', backref='attribute_type',
+            primaryjoin='AttributeType.id==Sla.attribute_type_id')
     fields = relationship('AttributeTypeField', order_by='AttributeTypeField.position', backref='attribute_type', cascade='all, delete, delete-orphan')
     rrds = relationship('AttributeTypeRRD', order_by='AttributeTypeRRD.position', backref='attribute_type', cascade='all, delete, delete-orphan')
     #}
@@ -228,9 +270,15 @@ class AttributeTypeField(DeclarativeBase):
                 cls.attribute_type_id == attribute_type,
                 cls.tag==tag)).first()
 
-        
+    @classmethod
+    def by_id(cls, id):
+        """ Return the field with given id"""
+        return DBSession.query(cls).filter(cls.id==id).first()
 
 class AttributeTypeRRD(DeclarativeBase):
+    """
+    AttributeTypes may have RRD fields attached to their definition
+    """
     __tablename__ = 'attribute_type_rrds'
     
     #{ Columns
@@ -238,12 +286,22 @@ class AttributeTypeRRD(DeclarativeBase):
     attribute_type_id = Column(Integer, ForeignKey("attribute_types.id"),nullable=False)
     display_name = Column(Unicode(40), nullable=False)
     name = Column(String(40))
-    position = Column(SmallInteger,nullable=False,default=10)
+    position = Column(SmallInteger,nullable=False,default=1)
     data_source_type = Column(SmallInteger) # gauge,counter,absolute
     range_min = Column(Integer)
     range_max = Column(Integer)
-    range_max_field = Column(Integer,ForeignKey('attribute_type_fields.id')) # foreign key to attribute_type_value
+    range_max_field = Column(String(40)) # matches tag in fields
     #}
+
+    @classmethod
+    def by_name(cls, attribute_type, name):
+        """ Return the RRD for this attribute_type with the given name """
+        print "by name {0} and name {1}".format(attribute_type.id, name)
+        return DBSession.query(cls).filter(and_(
+                cls.attribute_type_id == attribute_type.id,
+                cls.name==name)).first()
+
+
 
 # Discovered Attributes do not have and database backend
 class DiscoveredAttribute():

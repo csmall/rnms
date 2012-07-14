@@ -89,6 +89,11 @@ class JffnmsImporter(object):
         self.hosts = {}
         self.attributes = {}
         self.events = {}
+        self.slas = {}
+        newid=1
+        for oldid in (1,4,5,6,7,8,9,10,11,12):
+            self.slas[oldid] = newid
+            newid += 1
 
     def do_import(self):
         """
@@ -147,7 +152,7 @@ class JffnmsImporter(object):
             return False
         else:
             if self.verbose:
-                print 'Zones: {0} deleted, {0} added.'.format(delete_count, add_count)
+                print 'Zones: {0} deleted, {1} added.'.format(delete_count, add_count)
         return True
 
     def zone_id(self,jffnms_id):
@@ -178,7 +183,7 @@ class JffnmsImporter(object):
             return False
         else:
             if self.verbose:
-                print 'Users: {0} deleted, {0} added.'.format(delete_count, add_count)
+                print 'Users: {0} deleted, {1} added.'.format(delete_count, add_count)
         return True
 
     def user_id(self,jffnms_id):
@@ -225,7 +230,7 @@ class JffnmsImporter(object):
             return False
         else:
             if self.verbose:
-                print 'Hosts: {0} deleted, {0} added.'.format(delete_count, add_count)
+                print 'Hosts: {0} deleted, {1} added.'.format(delete_count, add_count)
         return True
 
     def host_id(self,jffnms_id):
@@ -278,7 +283,7 @@ class JffnmsImporter(object):
             return False
         else:
             if self.verbose:
-                print 'Interfaces: {0} deleted, {0} added.'.format(delete_count, add_count)
+                print 'Interfaces: {0} deleted, {1} added.'.format(delete_count, add_count)
         return True
 
 
@@ -295,6 +300,7 @@ class JffnmsImporter(object):
                 att.index = self.get_interface_index(row[0])
                 att.user_id = self.user_id(row[4])
                 att.attribute_type = DBSession.query(model.AttributeType).filter(model.AttributeType.display_name==unicode(row[15])).first()
+                att.sla_id = self.sla_id(row[5])
                 #FIXME sla poll group
                 att.make_sound = row[7]
                 att.show_rootmap = row[8]
@@ -302,7 +308,8 @@ class JffnmsImporter(object):
                 att.updated = date.fromtimestamp(row[11])
                 att.polled = date.fromtimestamp(row[12])
                 model.DBSession.add(att)
-                field_count += self._import_attribute_fields(att,row[0])
+                if att.attribute_type is not None:
+                    field_count += self._import_attribute_fields(att,row[0])
                 model.DBSession.flush()
                 self.attributes[row[0]] = att.id
                 attribute_count += 1
@@ -312,9 +319,12 @@ class JffnmsImporter(object):
             return False
         else:
             if self.verbose:
-                print 'Attributes: {0} deleted, {0} added.'.format(delete_count, attribute_count)
+                print 'Attributes: {0} deleted, {1} added.'.format(delete_count, attribute_count)
                 print 'Attribute Fields: 0 deleted, {0} added.'.format(field_count)
         return True
+
+    def sla_id(self,jffnms_id):
+        return self.slas.get(int(jffnms_id),1)
 
     def attribute_id(self,jffnms_id):
         return self.attributes.get(int(jffnms_id),1)
@@ -343,7 +353,7 @@ class JffnmsImporter(object):
         delete_count = self._delete_all(model.Event,0)
         add_count=0
         try:
-            result = self.dbhandle.execute('SELECT e.id,e.date, e.host, e.interface, e.state, e.username, e.info, e.referer, e.ack, e.analized, et.description FROM events e, types et WHERE e.type = et.id ORDER by e.id')
+            result = self.dbhandle.execute('SELECT e.id,e.date, e.host, e.interface, e.state, e.username, e.info, e.referer, e.ack, e.analized, et.description FROM events e, types et WHERE e.type = et.id AND date > adddate(now(),-7) ORDER by e.id')
             for row in result:
                 ev = model.Event()
                 ev.host_id = self.host_id(row[2])
@@ -391,5 +401,5 @@ class JffnmsImporter(object):
             return False
         else:
             if self.verbose:
-                print 'Events: {0} deleted, {0} added.'.format(delete_count, add_count)
+                print 'Events: {0} deleted, {1} added.'.format(delete_count, add_count)
         return True

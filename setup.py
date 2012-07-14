@@ -44,6 +44,7 @@ install_requires=[
     "tw2.rrd",
     "pysnmp",
     "mysql-python",
+    "pyparsing"
     ]
 
 if sys.version_info[:2] == (2,4):

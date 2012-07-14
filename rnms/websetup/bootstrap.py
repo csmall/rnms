@@ -68,11 +68,20 @@ def bootstrap(command, conf, vars):
                     at.break_by_card, ignore_handler, at.permit_manual_add,
                     at.default_sla_id, ignore_tools, at.required_sysobjid, fields, rrds
                     ) = row
+            field_position = 1
             for field in fields:
                 f = model.AttributeTypeField()
-                (f.display_name, f.tag, f.position, f.description,f.showable_edit, f.showable_discovery, f.overwritable, f.tracked, f.default, f.parameters, f.backend) = field
+                (f.display_name, f.tag, f.description,f.showable_edit, f.showable_discovery, f.overwritable, f.tracked, f.default_value, f.parameters, f.backend) = field
+                f.position = field_position
+                field_position += 1
                 at.fields.append(f)
-            # FIXME needs to process fields and rrds
+            rrd_position = 1
+            for rrd in rrds:
+                r = model.AttributeTypeRRD()
+                (r.display_name, r.name, r.data_source_type, r.range_min, r.range_max, r.range_max_field) = rrd
+                r.position = rrd_position
+                rrd_position += 1
+                at.rrds.append(r)
             model.DBSession.add(at)
 
 
@@ -128,10 +137,22 @@ def bootstrap(command, conf, vars):
                 print "Cannot add row \"%s\": %s.\n" % (row[0], errmsg)
                 exit()
 
+        for row in database_data.sla_conditions:
+            sc = model.SlaCondition()
+            (sc.display_name, sc.expression, sc.oper, sc.limit, sc.show_info, sc.show_expression, sc.show_unit) = row
+            model.DBSession.add(sc)
+
         for row in database_data.slas:
             s = model.Sla()
-            (s.display_name, s.alarm_state_id, s.event_text, s.event_id, s.threshold, s.attribute_type_id) = row
+            (s.display_name, s.alarm_state_id, s.event_text, event_id, s.threshold, s.attribute_type_id, sla_rows) = row
+            s.event_type_id = 10 # SLA evne_type
             model.DBSession.add(s)
+            position=1
+            for sla_row in sla_rows:
+                sr = model.SlaRow(s,show_result=sla_row[1], position=position)
+                sr.sla_condition_id = sla_row[0]
+                position += 1
+                model.DBSession.add(sr)
 
         ps = model.PollerSet(u'No Polling')
         model.DBSession.add(ps)

@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2011 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011-2012 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,8 +41,9 @@ class TestPoller(ModelTest):
 
     def test_poller_run(self):
         """ Poller run command works"""
-        poller_output = self.obj.run(self.attribute)
-        eq_(poller_output, "FIXME")
+        poller_buffer={}
+        poller_output = self.obj.run(self.attribute, poller_buffer)
+        eq_(poller_output, None) #FIXME
 
 
 class TestBackend(ModelTest):

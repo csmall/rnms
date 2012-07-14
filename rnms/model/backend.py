@@ -58,7 +58,7 @@ class Backend(DeclarativeBase):
     def __init__(self,display_name=None, plugin_name='none', command='', parameters=''):
         self.display_name = display_name
         self.plugin_name = plugin_name
-        self.command = tag
+        self.command = command
         self.parameters = parameters
 
     def __repr__(self):

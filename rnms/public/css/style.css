@@ -7,7 +7,6 @@ html {
 
 body {
 	text-align: left;
-	width: 960px;
 	margin: 0 auto;
 	padding: 0;
 	font-size: 12px;
@@ -94,7 +93,7 @@ ul#mainmenu li.loginlogout a:hover
 }
 
 #content {
-	background: #fff url('../images/contentbg.png') left bottom no-repeat;
+	background: #5555 url('../images/contentbg.png') left bottom no-repeat;
 	margin : 0 10px 10px 10px;
 	padding: 0 10px;
 	overflow: hidden;
@@ -317,3 +316,25 @@ font-weight:bold;
 div.clearingdiv {
 clear:both;
 }
+
+#overall_stats {
+	background: #fff url('../images/contentbg.png') left bottom no-repeat;
+    width: 920px;
+	margin : 0 10px 10px 10px;
+	padding: 0 10px;
+	overflow: hidden;
+}
+span.stats_label {
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.map_item {
+  width: 83px;
+  height: 4em;
+  background-color: #cccccc;
+  color: #000000;
+  overflow: hidden;
+  border: solid 1px #000000;
+}
+

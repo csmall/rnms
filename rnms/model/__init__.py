@@ -72,6 +72,6 @@ from rnms.model.graph_type import GraphTypeGraph
 from rnms.model.host import *
 from rnms.model.logfile import Logfile, LogmatchSet, LogmatchRow, LogmatchField
 from rnms.model.poller import PollerSet, Poller, PollerRow
-from rnms.model.sla import Sla, SlaCondition, SlaGroup
+from rnms.model.sla import Sla, SlaCondition, SlaRow
 from rnms.model.trigger import Trigger, TriggerRule, TriggerField
 from rnms.model.zone import Zone

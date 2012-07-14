@@ -58,9 +58,14 @@ class HostsController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = authorize.not_anonymous()
     
-    @expose('rnms.templates.index')
+    @expose('rnms.templates.host_index')
     def index(self):
-        return dict(page='index')
+        itemmap = {'width':170}
+        db_hosts = DBSession.query(Host)
+        hosts = []
+        for db_host in db_hosts:
+            hosts.append({'title':db_host.display_name})
+        return dict(itemmap=itemmap, items=hosts)
 
 
     @expose('rnms.templates.host')
