@@ -59,4 +59,5 @@ class TestController(object):
     def tearDown(self):
         """Method called by nose after running each test"""
         # Cleaning up the database:
+        model.DBSession.remove()
         teardown_db()

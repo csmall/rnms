@@ -17,16 +17,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-#
 """Sample controller module"""
 
 # turbogears imports
 from tg import expose
-#from tg import redirect, validate, flash
 
-# third party imports
+#from tg import redirect, validate, flash
 #from tg.i18n import ugettext as _
-#from repoze.what import predicates
+#from tg import predicates
 
 # project specific imports
 from rnms.lib.base import BaseController
@@ -35,7 +33,7 @@ from rnms.lib.base import BaseController
 
 class SampleController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
-    #allow_only = authorize.not_anonymous()
+    #allow_only = predicates.not_anonymous()
     
     @expose('rnms.templates.index')
     def index(self):

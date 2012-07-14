@@ -2,7 +2,7 @@
 """Sample controller with all its actions protected."""
 from tg import expose, flash
 from tg.i18n import ugettext as _, lazy_ugettext as l_
-from repoze.what.predicates import has_permission
+from tg.predicates import has_permission
 
 from rnms.lib.base import BaseController
 

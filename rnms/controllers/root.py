@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """Main Controller"""
 
-from tg import expose, flash, require, url, request, redirect
+from tg import expose, flash, require, url, lurl, request, redirect, tmpl_context
 from tg.i18n import ugettext as _, lazy_ugettext as l_
+from tg import predicates
 from rnms import model
-from repoze.what import predicates
 from rnms.controllers.secure import SecureController
 from rnms.model import DBSession, metadata
 from tgext.admin.tgadminconfig import TGAdminConfig
@@ -36,21 +36,23 @@ class RootController(BaseController):
     """
     secc = SecureController()
     admin = AdminController(model, DBSession, config_type=TGAdminConfig)
+
+    error = ErrorController()
+
+    """ Rosenberg NMS Specific controllers below """
     events = EventsController()
     attributes = AttributesController()
     hosts = HostsController()
     layouts = LayoutsController()
 
-    error = ErrorController()
+
+    def _before(self, *args, **kw):
+        tmpl_context.project_name = "rnms"
 
     @expose('rnms.templates.index')
     def index(self):
         """Handle the front-page."""
-        rows=(
-                ('Hosts', 'hosts', model.DBSession.query(model.Host).count()),
-                ('Attributes', 'attributes', model.DBSession.query(model.Attribute).count()),
-                )
-        return dict(page='index',rows=rows)
+        return dict(page='index')
 
     @expose('rnms.templates.about')
     def about(self):
@@ -60,18 +62,13 @@ class RootController(BaseController):
     @expose('rnms.templates.environ')
     def environ(self):
         """This method showcases TG's access to the wsgi environment."""
-        return dict(environment=request.environ)
+        return dict(page='environ', environment=request.environ)
 
     @expose('rnms.templates.data')
     @expose('json')
     def data(self, **kw):
         """This method showcases how you can use the same controller for a data page and a display page"""
-        return dict(params=kw)
-    @expose('rnms.templates.authentication')
-    def auth(self):
-        """Display some information about auth* on this application."""
-        return dict(page='auth')
-
+        return dict(page='data', params=kw)
     @expose('rnms.templates.index')
     @require(predicates.has_permission('manage', msg=l_('Only for managers')))
     def manage_permission_only(self, **kw):
@@ -85,23 +82,23 @@ class RootController(BaseController):
         return dict(page='editor stuff')
 
     @expose('rnms.templates.login')
-    def login(self, came_from=url('/')):
+    def login(self, came_from=lurl('/')):
         """Start the user login."""
-        login_counter = request.environ['repoze.who.logins']
+        login_counter = request.environ.get('repoze.who.logins', 0)
         if login_counter > 0:
             flash(_('Wrong credentials'), 'warning')
         return dict(page='login', login_counter=str(login_counter),
                     came_from=came_from)
 
     @expose()
-    def post_login(self, came_from='/'):
+    def post_login(self, came_from=lurl('/')):
         """
         Redirect the user to the initially requested page on successful
         authentication or redirect her back to the login page if login failed.
 
         """
         if not request.identity:
-            login_counter = request.environ['repoze.who.logins'] + 1
+            login_counter = request.environ.get('repoze.who.logins', 0) + 1
             redirect('/login',
                 params=dict(came_from=came_from, __logins=login_counter))
         userid = request.identity['repoze.who.userid']
@@ -109,7 +106,7 @@ class RootController(BaseController):
         redirect(came_from)
 
     @expose()
-    def post_logout(self, came_from=url('/')):
+    def post_logout(self, came_from=lurl('/')):
         """
         Redirect the user to the initially requested page on logout and say
         goodbye as well.

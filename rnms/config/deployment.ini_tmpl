@@ -81,8 +81,8 @@ qualname = sqlalchemy.engine
 # "level = DEBUG" logs SQL queries and results.
 # "level = WARN" logs neither.  (Recommended for production systems.)
 
-# A logger for authentication, identification and authorization -- this is
-# repoze.who and repoze.what:
+# A logger for authentication, identification and authorization
+# This is repoze.who:
 [logger_auth]
 level = WARN
 handlers =
