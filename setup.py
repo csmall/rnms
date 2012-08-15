@@ -43,6 +43,10 @@ install_requires=[
     "repoze.who.plugins.sa",
     "tw2.forms",
     # Rosenberg NMS specific stuff follows
+    "tw2.rrd",
+    "tw2.jqplugins.jqgrid",
+    "tw2.jqplugins.jqplot",
+    "tw2.jqplugins.portlets",
     "pysnmp",
     "mysql-python",
     "pyparsing"

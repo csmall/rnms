@@ -18,7 +18,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 #
-"""Sample controller module"""
+"""Attribute controller module"""
 import datetime
 from sqlalchemy import select,func
 
@@ -34,7 +34,7 @@ import tw2.sqla
 # project specific imports
 from rnms.lib.base import BaseController
 #from rnms.model import DBSession, metadata, Event, EventSeverity,EventType, DeclarativeBase
-from rnms.widgets import AttributeGrid, RRDWidget, AttributeGrid2
+#from rnms.widgets import AttributeGrid, RRDWidget, AttributeGrid2
 from rnms import model
 
 def recursive_update(d1, d2):
@@ -63,9 +63,9 @@ class AttributesController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = authorize.not_anonymous()
     
-    @expose('rnms.templates.widget')
-    def index(self, *args, **kw):
-        return dict(widget=AttributeGrid2, page='attribute')
+    #@expose('rnms.templates.widget')
+    #def index(self, *args, **kw):
+    #    return dict(widget=AttributeGrid2, page='attribute')
 
     @expose('json')
     def jqsumdata(self, page=1, rows=1, *args, **kw):
@@ -85,16 +85,16 @@ class AttributesController(BaseController):
                 ],
                 'id': attribute.id})
         return dict(page=page,records=row_count,total=row_count/rows, rows=data)
-    @expose('json')
-    def jqgrid(self, *args, **kwargs):
-        return AttributeGrid2.request(request).body
+#    @expose('json')
+    #def jqgrid(self, *args, **kwargs):
+    #    return AttributeGrid2.request(request).body
 
-    @expose('rnms.templates.attribute.graph')
-    def graph(self, graphid):
-        rrdwidget = RRDWidget()
-        rrdwidget.rrd_filenames = [
-                '/var/local/jffnms-website/rrd/interface-2731-0.rrd'
-                ]
-        rrdwidget.start = (datetime.datetime.today() - datetime.timedelta(1))
-        return dict(page="graph", rrdwidget=rrdwidget)
+    #@expose('rnms.templates.attribute.graph')
+    #def graph(self, graphid):
+    #    rrdwidget = RRDWidget()
+    #    rrdwidget.rrd_filenames = [
+    #            '/var/local/jffnms-website/rrd/interface-2731-0.rrd'
+    #            ]
+    #    rrdwidget.start = (datetime.datetime.today() - datetime.timedelta(1))
+    #    return dict(page="graph", rrdwidget=rrdwidget)
 

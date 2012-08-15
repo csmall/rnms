@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2011 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,23 +21,24 @@
 """Sample controller module"""
 import datetime
 from sqlalchemy import select,func,or_
+from formencode import validators
 
 # turbogears imports
 from tg import expose, tmpl_context
 import tg
-#from tg import redirect, validate, flash
+from tg import redirect, validate, flash
 
 # third party imports
 #from tg.i18n import ugettext as _
 #from repoze.what import predicates
 import tw2.core as twc
-import tw2.jqplugins.jqgrid
+#import tw2.jqplugins.jqgrid
 
 
 # project specific imports
 from rnms.lib.base import BaseController
 from rnms.model import DBSession, metadata, Event, EventSeverity,EventType
-from rnms.widgets import LogPlot,RRDWidget
+from rnms.widgets import EventsGrid
 
 class EventsWidget(twc.Widget):
     template = 'rnms.templates.eventswidget'
@@ -64,45 +65,45 @@ def recursive_update(d1, d2):
    
       return d1
 
-class GridWidget(tw2.jqplugins.jqgrid.jqGridWidget):
-    id = 'grid_widget'
-    entity = Event
-    excluded_columns = ['id']
-    prmFilter = {'stringResult': True, 'searchOnEnter': False}
-    pager_options = { "search" : True, "refresh" : True, "add" : False, }
-
-    options = {
-            'pager': 'event-grid_pager',
-    #        'url': '/tw2_controllers/db_jqgrid/',
-            'colNames':[ 'Date', 'Type', 'Host', 'Description'],
-            'colModel' : [
-                {
-                    'name': 'created',
-                    'width': 75,
-                    'align': 'right',
-                },{
-                    'name': 'event_type',
-                    'width': 75,
-                    'align': 'right',
-                },{
-                    'name': 'host_display_name',
-                    'width': 75,
-                    'align': 'right',
-                },{
-                    'name': 'event_description',
-                    'width': 75,
-                    'align': 'left',
-                },
-            ],
-            'url' : '/events/griddata',
-            'rowNum':15,
-            'rowList':[15,30,50],
-            'viewrecords':True,
-            'imgpath': 'scripts/jqGrid/themes/green/images',
-            'width': 900,
-            'height': 'auto',
-            }
-
+#class GridWidget(tw2.jqplugins.jqgrid.jqGridWidget):
+#    id = 'grid_widget'
+#    entity = Event
+#    excluded_columns = ['id']
+#    prmFilter = {'stringResult': True, 'searchOnEnter': False}
+#    pager_options = { "search" : True, "refresh" : True, "add" : False, }
+#
+#    options = {
+#            'pager': 'event-grid_pager',
+#    #        'url': '/tw2_controllers/db_jqgrid/',
+#            'colNames':[ 'Date', 'Type', 'Host', 'Description'],
+#            'colModel' : [
+#                {
+#                    'name': 'created',
+#                    'width': 75,
+#                    'align': 'right',
+#                },{
+#                    'name': 'event_type',
+#                    'width': 75,
+#                    'align': 'right',
+#                },{
+#                    'name': 'host_display_name',
+#                    'width': 75,
+#                    'align': 'right',
+#                },{
+#                    'name': 'event_description',
+#                    'width': 75,
+#                    'align': 'left',
+#                },
+#            ],
+#            'url' : '/events/griddata',
+#            'rowNum':15,
+#            'rowList':[15,30,50],
+#            'viewrecords':True,
+#            'imgpath': 'scripts/jqGrid/themes/green/images',
+#            'width': 900,
+#            'height': 'auto',
+#            }
+#
 
 
 class EventsController(BaseController):
@@ -177,12 +178,22 @@ class EventsController(BaseController):
                )
 
     @expose('json')
-    def griddata(self):
-        events =DBSession.query(Event)
-        data=[]
-        for event in events:
-            data.append({'created': event.created,})
-        return dict(data=data)
+    @validate(validators={'page':validators.Int()})
+    def griddata(self, page=1, rows=30, sidx=1, soid='asc', _search='false',
+            searchOper=u'', searchField=u'', searchString=u'', **kw):
+
+        qry = DBSession.query(Event)
+        qry = qry.filter()
+        qry = qry.order_by()
+        result_count = qry.count()
+
+        offset = (page-1) * rows
+        qry = qry.offset(offset).limit(rows)
+
+        records = [{'id': rw.id,
+                'cell': [ rw.id, rw.host, rw.created]} for rw in qry]
+        total = int(ceil(result_count / float(rows)))
+        return dict(page=page, total=total, records=result_count, rows=records)
 
 
     @expose('json')
@@ -207,11 +218,12 @@ class EventsController(BaseController):
                 '/var/local/jffnms-website/rrd/interface-2731-0.rrd'
                 ]
         rrdwidget.start = (datetime.datetime.today() - datetime.timedelta(1))
-        jqplot_params = self.blah()
-        plotwidget = LogPlot(data=jqplot_params['data'])
-        plotwidget.options = recursive_update(
-                plotwidget.options, jqplot_params['options'])
-        return dict(page='graph', plotwidget=plotwidget, rrdwidget=rrdwidget)
+        #jqplot_params = self.blah()
+        #plotwidget = LogPlot(data=jqplot_params['data'])
+        #plotwidget.options = recursive_update(
+        #        plotwidget.options, jqplot_params['options'])
+        #return dict(page='graph', plotwidget=plotwidget, rrdwidget=rrdwidget)
+        return dict(page='graph', rrdwidget=rrdwidget)
 
     @expose('rnms.templates.event_detail')
     def _default(self, *args):
@@ -234,7 +246,6 @@ class EventsController(BaseController):
 
     @expose('rnms.templates.widget')
     def grid(self, *args, **kw):
-        mw = twc.core.request_local()['middleware']
-        mw.controllers.register(GridWidget, 'db_jqgrid')
-        return dict(widget=GridWidget, page='events')
+        widget = EventsGrid()
+        return dict(widget=widget, page='events')
 

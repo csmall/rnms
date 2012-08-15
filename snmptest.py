@@ -13,7 +13,7 @@ pMod = api.protoModules[api.protoVersion1]
 reqPDU =  pMod.GetRequestPDU()
 pMod.apiPDU.setDefaults(reqPDU)
 pMod.apiPDU.setVarBinds(
-reqPDU, (((1,3,6,1,2,1,1,1,0), pMod.Null()),
+reqPDU, (((4,3,6,1,2,1,1,1,0), pMod.Null()),
     ((1,3,6,1,2,1,1,3,0), pMod.Null()))
 )
 
@@ -33,7 +33,7 @@ def cbRecvFun(transportDispatcher, transportDomain, transportAddress,
         wholeMsg, reqPDU=reqPDU):
     while wholeMsg:
         rspMsg, wholeMsg = decoder.decode(wholeMsg, asn1Spec=pMod.Message())
-        rspPDU = pMod.apiMessage.getPDU(rspMsg)
+    rspPDU = pMod.apiMessage.getPDU(rspMsg)
     # Match response to request
     if pMod.apiPDU.getRequestID(reqPDU)==pMod.apiPDU.getRequestID(rspPDU):
         # Check for SNMP errors reported
