@@ -17,6 +17,9 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
+import logging
+import time
+
 #from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pyasn1.type import univ as pyasn_types
@@ -28,8 +31,8 @@ from pysnmp.carrier.asynsock.dgram import udp
 from asyncore import poll
 from pyasn1.codec.ber import encoder, decoder
 from pysnmp.proto import api
-from time import time
 
+from scheduler import SNMPScheduler
 """ SNMP functions for rosenberg """
 
 # Constants - used for oper and adminm statates
@@ -40,7 +43,7 @@ STATE_UNKNOWN = 4
 
 DefaultSecurityName = 'Rosenberg'  # Arbitarily string really
 
-class SnmpEngine():
+class SNMPEngine():
     """ 
     This class does all the heavy lifting work to produce an asynchronous
     SNMP engine.  Pollers submit their requests to it with a call back
@@ -50,17 +53,28 @@ class SnmpEngine():
     anything extra sent to the inital function.
     """
     polling_jobs = {}
-    waiting_jobs = {}
     proto_mods = {}
     default_timeout = 3 # number of seconds before item is considered gone
+    max_attempts = 3
+    value_filters = {}
 
-    def __init__(self):
+    def __init__(self, logger=None):
+        self.value_filters = {
+            'int': self.filter_int,
+            'str': self.filter_str
+            }
         self.dispatcher = AsynsockDispatcher()
         self.dispatcher.registerTransport(
                 udp.domainName, udp.UdpSocketTransport().openClientMode()
                 )
         self.dispatcher.registerRecvCbFun(self._receive_msg)
-        self.scheduler = SNMPScheduler()
+        self.scheduler = SNMPScheduler(logger=logger)
+
+        if logger is not None:
+            self.logger = logger
+        else:
+            self.logger = logging.getLogger("SNMP")
+            
 
     def _pmod_from_community(self, community):
         """
@@ -78,6 +92,16 @@ class SnmpEngine():
             return api.protoModules[api_version]
         return None
 
+    def _return_value(self, value, job, error=None):
+        """
+        Filter the value returned by the SNMP stack and use the
+        callback function.
+        """
+        if job['filter'] is not None:
+            if job['filter'] in self.value_filters:
+                value = self.value_filters[job['filter']](value)
+        job['cb_func'](value, job['host'], job['kwargs'], error=error)
+
     def socketmap(self):
         """ Returns the socket of the transportDispatcher """
         return self.dispatcher.getSocketMap()
@@ -88,62 +112,85 @@ class SnmpEngine():
         requests. Returns true if there is still things to do
         """
         poll(0.2, self.dispatcher.getSocketMap())
+        self.send_jobs()
+        self.check_timeouts()
         return self.scheduler.have_jobs() or self.dispatcher.jobsArePending() or self.dispatcher.transportsAreWorking()
-
-    def _queue_job(self, reqid, cb_func, host, default ,kwargs):
-        self.waiting_jobs[reqid] = {
-                'cb_func': cb_func,
-                'host': host,
-                'default': default,
-                'kwargs': kwargs }
 
     def _get_job(self, reqid):
         return self.polling_jobs.get(reqid, None)
 
     def _del_request(self, reqid):
         try:
-            del(self.requests[reqid])
+            del(self.polling_jobs[reqid])
         except KeyError:
             pass
 
     def _requests_pending(self):
-        return len(self.requests) > 0
+        return len(self.polling_jobs) > 0
 
     def _receive_msg(self, dispatcher, trans_domain, trans_address, msg):
         pmod = self._pmod_from_api(api.decodeMessageVersion(msg))
         if pmod is None:
-            # FIXME logging
-            print "Cannot find pmod"
+            self.logger.exception("Empty pmod from receive_msg()")
             return
         while msg:
             rcv_msg, msg = decoder.decode(msg, asn1Spec=pmod.Message())
         rcv_pdu = pmod.apiMessage.getPDU(rcv_msg)
         request_id = pmod.apiPDU.getRequestID(rcv_pdu)
-        request = self._get_request(request_id)
-        if request is None:
+        if request_id not in self.polling_jobs:
+            self.logger.debug("receive_msg(): Cannot find request id {0}".format(request_id))
             return
+        request = self.polling_jobs[request_id]
         # Check for error
         error_status = pmod.apiPDU.getErrorStatus(rcv_pdu)
         if error_status:
-            request['cb_func'](request['default'], request['host'], request['kwargs'], error=error_status.prettyPrint())
+            self.logger.debug(error_status.prettyPrint())
+            self._return_value(request['default'], request, error=error_status.prettyPrint())
         else:
             varbinds = {}
             for oid, val in pmod.apiPDU.getVarBinds(rcv_pdu):
                 varbinds[oid.prettyPrint()] = val.prettyPrint()
             if len(varbinds) > 0:
-                request['cb_func'](varbinds, request['host'], request['kwargs'])
+                self._return_value(varbinds, request)
             else:
-                request['cb_func'](request['default'], request['host'], request['kwargs'])
+                self._return_value(request['default'], request)
         self._del_request(request_id)
-        #self.dispatcher.jobFinished(1)
+        self.scheduler.job_received(request_id)
 
-    def send_messages(self):
-        job = self.scheduler.job_pop()
-        if job is None:
-            return
+    def check_timeouts(self):
+        now = time.time()
+        for id,job in self.polling_jobs.items():
+            if job['timeout'] < now:
+                if job['attempt'] >= self.max_attempts:
+                    self.logger.debug("Job {0} reach maximum attempts".format(job['reqid']))
+                    self._return_value(job['default'], job, error="Maximum poll attempts exceeded")
+                    self._del_request(job['reqid'])
+                    self.scheduler.job_received(job['reqid'])
+                else:
+                    self.send_job(job, False)
+
+    def send_jobs(self):
+        """
+        Run a loop asking the scheduler to find all jobs we can kick off
+        on this cycle. Returns when there is no more to send.
+        """
+        while True:
+            job = self.scheduler.job_pop()
+            if job is None:
+                return
+            self.send_job(job)
+
+    def send_job(self, job, first=True):
         self.dispatcher.sendMessage(
-                encoder.encode(job['msg']), udp.domainName, (job['host'].mgmt_address, 161)
-                )
+            encoder.encode(job['msg']), udp.domainName, (job['host'].mgmt_address, 161))
+        if first:
+            self.scheduler.job_sent(job['reqid'])
+            self.polling_jobs[job['reqid']] = job
+            job['attempt'] = 1
+        else:
+            job['attempt'] += 1
+        job['timeout'] = time.time() + self.default_timeout
+        self.logger.debug("send_job(): Sending job {0} to {1} attempt {2}".format(job['reqid'], job['host'].mgmt_address, job['attempt']))
 
     def is_busy(self):
         """ Are there either jobs that are waiting or requests that are
@@ -166,8 +213,13 @@ class SnmpEngine():
         return msg,pmod
 
 
+    def get_int(self, host, oid, cb_function, default=None, **kwargs):
+        return self.get(host, oid, cb_function, default, filt="int", **kwargs)
 
-    def get(self, host, oid, cb_function, default=None, **kwargs):
+    def get_str(self, host, oid, cb_function, default=None, **kwargs):
+        return self.get(host, oid, cb_function, default, filt="str", **kwargs)
+
+    def get(self, host, oid, cb_function, default=None, filt=None, **kwargs):
         if host.community_ro is None:
             cbfunction(default, host, kwargs)
             return
@@ -177,88 +229,31 @@ class SnmpEngine():
             return
         self.scheduler.job_add(
                 pmod.apiPDU.getRequestID(pmod.apiMessage.getPDU(msg)),
-                host, cb_function, default, kwargs, msg)
+                host, cb_function, default, filt, kwargs, msg)
 
 
+    # Filters
+    def filter_int(self, value):
+        if value is None:
+            return 0
+        if type(value) is dict:
+            key,value = value.popitem()
+        try:
+            fvalue = int(value)
+        except ValueError:
+            fvalue = 0
+        return fvalue
 
-class SNMPScheduler():
-    """
-    The SNMP Scheuduler is given a series of SNMP polling jobs and stores 
-    them.  When the poller needs more items to poll, the scheduler determines
-    the best items to use, dependent on what is currently been polling.
-    """
-    waiting_jobs = []
-    active_jobs = {}
-
-    active_addresses = {}
-
-    def job_add(self, reqid, host, cb_func, default, kwargs, msg):
-        """
-        Adds a new job to the waiting queue
-        """
-        self.waiting_jobs.insert(0, {
-            'reqid': reqid,
-            'host': host,
-            'cb_func': cb_func,
-            'default': default,
-            'kwargs': kwargs,
-            'msg': msg
-            })
-
-    def job_del(self, reqid):
-        """
-        Remove a pending job based upon its request ID
-        """
-        pass # waitingor no:w
+    def filter_str(self, value):
+        if value is None:
+            return ""
+        if type(value) is dict:
+            key,value = value.popitem()
+        try:
+            fvalue = str(value)
+        except ValueError:
+            fvalue = ""
+        return fvalue
+                
 
 
-    def job_pop(self):
-        """
-        Returns the "best" job to be polled next, depending what the
-        scheduler decides is "best". Returns None if there are no best
-        items.
-
-        Callers should deal with each job first, for example calling
-        job_sent() before calling this method again.
-        """
-        for job in self.waiting_jobs:
-            if job.host.mgmt_address not in self.active_addresses:
-                return job
-        return None
-
-
-    def job_sent(self, reqid):
-        """
-        The Engine needs to tell the Scheduler that the job has been
-        sent. This will put this job into the active list and out
-        of pending list.
-        """
-        for i,job in enumerate(self.waiting_jobs):
-            if job.reqid == reqid:
-                mgmt_address = job.host.mgmt_address
-                if mgmt_address in self.active_addresses:
-                    self.active_addresses[mgmt_address] += 1
-                else:
-                    self.active_addresses[mgmt_address] = 1
-                self.active_jobs[reqid] = job
-                del(self.waiting_jobs[i])
-                return
-
-    def job_received(self, reqid):
-        """
-        The Engine calls this when either there has been a reply OR
-        the Engine has given up on trying to poll this item.  In any
-        case it frees up the polling of the remote device.
-        """
-        if reqid in self.active_jobs:
-            job = self.active_jobs[reqid]
-            mgmt_address = job.host.mgmt_address
-            if mgmt_address in self.active_addresses:
-                if self.active_addresses[mgmt_address] == 1:
-                    self.active_addrrsses[mgmt_address] += 1
-                else:
-                    self.active_addrrsses[mgmt_address] = 1
-            del(self.active_jobs[reqid])
-
-    def have_jobs(self):
-        return len(self.active_jobs) > 0 or len(self.waiting_jobs) > 0
