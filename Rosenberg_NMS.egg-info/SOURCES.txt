@@ -38,7 +38,6 @@ rnms/lib/logger.py
 rnms/lib/parsers.py
 rnms/lib/sla_analyzer.py
 rnms/lib/snmp.py
-rnms/lib/snmpold.py
 rnms/lib/importers/__init__.py
 rnms/lib/importers/jffnms.py
 rnms/lib/pollers/__init__.py
@@ -77,6 +76,7 @@ rnms/public/images/under_the_hood_blue.png
 rnms/public/javascript/bootstrap.js
 rnms/public/javascript/bootstrap.min.js
 rnms/templates/__init__.py
+rnms/templates/__init__.pyc
 rnms/templates/about.mak
 rnms/templates/attributes.mak
 rnms/templates/data.mak
@@ -99,6 +99,7 @@ rnms/templates/severitycss.mak
 rnms/templates/simple_mako.mak
 rnms/templates/widget.mak
 rnms/templates/attribute/__init__.py
+rnms/templates/attribute/__init__.pyc
 rnms/templates/attribute/graph.mak
 rnms/tests/__init__.py
 rnms/tests/functional/__init__.py
