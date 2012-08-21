@@ -48,6 +48,7 @@ install_requires=[
     "tw2.jqplugins.jqplot",
     "tw2.jqplugins.portlets",
     "pysnmp",
+    "python-rrdtool",
     "mysql-python",
     "pyparsing"
     ]

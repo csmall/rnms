@@ -12,12 +12,15 @@ convert them into boolean, for example, you should use the
     setting = asbool(global_conf.get('the_setting'))
  
 """
+import warnings
+warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 from tg.configuration import AppConfig
 
 import rnms
 from rnms import model
 from rnms.lib import app_globals, helpers 
+
 
 base_config = AppConfig()
 base_config.renderers = []

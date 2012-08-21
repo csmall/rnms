@@ -6,3 +6,4 @@ devdata.db
 .build
 build
 dist
+data/

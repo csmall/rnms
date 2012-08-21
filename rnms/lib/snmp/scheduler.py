@@ -37,19 +37,35 @@ class SNMPScheduler():
         else:
             self.logger = logger
 
-    def job_add(self, reqid, host, cb_func, default, filt, kwargs, msg):
+    def job_update(self, oldid, newid):
+        """
+        For getnext methods we run the same request over and over. This
+        method updates the ID and sends the updated request again.
+        """
+        if oldid not in self.active_jobs:
+            self.logger.warn("Trying to update job {0} but not found.".format(oldid))
+            return False
+        self.active_jobs[newid] = self.active_jobs[oldid]
+        del self.active_jobs[oldid]
+        self.active_jobs[newid]['id'] = newid
+
+    def job_add(self, reqid, host, cb_func, req_type, default, filt, kwargs, msg, table_oid=None, table_trim=None):
         """
         Adds a new job to the waiting queue
         """
         self.waiting_jobs.append( {
-            'reqid': reqid,
+            'id': reqid,
             'host': host,
             'cb_func': cb_func,
+            'type': req_type,
             'default': default,
             'filter': filt,
             'kwargs': kwargs,
-            'msg': msg
+            'msg': msg,
+            'table_oid': table_oid,
+            'table_trim': table_trim
             })
+            
 
     def job_del_by_host(self, host):
         """
@@ -76,7 +92,7 @@ class SNMPScheduler():
         """
         for job in self.waiting_jobs:
             if job['host'].mgmt_address not in self.active_addresses:
-                self.logger.debug("job_pop(): Poping job {0}".format(job['reqid']))
+                self.logger.debug("job_pop(): Poping job {0}".format(job['id']))
                 return job
         return None
 
@@ -88,7 +104,7 @@ class SNMPScheduler():
         of pending list.
         """
         for i,job in enumerate(self.waiting_jobs):
-            if job['reqid'] == reqid:
+            if job['id'] == reqid:
                 self.address_add(job['host'].mgmt_address)
                 self.active_jobs[reqid] = job
                 del(self.waiting_jobs[i])

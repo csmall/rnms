@@ -20,6 +20,7 @@
 """Attributes for a host"""
 import datetime
 import logging
+import os
 
 from sqlalchemy import *
 from sqlalchemy.orm import mapper, relationship, subqueryload
@@ -30,7 +31,7 @@ from sqlalchemy.types import Integer, Unicode
 from rnms.model import DeclarativeBase, metadata, DBSession
 from rnms.model.host import Host
 
-__all__ = ['Attribute', 'AttributeField', 'AttributeType', 'AttributeTypeField', 'AttributeTypeRRD', 'DiscoveredAttribute']
+__all__ = ['Attribute', 'AttributeField', 'AttributeType', 'AttributeTypeField', 'DiscoveredAttribute']
 
 snmp_state_names = {1:'up', 2:'down', 3:'testing', 4:'unknown'}
 class Attribute(DeclarativeBase):
@@ -62,6 +63,7 @@ class Attribute(DeclarativeBase):
     created = Column(DateTime, nullable=False, default=datetime.datetime.now)
     updated = Column(DateTime, nullable=False, default=datetime.datetime.now)
     polled = Column(DateTime, nullable=False, default=datetime.datetime.min)
+    next_poll = Column(DateTime, nullable=False, default=datetime.datetime.min)
     fields = relationship('AttributeField', backref='attribute', cascade='all, delete, delete-orphan')
     #}
 
@@ -173,7 +175,12 @@ class Attribute(DeclarativeBase):
                 return True
         return False
 
-    def fetch_rrd_value(self, start_time, end_time, rrd_name):
+    def rrd_value_set(self, rrd_name, value):
+        """
+        Set the last value for this particular RRD file
+        """
+
+    def rrd_value_get(self, start_time, end_time, rrd_name):
         """
         Return rrd value for the given time
         """
@@ -222,6 +229,7 @@ class AttributeType(DeclarativeBase):
     ad_parameters = Column(String(200))
     #default_poller_id = Column(Integer, ForeignKey('poller_sets.id'))
     #FIXME circular default_poller = relationship('PollerSet')
+    ds_heartbeat = Column(Integer, nullable=False, default=600)
     rra_cf = Column(String(10), nullable=False, default='AVERAGE')
     rra_rows = Column(Integer, nullable=False, default=103680)
     #default_graph_id = Column(Integer, ForeignKey('graph_type_graphs.id', use_alter=True, name='fk_default_graph'))
@@ -275,32 +283,8 @@ class AttributeTypeField(DeclarativeBase):
         """ Return the field with given id"""
         return DBSession.query(cls).filter(cls.id==id).first()
 
-class AttributeTypeRRD(DeclarativeBase):
-    """
-    AttributeTypes may have RRD fields attached to their definition
-    """
-    __tablename__ = 'attribute_type_rrds'
-    
-    #{ Columns
-    id = Column(Integer, autoincrement=True, primary_key=True)
-    attribute_type_id = Column(Integer, ForeignKey("attribute_types.id"),nullable=False)
-    display_name = Column(Unicode(40), nullable=False)
-    name = Column(String(40))
-    position = Column(SmallInteger,nullable=False,default=1)
-    data_source_type = Column(SmallInteger) # gauge,counter,absolute
-    range_min = Column(Integer)
-    range_max = Column(Integer)
-    range_max_field = Column(String(40)) # matches tag in fields
-    #}
-
-    @classmethod
-    def by_name(cls, attribute_type, name):
-        """ Return the RRD for this attribute_type with the given name """
-        print "by name {0} and name {1}".format(attribute_type.id, name)
-        return DBSession.query(cls).filter(and_(
-                cls.attribute_type_id == attribute_type.id,
-                cls.name==name)).first()
-
+        
+        
 
 
 # Discovered Attributes do not have and database backend
