@@ -10,3 +10,10 @@ repoze.who-friendlyform >= 1.0.4
 tgext.admin >= 0.5.1
 repoze.who.plugins.sa
 tw2.forms
+tw2.rrd
+tw2.jqplugins.jqgrid
+tw2.jqplugins.jqplot
+tw2.jqplugins.portlets
+pysnmp
+mysql-python
+pyparsing
