@@ -10,7 +10,7 @@ functional tests exercise the whole application and its WSGI stack.
 Please read http://pythonpaste.org/webtest/ for more information.
 
 """
-from nose.tools import assert_true, nottest
+from nose.tools import assert_true, nottest, eq_
 
 from rnms.lib.snmp import SNMPEngine
 class DummyHost(object):
@@ -25,17 +25,18 @@ def my_callback1(value, host, kwargs, error=None):
     if 'obj' not in kwargs:
         assert False
         return
-    kwargs['obj'].results[0] = value
+    kwargs['obj'].results.append(value)
 
 class TestSNMP(object):
     """ Base unit for SNMP testing """
     sysobjid_oid = (1,3,6,1,2,1,1,2,0)
-    results = [None, None]
+    results = []
     expected_sysobjid = "1.3.6.1.4.1.8072.3.2.10"
 
     def setUp(self):
         """ Setup the SNMP engine """
         self.snmp_engine = SNMPEngine()
+        self.results = []
 
     def poll(self):
         while (self.snmp_engine.poll()):
@@ -46,6 +47,19 @@ class TestSNMP(object):
         host = DummyHost("127.0.0.1", 2, "public")
         self.snmp_engine.get_str(host, self.sysobjid_oid, my_callback1, obj=self )
         self.poll()
-        assert(self.results == [self.expected_sysobjid, None])
+        print(self.results)
+        eq_(self.results, [self.expected_sysobjid,])
 
+    def test_default_bad_comm(self):
+        """ Simple SNMP fetch returns default with bad community"""
+        host = DummyHost("127.0.0.1", 2, "badcomm")
+        self.snmp_engine.get_str(host, self.sysobjid_oid, my_callback1, default="42", obj=self )
+        self.poll()
+        eq_(self.results, ["42"])
 
+    def test_default_bad_oid(self):
+        """ Simple SNMP fetch returns default with bad OID"""
+        host = DummyHost("127.0.0.1", 2, "public")
+        self.snmp_engine.get_str(host, '1.3.6.42.41.40', my_callback1, default="42", obj=self )
+        self.poll()
+        eq_(self.results, ["42"])

@@ -21,20 +21,25 @@ from rnms.lib import snmp
 from pyasn1.type import univ as pyasn_types
 from pyasn1.error import PyAsn1Error
 
-
-def run_snmpget(poller, attribute,poller_buffer):
+def poll_snmp_integer(poller, attribute):
     """
-    Generic SNMP get that is used for counters
-    Returns: single value for the OID or None
+    SNMP get that returns an integer
     Parameters: the OID in dotted decimal e.g. '1.3.6.1.1.9'
     """
     try:
         oid = pyasn_types.ObjectIdentifier(poller.parameters)
     except PyAsn1Error:
-        return None
-    return snmp.get(attribute.host, tuple(oid))
+        return False
+    poller.snmp_engine.get_int(attribute.host, oid, poll_snmp_integer_cb)
+    return True
 
-def run_snmp_status(poller, attribute,poller_buffer):
+def poll_snmp_integer_cb(value, host, kwargs, error=None):
+    if error is not None:
+        return None
+    return value
+        
+
+def poll_snmp_status(poller, attribute,poller_buffer):
     """
     Generic SNMP get that returns a status string
     Returns: a string based upon the SNMP value returned
@@ -48,7 +53,7 @@ def run_snmp_status(poller, attribute,poller_buffer):
     params = poller.parameters.split('|')
     param_count = len(params)
     if param_count < 2:
-        return None
+        return False
     default_ret = None
     if param_count > 2:
         default_ret = params[2]
@@ -56,21 +61,23 @@ def run_snmp_status(poller, attribute,poller_buffer):
     try:
         oid = pyasn_types.ObjectIdentifier(params[0])
     except PyAsn1Error:
-        return None
-    snmp_value = snmp.get(attribute.host, tuple(oid))
-    if snmp_value is None:
-        return None
+        return False
+    poller.snmp_engine.get_int(attribute.host, oid, poll_snmp_status_cb, mapping=params[1],default_ret=default_ret)
+    return True
 
+def poll_snmp_integer_cb(value, host, kwargs, error=None):
+    if error is not None:
+        return kwargs['default_ret']
     try:
-        for item in params[1].split(","):
+        for item in kwargs['mapping'].split(","):
             matchret = item.split("=")
             if len(matchret) != 2:
                 return None
-            if snmp_value == matchret[0]:
+            if value == matchret[0]:
                 return matchret[1]
     except:
         return None
-    return default_ret
+    return kwargs['default_ret']
 
 
     
