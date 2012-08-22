@@ -62,6 +62,7 @@ class Attribute(DeclarativeBase):
     created = Column(DateTime, nullable=False, default=datetime.datetime.now)
     updated = Column(DateTime, nullable=False, default=datetime.datetime.now)
     polled = Column(DateTime, nullable=False, default=datetime.datetime.min)
+    next_poll = Column(DateTime, nullable=False, default=datetime.datetime.min)
     fields = relationship('AttributeField', backref='attribute', cascade='all, delete, delete-orphan')
     #}
 

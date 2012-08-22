@@ -40,7 +40,8 @@ def my_cb(value, host, kwargs,error=None):
 #eng.get_str(host, (1,3,6,1,2,1,1,2,0), my_cb,foo="bar",eng=eng)
 #eng.get_int(deadhost, (1,3,6,1,2,1,1,1,0), my_cb,default=42, foo="bar2")
 #eng.get_str(host, (4,3,6,1,2,1,1,1,0), my_cb,foo="error?")
-eng.get_table(host,(1,3,6,1,2,1,2,2,1), my_cb, table_trim=2) 
+eng.get_int(host, (1,3,6,1,2,1,2,1,0), my_cb)
+eng.get_table(host,(1,3,6,1,2,1,2,2,1,1), my_cb, table_trim=1) 
 while (eng.poll()):
     pass
 print "test done"

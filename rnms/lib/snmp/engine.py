@@ -112,8 +112,10 @@ class SNMPEngine():
 
     def poll(self):
         """
-        Run through all the jobs and check timeout of all pending
-        requests. Returns true if there is still things to do
+        This method should be periodically called to gather all pending
+        requests and handle any responses from remote agents.
+
+        Returns true if there is still things to do
         """
         try:
             poll(0.2, self.dispatcher.getSocketMap())
@@ -170,7 +172,14 @@ class SNMPEngine():
         """ Handle reception of a GET response """
         varbinds = {}
         for oid, val in pmod.apiPDU.getVarBinds(rcv_pdu):
-            varbinds[oid.prettyPrint()] = val.prettyPrint()
+            pretty_val = val.prettyPrint()
+            if pretty_val == 'No Such Object currently exists at this OID' or pretty_val == 'No Such Instance currently exists at this OID' :
+                self._return_value(request['default'], request,
+                        error=pretty_val)
+                self._request_finished(request['id'])
+                return
+            else:
+                varbinds[oid.prettyPrint()] = pretty_val
         if len(varbinds) > 0:
             self._return_value(varbinds, request)
         else:
@@ -207,37 +216,37 @@ class SNMPEngine():
 
     def check_timeouts(self):
         now = time.time()
-        for id,job in self.active_requests.items():
-            if job['timeout'] < now:
-                if job['attempt'] >= self.max_attempts:
-                    self.logger.debug("Job {0} reach maximum attempts".format(job['id']))
-                    self._return_value(job['default'], job, error="Maximum poll attempts exceeded")
+        for id,request in self.active_requests.items():
+            if request['timeout'] < now:
+                if request['attempt'] >= self.max_attempts:
+                    self.logger.debug("Request #{0} reach maximum attempts".format(request['id']))
+                    self._return_value(request['default'], request, error="Maximum poll attempts exceeded")
                     self._request_finished(request['id'])
                 else:
-                    self.send_request(job, False)
+                    self.send_request(request, False)
 
     def send_requests(self):
         """
-        Run a loop asking the scheduler to find all jobs we can kick off
+        Run a loop asking the scheduler to find all requests we can kick off
         on this cycle. Returns when there is no more to send.
         """
         while True:
-            job = self.scheduler.job_pop()
-            if job is None:
+            request = self.scheduler.job_pop()
+            if request is None:
                 return
-            self.send_request(job)
+            self.send_request(request)
 
-    def send_request(self, job, first=True):
+    def send_request(self, request, first=True):
         self.dispatcher.sendMessage(
-            encoder.encode(job['msg']), udp.domainName, (job['host'].mgmt_address, 161))
+            encoder.encode(request['msg']), udp.domainName, (request['host'].mgmt_address, 161))
         if first:
-            self.scheduler.job_sent(job['id'])
-            self.active_requests[job['id']] = job
-            job['attempt'] = 1
+            self.scheduler.job_sent(request['id'])
+            self.active_requests[request['id']] = request
+            request['attempt'] = 1
         else:
-            job['attempt'] += 1
-        job['timeout'] = time.time() + self.default_timeout
-        self.logger.debug("send_request(): Sending job {0} to {1} attempt {2}".format(job['id'], job['host'].mgmt_address, job['attempt']))
+            request['attempt'] += 1
+        request['timeout'] = time.time() + self.default_timeout
+        self.logger.debug("send_request(): Sending request #{0} to {1} attempt {2}".format(request['id'], request['host'].mgmt_address, request['attempt']))
 
     def is_busy(self):
         """ Are there either jobs that are waiting or requests that are
@@ -317,6 +326,7 @@ class SNMPEngine():
 
     # Filters
     def filter_int(self, value):
+        self.logger.debug("filter_int(): Raw value is \"{0}\"".format(value))
         if value is None:
             return 0
         if type(value) is dict:
@@ -338,5 +348,13 @@ class SNMPEngine():
             fvalue = ""
         return fvalue
                 
+    def set_default_timeout(self, timeout):
+        """
+        Set the default SNMP timeout for a response from agent
+        """
+        try:
+            self.default_timeout = int(timeout)
+        except ValueError:
+            self.logger.warn("Bad timeout \"{0}\" given".format(timeout))
 
 

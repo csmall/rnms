@@ -142,6 +142,16 @@ class Host(DeclarativeBase):
                 return [ attrib.index for attrib in self.attributes if attrib.attribute_type_id == atype]
         return []
 
+    def main_attributes_down(self):
+        """
+        Return true if the attributes for the host that have poll_priority
+        set are considered down
+        """
+        for attribute in self.attributes:
+            if attribute.poll_priority and attribute.is_down():
+                return True
+        return False
+
     
 
         

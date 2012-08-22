@@ -20,6 +20,8 @@
 import logging
 import time
 
+from rnms.model import Attribute
+
 class Poller():
     """
     Poller process
@@ -27,8 +29,9 @@ class Poller():
     poller_buffer is a dict of a dict. The first level is the attribute id
     while the second is dependent on the poller set
     """
-
     poller_buffer = {}
+    polling_attributes = {} # The attributes we are currently polling
+    polling_sets = {} # Cache for polling sets
     find_attribute_interval = 60 # Scan to find new items every 60secs
     next_find_attribute = 0
 
@@ -51,11 +54,87 @@ class Poller():
         if self.next_find_attribute < now:
             self.find_new_attributes()
             self.next_find_attribute = now + self.find_attribute_interval
+        if self.polling_attributes:
+            self.check_pollers()
         self.snmp_engine.poll()
+
+    def check_polling_attributes(self):
+        """
+        Run through the set of polling_attributes and kick of the next
+        queries, when required
+        """
+        for att_id,patt in self.polling_attributes.items():
+            if patt['in_poller']:
+                next
+            if patt['index'] == 0:
+                self.poller_buffer[att_id] = {}
+            else:
+                patt['index'] += 1
+            #FIXME kick off poller
+            self._run_poller(patt)
+
+    def _run_poller(self, patt):
+        """
+        Run the actual poller
+        """
+        poller_row = self.get_poller_row(patt['attribute'].poller_set_id], patt['index'])
+        if poller_row is None:
+            # FIXME cleanup and finish poller
+            del self.polling_attributes[patt['attribute'].id]
+            return
+        # FIXME 
+        poller_row.run(patt['attribute'], self.poller_buffer[patt['attribute'].id])
+
 
     def find_new_attributes(self):
         """
         Scan the attribute table and look for any attributes that need polling
         """
+        hosts_down = {}
         self.logger.debug("Scanning attribute table to find new items to poll")
-        attributes = model.DBSession(model.Attribute).filter
+        now = datetime.datetime.now()
+        attributes = model.DBSession(Attribute).filter(and_(
+                (Attribute.next_poll < now),
+                (Attribute.poll_priority==True),
+                (Attribute.poller_set_id > 1))).order(Attribute.polled)
+        for attribute in attributes:
+            # Skip if already polling
+            if attribute.id in self.polling_attributes:
+                next
+
+            # Skip if not main attribute and main atts down
+            if attribute.poll_priority == False:
+                if attribute.host_id not in  hosts_down:
+                    hosts_down[attribute.host_id] = attribute.host.maint_attributes_down()
+                if hosts_down[attribute.host_id]:
+                    next
+            self.attribute_add(attribute)
+
+    def attribute_add(self, attribute):
+        """
+        Add the given attribute to the polled_attributes list the poller
+        keeps. Also resets the pointers to first poller_set row
+        """
+        self.polling_attributes[attribute.id] = {
+                'attribute': attribute,
+                'poller_set': self.poller_sets[attribute.poller_set_id],
+                'index': 0,
+                'in_poller': False
+                }
+
+    def cache_poller_set(self, poller_set_id):
+        """
+        Cache the given PollerSet within the Poller object so each
+        attribute using this set has it
+        returns true if it is found
+        """
+        
+        if poller_set_id in self.poller_sets:
+            return True
+
+        db_poller_set = PollerSet.by_id(poller_set_id)
+        if poller_set is None:
+            return False
+        self.poller_sets[poller_set_id] = [ poller_row for poller_row in poller_set.poller_rows]
+        return True
+
