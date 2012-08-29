@@ -15,5 +15,6 @@ tw2.jqplugins.jqgrid
 tw2.jqplugins.jqplot
 tw2.jqplugins.portlets
 pysnmp
+python-rrdtool
 mysql-python
 pyparsing

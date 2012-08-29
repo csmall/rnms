@@ -79,12 +79,24 @@ class Poller():
         """
         poller_row = self.get_poller_row(patt['attribute'].poller_set_id], patt['index'])
         if poller_row is None:
-            # FIXME cleanup and finish poller
-            del self.polling_attributes[patt['attribute'].id]
+            self._finish_polling(patt)
             return
         # FIXME 
         poller_row.run(patt['attribute'], self.poller_buffer[patt['attribute'].id])
 
+    def _finish_polling(self, patt):
+        """
+        Complete all the finishing up that is required once a poller has
+        run through its entire set of PollerRows
+        """
+        # Update all the relevant RRD files
+        updated_rrds = {}
+        rrd_fields = DBSession.query(model.AttributeTypeRRD)filter(model.AttributeTypeRRD== patt['attribute'].attribute_type_id)
+        for rrd_field in rrd_fields:
+            if rrd_field.name in self.poller_buffer[patt['attribute'].id]:
+                pass #FIXME update rrd item
+        del self.poller_buffer[patt['attribute'].id]
+        del self.polling_attributes[patt['attribute'].id]
 
     def find_new_attributes(self):
         """
@@ -105,7 +117,7 @@ class Poller():
             # Skip if not main attribute and main atts down
             if attribute.poll_priority == False:
                 if attribute.host_id not in  hosts_down:
-                    hosts_down[attribute.host_id] = attribute.host.maint_attributes_down()
+                    hosts_down[attribute.host_id] = attribute.host.main_attributes_down()
                 if hosts_down[attribute.host_id]:
                     next
             self.attribute_add(attribute)
