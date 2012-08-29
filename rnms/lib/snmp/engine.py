@@ -205,6 +205,7 @@ class SNMPEngine():
                     self._request_finished(request['id'])
                     return
 
+        oldid = request['id']
         # Create new request
         pmod.apiPDU.setVarBinds(req_pdu, 
                 map(lambda (x,y),n=pmod.Null(): ( x,n ), var_bind_table[-1]) )
@@ -212,6 +213,7 @@ class SNMPEngine():
         pmod.apiPDU.setRequestID(req_pdu, new_reqid)
         self.scheduler.job_update(request['id'], new_reqid)
         self.send_request(request)
+        self._request_finished(oldid)
 
 
     def check_timeouts(self):
