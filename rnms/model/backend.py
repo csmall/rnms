@@ -86,7 +86,7 @@ class Backend(DeclarativeBase):
 
     def _run_event(self, attribute, poller_result, always=False):
         """
-        Backend: alarm
+        Backend: event
         Raises an event if required.
         poller parameters: <event_type_id>,[<default>],[<damp_time>]
         event_type_id: ID for the event to raise
@@ -154,17 +154,30 @@ class Backend(DeclarativeBase):
         Backend: admin_status
         Set the admin_status of the attribute based upon the integer
         the backend receives from poller.
-        poller parameters: None
-        poller_result: integer
+        poller parameters: empty or 
+                           mapping alarm_state=matched_result,..
+                           e.g. down=2,up=1,0
+        poller_result: matches map or must be integer 0..3
+        No match on parameters means no change
         """
+        if self.parameters is not None:
+            # Attempt to do the mapping
+            state_mappings = { result:state for state,results in enumerate(self.parameters.split('|')) for result in results.split(',') if result != ''}
+            if poller_result not in state_mappings:
+                return 'Poller state "{0}" not in mapping'.format(poller_result)
+            new_state = state_mappings[poller_result]
+        else:
+            new_state = poller_result
         try:
-            new_state = int(poller_result)
+            new_state_int = int(new_state)
         except ValueError:
-            return "Admin status received by poller is not a integer"
-        if attribute.admin_state == poller_result:
-            return "Admin status not changed."
-        attribute.admin_state = poller_result
-        return "Admin status set to "+str(poller_result)
+            return 'New State {0} must be an integer'.format(new_state)
+        if new_state_int < 0 or new_state_int > 3:
+            return 'New State {0} must be 0 to 3'.format(new_state_int)
+        if attribute.admin_state == new_state:
+            return "Admin status not changed"
+        attribute.admin_state = new_state
+        return "Admin status set to {0}".format(new_state)
 
     def _run_oper_status(self, attribute, poller_result):
         """

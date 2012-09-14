@@ -156,6 +156,11 @@ def bootstrap(command, conf, vars):
 
         ps = model.PollerSet(u'No Polling')
         model.DBSession.add(ps)
+        # Poller Sets
+        for row in database_data.pollers:
+            p = model.Poller()
+            (p.field, p.display_name, p.command, p.parameters) = row
+            model.DBSession.add(p)
 
         # Default Single Setup
         zone = model.Zone(u'Default Zone',u'default')
