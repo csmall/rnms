@@ -345,7 +345,7 @@ attribute_types = [
             ], [
             [u'Sensor Value', 'sensor_value', 1,0,30000000,''],
                 ] ],
-        ['Brocade FC Ports',0,0,'brocade_fcports','',38,'AVERAGE','103680',300,78,0,'none',0,1,0,'ent.1588',[
+        ['Brocade FC Port',0,0,'brocade_fcports','',38,'AVERAGE','103680',300,78,0,'none',0,1,0,'ent.1588',[
             [u'Physical Status','phy',0,1,1, 0,0,'','',''],
             ], [
             [u'Tx Words', 'tx_words', 2,0,100000000,''],
@@ -369,7 +369,6 @@ attribute_types = [
             [u'Charge Remaining', 'charge_remaining', 1,0,10000200,''],
                 ] ],
         ['UPS Lines',0,1,'ups_lines','',42,'AVERAGE','103680',300,85,0,'none',0,1,0,'.',[], [] ],
-        ['IPTables Chains',1,1,'linux_iptables','.1.3.6.1.4.1.2021.5002',43,'AVERAGE','103680',300,89,1,'none',0,1,0,'.',[], [] ],
         ['Cisco PIX',1,1,'pix_connections','',44,'AVERAGE','103680',300,91,0,'none',0,1,0,'ent.9',[], [] ],
         ['Cisco NAT',0,1,'simple','.1.3.6.1.4.1.9.10.77.1.2.1.0,NAT',45,'AVERAGE','103680',300,93,0,'none',0,1,0,'ent.9',[], [] ],
         ['Sensors',1,1,'sensors','',46,'AVERAGE','103680',300,94,1,'none',0,1,0,'.',[], [] ],
@@ -380,7 +379,10 @@ attribute_types = [
         ['IBM Component Health',1,0,'ibm_ComponentHealth','',57,'AVERAGE','103680',300,1,0,'none',0,1,0,'.',[], [] ],
         ['IBM Blade server',1,0,'ibm_blade_servers','',51,'AVERAGE','103680',300,106,0,'none',0,1,0,'.',[], [] ],
         ['Generic FC Ports',1,0,'fc_ports','',52,'AVERAGE','103680',300,105,0,'none',0,1,0,'.',[], [] ],
-        ['Cisco Wireless Device',1,0,'simple','.1.3.6.1.4.1.9.9.273.1.1.2.1.1.1,Cisco AP',53,'AVERAGE','103680',300,101,0,'none',0,1,0,'ent.9',[], [] ],
+        ['Cisco 802.11X Device',1,0,'simple','.1.3.6.1.4.1.9.9.273.1.1.2.1.1.1,Cisco AP',53,'AVERAGE','103680',300,101,0,'none',0,1,0,'ent.9',[
+            ], [
+            [u'Associated', 'associated', 0,0,2100,''],
+                ]],
         ['IBM Blade Power',1,0,'ibm_blade_power','',54,'AVERAGE','103680',300,107,0,'none',0,1,0,'.',[], [] ],
         ['Compaq Power Supply',1,0,'cpqmib','powersupply',55,'AVERAGE','103680',300,1,0,'none',0,1,0,'.',[], [] ],
         ['IBM Storage Controller',0,0,'ibm_ds_storage','storagesubsystem',56,'AVERAGE','103680',300,1,0,'none',0,1,0,'.',[], [] ],
@@ -427,7 +429,6 @@ event_types = [
     [u'Win Warning', u'Warning', u'<attribute>: <info> (ID:<state>)',0,1,0,1,1],
     [u'Win Error', u'Fault', u'<attribute>: <info> (ID:<state>)',0,1,0,1,1],
     [u'Win Security', u'Fault', u'<info> (ID:<state>)',0,1,0,1,1],
-    [u'SQL', u'Fault', u'SQL <attribute> is <state> <info>',1,1,0,1,1],
     [u'APC Status', u'Critical', u'<attribute> is <state> <info>',1,1,0,1,1],
     [u'PIX Debug', u'Administrative', u'<info> (ID:<attribute>)',0,1,0,2,1],
     [u'PIX Info', u'Information', u'<info> (ID:<attribute>)',0,1,0,2,1],
@@ -623,6 +624,7 @@ sla_conditions = [
 
 pollers = [
         ['no_poller','No Poller','no_poller',''],
+        ['simple','Simple','',0],
         ['input','SNMP Input Rate','snmp_counter','.1.3.6.1.2.1.2.2.1.10.<interfacenumber>'],
         ['verify_interface_number','Cisco Verify Interface Number','verify_interface_number',''],
         ['cisco_snmp_ping_start','Cisco SNMP Ping Start','cisco_snmp_ping_start',''],
@@ -718,23 +720,15 @@ pollers = [
         ['tfs','IIS Total Files Sent','snmp_counter','.1.3.6.1.4.1.311.1.7.3.1.5.0'],
         ['tg','IIS Total GETs','snmp_counter','.1.3.6.1.4.1.311.1.7.3.1.18.0'],
         ['tp','IIS Total Posts','snmp_counter','.1.3.6.1.4.1.311.1.7.3.1.19.0'],
-        ['pm_serial_free','Livingston Portmaster Free','livingston_serial_port_status','1'],
-        ['pm_serial_established','Livingston Portmaster Established','livingston_serial_port_status','3'],
-        ['pm_serial_disconnecting','Livingston Portmaster Disconnecting','livingston_serial_port_status','4'],
-        ['pm_serial_command','Livingston Portmaster Command','livingston_serial_port_status','5'],
-        ['pm_serial_connecting','Livingston Portmaster Connecting','livingston_serial_port_status','2'],
-        ['pm_serial_noservice','Livingston Portmaster No Service','livingston_serial_port_status','6'],
         ['tac,tkb,cplo,up,bpr,bw,iw','Apache Status','apache',''],
-        ['capacity','a APC Battery Capacity','snmp_counter','.1.3.6.1.4.1.318.1.1.1.2.2.1.0'],
-        ['load','a APC Output Load','snmp_counter','.1.3.6.1.4.1.318.1.1.1.4.2.3.0'],
-        ['in_voltage','a APC Input Voltage','snmp_counter','.1.3.6.1.4.1.318.1.1.1.3.2.1.0'],
-        ['out_voltage','a APC Output Voltage','snmp_counter','.1.3.6.1.4.1.318.1.1.1.4.2.1.0'],
-        ['time_remaining','a APC Time Remaining','snmp_counter','.1.3.6.1.4.1.318.1.1.1.2.2.3.0'],
-        ['status','a APC Battery Status','snmp_status','.1.3.6.1.4.1.318.1.1.1.2.1.1.0,2=battery normal|1=battery unknown|3=battery low'],
-        ['temperature','a APC Temperature','snmp_counter','.1.3.6.1.4.1.318.1.1.1.2.2.2.0'],
-        ['output_status','a APC Output Status','snmp_status','.1.3.6.1.4.1.318.1.1.1.4.1.1.0,2=on line|3=on battery'],
-        ['records_counter,records_absolute','ODBC Query','odbc_query',''],
-        ['sql_status','SQL Query Status','sql_status',''],
+        ['capacity','APC Battery Capacity','snmp_counter','.1.3.6.1.4.1.318.1.1.1.2.2.1.0'],
+        ['load','APC Output Load','snmp_counter','.1.3.6.1.4.1.318.1.1.1.4.2.3.0'],
+        ['in_voltage','APC Input Voltage','snmp_counter','.1.3.6.1.4.1.318.1.1.1.3.2.1.0'],
+        ['out_voltage','APC Output Voltage','snmp_counter','.1.3.6.1.4.1.318.1.1.1.4.2.1.0'],
+        ['time_remaining','APC Time Remaining','snmp_counter','.1.3.6.1.4.1.318.1.1.1.2.2.3.0'],
+        ['status','APC Battery Status','snmp_status','.1.3.6.1.4.1.318.1.1.1.2.1.1.0,2=battery normal|1=battery unknown|3=battery low'],
+        ['temperature','APC Temperature','snmp_counter','.1.3.6.1.4.1.318.1.1.1.2.2.2.0'],
+        ['output_status','APC Output Status','snmp_status','.1.3.6.1.4.1.318.1.1.1.4.1.1.0,2=on line|3=on battery'],
         ['admin_state','Alteon RServer Admin','snmp_counter','.1.3.6.1.4.1.1872.2.1.5.2.1.10.<index>'],
         ['oper_state','Alteon RServer Oper','snmp_status','.1.3.6.1.4.1.1872.2.1.9.2.2.1.7.<index>,2=up'],
         ['current_sessions','Alteon RServer Current Sessions','snmp_counter','.1.3.6.1.4.1.1872.2.1.8.2.5.1.2.<index>'],
@@ -752,18 +746,18 @@ pollers = [
         ['cpua_4secs','Alteon CPU A 4Secs','snmp_counter','.1.3.6.1.4.1.1872.2.1.8.16.3.0'],
         ['cpua_64secs','Alteon CPU A 64Secs','snmp_counter','.1.3.6.1.4.1.1872.2.1.8.16.5.0'],
         ['cpub_1sec','Alteon CPU B 1Sec','snmp_counter','.1.3.6.1.4.1.1872.2.1.8.1.16.2.0'],
-        ['cpub_4secs','Alteon CPU B 4 Secs','snmp_counter','.1.3.6.1.4.1.1872.2.1.8.16.4.0'],
+        ['cpub_4secs','Alteon CPU B 4Secs','snmp_counter','.1.3.6.1.4.1.1872.2.1.8.16.4.0'],
         ['cpub_64secs','Alteon CPU B 64Secs','snmp_counter','.1.3.6.1.4.1.1872.2.1.8.16.6.0'],
         ['mem_total','Alteon Memory Total','snmp_counter','.1.3.6.1.4.1.1872.2.1.8.12.6.0'],
         ['mem_used','Alteon Memory Used','snmp_counter','.1.3.6.1.4.1.1872.2.1.8.12.4.0'],
         ['sensor_value','Brocade Sensor Value','snmp_counter','1.3.6.1.4.1.1588.2.1.1.1.1.22.1.4.<index>'],
         ['oper_status','Brocade Sensor Oper','snmp_status','1.3.6.1.4.1.1588.2.1.1.1.1.22.1.3.<index>,4=ok|3=alert|5=alert'],
-        ['tx_words','Brocade FCPort TxWords','snmp_counter','1.3.6.1.4.1.1588.2.1.1.1.6.2.1.11.<index>'],
-        ['rx_words','Brocade FCPort RxWords','snmp_counter','1.3.6.1.4.1.1588.2.1.1.1.6.2.1.12.<index>'],
-        ['tx_frames','Brocade FCPort TxFrames','snmp_counter','1.3.6.1.4.1.1588.2.1.1.1.6.2.1.13.<index>'],
-        ['rx_frames','Brocade FCPort RxFrames','snmp_counter','1.3.6.1.4.1.1588.2.1.1.1.6.2.1.14.<index>'],
-        ['admin_state','Brocade Fc Port Admin State','snmp_counter','1.3.6.1.4.1.1588.2.1.1.1.6.2.1.5.<index>'],
-        ['oper_status','Brocade fC Ports Oper Status','snmp_status','1.3.6.1.4.1.1588.2.1.1.1.6.2.1.4.<index>,1=up|3=testing'],
+        ['tx_words','Brocade FC Port TxWords','snmp_counter','1.3.6.1.4.1.1588.2.1.1.1.6.2.1.11.<index>'],
+        ['rx_words','Brocade FC Port RxWords','snmp_counter','1.3.6.1.4.1.1588.2.1.1.1.6.2.1.12.<index>'],
+        ['tx_frames','Brocade FC Port TxFrames','snmp_counter','1.3.6.1.4.1.1588.2.1.1.1.6.2.1.13.<index>'],
+        ['rx_frames','Brocade FC Port RxFrames','snmp_counter','1.3.6.1.4.1.1588.2.1.1.1.6.2.1.14.<index>'],
+        ['admin_state','Brocade FC Port Admin State','snmp_counter','1.3.6.1.4.1.1588.2.1.1.1.6.2.1.5.<index>'],
+        ['oper_status','Brocade FC Port Oper Status','snmp_status','1.3.6.1.4.1.1588.2.1.1.1.6.2.1.4.<index>,1=up|3=testing'],
         ['phy_state','Brocade FC Port Phy State','brocade_fcport_phystate','<index>'],
         ['cisco_async','Cisco Async Utilisation','cisco_serial_port_status','1'],
         ['cisco_dsx','Cisco DSX Utilisation','cisco_serial_port_status','2'],
@@ -779,8 +773,6 @@ pollers = [
         ['voltage','UPS Lines Voltage','ups_line',''],
         ['current','UPS Lines Current','ups_line',''],
         ['load','UPS Lines Load','ups_line',''],
-        ['ipt_packets','IPTables Chain Packets','snmp_counter','.1.3.6.1.4.1.2021.5002.1.4.<chainnumber>'],
-        ['ipt_bytes','IPTables Chainl Bytes','snmp_counter','.1.3.6.1.4.1.2021.5002.1.5.<chainnumber>'],
         ['accepted_routes','BGP Accepted Routes','snmp_counter','.1.3.6.1.4.1.9.9.187.1.2.4.1.1.<remote>.1.1'],
         ['advertised_routes','BGP Advertised Routes','snmp_counter','.1.3.6.1.4.1.9.9.187.1.2.4.1.6.<remote>.1.1'],
         ['pix_connections','Pix Connections Poller','snmp_counter','.1.3.6.1.4.1.9.9.147.1.2.2.2.1.5.<index>'],
@@ -817,7 +809,7 @@ pollers = [
         ['status','FC Oper Status','snmp_status','.1.3.6.1.2.1.75.1.2.2.1.2.<real_index>,1=up|2=offline|4=linkFailure'],
         ['rx_frames','FCPort RxFrames','snmp_counter','.1.3.6.1.2.1.75.1.4.3.1.1.<real_index>'],
         ['tx_frames','FCPort TxFrames','snmp_counter','.1.3.6.1.2.1.75.1.4.3.1.2.<real_index>'],
-        ['associated','Client Associated','snmp_counter','.1.3.6.1.4.1.9.9.273.1.1.2.1.1.1'],
+        ['associated','802.11x Associated Clients','snmp_counter','.1.3.6.1.4.1.9.9.273.1.1.2.1.1.1'],
         ['power_status','Compaq Power Condition','snmp_status','1.3.6.1.4.1.232.6.2.9.3.1.4.<chassis>.<bayindex>,2=up'],
         ['status','IBM Storage Controller status','ibm_ds_storage','controler'],
         ['arraystatus','AS 400 System','snmp_array_null','.1.3.6.1.2.1.25.2.3.1.6'],
@@ -838,27 +830,388 @@ pollers = [
         ]
 
 backends = [
-        ['No Backend','no_backend','',0],
-        ['Unknown Event','event_always','1',0],
-        ['Alarm Verify Operational','event','3,,180',1],
-        ['Change Interface Number','verify_index','',0],
-        ['Alarm TCP Port','event','22',1],
-        ['Alarm Environmental','event','26',1],
-        ['Alarm BGP Peer','event','6,,180',1],
-        ['Application Alarm','event','38',1],
-        ['Alarm TCP Content','event','39',1],
-        ['Alarm Reachability','event','40',1],
-        ['Admin Status Change View','admin_status','show_rootmap,down=2|up=1,0',1],
-        ['Alarm APC','event','60',1],
-        ['Alarm SQL Records','event','50',1],
-        ['Alteon Admin Status View','admin_status','show_rootmap,down=0|up=2,2',1],
-        ['Alarm Alteon RServer','event','68',1],
-        ['Alarm Alteon Service','event','69',1],
-        ['Alarm Alteon VServer','event','70',1],
-        ['Brocace FC Admin View','admin_status','show_rootmap,down=2|up=1,0',0],
-        ['Alarm Brocade FC Port','event','71',1],
-        ['Alarm IBM','event','75',1],
-        ['IBM San Trap','event_always','77',0],
-        ['Alarm OS/400','event','78',1],
-        ['Alarm IBM Storage Controller','event','80',1]
+        [u'No Backend','','',0],
+        [u'Unknown Event','event_always','1',0],
+        [u'Alarm APC','event','60',1],
+        [u'Alarm BGP Peer','event','6,,180',1],
+        [u'Alarm Brocade FC Port','event','71',1],
+        [u'Alarm Environmental','event','26',1],
+        [u'Alarm NTP','event','40,nothing',1],
+        [u'Admin Status Change View','admin_status','show_rootmap,down=2|up=1,0',1],
+        [u'Alarm TCP Content','event','39',1],
+        [u'Alarm TCP Port','event','22',1],
+        [u'Alarm Verify Operational','event','3,,180',1],
+        [u'Alarm Reachability','event','40',1],
+        [u'Application Alarm','event','38',1],
+        [u'Alteon Admin Status View','admin_status','show_rootmap,down=0|up=2,2',1],
+        [u'Alarm Alteon RServer','event','68',1],
+        [u'Alarm Alteon Service','event','69',1],
+        [u'Alarm Alteon VServer','event','70',1],
+        [u'Brocade FC Admin View','admin_status','show_rootmap,down=2|up=1,0',0],
+        [u'Alarm IBM','event','75',1],
+        [u'Change Interface Number','verify_index','',0],
+        [u'IBM San Trap','event_always','77',0],
+        [u'Alarm OS/400','event','78',1],
+        [u'Alarm IBM Storage Controller','event','80',1]
+        ]
+
+poller_sets = [
+        [u'No Polling', u'No Interface Type', []],
+        [u'Cisco Interface', u'Physical Interfaces', [
+            [u'Cisco Verify Interface Number', u'Change Interface Number'],
+            [u'Cisco SNMP Ping Start', u''],
+            [u'SNMP Interface Operational Status', u'Alarm Verify Operational'],
+            [u'SNMP Interface Administrative Status', u'Admin Status Change View'],
+            [u'SNMP Input Rate', u''],
+            [u'SNMP Input Packets', u''],
+            [u'SNMP Output Rate', u''],
+            [u'SNMP Output Packets', u''],
+            [u'SNMP Output Errors', u''],
+            [u'SNMP Input Errors', u''],
+            [u'SNMP Drops', u''],
+            [u'Get Bandwidth IN from DB', u''],
+            [u'Get Bandwidth OUT from DB', u''],
+            [u'Cisco SNMP Ping Wait', u''],
+            [u'Cisco SNMP Ping Get PL', u''],
+            [u'Cisco SNMP Ping Get RTT', u''],
+            [u'Cisco SNMP Ping End', u''],
+            ]],
+        [u'Cisco Router', u'Cisco System Info', [
+            [u'Cisco CPU Utilization', u''],
+            [u'TCP MIB Established Connections', u''],
+            [u'Cisco Used Memory', u''],
+            [u'TCP MIB Active Opens', u''],
+            [u'Cisco Free Memory', u''],
+            [u'TCP MIB Passive Opens', u''],
+            [u'Cisco Accounting', u'']
+            ]],
+        [u'TCP/IP Port', u'TCP Ports', [
+            [u'TCP Port Check & Delay', u''],
+            [u'TCP Port Status', u'Alarm TCP Port'],
+            [u'TCP Connection Numbers', u''],
+            [u'TCP Port Response Check', u'Alarm TCP Content']
+            ]],
+        [u'BGP Neighbor', u'BGP Neighbors', [
+            [u'BGP Peer Status', u'Alarm BGP Peer' ],
+            [u'BGP Inbound Updates', u''],
+            [u'BGP Accepted Routes', u''],
+            [u'BGP Advertised Routes', u''],
+            [u'BGP Outbound Updates', u''],
+            [u'BGP Uptime', u'']
+            ]],
+        [u'Storage Device', u'Storage', [
+            [u'Verify Storage Index', u'Change Interface Number'],
+            [u'Storage Device Block Size', u''],
+            [u'Storage Device Total Blocks', u''],
+            [u'Storage Device Used Blocks', u'']
+            ]],
+        [u'CSS VIP', u'CSS VIPs', [
+            [u'CSS VIP Traffic Rate', u''],
+            [u'CSS VIP Hits', u'']
+            ]],
+        [u'Linux/Unix Host', u'Linux/Unix System Info', [
+            [u'CPU Nice Time', u''],
+            [u'Host MIB Number of Processes', u''],
+            [u'CPU User Time', u''],
+            [u'Host MIB Number of Users', u''],
+            [u'CPU Idle Time', u''],
+            [u'TCP MIB Established Connections', u''],
+            [u'CPU System Time', u''],
+            [u'TCP MIB Active Opens', u''],
+            [u'Load Average 1 min', u''],
+            [u'TCP MIB Passive Opens', u''],
+            [u'Load Average 5 min', u''],
+            [u'Load Average 15 min', u'']
+            ]],
+        [u'Solaris Host', u'Solaris System Info', [
+            [u'CPU System Time', u''],
+            [u'CPU Idle Time', u''],
+            [u'CPU Kernel Time', u''],
+            [u'CPU Wait Time', u''],
+            [u'Load Average 1 min', u''],
+            [u'Load Average 5 min', u''],
+            [u'Load Average 15 min', u''],
+            [u'Real Memory Available', u''],
+            [u'Real Memory Total', u''],
+            [u'Swap Memory Available', u''],
+            [u'Swap Memory Total', u''],
+            ]],
+        [u'Windows Host', u'Windows System Info', [
+            [u'Host MIB Proc Average Util', u''],
+            [u'Host MIB Number of Processes', u''],
+            [u'Host MIB Number of Users', u''],
+            [u'TCP MIB Active Opens', u''],
+            [u'TCP MIB Established Connections', u''],
+            [u'TCP MIB Passive Opens', u'']
+            ]],
+        [u'Cisco Accounting', u'Cisco MAC Accounting', [
+            [u'Cisco MAC Accounting Input Packets', u''],
+            [u'Cisco MAC Accounting Input Bytes', u''],
+            [u'Cisco MAC Accounting Output Bytes', u''],
+            [u'Cisco MAC Accounting Output Packets', u'']
+            ]],
+        [u'Smokeping Host', u'Smokeping Host', [
+            [u'Verify Smokeping Number' ,u'Change Interface Number'],
+            [u'Smokeping Loss', u''],
+            [u'Smokeping RTT', u'']
+            ]],
+        [u'HostMIB Application', u'Applications', [
+            [u'Host MIB Process Verifier', u''],
+            [u'Host MIB Status', u'Application Alarm'],
+            [u'Host MIB Process Memory Usage', u'']
+            ]],
+        [u'Cisco Power Supply', u'Cisco Power Supply', [
+            [u'Cisco Power Supply Status', u'Alarm Environmental'],
+            ]],
+        [u'Cisco Tempererature', u'Cisco Temperature', [
+            [u'Cisco Temperature Status', u'Alarm Environmental'],
+            [u'Cisco Temperature', u'']
+            ]],
+        [u'Cisco Voltage', u'Cisco Voltage', [
+            [u'Cisco Voltage Status', u'Alarm Environmental'],
+            ]],
+        [u'Cisco SA Agent', u'Cisco SA Agent', [
+            [u'SA Agent Forward Jitter', u''],
+            [u'SA Agent bw % PacketLoss', u''],
+            [u'SA Agent fw % PacketLoss', u''],
+            [u'SA Agent Round-Trip Latency', u''],
+            [u'SA Agent Backward Jitter', u'']
+            ]],
+        [u'Reachability', u'Reachable', [
+            [u'Reachability Start FPING', u''],
+            [u'Reachability Wait until finished', u''],
+            [u'Reachability RTT', u''],
+            [u'Reachability PL', u''],
+            [u'Reachability Status', u'Alarm Reachability'],
+            [u'Reachability End', u'']
+            ]],
+        [u'TC Class', u'Linux Traffic Control', [
+            [u'Linux TC Verfy Interface Number', u'Change Interface Number'],
+            [u'Linux TC Bytes', u''],
+            [u'Linux TC Packets', u''],
+            ]],
+        [u'NTP', u'NTP', [
+            [u'NTP Status', u'Alarm NTP'],
+            ]],
+        [u'UDP/IP Port', u'UDP Ports', [
+            [u'UDP Port Status & Delay', u''],
+            [u'UDP Port Status', u'Alarm TCP Port']
+            ]],
+        [u'Compaq Physical Drive', u'Compaq Physical Drives', [
+            [u'Compaq Drive Condition', u'Alarm Environmental'],
+            ]],
+        [u'Compaq Fan', u'Compaq Fans', [
+            [u'Compaq Fan Condition', u'Alarm Environmental'],
+            ]],
+        [u'Compaq Temperature', u'Compaq Temperature', [
+            [u'Compaq Temperature Status', u'Alarm Environmental'],
+            [u'Compaq Temperature', u'']
+            ]],
+        [u'IIS Info', u'IIS Webserver Information', [
+            [u'IIS Total Bytes Received', u''],
+            [u'IIS Total CGI Requests', u''],
+            [u'IIS Total Files Sent', u''],
+            [u'IIS Total GETs', u''],
+            [u'IIS Total Posts', u'']
+            ]],
+        [u'Apache', u'Apache', [
+            [u'Apache Status', u''],
+            ]],
+        [u'APC', u'APC', [
+            [u'APC Battery Status', u'Alarm Environmental' ],
+            [u'APC Output Status', u'Alarm APC' ],
+            [u'APC Battery Capacity', u''],
+            [u'APC Output Load', u''],
+            [u'APC Input Voltage', u''],
+            [u'APC Output Voltage', u''],
+            [u'APC Time Remaining', u''],
+            [u'APC Temperature', u'']
+            ]],
+        [u'Alteon Real Server', u'Alteon Real Server', [
+            [u'Alteon RServer Admin', u'Alteon Admin Status View'],
+            [u'Alteon RServer Oper', u'Alarm Verify Operational'],
+            [u'Alteon RServer Current Sessions', u''],
+            [u'Alteon RServer Failures', u''],
+            [u'Alteon RServer Octets', u''],
+            [u'Alteon RServer Total Sessions', u'']
+            ]],
+        [u'Alteon Virtual Server', u'Alteon Virtual Server', [
+            [u'Alteon VServer Admin State', u'Admin Status Change View'],
+            [u'Alteon VServer Current Sessions', u''],
+            [u'Alteon VServer Octets', u''],
+            [u'Alteon VServer Total Sessions', u'']
+            ]],
+        [u'Alteon Real Services', u'Alteon Real Services', [
+            [u'Alteon RService Admin State', u'Admin Status Change View'],
+            [u'Alteon RService Oper State', u'Alarm Alteon Service'],
+            [u'Alteon RService Response Time', u'']
+            ]],
+        [u'Alteon System Info', u'Alteon System Info', [
+            [u'Alteon CPU A 1Sec', u''],
+            [u'Alteon CPU A 4Secs', u''],
+            [u'Alteon CPU A 64Secs', u''],
+            [u'Alteon CPU B 1Sec', u''],
+            [u'Alteon CPU B 4Secs', u''],
+            [u'Alteon CPU B 64Secs', u''],
+            [u'TCP MIB Active Opens', u''],
+            [u'TCP MIB Passive Opens', u''],
+            [u'TCP MIB Established Connections', u''],
+            [u'Alteon Memory Used', u''],
+            [u'Alteon Memory Total', u'']
+            ]],
+        [u'Brocade Sensors', u'Brocade Sensors', [
+            [u'Brocade Sensor Oper', u'Alarm Verify Operational'],
+            [u'Brocade Sensor Value', u''],
+            ]],
+        [u'Brocade FC Port', u'Brocade FC Port', [
+            [u'Brocade FC Port Admin State', u'Brocade FC Admin View'],
+            [u'Brocade FC Port Oper Status', u'Alarm Verify Operational'],
+            [u'Brocade FC Port Phy State', u'Alarm Brocade FC Port'],
+            [u'Brocade FC Port TxWords', u''],
+            [u'Brocade FC Port RxWords', u''],
+            [u'Brocade FC Port TxFrames', u''],
+            [u'Brocade FC Port RxFrames', u'']
+            ]],
+        [u'Windows Informant Disks', u'Windows Logical Disks', [
+            [u'Informant Disk Read Rate', u''],
+            [u'Informant Disk Write Rate', u''],
+            [u'Informant Disk Read Time', u''],
+            [u'Informant Disk Write Time', u'']
+            ]],
+        [u'UPS', u'UPS', [
+            [u'UPS Battery Status', u'Alarm Environmental'],
+            [u'UPS Battery Charge Remaining', u''],
+            [u'UPS Battery Minutes Remaining', u''],
+            [u'UPS Battery Temperature', u'']
+            ]],
+        [u'UPS Lines', u'UPS Lines', [
+            [u'UPS Lines Voltage', u''],
+            [u'UPS Lines Current', u''],
+            [u'UPS Lines Load', u''],
+            [u'UPS Lines Power', u'']
+            ]],
+        [u'PIX Connection Stat', u'Cisco PIX', [
+            [u'Pix Connections Poller', u''],
+            ]],
+        [u'Cisco NAT', u'Cisco NAT', [
+            [u'Cisco NAT Other IP Outbound', u''],
+            [u'Cisco NAT Other IP Inbound', u''],
+            [u'Cisco NAT ICMP Outbound', u''],
+            [u'Cisco NAT ICMP Inbound', u''],
+            [u'Cisco NAT UDP Outbound', u''],
+            [u'Cisco NAT UDP Inbound', u''],
+            [u'Cisco NAT TCP Outbound', u''],
+            [u'Cisco NAT TCP Inbound', u''],
+            [u'Cisco NAT Active Binds', u'']
+            ]],
+        [u'Sensors', u'Sensors', [
+            [u'Sensor Value', u''],
+            ]],
+        [u'OS/400 Host', u'OS/400 System Info', [
+            [u'OS 400 System Load', u''],
+            [u'AS 400 System', u'Alarm OS/400']
+            ]],
+        [u'Dell Chassis', u'Dell Chassis', [
+            [u'Dell OpenManage Chassis', u'Alarm Verify Operational'],
+            [u'Dell OpenManage Chassis' ,u'Admin Status Change View'],
+            [u'Dell OpenManage Ambient Temp', u''],
+            [u'Dell OpenManage Fan RPM #1', u''],
+            [u'Dell OpenManage Fan RPM #2', u''],
+            [u'Dell OpenManage Fan RPM #3', u''],
+            [u'Dell OpenManage Fan RPM #4', u''],
+            [u'Dell OpenManage Fan RPM #5', u''],
+            [u'Dell OpenManage Fan RPM #6', u''],
+            [u'Dell OpenManage Fan RPM #7', u''],
+            ]],
+        [u'Compaq Power Supply', u'Compaq Power Supply', [
+            [u'Compaq Power Condition', u'Alarm Environmental'],
+            ]],
+        [u'Cisco 802.11X Device', u'Cisco 802.11X Device', [
+            [u'802.11x Associated Clients', u''],
+            ]],
+        [u'Fibre Channel Interface', u'Generic FC Ports', [
+            [u'FC Oper Status', u'Alarm Environmental'],
+            [u'FCPort RxFrames', u''],
+            [u'FCPort TxFrames', u''],
+            ]],
+        [u'IBM Component Health', u'IBM Component Health', [
+            [u'IBM Component Health Status', u'Alarm IBM'],
+            ]],
+        [u'IBM Blade Servers', u'IBM Blade server', [
+            [u'IBM Blade Server Health Status', u'Alarm Environmental'],
+            [u'IBM Blade Server CPU1 Temp', u''],
+            [u'IBM Blade Server CPU2 Temp', u'']
+            ]],
+        [u'IBM Blade Power Module', u'IBM Blade Power', [
+            [u'IBM Blade Power Gauge', u''],
+            [u'IBM Blade Power Status', u'Alarm IBM']
+            ]],
+        [u'IBM Storage Controller', u'IBM Storage Controller', [
+            [u'IBM Storage Controller status', u'Alarm IBM Storage Controller' ],
+            ]],
+        [u'Informant Disks 64', u'Informant Disks 64', [
+            [u'Inf-64 Disk CurrentDiskQueue', u''],
+            [u'Inf-64 Disk AvgDiskQueu', u''],
+            [u'Inf-64 Disk avg Read DiskQueue', u''],
+            [u'Inf-64 Disk avg Write DiskQueue', u''],
+            [u'Inf-64 Disk Read Time', u''],
+            [u'Inf-64 Disk Write Time', u''],
+            [u'Inf-64 Disk Read rate', u''],
+            [u'Inf-64 Disk Write rate', u''],
+            [u'Inf-64 Disk Read Bytes', u''],
+            [u'Inf-64 Disk Write Bytes', u''],
+            ]],
+        [u'PDU', u'PDU', [
+            [u'PDU Load Status', u''],
+            ]],
+        [u'PDU Banks', u'PDU Banks', [
+            [u'PDU Banks Load', u''],
+            ]],
+        [u'Cisco Interface HC', u'Physical Interfaces', [
+            [u'Cisco Verify Interface Number', u'Change Interface Number'],
+            [u'Cisco SNMP Ping Start', u''],
+            [u'SNMP Interface Operational Status', u'Alarm Verify Operational'],
+            [u'SNMP Interface Administrative Status', u'Admin Status Change View'],
+            [u'SNMP Input Rate HC', u''],
+            [u'SNMP Input Packets HC', u''],
+            [u'SNMP Output Rate HC', u''],
+            [u'SNMP Output Packets HC', u''],
+            [u'SNMP Output Errors', u''],
+            [u'SNMP Input Errors', u''],
+            [u'SNMP Drops', u''],
+            [u'Get Bandwidth IN from DB', u''],
+            [u'Get Bandwidth OUT from DB', u''],
+            [u'Cisco SNMP Ping Wait', u''],
+            [u'Cisco SNMP Ping Get PL', u''],
+            [u'Cisco SNMP Ping Get RTT', u''],
+            [u'Cisco SNMP Ping End', u'']
+            ]],
+        [u'SNMP Interface', u'Physical Interfaces', [
+            [u'Cisco Verify Interface Number', u'Change Interface Number'],
+            [u'SNMP Interface Operational Status', u'Alarm Verify Operational'],
+            [u'SNMP Interface Administrative Status', u'Admin Status Change View'],
+            [u'SNMP Input Rate', u''],
+            [u'SNMP Input Packets', u''],
+            [u'SNMP Output Rate', u''],
+            [u'SNMP Output Packets', u''],
+            [u'SNMP Output Errors', u''],
+            [u'SNMP Input Errors', u''],
+            [u'SNMP Drops', u''],
+            [u'Get Bandwidth IN from DB', u''],
+            [u'Get Bandwidth OUT from DB', u''],
+            ]],
+        [u'SNMP Interface HC', u'Physical Interfaces', [
+            [u'Cisco Verify Interface Number', u'Change Interface Number'],
+            [u'SNMP Interface Operational Status', u'Alarm Verify Operational'],
+            [u'SNMP Interface Administrative Status', u'Admin Status Change View'],
+            [u'SNMP Input Rate HC', u''],
+            [u'SNMP Input Packets HC', u''],
+            [u'SNMP Output Rate HC', u''],
+            [u'SNMP Output Packets HC', u''],
+            [u'SNMP Output Errors', u''],
+            [u'SNMP Input Errors', u''],
+            [u'SNMP Drops', u''],
+            [u'Get Bandwidth IN from DB', u''],
+            [u'Get Bandwidth OUT from DB', u''],
+            ]],
         ]

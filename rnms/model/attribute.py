@@ -252,6 +252,13 @@ class AttributeType(DeclarativeBase):
         self.ad_parameters= ad_parameters
         self.required_sysobjid=''
 
+    @classmethod
+    def by_display_name(cls, display_name):
+        """" Return the AttributeType matching display_name """
+        if display_name is None:
+            return None
+        return DBSession.query(cls).filter(cls.display_name == display_name).first()
+
 class AttributeTypeField(DeclarativeBase):
     __tablename__ = 'attribute_type_fields'
     

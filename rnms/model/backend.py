@@ -66,6 +66,10 @@ class Backend(DeclarativeBase):
     def __unicode__(self):
         return self.display_name
 
+    @classmethod
+    def by_display_name(cls, display_name):
+        """ Return Backend with given class name"""
+        return DBSession.query(cls).filter(cls.display_name == display_name).first()
     def run(self, attribute, poller_result):
         """
         Run the real backend method "_run_BLAH" based upon the command 

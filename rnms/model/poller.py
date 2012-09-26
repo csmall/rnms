@@ -54,6 +54,13 @@ class Poller(DeclarativeBase):
     def __unicode__(self):
         return self.display_name
 
+    @classmethod
+    def by_display_name(cls, display_name):
+        """ Return Poller with given display_name """
+        if display_name is None:
+            return None
+        return DBSession.query(cls).filter(cls.display_name == display_name).first()
+
     def run(self, attribute, poller_buffer):
         """ 
         Run the real poller method "_run_BLAH" based upon the command

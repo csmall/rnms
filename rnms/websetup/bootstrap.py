@@ -154,13 +154,41 @@ def bootstrap(command, conf, vars):
                 position += 1
                 model.DBSession.add(sr)
 
-        ps = model.PollerSet(u'No Polling')
-        model.DBSession.add(ps)
-        # Poller Sets
+        # Pollers
         for row in database_data.pollers:
             p = model.Poller()
-            (p.field, p.display_name, p.command, p.parameters) = row
+            (p.field, dn, p.command, p.parameters) = row
+            p.display_name = unicode(dn)
             model.DBSession.add(p)
+
+        for row in database_data.backends:
+            be = model.Backend(row[0], row[1], row[2], row[3])
+            model.DBSession.add(be)
+
+        for row in database_data.poller_sets:
+            (ps_name, at_name, poller_rows) = row
+            atype = model.AttributeType.by_display_name(at_name)
+            if atype is None:
+                raise ValueError("Attribute type {0} not found.".format(at_name))
+            ps = model.PollerSet(ps_name)
+            ps.attribute_type = atype
+            poller_row_pos = 0
+            for poller_row in poller_rows:
+                pr_poller = model.Poller.by_display_name(poller_row[0])
+                if pr_poller is None:
+                    raise ValueError("Bad poller name \"{0}\".".format(poller_row[0]))
+                if poller_row[1] == u'':
+                    pr_backend = model.Backend.by_display_name(u'No Backend')
+                else:
+                    pr_backend = model.Backend.by_display_name(poller_row[1])
+                if pr_backend is None:
+                    raise ValueError("Bad backend name \"{0}\".".format(poller_row[1]))
+                pr = model.PollerRow()
+                pr.poller = pr_poller
+                pr.position = poller_row_pos
+                poller_row_pos += 1
+                ps.poller_rows.append(pr)
+            model.DBSession.add(ps)
 
         # Default Single Setup
         zone = model.Zone(u'Default Zone',u'default')
@@ -178,6 +206,5 @@ def bootstrap(command, conf, vars):
         import traceback
         print traceback.format_exc()
         transaction.abort()
-
 
     # <websetup.bootstrap.after.auth>

@@ -43,6 +43,17 @@ class Poller():
         else:
             self.logger = logging.getLogger("Poller")
 
+    def poll_finished(self,attribute):
+        """
+        This method is called once a poller has finished running
+        and needs to signal to move to the next one
+        """
+        if attribute.id not in self.polling_attributes:
+            # FIXME logger
+            return
+        patt = self.polling_attributes[attribute.id]
+        patt['index'] += 1
+        self._run_poller(patt)
 
     def poll(self):
         """
@@ -70,7 +81,6 @@ class Poller():
                 self.poller_buffer[att_id] = {}
             else:
                 patt['index'] += 1
-            #FIXME kick off poller
             self._run_poller(patt)
 
     def _run_poller(self, patt):
@@ -81,8 +91,8 @@ class Poller():
         if poller_row is None:
             self._finish_polling(patt)
             return
-        # FIXME 
-        poller_row.run(patt['attribute'], self.poller_buffer[patt['attribute'].id])
+        if poller_row.run(patt['attribute'], self.poller_buffer[patt['attribute'].id]): # run was successful
+            patt['in_poller'] = True
 
     def _finish_polling(self, patt):
         """
@@ -94,7 +104,7 @@ class Poller():
         rrd_fields = DBSession.query(model.AttributeTypeRRD)filter(model.AttributeTypeRRD== patt['attribute'].attribute_type_id)
         for rrd_field in rrd_fields:
             if rrd_field.name in self.poller_buffer[patt['attribute'].id]:
-                pass #FIXME update rrd item
+                rrd_field.update(patt['attribute'], self.poller_buffer[patt['attribute'].id])
         del self.poller_buffer[patt['attribute'].id]
         del self.polling_attributes[patt['attribute'].id]
 
