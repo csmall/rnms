@@ -1,0 +1,185 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of the Rosenberg NMS
+#
+# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>
+#
+import asyncore
+import socket
+import struct
+import datetime
+
+""" NTP Client """
+
+class NTPClientError(Exception):
+    pass
+
+class NTPClient(asyncore.dispatcher):
+    """
+    Base Class to make NTP control queries
+    """
+    timeout = 10
+    waiting_jobs = []
+    sent_jobs = {}
+
+    def __init__(self, socktype, timeout=10):
+        asyncore.dispatcher.__init__(self)
+        self.create_socket(socket.AF_INET, socktype)
+        self.timeout = timeout
+
+    def handle_connect(self):
+        pass
+
+    def handle_close(self):
+        self.close()
+
+    def handle_read(self):
+        recv_msg, recv_addr =  self.recvfrom(8192)
+        try:
+            recv_job = self.sent_jobs[recv_addr]
+        except KeyError:
+            print "no job for {0}".format(recv_addr)
+        else:
+            self._cb_fun(recv_job, recv_msg, recv_addr)
+
+    def writable(self):
+        return (len(self.waiting_jobs) > 0)
+
+    def handle_write(self):
+        try:
+            new_job = self.waiting_jobs.pop()
+        except IndexError:
+            return
+        new_job['timeout'] = datetime.datetime.now() + datetime.timedelta(seconds=self.timeout)
+        self.sent_jobs[new_job['host']] = dict(new_job)
+        try:
+            self.sendto(new_job['msg'], new_job['host'])
+        except socket.error as errmsg:
+            raise NTPClientError(errmsg)
+
+    def _cb_fun(self, recv_job, recv_msg, recv_addr):
+        """
+        Calls the given callback with message and delets from sent queue
+        The callback can request there is more info by returning True
+        """
+        if recv_job['cb_fun'](recv_msg, recv_job['kwargs']) != True:
+            del(self.sent_jobs[recv_addr])
+
+    def send_message(self, host, msg, cb_fun, **kwargs):
+        self.waiting_jobs.append({
+            'host': host,
+            'msg': msg,
+            'cb_fun': cb_fun,
+            'kwargs': kwargs})
+    
+    def poll(self):
+        """
+        Check pending and waiting jobs
+        Returns true if there are things going on
+        This method also checks timed out jobs
+        """
+        retval = len(self.waiting_jobs) > 0
+        now = datetime.datetime.now()
+        for job in self.sent_jobs.values():
+            if job['timeout'] < now:
+                # Job timed out
+                self._cb_fun(job, None, job['host'])
+            else:
+                retval = True
+        return retval
+
+
+class NTPAssoc():
+    """
+    Class holding information about the NTP Associations
+    """
+    assoc_id = 0
+    __PACKET_FORMAT = '!H B B'
+
+    def from_data(self, data):
+        unpacked = struct.unpack(self.__PACKET_FORMAT, data)
+        self.assoc_id = unpacked[0]
+        self.configured = unpacked[1] >> 7 & 0x1
+        self.authentable = unpacked[1] >> 6 & 0x1
+        self.authentic = unpacked[1] >> 5 & 0x1
+        self.reach = unpacked[1] >> 4 & 0x1
+        # bit 3 is reserved
+        self.selection = unpacked[1] & 0x7
+
+        self.event_counter = unpacked[2] >> 4 & 0xf
+        self.event_code = unpacked[2] & 0xf
+
+class NTPControl():
+    leap = 0
+    version = 2
+    mode = 6
+
+    response = 0
+    error = 0
+    more = 0
+    status = 0
+    offset = 0
+    count = 0
+    peers = []
+    assoc_data = {}
+
+    __PACKET_FORMAT = "!B B H H H H H"
+
+    def __init__(self, opcode=1, sequence=1, assoc_id=0):
+        self.opcode = opcode
+        self.sequence = sequence
+        self.assoc_id = assoc_id
+
+    def __repr__(self):
+        return 'NTPControl ID={0} opcode={1}'.format(self.assoc_id, self.opcode)
+
+    def to_data(self):
+        packed = struct.pack(self.__PACKET_FORMAT,
+            (self.leap << 6 | self.version << 3 | self.mode),
+            (self.response << 7 | self.error << 6 | self.more << 5 | self.opcode ),
+            self.sequence,
+            self.status,
+            self.assoc_id,
+            self.offset,
+            self.count)
+        return packed
+
+    def from_data(self, data):
+        header_len = struct.calcsize(self.__PACKET_FORMAT)
+        unpacked = struct.unpack(self.__PACKET_FORMAT,
+                data[0:header_len])
+        self.leap = unpacked[0] >> 6 & 0x3
+        self.version = unpacked[0] >> 3 & 0x7
+        self.mode = unpacked[0] & 0x7
+        self.response = unpacked[1] >> 7 & 0x1
+        self.error = unpacked[1] >> 6 & 0x1
+        self.more = unpacked[1] >> 5 & 0x1
+        self.opcode = unpacked[1] & 0x1f
+        self.sequence = unpacked[2]
+        self.status = unpacked[3]
+        self.assoc_id = unpacked[4]
+        self.offset = unpacked[5]
+        self.count = unpacked[6]
+
+        if self.opcode == 1:
+            for assoc_count in range(0, (self.count)/4):
+                assoc = NTPAssoc()
+                assoc.from_data(data[header_len+assoc_count*4:header_len+(assoc_count+1)*4])
+                self.peers.append(assoc)
+        elif self.opcode == 2:
+            assoc_data = data[header_len:].split(",")
+            self.assoc_data.update(dict([tuple(ad.strip().split("=")) for ad in data[header_len:].split(",") if ad.find("=") > -1]))
+
