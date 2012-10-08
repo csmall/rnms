@@ -26,16 +26,15 @@ class SNMPScheduler():
     them.  When the poller needs more items to poll, the scheduler determines
     the best items to use, dependent on what is currently been polling.
     """
-    waiting_jobs = []
-    active_jobs = {}
-
-    active_addresses = {}
 
     def __init__(self, logger=None):
         if logger is None:
             self.logger = logging.getLogger("SNMPScheduler")
         else:
             self.logger = logger
+        self.waiting_jobs = []
+        self.active_jobs = {}
+        self.active_addresses = {}
 
     def job_update(self, oldid, newid):
         """
@@ -92,7 +91,7 @@ class SNMPScheduler():
         """
         for job in self.waiting_jobs:
             if job['host'].mgmt_address not in self.active_addresses:
-                self.logger.debug("job_pop(): Poping job {0}".format(job['id']))
+                #self.logger.debug("job_pop(): Poping job {0}".format(job['id']))
                 return job
         return None
 
@@ -116,15 +115,18 @@ class SNMPScheduler():
         the Engine has given up on trying to poll this item.  In any
         case it frees up the polling of the remote device.
         """
-        self.logger.debug("Scheduler attempting to remove request {0}".format(reqid))
+        #self.logger.debug("Scheduler attempting to remove request {0}".format(reqid))
         if reqid in self.active_jobs:
             job = self.active_jobs[reqid]
             mgmt_address = job['host'].mgmt_address
             self.address_del(mgmt_address)
             del(self.active_jobs[reqid])
 
-    def have_jobs(self):
-        return len(self.active_jobs) > 0 or len(self.waiting_jobs) > 0
+    def have_active_jobs(self):
+        return self.active_jobs != {}
+
+    def have_waiting_jobs(self):
+        return self.waiting_jobs != []
 
     def address_add(self, address):
         """

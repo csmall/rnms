@@ -20,6 +20,7 @@
 #
 """Poller model module."""
 import time
+import logging
 
 from sqlalchemy import *
 from sqlalchemy.orm import mapper, relationship
@@ -30,6 +31,7 @@ from sqlalchemy.types import Integer, Unicode
 from rnms.model import DeclarativeBase, metadata, DBSession
 from rnms.lib import pollers
 from rnms.lib.genericset import GenericSet
+from rnms.lib.parsers import RnmsTextTemplate
 
 __all__ = [ 'PollerSet', 'Poller', 'PollerRow']
 
@@ -61,20 +63,31 @@ class Poller(DeclarativeBase):
             return None
         return DBSession.query(cls).filter(cls.display_name == display_name).first()
 
-    def run(self, attribute, poller_buffer):
+    def run(self, poller_row, pobj, attribute, poller_buf):
         """ 
-        Run the real poller method "_run_BLAH" based upon the command
+        Run the real poller method "poll_BLAH" based upon the command
         field for this poller.
         """
         if self.command is None or self.command=='none':
             return None
         try:
-            real_poller = getattr(pollers, "run_"+self.command)
+            real_poller = getattr(pollers, "poll_"+self.command)
         except AttributeError:
-            logging.error("Poller {0} does not exist.".format(self.command))
+            pobj.logger.error("A:%d - Poller function poll_%s does not exist.", attribute.id, self.command)
             return None
-        return real_poller(self,attribute,poller_buffer)
+        return real_poller(poller_buf, pobj=pobj, poller_row=poller_row, attribute=attribute, parsed_params=poller_row.poller.parsed_parameters(attribute))
 
+    def parsed_parameters(self, attribute):
+        """
+        Poller.parameters may have certain fields that need to be parsed
+        by filling in <item> with some value from the attribute
+        """
+        text_template = RnmsTextTemplate(self.parameters)
+        subs = {
+                'index': attribute.index
+                }
+        subs.update(dict([ef.attribute_type_field.tag,ef.value] for ef in attribute.fields))
+        return text_template.safe_substitute(subs)
 
 class PollerSet(DeclarativeBase, GenericSet):
     __tablename__ = 'poller_sets'
@@ -105,6 +118,9 @@ class PollerSet(DeclarativeBase, GenericSet):
     def no_polling(cls):
         return DBSession.query(cls).order_by(id).first()
     
+    @classmethod
+    def by_id(cls,pset_id):
+        return DBSession.query(cls).filter(cls.id == pset_id).first()
 
     def run(self, attribute):
         """
@@ -147,37 +163,28 @@ class PollerRow(DeclarativeBase):
             backend_name = 'None'
         return '<PollerRow position=%d poller=%s backend=%s>' % (self.position, poller_name, backend_name)
 
-    def run(self, attribute, poller_buffer):
+    def run_poller(self, pobj, attribute, poller_buff):
         """
         Run the actual polling process for this poller row
         Requires the attribute that calls the poller
         Returns True if it worked or False if not
         """
-        if self.poller is None or self.backend is None:
+        if self.poller is None:
+            logger.warning('run logger called with no poller!')
             return False
-        start_time = time.time()
-        poller_result = self.poller.run(attribute, poller_buffer)
-        poller_time = int((time.time() - start_time)*1000)
-        if poller_output is None:
-            return False
-        # Stash everything that comes out of the poller into the buffer
-        if type(poller_result)==dict:
-            for (k,v) in poller_result:
-                if k not in poller_buffer:
-                    poller_buffer[k]=v
-        elif self.poller.field is not None and self.poller.field not in poller_buffer:
-            poller_buffer[self.poller.field] = unicode(poller_result)
-
-        start_time = time.time()
-        backend_output =  self.backend.run(attribute, poller_result)
-        backend_time = int((time.time() - start_time )*1000)
-        if backend_output is None:
-            return False
-        logging.info("H:%d A:%d P:%d %s() -> %s() (Time P:%0.0f B:%0.0f)" % (
-            attribute.host_id, attribute.id, self.position, poller, backend,
-            poller_time, backend_time))
-
-        return True
+        if self.poller.id == 1:
+            self.run_backend(attribute, None)
+            return True
+        return self.poller.run(self, pobj, attribute, poller_buff)
         
+    def run_backend(self, attribute, value):
+        """
+        Run the actual backend process for this poller row
+        Requires the attribute that calls the poller
+        Returns True if it worked or False if not
+        """
+        if self.backend is None or self.backend.id == 1:
+            return ''
+        return self.backend.run(self, attribute, value)
 
 

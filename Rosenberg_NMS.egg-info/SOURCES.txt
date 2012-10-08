@@ -43,7 +43,9 @@ rnms/lib/importers/__init__.py
 rnms/lib/importers/jffnms.py
 rnms/lib/pollers/__init__.py
 rnms/lib/pollers/apache.py
+rnms/lib/pollers/simple.py
 rnms/lib/pollers/snmp.py
+rnms/lib/pollers/verify_storage_index.py
 rnms/lib/snmp/__init__.py
 rnms/lib/snmp/engine.py
 rnms/lib/snmp/scheduler.py
@@ -116,6 +118,7 @@ rnms/tests/models/__init__.py
 rnms/tests/models/test_alarm_state.py
 rnms/tests/models/test_attribute.py
 rnms/tests/models/test_auth.py
+rnms/tests/models/test_backend.py
 rnms/tests/models/test_event.py
 rnms/tests/models/test_host.py
 rnms/tests/models/test_poller.py

@@ -17,29 +17,38 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
+import logging
+
 from rnms.lib import snmp
 from pyasn1.type import univ as pyasn_types
 from pyasn1.error import PyAsn1Error
 
-def poll_snmp_integer(poller, attribute):
+logger = logging.getLogger('pSNMP')
+
+def poll_snmp_counter(poller_buffer, **kwargs):
     """
     SNMP get that returns an integer
     Parameters: the OID in dotted decimal e.g. '1.3.6.1.1.9'
     """
+    str_oid = str(kwargs['parsed_params'])
+    if str_oid[0] == '.':
+        str_oid = str_oid[1:]
     try:
-        oid = pyasn_types.ObjectIdentifier(poller.parameters)
-    except PyAsn1Error:
+        oid = pyasn_types.ObjectIdentifier().prettyIn(str_oid)
+    except PyAsn1Error as errmsg:
+        logger.warning("A%d: OID \"%s\" could not be parsed: %s", kwargs['attribute'].id, str_oid, errmsg)
         return False
-    poller.snmp_engine.get_int(attribute.host, oid, poll_snmp_integer_cb)
+    kwargs['pobj'].snmp_engine.get_int(kwargs['attribute'].host, oid, cb_snmp_counter, kwargs=kwargs)
     return True
 
-def poll_snmp_integer_cb(value, host, kwargs, error=None):
+def cb_snmp_counter(value, error, kwargs):
     if error is not None:
-        return None
-    return value
+        kwargs['pobj'].poller_callback(kwargs['attribute'], None)
+        return
+    kwargs['pobj'].poller_callback(kwargs['attribute'], value)
         
 
-def poll_snmp_status(poller, attribute,poller_buffer):
+def poll_snmp_status(poller_buffer, **kwargs):
     """
     Generic SNMP get that returns a status string
     Returns: a string based upon the SNMP value returned
@@ -50,34 +59,39 @@ def poll_snmp_status(poller, attribute,poller_buffer):
     An optional default return value can be used, returns None if
     there is an error
     """
-    params = poller.parameters.split('|')
+    params = kwargs['parsed_params'].split('|')
     param_count = len(params)
-    if param_count < 2:
-        return False
-    default_ret = None
-    if param_count > 2:
-        default_ret = params[2]
-
     try:
-        oid = pyasn_types.ObjectIdentifier(params[0])
-    except PyAsn1Error:
+        kwargs['mapping'] = params[1]
+    except IndexError:
+        pass
+    try:
+        kwargs['default_value'] = params[2]
+    except IndexError:
+        kwargs['default_value'] = None
+    try:
+        oid = pyasn_types.ObjectIdentifier().prettyIn(str(params[0]))
+    except PyAsn1Error as errmsg:
+        logger.warning("A%d: OID \"%s\" could not be parsed: %s", kwargs['attribute'].id, params[0], errmsg)
         return False
-    poller.snmp_engine.get_int(attribute.host, oid, poll_snmp_status_cb, mapping=params[1],default_ret=default_ret)
+    kwargs['pobj'].snmp_engine.get_int(kwargs['attribute'].host, oid, cb_snmp_status, kwargs=kwargs)
     return True
 
-def poll_snmp_integer_cb(value, host, kwargs, error=None):
+def cb_snmp_status(value, error, kwargs):
     if error is not None:
-        return kwargs['default_ret']
+        kwargs['pobj'].poller_callback(kwargs['attribute'], kwargs['default_value'])
     try:
         for item in kwargs['mapping'].split(","):
             matchret = item.split("=")
-            if len(matchret) != 2:
-                return None
-            if value == matchret[0]:
-                return matchret[1]
-    except:
-        return None
-    return kwargs['default_ret']
+            try:
+                if value == int(matchret[0]):
+                    kwargs['pobj'].poller_callback(kwargs['attribute'], matchret[1])
+                    return
+            except IndexError:
+                pass
+    except KeyError:
+        pass
+    kwargs['pobj'].poller_callback(kwargs['attribute'], kwargs['default_value'])
 
 
     

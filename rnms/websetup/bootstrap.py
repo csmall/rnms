@@ -102,7 +102,7 @@ def bootstrap(command, conf, vars):
 
         for row in database_data.event_types:
             et = model.EventType()
-            (et.display_name, severity, et.text, et.showable, et.generate_id, et.up_event_id, et.alarm_duration, et.show_host) = row
+            (et.display_name, severity, et.text, et.generate_alarm, et.up_event_id, et.alarm_duration, et.showable, et.show_host) = row
             et.severity = model.EventSeverity.by_name(severity)
             #print("eseverity %s is %s" % (severity, et.severity))
             model.DBSession.add(et)
@@ -162,7 +162,8 @@ def bootstrap(command, conf, vars):
             model.DBSession.add(p)
 
         for row in database_data.backends:
-            be = model.Backend(row[0], row[1], row[2], row[3])
+            be = model.Backend()
+            (be.display_name, be.command, be.parameters) = row
             model.DBSession.add(be)
 
         for row in database_data.poller_sets:
@@ -173,18 +174,20 @@ def bootstrap(command, conf, vars):
             ps = model.PollerSet(ps_name)
             ps.attribute_type = atype
             poller_row_pos = 0
+            default_backend = model.Backend.default()
             for poller_row in poller_rows:
                 pr_poller = model.Poller.by_display_name(poller_row[0])
                 if pr_poller is None:
                     raise ValueError("Bad poller name \"{0}\".".format(poller_row[0]))
                 if poller_row[1] == u'':
-                    pr_backend = model.Backend.by_display_name(u'No Backend')
+                    pr_backend = default_backend
                 else:
                     pr_backend = model.Backend.by_display_name(poller_row[1])
                 if pr_backend is None:
                     raise ValueError("Bad backend name \"{0}\".".format(poller_row[1]))
                 pr = model.PollerRow()
                 pr.poller = pr_poller
+                pr.backend = pr_backend
                 pr.position = poller_row_pos
                 poller_row_pos += 1
                 ps.poller_rows.append(pr)

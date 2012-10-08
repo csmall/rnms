@@ -17,20 +17,26 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-def poll_simple(poller_buffer, **kwargs):
+import logging
+
+logger = logging.getLogger('CiscoPing')
+
+def poll_cisco_snmp_ping_start(poller_buffer, **kwargs):
     """
-    Simple poller that returns what is in the poller attribute
-    Good for showing an example
-    Returns True on success, False on error
     """
-    poll_simple_cb(kwargs['poller_row'].poller.parameter, None, kwargs)
+    logger.debug('Cisco Ping not implemented')
+    kwargs['pobj'].poller_callback(kwargs['attribute'], None)
     return True
 
-def cb_simple(value, error, kwargs):
-    """
-    CallBack function for a simple poller. This should kick off
-    the return functions in the PollerRow
-    """
-    kwargs['pobj'].poller_callback(kwargs['attribute'], value)
+def poll_cisco_snmp_ping_wait(poller_buffer, **kwargs):
+    poll_cisco_snmp_ping_start(poller_buffer, **kwargs)
 
-        
+def poll_cisco_snmp_ping_get_rtt(poller_buffer, **kwargs):
+    poll_cisco_snmp_ping_start(poller_buffer, **kwargs)
+
+def poll_cisco_snmp_ping_get_pl(poller_buffer, **kwargs):
+    poll_cisco_snmp_ping_start(poller_buffer, **kwargs)
+
+def poll_cisco_snmp_ping_end(poller_buffer, **kwargs):
+    poll_cisco_snmp_ping_start(poller_buffer, **kwargs)
+

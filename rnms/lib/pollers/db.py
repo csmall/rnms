@@ -17,11 +17,9 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-def poll_simple(poller_buffer, **kwargs):
+def poll_db(poller_buffer, **kwargs):
     """
-    Simple poller that returns what is in the poller attribute
-    Good for showing an example
-    Returns True on success, False on error
+    Retrive an item for this attribute
     """
     poll_simple_cb(kwargs['poller_row'].poller.parameter, None, kwargs)
     return True

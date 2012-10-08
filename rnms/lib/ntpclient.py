@@ -34,6 +34,7 @@ class NTPClient(asyncore.dispatcher):
     timeout = 10
     waiting_jobs = []
     sent_jobs = {}
+    next_sequence = 0
 
     def __init__(self, socktype, timeout=10):
         asyncore.dispatcher.__init__(self)
@@ -53,7 +54,7 @@ class NTPClient(asyncore.dispatcher):
         except KeyError:
             print "no job for {0}".format(recv_addr)
         else:
-            self._cb_fun(recv_job, recv_msg, recv_addr)
+            self._parse_response(recv_job, recv_msg, recv_addr)
 
     def writable(self):
         return (len(self.waiting_jobs) > 0)
@@ -64,26 +65,44 @@ class NTPClient(asyncore.dispatcher):
         except IndexError:
             return
         new_job['timeout'] = datetime.datetime.now() + datetime.timedelta(seconds=self.timeout)
-        self.sent_jobs[new_job['host']] = dict(new_job)
+        self.sent_jobs[new_job['sockaddr']] = dict(new_job)
         try:
-            self.sendto(new_job['msg'], new_job['host'])
+            self.sendto(new_job['request_packet'].to_data(), new_job['sockaddr'])
         except socket.error as errmsg:
             raise NTPClientError(errmsg)
 
-    def _cb_fun(self, recv_job, recv_msg, recv_addr):
+    def _get_next_sequence(self):
+        next_seq = self.next_sequence
+        self.next_sequence += 1
+        return next_seq
+
+    def _parse_response(self, recv_job, recv_msg, recv_addr):
         """
         Calls the given callback with message and delets from sent queue
-        The callback can request there is more info by returning True
         """
-        if recv_job['cb_fun'](recv_msg, recv_job['kwargs']) != True:
+        response_packet = recv_job['response_packet']
+        if recv_msg is not None:
+            response_packet.from_data(recv_msg)
+        if response_packet.more == 0:
+            recv_job['cb_fun'](recv_job['host'], response_packet, recv_job['kwargs'])
             del(self.sent_jobs[recv_addr])
 
-    def send_message(self, host, msg, cb_fun, **kwargs):
+    def _send_message(self, host, request_packet, cb_fun, **kwargs):
+        try:
+            addrinfo = socket.getaddrinfo(host.mgmt_address, 123)[0]
+        except socket.gaierror:
+            return False
+        sockaddr = addrinfo[4]
+        request_packet.sequence = self._get_next_sequence()
+
         self.waiting_jobs.append({
             'host': host,
-            'msg': msg,
+            'sockaddr': sockaddr,
+            'request_packet': request_packet,
+            'response_packet': NTPControl(),
             'cb_fun': cb_fun,
             'kwargs': kwargs})
+        return True
     
     def poll(self):
         """
@@ -91,15 +110,32 @@ class NTPClient(asyncore.dispatcher):
         Returns true if there are things going on
         This method also checks timed out jobs
         """
-        retval = len(self.waiting_jobs) > 0
+        if self.waiting_jobs == []:
+            return False
+        retval = False
         now = datetime.datetime.now()
         for job in self.sent_jobs.values():
             if job['timeout'] < now:
                 # Job timed out
-                self._cb_fun(job, None, job['host'])
+                self._parse_response(job, None, job['sockaddr'])
             else:
                 retval = True
         return retval
+
+    def get_peers(self, host, cb_fun, **kwargs):
+        """
+        Returns a list of peers to the callback function
+        Returns true on success
+        """
+        query_packet = NTPControl()
+        return self._send_message(host, query_packet, cb_fun, **kwargs)
+
+    def get_peer_by_id(self, host, assoc_id, cb_fun, **kwargs):
+        """
+        Return the information known by the host for the specified peer
+        """
+        query_packet = NTPControl(opcode=2, assoc_id=assoc_id)
+        return self._send_message(host, query_packet, cb_fun, **kwargs)
 
 
 class NTPAssoc():
@@ -130,11 +166,13 @@ class NTPControl():
     response = 0
     error = 0
     more = 0
-    status = 0
+
+    leap_indicator = 0
+    clock_source = 0
+    event_counter = 0
+    event_code = 0
     offset = 0
     count = 0
-    peers = []
-    assoc_data = {}
 
     __PACKET_FORMAT = "!B B H H H H H"
 
@@ -142,16 +180,18 @@ class NTPControl():
         self.opcode = opcode
         self.sequence = sequence
         self.assoc_id = assoc_id
+        self.peers = []
+        self.assoc_data = {}
 
     def __repr__(self):
-        return 'NTPControl ID={0} opcode={1}'.format(self.assoc_id, self.opcode)
+        return '<NTPControl seq={2} assoc_id={0} opcode={1}>'.format(self.assoc_id, self.opcode, self.sequence)
 
     def to_data(self):
         packed = struct.pack(self.__PACKET_FORMAT,
             (self.leap << 6 | self.version << 3 | self.mode),
             (self.response << 7 | self.error << 6 | self.more << 5 | self.opcode ),
             self.sequence,
-            self.status,
+            0,
             self.assoc_id,
             self.offset,
             self.count)
@@ -159,20 +199,19 @@ class NTPControl():
 
     def from_data(self, data):
         header_len = struct.calcsize(self.__PACKET_FORMAT)
-        unpacked = struct.unpack(self.__PACKET_FORMAT,
-                data[0:header_len])
-        self.leap = unpacked[0] >> 6 & 0x3
-        self.version = unpacked[0] >> 3 & 0x7
-        self.mode = unpacked[0] & 0x7
-        self.response = unpacked[1] >> 7 & 0x1
-        self.error = unpacked[1] >> 6 & 0x1
-        self.more = unpacked[1] >> 5 & 0x1
-        self.opcode = unpacked[1] & 0x1f
-        self.sequence = unpacked[2]
-        self.status = unpacked[3]
-        self.assoc_id = unpacked[4]
-        self.offset = unpacked[5]
-        self.count = unpacked[6]
+        flags1, flags2, self.sequence, status, self.assoc_id, self.offset, self.count = struct.unpack(self.__PACKET_FORMAT, data[0:header_len])
+        self.leap = flags1 >> 6 & 0x3
+        self.version = flags1 >> 3 & 0x7
+        self.mode = flags1 & 0x7
+        self.response = flags2 >> 7 & 0x1
+        self.error = flags2 >> 6 & 0x1
+        self.more = flags2 >> 5 & 0x1
+        self.opcode = flags2 & 0x1f
+
+        self.leap_indicator = status >> 14 & 0x3
+        self.clock_source = status >> 8 & 0x3f
+        self.event_counter = status >> 4 & 0xf
+        self.event_code = status & 0xf
 
         if self.opcode == 1:
             for assoc_count in range(0, (self.count)/4):

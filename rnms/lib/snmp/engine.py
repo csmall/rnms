@@ -84,11 +84,12 @@ class SNMPEngine():
         """
         Returns the Proto Module based upon the SNMP community structure
         """
-        version = community[0]
-        if version == 1:
+        version = str(community[0])
+        if version == '1':
             return api.protoModules[api.protoVersion1]
-        elif version == 2:
+        elif version == '2':
             return api.protoModules[api.protoVersion2c]
+        self.logger.info('Unknown SNMP version "%s"', version)
         return None
 
     def _pmod_from_api(self, api_version):
@@ -104,7 +105,7 @@ class SNMPEngine():
         if request['filter'] is not None:
             if request['filter'] in self.value_filters:
                 value = self.value_filters[request['filter']](value)
-        request['cb_func'](value, request['host'], request['kwargs'], error=error)
+        request['cb_func'](value, error, **(request['kwargs']))
 
     def socketmap(self):
         """ Returns the socket of the transportDispatcher """
@@ -117,13 +118,16 @@ class SNMPEngine():
 
         Returns true if there is still things to do
         """
-        try:
-            poll(0.2, self.dispatcher.getSocketMap())
-        except socket.error:
-            pass
-        self.send_requests()
+        retval = False
         self.check_timeouts()
-        return self.scheduler.have_jobs() or self.dispatcher.jobsArePending() or self.dispatcher.transportsAreWorking()
+        if self.scheduler.have_active_jobs():
+            try:
+                poll(0, self.dispatcher.getSocketMap())
+            except socket.error:
+                pass
+            retval = True
+        self.send_requests()
+        return retval or self.scheduler.have_waiting_jobs()
 
     def _get_request(self, reqid):
         return self.active_requests.get(reqid, None)
@@ -248,7 +252,7 @@ class SNMPEngine():
         else:
             request['attempt'] += 1
         request['timeout'] = time.time() + self.default_timeout
-        self.logger.debug("send_request(): Sending request #{0} to {1} attempt {2}".format(request['id'], request['host'].mgmt_address, request['attempt']))
+        #self.logger.debug("send_request(): Sending request #{0} to {1} attempt {2}".format(request['id'], request['host'].mgmt_address, request['attempt']))
 
     def is_busy(self):
         """ Are there either jobs that are waiting or requests that are
@@ -273,6 +277,7 @@ class SNMPEngine():
     def _build_getnext_message(self, community, oid):
         pmod = self._pmod_from_community(community)
         if pmod is None:
+            self.logger.info('Could not get pmod from community %s',community)
             return None,None
 
         # SNMP table header
@@ -328,7 +333,7 @@ class SNMPEngine():
 
     # Filters
     def filter_int(self, value):
-        self.logger.debug("filter_int(): Raw value is \"{0}\"".format(value))
+        #self.logger.debug("filter_int(): Raw value is \"{0}\"".format(value))
         if value is None:
             return 0
         if type(value) is dict:

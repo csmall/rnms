@@ -26,8 +26,7 @@ from sqlalchemy import Table, ForeignKey, Column
 from sqlalchemy.types import Integer, Unicode
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, metadata, DBSession
-from rnms.model import trigger
+from rnms.model import DeclarativeBase, metadata, DBSession, Trigger
 
 # Alarm internal state defines
 ALARM_DOWN = 1
@@ -69,7 +68,7 @@ class Alarm(DeclarativeBase):
             self.event_type = event.event_type
             self.alarm_state = event.alarm_state
             if event.event_type.alarm_duration > 0:
-                self.stop_time = datetime.dateime.now() + datetime.timedelta(minutes=event.event_type.alarm_duration)
+                self.stop_time = datetime.datetime.now() + datetime.timedelta(minutes=event.event_type.alarm_duration)
             self.analyze_triggers()
 
     def substitutes(self):
@@ -95,7 +94,7 @@ class Alarm(DeclarativeBase):
         new alarm_state to set the alarm to.
         """
         if alarm_state is None:
-            self.alarm_state = stop.event.alarm_state
+            self.alarm_state = stop_event.alarm_state
         else:
             self.alarm_state = alarm_state
         self.stop_time = stop_event.created
@@ -110,9 +109,10 @@ class Alarm(DeclarativeBase):
         if attribute is None or event_type is None:
             return None
         return DBSession.query(cls).filter(and_(
-            cls.attribute==attribute,
-            cls.event_type==event_type,
-            cls.alarm_state.internal_state.in_([ALARM_DOWN, ALARM_TESTING]),
+            cls.attribute_id==attribute.id,
+            cls.event_type_id==event_type.id,
+            cls.alarm_state_id == AlarmState.id,
+            AlarmState.internal_state.in_([ALARM_DOWN, ALARM_TESTING]),
             )).first()
 
     def analyze_triggers(self):
@@ -120,7 +120,7 @@ class Alarm(DeclarativeBase):
         Run though all the triggers there are and attempt to fire
         any for this alarm.
         """
-        triggers = model.Trigger.alarm_triggers()
+        triggers = Trigger.alarm_triggers()
         for trigger in triggers:
             trigger_result = trigger.process_alarm(self)
 
@@ -138,11 +138,20 @@ class AlarmState(DeclarativeBase):
     internal_state = Column(SmallInteger,nullable=False)
     
     #}
+
+    def __repr__(self):
+        return '<AlarmState: %s (%s)>' % (self.display_name, self.internal_state)
     @classmethod
     def by_name(cls, display_name):
         """ Return the alarm_state with display_name given. """
         return DBSession.query(cls).filter(
                 cls.display_name == display_name).first()
+
+    def is_up(self):
+        """
+        Returns true if this alarm has internal state of up.
+        """
+        return (self.internal_state==ALARM_UP)
 
     def is_down(self):
         """

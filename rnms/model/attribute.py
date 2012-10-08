@@ -34,6 +34,8 @@ from rnms.model.host import Host
 __all__ = ['Attribute', 'AttributeField', 'AttributeType', 'AttributeTypeField', 'DiscoveredAttribute']
 
 snmp_state_names = {1:'up', 2:'down', 3:'testing', 4:'unknown'}
+MINDATE=datetime.date(1900,1,1)
+
 class Attribute(DeclarativeBase):
     __tablename__ = 'attributes'
     
@@ -54,7 +56,6 @@ class Attribute(DeclarativeBase):
     sla = relationship('Sla', primaryjoin='Attribute.sla_id==Sla.id', post_update=True)
     index = Column(String(40), nullable=False) # Unique for host
     make_sound = Column(Boolean,nullable=False)
-    show_rootmap = Column(SmallInteger,nullable=False)
     poll_interval = Column(SmallInteger,nullable=False)
     check_status = Column(Boolean,nullable=False)
     poll_priority = Column(Boolean,nullable=False) #DMII
@@ -62,8 +63,8 @@ class Attribute(DeclarativeBase):
     poller_set = relationship('PollerSet')
     created = Column(DateTime, nullable=False, default=datetime.datetime.now)
     updated = Column(DateTime, nullable=False, default=datetime.datetime.now)
-    polled = Column(DateTime, nullable=False, default=datetime.datetime.min)
-    next_poll = Column(DateTime, nullable=False, default=datetime.datetime.min)
+    polled = Column(DateTime, nullable=False, default=MINDATE)
+    next_poll = Column(DateTime, nullable=False, default=datetime.datetime.now)
     fields = relationship('AttributeField', backref='attribute', cascade='all, delete, delete-orphan')
     #}
 
@@ -115,7 +116,6 @@ class Attribute(DeclarativeBase):
         self.user_id = 1
         self.sla_id = 1
         self.make_sound = True
-        self.show_rootmap = 0
         self.poll_interval = 0
         self.check_status = True
         self.poll_priority = False
@@ -166,6 +166,21 @@ class Attribute(DeclarativeBase):
             return snmp_state_names[self.admin_state]
         return u"Unknown {0}".format(self.admin_state)
 
+    def set_oper_state(self, state_name):
+        """ Set the oper_state based upon a state_name """
+        for state,name in snmp_state_names.items():
+            if state_name == name:
+                self.oper_state = state
+                return True
+        return False
+
+    def set_admin_state(self, state_name):
+        """ Set the admin_state based upon a state_name """
+        for state,name in snmp_state_names.items():
+            if state_name == name:
+                self.admin_state = state
+                return True
+        return False
     def is_down(self):
         """
         Return true if this attribute is down. A down interface is one that

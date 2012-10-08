@@ -26,8 +26,11 @@ from sqlalchemy import Table, ForeignKey, Column
 from sqlalchemy.types import Integer, Unicode, String, Boolean
 #from sqlalchemy.orm import relation, backref
 import datetime
+import logging
 
-from rnms.model import DeclarativeBase, metadata, DBSession, Attribute
+logger = logging.getLogger('Event')
+
+from rnms.model import DeclarativeBase, metadata, DBSession, Attribute, Alarm, AlarmState
 
 class Event(DeclarativeBase):
     """
@@ -113,24 +116,24 @@ class Event(DeclarativeBase):
             return #done it already
 
         if self.alarm_state is None:
-            logging.warn("Event to be processed but no alarm_state.")
+            logger.warn("Event to be processed but no alarm_state.")
             return
         if self.host is None and self.attribute is None:
-            logging.warn("Event to be processed with no attribute or host.")
+            logger.warn("Event to be processed with no attribute or host.")
             return
         if self.event_type is None:
-            logging.warn("Event to be procesed with no event_type.")
+            logger.warn("Event to be procesed with no event_type.")
             return
 
         if self.attribute is not None:
             if self.alarm_state.is_alert():
                 self._process_event_alert()
             else:
-                down_alarm = model.Alarm.find_down(self.attribute,self.event_type)
+                down_alarm = Alarm.find_down(self.attribute,self.event_type)
                 if self.alarm_state.is_downtesting():
                     self._process_event_downtesting(down_alarm)
                 elif self.alarm_state.is_up():
-                    self._process_event_up(other_alarm)
+                    self._process_event_up(down_alarm)
         if self.alarm_state.is_up():
             self.acknowledged = True
         self.processed = True
@@ -143,9 +146,8 @@ class Event(DeclarativeBase):
         only around for some time.
         Alert level events must have an attribute to raise an alarm.
         """
-        logging.info("E %d := ALERT Attribute %s",
-                self.id, self.attribute.display_name)
-        new_alarm = model.Alarm(event=self)
+        logger.info("A:%d E:%d - ALERT Event", self.attribute.id, self.id)
+        new_alarm = Alarm(event=self)
         new_alarm.stop_time = datetime.datetime.now() + datetime.timedelta(minutes=(self.event_type.alarm_duration+30))
         new_alarm.stop_event = self
         DBSession.add(new_alarm)
@@ -154,22 +156,20 @@ class Event(DeclarativeBase):
         """
         Process down or testing events
         """
+        logger.info("A:%d E:%d - DOWN/TESTING", event.attribute.id, event.id)
         if other_alarm is not None:
-            other_alarm.set_stop(event, alarm_state=model.AlarmState.by_name('up'))
+            other_alarm.set_stop(event, alarm_state=AlarmState.by_name('up'))
             event.acknowledged=True
             other_alarm.start_event.acknowledged=True
 
-        logging.info("E %d:= DOWN/TESTING Interface %s",
-            event.id, event.attribute.display_name)
 
-        new_alarm = model.Alarm(event)
+        new_alarm = Alarm(event=self)
         DBSession.add(new_alarm)
 
     def _process_event_up(self, other_alarm):
         self.acknowledged=True
         if other_alarm is not None:
-            logging.info("E %d:= UP Interface %s",
-                self.id, self.attribute.display_name)
+            logger.info("A:%d E:%d - UP Event", self.attribute.id, self.id)
             other_alarm.set_stop(self)
             other_alarm.start_event.acknowledged=True
 

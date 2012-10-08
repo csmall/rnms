@@ -20,6 +20,7 @@
 """ RRD field for Attribute Types """
 import os
 import rrdtool
+import time
 
 from sqlalchemy import *
 from sqlalchemy.orm import mapper, relationship, subqueryload
@@ -27,7 +28,7 @@ from sqlalchemy import Table, ForeignKey, Column, and_
 from sqlalchemy.types import Integer, Unicode
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, metadata, DBSession
+from rnms.model import DeclarativeBase, metadata, DBSession, AttributeField, AttributeTypeField
 
 dst_names = { 0: 'GAUGE', 1: 'COUNTER', 2: 'ABSOLUTE' }
 
@@ -75,16 +76,37 @@ class AttributeTypeRRD(DeclarativeBase):
         #  xff 0.5 
         #  steps 1
         #  rows attribute_type.rra_rows
-        rrdtool.create(filename, str(time.time()),
-                [ "DS:data:{0}:{1}:{2}:{3}".format(self.dst2str, self.attribute_type.ds_heartbeat, self.range_min, self,range_max)],
-                    "RRA:{0}:0.5:1:{1}".format(self.attribute_type.rra_cf, self.attribute_type.rra_rows)
-                    )
+        ds_defn = "DS:data:{0}:{1}:{2}:{3}".format(self.dst2str(), self.attribute_type.ds_heartbeat, self.range_min, self.parse_range_max(attribute))
+        rra_defn = "RRA:{0}:0.5:1:{1}".format(self.attribute_type.rra_cf, self.attribute_type.rra_rows)
+        try:
+            rrdtool.create(filename, [ds_defn], rra_defn)
+        except rrdtool.error as errmsg:
+            print "rrdtool error {0} {1} {2}".format(errmsg,ds_defn,rra_defn)
+            return False
         try:
             rrdtool.info(filename)
         except rrdtool.error as errmsg:
             #FIXME - logging error
             return False
         return True
+
+    def parse_range_max(self, attribute):
+        """
+        range_max can either be the value stored in that field, or
+        derived from an attributes field
+        """
+        if self.range_max_field == '':
+            return self.range_max
+        attribute_field = DBSession.query(AttributeField).filter(and_(
+            AttributeField.attribute == attribute,
+            AttributeField.attribute_type_field_id == AttributeTypeField.id,
+            AttributeTypeField.tag == self.range_max_field)).first()
+        if attribute_field is None:
+            return 'U'
+        new_max = int(attribute_field.value)
+        if new_max == 0:
+            return 'U'
+        return new_max
 
 
 
@@ -95,13 +117,12 @@ class AttributeTypeRRD(DeclarativeBase):
         Format is <rrd_dir>/<attribute_id>-<rrd_position>.rrd
         If the file doesn't exist, it is created
         """
-        global conf
-        if conf is None:
-            return None
+        # FIXME = dodgy fixed rrd dir
+        rrd_dir = '/var/tmp'
         if self.attribute_type_id != attribute.attribute_type_id:
             return None
         filename=  "{0}{1}{2}-{3}{4}rrd".format(
-                conf.rrd_dir, os.sep, attribute.id, 
+                rrd_dir, os.sep, attribute.id, 
                 self.position, os.extsep)
         if os.path.isfile(filename):
             return filename
@@ -112,17 +133,16 @@ class AttributeTypeRRD(DeclarativeBase):
     def update(self, attribute, value):
         """
         Update the RRD file for the given attribute with the given value
-        Returns True on success
+        Returns a key:value on success or error message
         """
         filename = self.filename(attribute)
         if filename is None:
-            return False
+            return '(No filename)'
         try:
             rrdtool.update(filename, "N:{0}".format(value))
-        except rrdtool.error:
-            # FIXME logging
-            return False
-        return Truei
+        except rrdtool.error as errmsg:
+            return '(error {0})'.format(errmsg)
+        return value
 
     def adjust_limits(self, attribute, new_min, new_max):
         """ Adjust the RRD DS maximum and minimum """
@@ -137,6 +157,6 @@ class AttributeTypeRRD(DeclarativeBase):
         return True
 
     def dst2str(self):
-        """ Return string representation of DSN field"""
-        return dsn_names.get(self.data_source_type, None)
+        """ Return string representation of DST field"""
+        return dst_names.get(self.data_source_type, None)
 

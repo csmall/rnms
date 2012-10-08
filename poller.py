@@ -19,13 +19,18 @@
 #
 import os
 import sys
+import logging
 from argparse import ArgumentParser
+import datetime
+import transaction
+
 import sqlalchemy 
 from paste.deploy import appconfig
 from rnms.config.environment import load_environment
-from rnms import model
-from rnms.lib.importers import jffnms 
-import transaction
+from rnms.lib.poller import Poller
+from rnms.lib import logger as rnms_logger
+
+atids=[46,]
 
 def load_config(filename):
     conf = appconfig('config:' + os.path.abspath(filename))
@@ -34,16 +39,20 @@ def load_config(filename):
 def parse_args():
     parser = ArgumentParser(description=__doc__)
     parser.add_argument('--conf_file', help="configuration to use", default='development.ini')
-    parser.add_argument('--commit', help='Really insert the fields into database', action='store_true')
-    parser.add_argument('--jffnms_conf', help='JFFNMS Configuration directory', default='/home/wwwroot/jffnms/conf')
+    parser.add_argument('--atts', help='Attribute ids commar separated')
     return parser.parse_args()
 
 args = parse_args()
 load_config(args.conf_file)
 
-j = jffnms.JffnmsConfig(args.jffnms_conf)
-jffnms_db = sqlalchemy.create_engine(sqlalchemy.engine.url.URL(j.get('db_type'),username=j.get('dbuser'),password=j.get('dbpass'), host=j.get('dbhost'), database=j.get('db')))
-jdb_conn = jffnms_db.connect()
-importer = jffnms.JffnmsImporter(jdb_conn,verbose=True,delete=True,commit=(args.commit is not None))
-importer.do_import()
-jdb_conn.close()
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger("Poller")
+
+if args.atts is not None:
+    atids = args.atts.split(',')
+    main_poller = Poller(attributes=atids,logger=logger)
+    old_now = datetime.datetime.now()
+    while main_poller.poll():
+        pass
+    print "test done"
+    transaction.commit()

@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2011 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011,2012 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -195,7 +195,7 @@ class JffnmsImporter(object):
             return None
         try:
             (ver,comm) = old_comm.split(':')
-            return [ver, comm]
+            return [ver[1:], comm]
         except:
             return None
 
@@ -292,21 +292,28 @@ class JffnmsImporter(object):
         attribute_count=0
         field_count=0
         try:
-            result = self.dbhandle.execute('SELECT interfaces.*,interface_types.description as itype FROM interfaces,interface_types WHERE host > 1 AND interfaces.type=interface_types.id ORDER BY interfaces.id')
+            result = self.dbhandle.execute('SELECT interfaces.*,interface_types.description as itype, pollers_groups.description FROM interfaces,interface_types,pollers_groups WHERE host > 1 AND interfaces.type=interface_types.id AND interfaces.poll=pollers_groups.id ORDER BY interfaces.id')
             for row in result:
                 att = model.Attribute()
                 att.display_name=unicode(row[2])
                 att.host_id = self.hosts.get(row[3],1)
                 att.index = self.get_interface_index(row[0])
                 att.user_id = self.user_id(row[4])
-                att.attribute_type = DBSession.query(model.AttributeType).filter(model.AttributeType.display_name==unicode(row[15])).first()
                 att.sla_id = self.sla_id(row[5])
                 #FIXME sla poll group
                 att.make_sound = row[7]
-                att.show_rootmap = row[8]
+                # show_rootmap is visible and admin_state
+                if row[8] == 0:
+                    att.visible = False
+                elif row[8] == 1:
+                    att.admin_state = 1
+                elif row[8] == 2:
+                    att.admin_state = 2
                 att.created = date.fromtimestamp(row[10])
                 att.updated = date.fromtimestamp(row[11])
                 att.polled = date.fromtimestamp(row[12])
+                att.attribute_type = DBSession.query(model.AttributeType).filter(model.AttributeType.display_name==unicode(row[15])).first()
+                att.poller_set = DBSession.query(model.PollerSet).filter(model.PollerSet.display_name==unicode(row[16])).first()
                 model.DBSession.add(att)
                 if att.attribute_type is not None:
                     field_count += self._import_attribute_fields(att,row[0])
