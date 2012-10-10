@@ -120,14 +120,17 @@ class SNMPEngine():
         """
         retval = False
         self.check_timeouts()
+        if self.scheduler.have_waiting_jobs():
+            retval = True
         if self.scheduler.have_active_jobs():
             try:
                 poll(0, self.dispatcher.getSocketMap())
             except socket.error:
-                pass
-            retval = True
+                logger.warning("socket error")
+            else:
+                retval = True
         self.send_requests()
-        return retval or self.scheduler.have_waiting_jobs()
+        return retval
 
     def _get_request(self, reqid):
         return self.active_requests.get(reqid, None)
@@ -304,14 +307,15 @@ class SNMPEngine():
     def get(self, host, oid, cb_function, default=None, filt=None, **kwargs):
         if host.community_ro is None:
             cb_function(default, host, kwargs)
-            return
+            return False
         msg, pmod = self._build_get_message(host.community_ro, oid)
         if msg is None:
             cb_function(default, host, kwargs)
-            return
+            return False
         self.scheduler.job_add(
                 pmod.apiPDU.getRequestID(pmod.apiMessage.getPDU(msg)),
                 host, cb_function, REQUEST_GET, default, filt, kwargs, msg)
+        return True
 
     def get_table(self, host, oid, cb_function, default=None, filt=None, table_trim=None, **kwargs):
         """ Get a SNMP table from the given host and pass it to the
@@ -320,15 +324,16 @@ class SNMPEngine():
         """
         if host.community_ro is None:
             cb_function(default, host, kwargs)
-            return
+            return False
         msg, pmod = self._build_getnext_message(host.community_ro, oid)
         if msg is None:
             cb_function(default, host, kwargs)
-            return
+            return False
         table_oid = pmod.ObjectIdentifier(oid) 
         self.scheduler.job_add(
                 pmod.apiPDU.getRequestID(pmod.apiMessage.getPDU(msg)),
                 host, cb_function, REQUEST_GETNEXT, default, filt, kwargs, msg, table_oid=table_oid, table_trim=table_trim)
+        return True
                 
 
     # Filters

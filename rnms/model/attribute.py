@@ -38,6 +38,7 @@ MINDATE=datetime.date(1900,1,1)
 
 class Attribute(DeclarativeBase):
     __tablename__ = 'attributes'
+    default_poll_interval = 5
     
     #{ Columns
     id = Column(Integer, autoincrement=True,primary_key=True)
@@ -56,7 +57,7 @@ class Attribute(DeclarativeBase):
     sla = relationship('Sla', primaryjoin='Attribute.sla_id==Sla.id', post_update=True)
     index = Column(String(40), nullable=False) # Unique for host
     make_sound = Column(Boolean,nullable=False)
-    poll_interval = Column(SmallInteger,nullable=False)
+    poll_interval = Column(SmallInteger,nullable=False, default=0)
     check_status = Column(Boolean,nullable=False)
     poll_priority = Column(Boolean,nullable=False) #DMII
     poller_set_id = Column(Integer, ForeignKey('poller_sets.id'), nullable=False, default=1)
@@ -181,6 +182,7 @@ class Attribute(DeclarativeBase):
                 self.admin_state = state
                 return True
         return False
+
     def is_down(self):
         """
         Return true if this attribute is down. A down interface is one that
@@ -190,22 +192,18 @@ class Attribute(DeclarativeBase):
                 return True
         return False
 
-    def rrd_value_set(self, rrd_name, value):
+    def update_poll_date(self, now=None):
         """
-        Set the last value for this particular RRD file
+        Update the poll date and next poll date to the given datetime
+        or if None to now
         """
-
-    def rrd_value_get(self, start_time, end_time, rrd_name):
-        """
-        Return rrd value for the given time
-        """
-        # FIXME
-        at_rrd = AttributeTypeRRD.by_name(self.attribute_type,rrd_name)
-        if at_rrd is None:
-            return None
-        print "interface-{0}-{1}\n".format(self.id,at_rrd.position)
-        print "fetch rrd name {0}\n".format(rrd_name)
-        return 42
+        if now == None:
+            now = datetime.datetime.now()
+        self.polled = now
+        if self.poll_interval < 1:
+            self.next_poll = now + datetime.timedelta(minutes=self.default_poll_interval)
+        else:
+            self.next_poll = now + datetime.timedelta(minutes=self.poll_interval)
 
 class AttributeField(DeclarativeBase):
     __tablename__ = 'attribute_fields'

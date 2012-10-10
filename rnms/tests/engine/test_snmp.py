@@ -21,7 +21,7 @@ class DummyHost(object):
         self.community_ro[0] = snmpver
         self.community_ro[1] = snmpcomm
 
-def my_callback1(value, host, kwargs, error=None):
+def my_callback1(value, error, **kwargs):
     if 'obj' not in kwargs:
         assert False
         return
@@ -30,7 +30,6 @@ def my_callback1(value, host, kwargs, error=None):
 class TestSNMP(object):
     """ Base unit for SNMP testing """
     sysobjid_oid = (1,3,6,1,2,1,1,2,0)
-    results = []
     expected_sysobjid = "1.3.6.1.4.1.8072.3.2.10"
 
     def setUp(self):
@@ -56,9 +55,8 @@ class TestSNMP(object):
     def test_v1get(self):
         """ Simple SNMP v1 fetch of SysObjectID """
         host = DummyHost("127.0.0.1", 1, "public")
-        self.snmp_engine.get_str(host, self.sysobjid_oid, my_callback1, obj=self )
+        assert(self.snmp_engine.get_str(host, self.sysobjid_oid, my_callback1, obj=self ))
         self.poll()
-        print(self.results)
         eq_(self.results, [self.expected_sysobjid,])
 
     def test_v2get(self):
@@ -66,7 +64,6 @@ class TestSNMP(object):
         host = DummyHost("127.0.0.1", 2, "public")
         self.snmp_engine.get_str(host, self.sysobjid_oid, my_callback1, obj=self )
         self.poll()
-        print(self.results)
         eq_(self.results, [self.expected_sysobjid,])
 
     def test_v1_default_bad_comm(self):
@@ -131,8 +128,6 @@ class TestSNMP(object):
         self.snmp_engine.get_table(host, '1.3.6.1.2.1.2.2.1.1', my_callback1, table_trim=1, obj=self )
         self.poll()
         eq_(len(self.results),2)
-        print "TL {0} LEN {1}".format(table_length, len(self.results[1]))
-        print self.results
         eq_(len(self.results[1]),table_length)
         for oid,val in self.results[1].items():
             assert(oid == val)

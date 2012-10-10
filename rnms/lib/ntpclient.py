@@ -21,25 +21,71 @@ import asyncore
 import socket
 import struct
 import datetime
+import logging
+
+logger = logging.getLogger('NTPClient')
 
 """ NTP Client """
 
 class NTPClientError(Exception):
     pass
 
-class NTPClient(asyncore.dispatcher):
+class NTPClient():
     """
-    Base Class to make NTP control queries
+    NTP Client is the Base Class to make NTP control queries.
+    Uses two dispatchers, one for each address family
+    """
+    address_families = [ socket.AF_INET, socket.AF_INET6 ]
+
+    def __init__(self):
+        self.dispatchers = { af : NTPDispatcher(af) for af in self.address_families}
+
+    def get_peers(self, host, cb_fun, **kwargs):
+        """
+        Returns a list of peers to the callback function
+        Returns true on success
+        """
+        query_packet = NTPControl()
+        return self._send_message(host, query_packet, cb_fun, **kwargs)
+
+    def get_peer_by_id(self, host, assoc_id, cb_fun, **kwargs):
+        """
+        Return the information known by the host for the specified peer
+        """
+        query_packet = NTPControl(opcode=2, assoc_id=assoc_id)
+        return self._send_message(host, query_packet, cb_fun, **kwargs)
+
+    def _send_message(self, host, request_packet, cb_fun, **kwargs):
+        try:
+            addrinfo = socket.getaddrinfo(host.mgmt_address, 123)[0]
+        except socket.gaierror:
+            return False
+        addr_family, sockaddr = addrinfo[0], addrinfo[4]
+        try:
+            return self.dispatchers[addr_family].send_message(host,request_packet,cb_fun, **kwargs)
+        except KeyError:
+            logger.error('Cannot find dispatcher for address family {0}',addr_family)
+            return False
+
+    def poll(self):
+        retval = False
+        for dispatcher in self.dispatchers.values():
+            if dispatcher.poll() == True:
+                retval = True
+        return retval
+
+class NTPDispatcher(asyncore.dispatcher):
+    """
+    Dispatcher for each address family for NTP queries
     """
     timeout = 10
-    waiting_jobs = []
-    sent_jobs = {}
-    next_sequence = 0
 
-    def __init__(self, socktype, timeout=10):
+    def __init__(self, address_family):
         asyncore.dispatcher.__init__(self)
-        self.create_socket(socket.AF_INET, socktype)
-        self.timeout = timeout
+        self.create_socket(address_family, socket.SOCK_DGRAM)
+        self.waiting_jobs = []
+        self.sent_jobs = {}
+        self.next_sequence = 0
 
     def handle_connect(self):
         pass
@@ -49,10 +95,11 @@ class NTPClient(asyncore.dispatcher):
 
     def handle_read(self):
         recv_msg, recv_addr =  self.recvfrom(8192)
+        logger.debug("Received message from %s", recv_addr)
         try:
             recv_job = self.sent_jobs[recv_addr]
         except KeyError:
-            print "no job for {0}".format(recv_addr)
+            logger.warning("No job for %s", recv_addr)
         else:
             self._parse_response(recv_job, recv_msg, recv_addr)
 
@@ -69,6 +116,7 @@ class NTPClient(asyncore.dispatcher):
         try:
             self.sendto(new_job['request_packet'].to_data(), new_job['sockaddr'])
         except socket.error as errmsg:
+            logger.error("Socket error for sendto %s", new_job['sockaddr'])
             raise NTPClientError(errmsg)
 
     def _get_next_sequence(self):
@@ -87,10 +135,11 @@ class NTPClient(asyncore.dispatcher):
             recv_job['cb_fun'](recv_job['host'], response_packet, recv_job['kwargs'])
             del(self.sent_jobs[recv_addr])
 
-    def _send_message(self, host, request_packet, cb_fun, **kwargs):
+    def send_message(self, host, request_packet, cb_fun, **kwargs):
         try:
             addrinfo = socket.getaddrinfo(host.mgmt_address, 123)[0]
         except socket.gaierror:
+            logging.warning("getaddrinfo error")
             return False
         sockaddr = addrinfo[4]
         request_packet.sequence = self._get_next_sequence()
@@ -110,32 +159,18 @@ class NTPClient(asyncore.dispatcher):
         Returns true if there are things going on
         This method also checks timed out jobs
         """
-        if self.waiting_jobs == []:
-            return False
         retval = False
+        if self.waiting_jobs != []:
+            retval = True
         now = datetime.datetime.now()
         for job in self.sent_jobs.values():
             if job['timeout'] < now:
                 # Job timed out
+                logger.debug('Job for %s timed out', job['sockaddr'])
                 self._parse_response(job, None, job['sockaddr'])
             else:
                 retval = True
         return retval
-
-    def get_peers(self, host, cb_fun, **kwargs):
-        """
-        Returns a list of peers to the callback function
-        Returns true on success
-        """
-        query_packet = NTPControl()
-        return self._send_message(host, query_packet, cb_fun, **kwargs)
-
-    def get_peer_by_id(self, host, assoc_id, cb_fun, **kwargs):
-        """
-        Return the information known by the host for the specified peer
-        """
-        query_packet = NTPControl(opcode=2, assoc_id=assoc_id)
-        return self._send_message(host, query_packet, cb_fun, **kwargs)
 
 
 class NTPAssoc():

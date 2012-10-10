@@ -30,8 +30,6 @@ from rnms.config.environment import load_environment
 from rnms.lib.poller import Poller
 from rnms.lib import logger as rnms_logger
 
-atids=[46,]
-
 def load_config(filename):
     conf = appconfig('config:' + os.path.abspath(filename))
     load_environment(conf.global_conf, conf.local_conf)
@@ -48,11 +46,9 @@ load_config(args.conf_file)
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("Poller")
 
+attribute_ids=None
 if args.atts is not None:
-    atids = args.atts.split(',')
-    main_poller = Poller(attributes=atids,logger=logger)
-    old_now = datetime.datetime.now()
-    while main_poller.poll():
-        pass
-    print "test done"
-    transaction.commit()
+    attribute_ids = args.atts.split(',')
+main_poller = Poller(attributes=attribute_ids,logger=logger)
+main_poller.main_loop()
+transaction.commit()

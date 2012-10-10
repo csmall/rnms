@@ -19,15 +19,19 @@
 #
 import logging
 import datetime
+import time
 from timeit import Timer
 import select
 import socket
 import asyncore
 import transaction
 
+from sqlalchemy import *
+
 from rnms import model
 from rnms.lib.snmp import SNMPEngine
 from rnms.lib import ntpclient
+from rnms.lib.tcpclient import TCPClient
 
 class Poller():
     """
@@ -37,7 +41,7 @@ class Poller():
     while the second is dependent on the poller set
     """
     find_attribute_interval = 60 # Scan to find new items every 60secs
-    next_find_attribute = 0
+    next_find_attribute = datetime.datetime.min
     forced_attributes=False
 
     def __init__(self, attributes=None, logger=None):
@@ -47,7 +51,8 @@ class Poller():
         else:
             self.logger = logging.getLogger("Poller")
         self.snmp_engine = SNMPEngine(logger=self.logger)
-        self.ntp_client = ntpclient.NTPClient(socket.SOCK_DGRAM)
+        self.ntp_client = ntpclient.NTPClient()
+        self.tcp_client = TCPClient()
         self.waiting_attributes = [] # Waiting to start
         self.polling_attributes = {} # The attributes we are currently polling
         self.poller_buffer = {}
@@ -57,27 +62,42 @@ class Poller():
             self._add_forced_attributes(attributes)
             self.forced_attributes=True
 
-    def poll(self):
+    def main_loop(self):
         """
-        The poll method for the Poller object.
-        It is run at very regular intervals and runs through all the tasks
-        that the poller needs to do
+        The main loop for the poller to do everything it needs to do.
+        This will only exit if we have forced attributes and they are all
+        polled.
         """
         #print select.select([], self.snmp_engine.dispatcher.getSocketMap().keys(), [], self.find_attribute_interval)
-        now = datetime.datetime.now()
-        retval = False
-        if self.forced_attributes == False and self.next_find_attribute < now:
-            self.find_new_attributes()
-            self.next_find_attribute = now + self.find_attribute_interval
-        if self.polling_attributes:
-            retval = True
-            self.check_polling_attributes()
-        if self.snmp_engine.poll():
-            retval = True
-        if self.ntp_client.poll():
-            asyncore.poll(0.2) # FIXME - combine with snmp engine one
-            retval = True
-        return retval
+        while True:
+            now = datetime.datetime.now()
+            polls_running = False
+            if self.forced_attributes == False and self.next_find_attribute < now:
+                self.find_new_attributes()
+                self.next_find_attribute = now + datetime.timedelta(seconds=self.find_attribute_interval)
+            if self.polling_attributes:
+                self.check_polling_attributes()
+                polls_running = True
+            if self.snmp_engine.poll():
+                polls_running = True
+
+            need_asynpoll = False
+            if self.ntp_client.poll():
+                need_asynpoll = True
+            if self.tcp_client.poll():
+                need_asynpoll = True
+            if need_asynpoll:
+                asyncore.poll(0.2) # FIXME - combine with snmp engine one
+                polls_running = True
+            if polls_running == False:
+                # If there are no pollers, we can sleep until we need to
+                # look for more attributes to poll
+                if self.forced_attributes == True:
+                    return
+                sleep_time = (self.next_find_attribute - datetime.datetime.now()).total_seconds()
+                self.logger.debug("Sleeping for {0} seconds".format(sleep_time))
+                time.sleep(sleep_time)
+
 
     def poller_callback(self, attribute, poller_value):
         """
@@ -105,6 +125,7 @@ class Poller():
             if field_count == 1:
                 poll_buffer[poller_row.poller.field] = poller_value
             else:
+                print poller_value
                 for ford, fkey in enumerate(poller_row.poller.field.split(',')):
                     try:
                         poll_buffer[fkey] = poller_value[ford]
@@ -169,6 +190,7 @@ class Poller():
             self.logger.debug('A:%d - Polling complete - no rrds', patt['attribute'].id)
         del (self.poller_buffer[patt['attribute'].id])
         del (self.polling_attributes[patt['attribute'].id])
+        patt['attribute'].update_poll_date()
         model.DBSession.flush()
 
     def _add_forced_attributes(self, att_ids):
@@ -191,8 +213,7 @@ class Poller():
         now = datetime.datetime.now()
         attributes = model.DBSession.query(model.Attribute).filter(and_(
                 (model.Attribute.next_poll < now),
-                (model.Attribute.poll_priority==True),
-                (model.Attribute.poller_set_id > 1))).order(model.Attribute.polled)
+                (model.Attribute.poller_set_id > 1))).order_by(model.Attribute.polled)
         for attribute in attributes:
             # Skip if already polling
             if attribute.id in self.polling_attributes:

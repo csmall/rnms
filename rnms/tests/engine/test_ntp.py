@@ -36,7 +36,7 @@ class TestNTP(object):
     """ Base unti for NTP client testing """
 
     def setUp(self):
-        self.ntp_client = NTPClient(socket.SOCK_DGRAM, timeout=2)
+        self.ntp_client = NTPClient()
         self.results = {}
 
     def poll(self):
@@ -54,6 +54,14 @@ class TestNTP(object):
     def test_success(self):
         """ Querying list and specific assoc gives assoc details """
         host = DummyHost('127.0.0.1')
+        self.ntp_client.get_peers(host, my_cb_peers, obj=self)
+        self.poll()
+        assert('srcadr' in self.results)
+        assert('filtdelay' in self.results) # in second packet
+
+    def test_ipv6(self):
+        """ Query using ipv6 """
+        host = DummyHost('::1')
         self.ntp_client.get_peers(host, my_cb_peers, obj=self)
         self.poll()
         assert('srcadr' in self.results)
