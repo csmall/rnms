@@ -99,7 +99,7 @@ class Event(DeclarativeBase):
             subs['state'] = self.alarm_state.display_name
         if self.attribute is not None:
             subs['attribute'] = self.attribute.display_name
-            subs['attribute-description'] = self.attribute.description
+            subs['attribute-description'] = self.attribute.description()
             subs['client'] = self.attribute.user.display_name
             subs['host'] = self.attribute.host.display_name
         elif self.host:

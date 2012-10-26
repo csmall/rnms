@@ -20,96 +20,75 @@
 #
 """Sample controller module"""
 import datetime
+import math
 from sqlalchemy import select,func,or_
+from sqlalchemy.orm import subqueryload, subqueryload_all, contains_eager
 from formencode import validators
 
 # turbogears imports
-from tg import expose, tmpl_context
+from tg import expose, tmpl_context, request
 import tg
 from tg import redirect, validate, flash
 
 # third party imports
 #from tg.i18n import ugettext as _
 #from repoze.what import predicates
+from tw2.jqplugins import portlets
 import tw2.core as twc
+import tw2.forms as twf
 #import tw2.jqplugins.jqgrid
 
 
 # project specific imports
 from rnms.lib.base import BaseController
-from rnms.model import DBSession, metadata, Event, EventSeverity,EventType
-from rnms.widgets import EventsGrid
-
-class EventsWidget(twc.Widget):
-    template = 'rnms.templates.eventswidget'
-
-def recursive_update(d1, d2):
-      """ Little helper function that does what d1.update(d2) does,
-      but works nice and recursively with dicts of dicts of dicts.
-   
-      It's not necessarily very efficient.
-      """
-   
-      for k in d1.keys():
-          if k not in d2:
-              continue
-   
-          if isinstance(d1[k], dict) and isinstance(d2[k], dict):
-              d1[k] = recursive_update(d1[k], d2[k])
-          else:
-              d1[k] = d2[k]
-   
-      for k in d2.keys():
-          if k not in d1:
-              d1[k] = d2[k]
-   
-      return d1
-
-#class GridWidget(tw2.jqplugins.jqgrid.jqGridWidget):
-#    id = 'grid_widget'
-#    entity = Event
-#    excluded_columns = ['id']
-#    prmFilter = {'stringResult': True, 'searchOnEnter': False}
-#    pager_options = { "search" : True, "refresh" : True, "add" : False, }
-#
-#    options = {
-#            'pager': 'event-grid_pager',
-#    #        'url': '/tw2_controllers/db_jqgrid/',
-#            'colNames':[ 'Date', 'Type', 'Host', 'Description'],
-#            'colModel' : [
-#                {
-#                    'name': 'created',
-#                    'width': 75,
-#                    'align': 'right',
-#                },{
-#                    'name': 'event_type',
-#                    'width': 75,
-#                    'align': 'right',
-#                },{
-#                    'name': 'host_display_name',
-#                    'width': 75,
-#                    'align': 'right',
-#                },{
-#                    'name': 'event_description',
-#                    'width': 75,
-#                    'align': 'left',
-#                },
-#            ],
-#            'url' : '/events/griddata',
-#            'rowNum':15,
-#            'rowList':[15,30,50],
-#            'viewrecords':True,
-#            'imgpath': 'scripts/jqGrid/themes/green/images',
-#            'width': 900,
-#            'height': 'auto',
-#            }
-#
-
+from rnms.model import DBSession, metadata, Event, EventSeverity,EventType, Host
+from rnms.widgets.event import EventsWidget, EventsWidget2
 
 class EventsController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = authorize.not_anonymous()
     
+    @expose('rnms.templates.host')
+    def index(self, *args): 
+        class LayoutWidget(portlets.ColumnLayout):
+            id = 'event-layout'
+            class por1(portlets.Portlet):
+                title = 'Events'
+                widget = EventsWidget
+        return dict(layoutwidget=LayoutWidget)
+
+    @expose('rnms.templates.host')
+    def test(self, *args, **kwargs): 
+        class LayoutWidget(portlets.ColumnLayout):
+            id = 'event-layout'
+            class por1(portlets.Portlet):
+                title = 'Events'
+                widget = EventsWidget2
+        return dict(layoutwidget=LayoutWidget)
+
+    @expose('json')
+    def jqgridsqla(self, *args, **kwargs):
+        return EventsWidget.request(request).body
+
+    @expose('json')
+    def jqgrid(self, page=1, rows=30, sidx=1, soid='asc', _search='false',
+            searchOper=u'', searchField=u'', searchString=u'', **kw):
+
+        qry = DBSession.query(Event)
+        qry = qry.filter()
+        qry = qry.order_by()
+        result_count = qry.count()
+        rows = int(rows)
+
+        offset = (int(page)-1) * rows
+        qry = qry.offset(offset).limit(rows)
+        qry.options(subqueryload(Event.event_type), contains_eager(Event.fields), subqueryload_all('attribute.fields.attribute_type_field'), subqueryload(Event.host))
+
+        records = [{'id': rw,
+            'cell': [ rw.created.strftime('%d %b %H:%M:%S'), '<div class="severity{0}">{1}</div>'.format(rw.event_type.severity_id, rw.event_type.display_name), rw.host.display_name, rw.text()]} for rw in qry]
+        total = int(math.ceil(result_count / float(rows)))
+        return dict(page=int(page), total=total, records=result_count, rows=records)
+
     @expose('rnms.templates.severitycss', content_type='text/css')
     def severitycss(self):
         severities = DBSession.query(EventSeverity)
@@ -145,37 +124,6 @@ class EventsController(BaseController):
         myw.events = myw.currentPage.items
         myw.tgurl = tg.url
         return dict(widget=myw, page='attribute')
-
-    @expose('rnms.templates.events')
-    def index(self, **named):
-        from webhelpers import paginate
-        conditions = []
-        copy_args=[]
-        if 'type' in named:
-            conditions.append(Event.event_type_id==named['type'])
-            copy_args.append('type')
-        if 'host_id' in named:
-            conditions.append(Event.host_id==named['host_id'])
-            copy_args.append('host_id')
-
-        condition = or_(*conditions)
-        events = DBSession.query(Event).filter(condition).order_by(Event.id.desc())
-        count = events.count()
-        page = int(named.get('page', '1'))
-        span = int(named.get('span', '20'))
-        currentPage = paginate.Page(
-                events, page, item_count=count,
-                items_per_page=span,
-                )
-        for arg in copy_args:
-            currentPage.kwargs[arg] = str(named[arg])
-        
-        events = currentPage.items
-        return dict(
-               page='events',
-               events=events,
-               currentPage=currentPage,
-               )
 
     @expose('json')
     @validate(validators={'page':validators.Int()})

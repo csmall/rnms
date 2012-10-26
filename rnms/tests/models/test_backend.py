@@ -19,48 +19,42 @@
 #
 """ Test suite for the backend model in Rosenberg"""
 from nose.tools import eq_
+import mock
 
 from rnms import model
 from rnms.tests.models import ModelTest
+
+test_poller_row = mock.Mock(spec_set=model.PollerRow)
 
 class TestBackend(ModelTest):
     klass = model.Backend
     attrs = dict(
             display_name = (u'Test Backend'),
-            plugin_name = 'test',
             command = 'test',
             #position = 1,
             )
 
+    def setUp(self):
+        super(TestBackend, self).setUp()
+
     def test_run_none(self):
         """Backend none reutrns blank """
         self.obj.command = 'none'
-        eq_('',self.obj.run(None, ''))
+        eq_('',self.obj.run(test_poller_row, None, ''))
 
     def test_run_invalid(self):
         """ Invalid backend type returns error"""
         self.obj.command = 'f00b@r'
-        eq_('invalid backend', self.obj.run(None, ''))
+        eq_('invalid backend {0}'.format(self.obj.command), self.obj.run(test_poller_row, None, ''))
 
     def test_run_admin_direct(self):
         """ admin_status backend sets status correctly """
         self.obj.command = 'admin_status'
         self.obj.parameters = None
         att = model.Attribute(display_name=u'Test Attribute')
-        for newstate in [0,1,2,3]:
-            eq_('Admin status set to {0}'.format(newstate), self.obj.run(att, newstate))
-            eq_(att.admin_state, newstate)
+        for newstate in ['up','down', 'testing']:
+            eq_('Admin status set to {0}'.format(newstate), self.obj.run(test_poller_row, att, newstate))
 
-    def test_run_admin_outrange(self):
-        """ admin_status backend out of range poller result doesnt set status """
-        self.obj.command = 'admin_status'
-        self.obj.parameters = None
-        att = model.Attribute(display_name=u'Test Attribute')
-        att.admin_state = 0
-        eq_("New State -1 must be 0 to 3",self.obj.run(att, -1))
-        eq_(att.admin_state, 0)
-        eq_("New State 4 must be 0 to 3",self.obj.run(att, 4))
-        eq_(att.admin_state, 0)
 
     def test_admin_badvalue(self):
         """ admin_status backend detects bad values """
@@ -68,7 +62,7 @@ class TestBackend(ModelTest):
         self.obj.parameters = None
         att = model.Attribute(display_name=u'Test Attribute')
         att.admin_state = 0
-        eq_("New State foo must be an integer",self.obj.run(att, 'foo'))
+        eq_("Bad Admin status \"foo\"",self.obj.run(test_poller_row, att, 'foo'))
         eq_(att.admin_state, 0)
 
     def test_admin_nochange(self):
@@ -76,5 +70,5 @@ class TestBackend(ModelTest):
         self.obj.command = 'admin_status'
         self.obj.parameters = None
         att = model.Attribute(display_name=u'Test Attribute')
-        att.admin_state = 0
-        eq_("Admin status not changed",self.obj.run(att, 0))
+        att.admin_state = 1
+        eq_("Admin status not changed",self.obj.run(test_poller_row, att, 'up'))

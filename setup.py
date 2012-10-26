@@ -28,6 +28,7 @@ testpkgs=['WebTest >= 1.2.3',
                'nose',
                'coverage',
                'wsgiref',
+               'mock',
                ]
 install_requires=[
     "TurboGears2 >= 2.2.0rc2",

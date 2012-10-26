@@ -45,9 +45,9 @@ class Poller(DeclarativeBase):
     field = Column(String(20))
     parameters = Column(String(250), nullable=False, default='')
 
-    def __init__(self,display_name=None, plugin_name='none', tag='', parameters=''):
+    def __init__(self,display_name=None, command='none', tag='', parameters=''):
         self.display_name = display_name
-        self.plugin_name = plugin_name
+        self.command = command
         self.tag = tag
         self.parameters = parameters
 

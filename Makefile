@@ -4,7 +4,7 @@ all:
 	@echo
 
 egg:
-	easy_install setup.py bdist_egg
+	python setup.py bdist_egg
 
 check:
 	nosetests

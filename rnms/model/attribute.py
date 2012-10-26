@@ -43,7 +43,6 @@ class Attribute(DeclarativeBase):
     #{ Columns
     id = Column(Integer, autoincrement=True,primary_key=True)
     display_name = Column(Unicode(40))
-    description = Column(Unicode(200))
     oper_state = Column(SmallInteger, nullable=False) #IF-MIB
     admin_state = Column(SmallInteger, nullable=False) #IF-MIB
     attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'))
@@ -155,6 +154,11 @@ class Attribute(DeclarativeBase):
                 return field.value
         return at_field.default_value
 
+    def description(self):
+        """ Returns a string of all joined description fields """
+        descriptions = [ self.field(id=at_field.id) for at_field in self.attribute_type.fields if at_field.description]
+        return " ".join(descriptions)
+        
     def oper_state_name(self):
         """ Return string representation of operational state"""
         if self.oper_state in snmp_state_names:

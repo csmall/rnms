@@ -175,7 +175,7 @@ class Backend(DeclarativeBase):
                 return "Admin status not changed"
             else:
                 return "Admin status set to {0}".format(poller_result)
-        return "Bad  Admin status \"{0}\"".format(poller_result)
+        return "Bad Admin status \"{0}\"".format(poller_result)
 
     def _run_oper_status(self, poller_row, attribute, poller_result):
         """

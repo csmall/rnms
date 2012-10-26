@@ -19,6 +19,7 @@
 #
 """ Test suite for the Event model in Rosenberg"""
 from nose.tools import eq_
+import mock
 
 from rnms import model
 from rnms.tests.models import ModelTest
@@ -32,6 +33,9 @@ class TestEvent(ModelTest):
             event_type = test_event_type,
             )
 
+    def setUp(self):
+        super(TestEvent, self).setUp()
+
     def do_get_dependencies(self):
         test_user = model.User()
         test_user.display_name = u'Test User'
@@ -40,6 +44,7 @@ class TestEvent(ModelTest):
         test_host = model.Host(display_name=u'Test Host')
         
         test_attribute = model.Attribute(display_name='Test Attribute')
+        test_attribute.attribute_type = model.AttributeType(display_name='Test Type')
 
         test_attribute.user = test_user
         test_attribute.host = test_host

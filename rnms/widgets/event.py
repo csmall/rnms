@@ -23,7 +23,10 @@ import tg
 import tw2.core as twc
 from rnms.model import DBSession, Event
 from sqlalchemy import select,func,or_
-from tw2.jqplugins.jqgrid import jqGridWidget
+from tw2.jqplugins.jqgrid import jqGridWidget, SQLAjqGridWidget
+from tw2.jqplugins.jqgrid.base import word_wrap_css
+
+from rnms import model
 
 class EventsGrid(jqGridWidget):
     id = 'events-grid-id'
@@ -57,7 +60,7 @@ class EventsGrid(jqGridWidget):
             'height': 'auto',
             }
 
-class EventsWidget(twc.Widget):
+class EventsWidget3(twc.Widget):
     id = 'events-widget'
     template = 'rnms.templates.eventswidget'
 
@@ -74,8 +77,11 @@ class EventsWidget(twc.Widget):
                 raise ValueError, "Host ID must be an integer"
             conditions.append(Event.host_id==host_id)
             copy_args['h']=1
+        else:
+            conditions.append(Event.host_id > 0)
         condition = or_(*conditions)
         events = DBSession.query(Event).filter(condition).order_by(Event.id.desc())
+        #events = DBSession.query(Event).order_by(Event.id.desc())
         count = events.count()
         page = int(getattr(self, 'page', '1'))
         span = int(getattr(self, 'span', '20'))
@@ -89,3 +95,51 @@ class EventsWidget(twc.Widget):
         self.events = self.currentPage.items
         self.tgurl = tg.url
         super(EventsWidget, self).prepare
+
+class EventsWidget(SQLAjqGridWidget):
+    def prepare(self):
+        self.resources.append(word_wrap_css)
+        super(EventsWidget, self).prepare()
+    entity = model.Event
+    options = {
+            'url': '/events/jqgridsqla',
+            'rowNum': 15,
+            'viewrecords': True,
+            'imgpath': 'scripts/jqGrid/themes/green/images',
+            'height': 'auto',
+            'pager': 'event-list-pager'
+            }
+
+class EventsWidget2(jqGridWidget):
+    def prepare(self):
+        self.resources.append(word_wrap_css)
+        super(EventsWidget2, self).prepare()
+    options = {
+            'pager': 'event-list-pager2',
+            'url': '/events/jqgrid',
+            'datatype': 'json',
+            'colNames': ['Date', 'Type', 'Host & Zone', 'Description'],
+            'colModel': [
+                {
+                    'name': 'Date',
+                    'width': 100,
+                    'align': 'right',
+                }, {
+                    'name': 'Type',
+                    'width': '50',
+                },{
+                    'name': 'Host & Zone',
+                    'width': 100,
+                },{
+                    'name': 'Description',
+                    'width': 600,
+                    },
+                ],
+            'rowNum': 15,
+            'rowList': [15, 30, 50],
+            'viewrecords': True,
+            'imgpath': 'scripts/jqGrid/themes/green/images',
+            'height': 'auto',
+            }
+    pager_options = { 'search': True, 'refresh': True, 'add': False, }
+    prmFilter = {'stringResult': True, 'searchOnEnter': False }

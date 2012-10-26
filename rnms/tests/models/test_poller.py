@@ -19,6 +19,7 @@
 #
 """ Test suite for the Poller and PollerSet model in Rosenberg"""
 from nose.tools import eq_
+import mock
 
 from rnms import model
 from rnms.tests.models import ModelTest
@@ -28,8 +29,10 @@ class TestPoller(ModelTest):
     attribute = model.Attribute(display_name=u'Test Attribute')
     attrs = dict(
             display_name = (u'Test Poller'),
-            plugin_name = ('test_poller')
+            command = ('test_poller')
             )
+    poller_row = mock.Mock()
+    pobj = mock.Mock()
 
     def test_poller_init_name(self):
         """Poller init sets display name correctly"""
@@ -37,12 +40,12 @@ class TestPoller(ModelTest):
 
     def test_poller_init_plugin(self):
         """Poller init sets plugin name correctly"""
-        eq_(self.obj.plugin_name,'test_poller') 
+        eq_(self.obj.command,'test_poller') 
 
     def test_poller_run(self):
         """ Poller run command works"""
         poller_buffer={}
-        poller_output = self.obj.run(self.attribute, poller_buffer)
+        poller_output = self.obj.run(self.poller_row, self.pobj, self.attribute, poller_buffer)
         eq_(poller_output, None) #FIXME
 
 
@@ -50,7 +53,7 @@ class TestBackend(ModelTest):
     klass = model.Backend
     attrs = dict(
             display_name = (u'Test Backend'),
-            plugin_name = ('test_backend')
+            command = ('test_backend')
             )
 
     def test_backend_init_name(self):
@@ -59,7 +62,7 @@ class TestBackend(ModelTest):
 
     def test_backend_init_plugin(self):
         """Backend init sets plugin name correctly"""
-        eq_(self.obj.plugin_name,'test_backend') 
+        eq_(self.obj.command,'test_backend') 
 
 class TestPollerSet(ModelTest):
     klass = model.PollerSet
