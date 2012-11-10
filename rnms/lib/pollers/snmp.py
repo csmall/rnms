@@ -41,10 +41,32 @@ def poll_snmp_counter(poller_buffer, **kwargs):
     kwargs['pobj'].snmp_engine.get_int(kwargs['attribute'].host, oid, cb_snmp_counter, kwargs=kwargs)
     return True
 
-def cb_snmp_counter(value, error, kwargs):
+def poll_snmp_counter_mul(poller_buffer, **kwargs):
+    """
+    SNMP get that returns an integer that is multiplier
+    Parameters: <oid>|<multiplier>
+      <oid>: the OID in dotted decimal e.g. '1.3.6.1.1.9'
+      <multiplier>: value is multiplied by this
+    """
+    params = kwargs['parsed_params'].split('|')
+    str_oid = str(params[0])
+
+    if str_oid[0] == '.':
+        str_oid = str_oid[1:]
+    try:
+        oid = pyasn_types.ObjectIdentifier().prettyIn(str_oid)
+    except PyAsn1Error as errmsg:
+        logger.warning("A%d: OID \"%s\" could not be parsed: %s", kwargs['attribute'].id, str_oid, errmsg)
+        return False
+    kwargs['pobj'].snmp_engine.get_int(kwargs['attribute'].host, oid, cb_snmp_counter, kwargs=kwargs, multiplier=int(params[1]))
+    return True
+
+def cb_snmp_counter(value, error, kwargs, multiplier=None):
     if error is not None:
         kwargs['pobj'].poller_callback(kwargs['attribute'], None)
         return
+    if multiplier is not None:
+        value = value * multiplier
     kwargs['pobj'].poller_callback(kwargs['attribute'], value)
         
 

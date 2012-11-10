@@ -367,7 +367,30 @@ attribute_types = [
             [u'Minutes Remaining', 'minutes_remaining', 1,0,10000200,''],
             [u'Charge Remaining', 'charge_remaining', 1,0,10000200,''],
                 ] ],
-        ['UPS Lines',0,1,'ups_lines','',42,'AVERAGE','103680',300,85,0,'none',0,1,0,'.',[], [] ],
+        ['UPS Input Line',0,1,'ups_lines','',42,'AVERAGE','103680',300,85,0,'none',0,1,0,'.',[
+            ], [
+            [u'Voltage', 'voltage', 1,0,500,''],
+            [u'Current', 'current', 1,0,500,''],
+                ] ],
+        ['UPS Output Line',0,1,'ups_lines','',42,'AVERAGE','103680',300,85,0,'none',0,1,0,'.',[
+            ], [
+            [u'Voltage', 'voltage', 1,0,500,''],
+            [u'Current', 'current', 1,0,500,''],
+            [u'Load', 'load', 1,0,100,''],
+                ] ],
+        ['Mitsubishi UPS Input Line',0,1,'mitsu_ups_lines','',42,'AVERAGE','103680',300,85,0,'none',0,1,0,'.',[
+            ], [
+            [u'Voltage', 'voltage', 1,0,500,''],
+            [u'Current', 'current', 1,0,500,''],
+            [u'Power', 'power', 1,0,100000,''],
+                ] ],
+        ['Mitsubishi UPS Output Line',0,1,'mitsi_ups_lines','',42,'AVERAGE','103680',300,85,0,'none',0,1,0,'.',[
+            ], [
+            [u'Voltage', 'voltage', 1,0,500,''],
+            [u'Current', 'current', 1,0,500,''],
+            [u'Power', 'power', 1,0,100000,''],
+            [u'Load', 'load', 1,0,100,''],
+                ] ],
         ['Cisco PIX',1,1,'pix_connections','',44,'AVERAGE','103680',300,91,0,'none',0,1,0,'ent.9',[], [] ],
         ['Cisco NAT',0,1,'simple','.1.3.6.1.4.1.9.10.77.1.2.1.0,NAT',45,'AVERAGE','103680',300,93,0,'none',0,1,0,'ent.9',[], [] ],
         ['Sensors',1,1,'sensors','',46,'AVERAGE','103680',300,94,1,'none',0,1,0,'.',[], [] ],
@@ -768,9 +791,18 @@ pollers = [
         ['temperature','UPS Battery Temperature','snmp_counter','.1.3.6.1.2.1.33.1.2.7.0'],
         ['minutes_remaining','UPS Battery Minutes Remaining','snmp_counter','.1.3.6.1.2.1.33.1.2.3.0'],
         ['charge_remaining','UPS Battery Charge Remaining','snmp_counter','.1.3.6.1.2.1.33.1.2.4.0'],
-        ['voltage','UPS Lines Voltage','ups_line',''],
-        ['current','UPS Lines Current','ups_line',''],
-        ['load','UPS Lines Load','ups_line',''],
+        ['voltage','UPS Input Voltage','snmp_counter','.1.3.6.1.2.1.33.1.3.3.1.3.<index>'],
+        ['current','UPS Input Current','snmp_counter','.1.3.6.1.2.1.33.1.3.3.1.4.<index>'],
+        ['voltage','UPS Output Voltage','snmp_counter','.1.3.6.1.2.1.33.1.4.4.1.2.<index>'],
+        ['current','UPS Output Current','snmp_counter','.1.3.6.1.2.1.33.1.4.4.1.3.<index>'],
+        ['load','UPS Output Load','snmp_counter','.1.3.6.1.2.1.33.1.4.4.1.5.<index>'],
+        ['voltage','Mitsu UPS Input Voltage','snmp_counter_mul','.1.3.6.1.4.1.13891.101.3.3.1.3.<index>|0.1'],
+        ['current','Mitsu UPS Input Current','snmp_counter_mul','.1.3.6.1.4.1.13891.101.3.3.1.4.<index>|0.1'],
+        ['power','Mitsu UPS Input Power','snmp_counter','.1.3.6.1.4.1.13891.101.3.3.1.5.<index>'],
+        ['voltage','Mitsu UPS Output Voltage','snmp_counter_mul','.1.3.6.1.4.1.13891.101.4.4.1.2.<index>|0.1'],
+        ['current','Mitsu UPS Output Current','snmp_counter_mul','.1.3.6.1.4.1.13891.101.4.4.1.3.<index>|0.1'],
+        ['power','Mitsu UPS Output Power','snmp_counter','.1.3.6.1.4.1.13891.101.4.4.1.4.<index>'],
+        ['load','Mitsu UPS Output Load','snmp_counter','.1.3.6.1.4.1.13891.101.4.4.1.5.<index>'],
         ['accepted_routes','BGP Accepted Routes','snmp_counter','.1.3.6.1.4.1.9.9.187.1.2.4.1.1.<remote>.1.1'],
         ['advertised_routes','BGP Advertised Routes','snmp_counter','.1.3.6.1.4.1.9.9.187.1.2.4.1.6.<remote>.1.1'],
         ['pix_connections','Pix Connections Poller','snmp_counter','.1.3.6.1.4.1.9.9.147.1.2.2.2.1.5.<index>'],
@@ -795,7 +827,6 @@ pollers = [
         ['dell_om_fan_5','Dell OpenManage Fan RPM #5','snmp_counter','1.3.6.1.4.1.674.10892.1.700.12.1.6.1.5'],
         ['dell_om_fan_6','Dell OpenManage Fan RPM #6','snmp_counter','1.3.6.1.4.1.674.10892.1.700.12.1.6.1.6'],
         ['dell_om_fan_7','Dell OpenManage Fan RPM #7','snmp_counter','1.3.6.1.4.1.674.10892.1.700.12.1.6.1.7'],
-        ['power','UPS Lines Power','ups_line',''],
         ['status','PDU Load Status','snmp_status','.1.3.6.1.4.1.318.1.1.12.2.3.1.1.3.<index>,1=load normal|2=load low|3=load near overload|4=load ove'],
         ['load','PDU Banks Load','pdu_banks',''],
         ['ibm_component_health','IBM Component Health Status','snmp_status','1.3.6.1.4.1.2.6.159.1.1.30.3.1.2.<index>,0=up|1=warning|2=down'],
@@ -1080,11 +1111,25 @@ poller_sets = [
             [u'UPS Battery Minutes Remaining', u''],
             [u'UPS Battery Temperature', u'']
             ]],
-        [u'UPS Lines', u'UPS Lines', [
-            [u'UPS Lines Voltage', u''],
-            [u'UPS Lines Current', u''],
-            [u'UPS Lines Load', u''],
-            [u'UPS Lines Power', u'']
+        [u'UPS Input Line', u'UPS Input Line', [
+            [u'UPS Input Voltage', u''],
+            [u'UPS Input Current', u''],
+            ]],
+        [u'UPS Output Line', u'UPS Output Line', [
+            [u'UPS Output Voltage', u''],
+            [u'UPS Output Current', u''],
+            [u'UPS Output Load', u''],
+            ]],
+        [u'Mitsubishi UPS Input Line', u'Mitsubishi UPS Input Line', [
+            [u'Mitsu UPS Input Voltage', u''],
+            [u'Mitsu UPS Input Current', u''],
+            [u'Mitsu UPS Input Power', u''],
+            ]],
+        [u'Mitsubishi UPS Output Line', u'Mitsubishi UPS Output Line', [
+            [u'Mitsu UPS Output Voltage', u''],
+            [u'Mitsu UPS Output Current', u''],
+            [u'Mitsu UPS Output Load', u''],
+            [u'Mitsu UPS Output Power', u'']
             ]],
         [u'PIX Connection Stat', u'Cisco PIX', [
             [u'Pix Connections Poller', u''],

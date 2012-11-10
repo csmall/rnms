@@ -33,7 +33,7 @@ from rnms.lib.snmp import SNMPEngine
 from rnms.lib import ntpclient
 from rnms.lib.tcpclient import TCPClient
 
-class Poller():
+class Poller(object):
     """
     Poller process
 
@@ -97,7 +97,6 @@ class Poller():
                 sleep_time = (self.next_find_attribute - datetime.datetime.now()).total_seconds()
                 self.logger.debug("Sleeping for {0} seconds".format(sleep_time))
                 time.sleep(sleep_time)
-
 
     def poller_callback(self, attribute, poller_value):
         """
