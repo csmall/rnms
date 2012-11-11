@@ -118,6 +118,7 @@ class EventsWidget2(jqGridWidget):
             'pager': 'event-list-pager2',
             'url': '/events/jqgrid',
             'datatype': 'json',
+            'postData' : { 'Foo': 'bar', },
             'colNames': ['Date', 'Type', 'Host & Zone', 'Description'],
             'colModel': [
                 {

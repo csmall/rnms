@@ -26,10 +26,13 @@ class AttributeGrid(jqgrid.jqGridWidget):
             'pager' : 'attribute-grid-pager',
             'url' : '/attributes/jqsumdata',
             'datatype': 'json',
-            'colNames' : ['Name', 'Oper State', 'Admin State'],
+            'colNames' : ['Name', 'Description', 'Oper State', 'Admin State'],
             'colModel' : [
                 {
                     'name' : 'display_name',
+                } , {
+                    'description' : 'description',
+                    'width' : 300,
                 } , {
                     'name' : 'oper_state',
                     'width': 100,

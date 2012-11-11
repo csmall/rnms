@@ -49,21 +49,21 @@ class EventsController(BaseController):
     #allow_only = authorize.not_anonymous()
     
     @expose('rnms.templates.host')
-    def index(self, *args): 
-        class LayoutWidget(portlets.ColumnLayout):
-            id = 'event-layout'
-            class por1(portlets.Portlet):
-                title = 'Events'
-                widget = EventsWidget
-        return dict(layoutwidget=LayoutWidget)
-
-    @expose('rnms.templates.host')
-    def test(self, *args, **kwargs): 
+    def index(self, *args, **kwargs): 
         class LayoutWidget(portlets.ColumnLayout):
             id = 'event-layout'
             class por1(portlets.Portlet):
                 title = 'Events'
                 widget = EventsWidget2
+        return dict(layoutwidget=LayoutWidget)
+
+    @expose('rnms.templates.host')
+    def oldindex(self, *args): 
+        class LayoutWidget(portlets.ColumnLayout):
+            id = 'event-layout'
+            class por1(portlets.Portlet):
+                title = 'Events'
+                widget = EventsWidget
         return dict(layoutwidget=LayoutWidget)
 
     @expose('json')
@@ -74,6 +74,8 @@ class EventsController(BaseController):
     def jqgrid(self, page=1, rows=30, sidx=1, soid='asc', _search='false',
             searchOper=u'', searchField=u'', searchString=u'', **kw):
 
+        import logging
+        logging.info(kw)
         qry = DBSession.query(Event)
         qry = qry.filter()
         qry = qry.order_by()
@@ -192,8 +194,9 @@ class EventsController(BaseController):
         value = event_filler.get_value(dict(limit=10))
         return dict(value=value)
 
+"""
     @expose('rnms.templates.widget')
     def grid(self, *args, **kw):
         widget = EventsGrid()
         return dict(widget=widget, page='events')
-
+"""

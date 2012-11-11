@@ -80,6 +80,7 @@ class AttributesController(BaseController):
         for attribute in attributes[start_row:end_row]:
             data.append({
                 'cell' : [ attribute.display_name,
+                attribute.description(),
                 attribute.oper_state_name(),
                 attribute.admin_state_name(),
                 ],
