@@ -132,7 +132,7 @@ class NTPDispatcher(asyncore.dispatcher):
         if recv_msg is not None:
             response_packet.from_data(recv_msg)
         if response_packet.more == 0:
-            recv_job['cb_fun'](recv_job['host'], response_packet, recv_job['kwargs'])
+            recv_job['cb_fun'](recv_job['host'], response_packet, **recv_job['kwargs'])
             del(self.sent_jobs[recv_addr])
 
     def send_message(self, host, request_packet, cb_fun, **kwargs):

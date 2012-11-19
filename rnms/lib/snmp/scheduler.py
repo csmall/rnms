@@ -48,22 +48,19 @@ class SNMPScheduler():
         del self.active_jobs[oldid]
         self.active_jobs[newid]['id'] = newid
 
-    def job_add(self, reqid, host, cb_func, req_type, default, filt, kwargs, msg, table_oid=None, table_trim=None):
+    def job_add(self, reqid,  request, msg, table_oid = None, table_trim=None):
         """
         Adds a new job to the waiting queue
         """
-        self.waiting_jobs.append( {
+        self.waiting_jobs.append({
             'id': reqid,
-            'host': host,
-            'cb_func': cb_func,
-            'type': req_type,
-            'default': default,
-            'filter': filt,
-            'kwargs': kwargs,
+            'host' : request.host,
+            'request': request,
             'msg': msg,
-            'table_oid': table_oid,
-            'table_trim': table_trim
+            'table_oid' : table_oid,
+            'table_trim': table_trim,
             })
+
             
 
     def job_del_by_host(self, host):

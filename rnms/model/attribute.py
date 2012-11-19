@@ -299,7 +299,7 @@ class AttributeTypeField(DeclarativeBase):
     def by_tag(cls, attribute_type, tag):
         """ Return the field for attribute type with id that has tag ''tag''."""
         return DBSession.query(cls).filter(and_(
-                cls.attribute_type_id == attribute_type,
+                cls.attribute_type == attribute_type,
                 cls.tag==tag)).first()
 
     @classmethod

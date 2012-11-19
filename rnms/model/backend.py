@@ -119,13 +119,13 @@ class Backend(DeclarativeBase):
             default_input = ''
 
         try:
-            damp_time = params[2]
-        except IndexError:
+            damp_time = int(params[2])
+        except IndexError, ValueError:
             damp_time = 1
 
+        event_fields={}
         if type(poller_result) is not dict:
-            alarm_description = poller_result
-            event_fields={}
+            alarm_description = unicode(poller_result)
         else:
             try:
                 alarm_description = poller_result['state']
@@ -198,12 +198,15 @@ class Backend(DeclarativeBase):
         """
         Backend: verify_index
         Update and set the index for this attribute if required.
+        If the poller_result is None then it is unchanged
         """
+        if poller_result is None:
+            return 'not changed'
         try:
             new_index = str(poller_result)
         except ValueError:
             return 'Cannot convert poller_result to string'
-        if poller_result == '-1' or poller_result == attribute.index:
+        if poller_result == attribute.index:
             return 'not changed'
         old_index = attribute.index
         attribute.index = new_index
@@ -220,7 +223,6 @@ class Backend(DeclarativeBase):
 
         # Raise an up event if the down event was more that wait_time minutes ago
         if alarm_state.is_up() and down_alarm is not None:
-            print "{0} > {1} ?".format(datetime.datetime.now(), down_alarm.start_time + datetime.timedelta(minutes=damp_time))
             if datetime.datetime.now() > down_alarm.start_time + datetime.timedelta(minutes=damp_time):
                 return True
 

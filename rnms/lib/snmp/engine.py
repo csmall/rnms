@@ -19,7 +19,9 @@
 #
 import logging
 import time
+import asyncore
 import socket
+import datetime
 
 #from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.entity.rfc3413.oneliner import cmdgen
@@ -34,6 +36,7 @@ from pyasn1.codec.ber import encoder, decoder
 from pysnmp.proto import api
 
 from scheduler import SNMPScheduler
+from dispatcher import SNMPDispatcher
 """ SNMP functions for rosenberg """
 
 # Constants - used for oper and adminm statates
@@ -44,8 +47,72 @@ STATE_UNKNOWN = 4
 
 REQUEST_GET = 0
 REQUEST_GETNEXT = 1
+REQUEST_GETBULK = 2
 
 DefaultSecurityName = 'Rosenberg'  # Arbitarily string really
+
+logger = logging.getLogger('snmp')
+
+class SNMPRequest(object):
+    """
+    Class for filling in SNMP requests.  There may be multiple OIDs
+    within the same request, for speed
+    """
+
+    replyall = False
+    oid_trim = None
+
+    def __init__(self, host, req_type=REQUEST_GET):
+        self.host = host
+        self.req_type = req_type
+        self.oids = {}
+
+    def __repr__(self):
+        return "<SNMPRequest Host:{0} #oids:{1}>".format(self.host.mgmt_address, len(self.oids))
+
+    def add_oid(self, oid, callback, data=None, default=None, filt=None, value=None):
+        """
+        Add another OID to this request, there can be multiple queries to
+        the same host
+        """
+        self.oids[oid] = {'callback': callback, 'data': data, 'default': default, 'filter': filt, 'value': value }
+
+    def set_replyall(self, flag):
+        """
+        By default, each OID will have its own callback.  Setting this 
+        flag means that the first OID's callback will be used and it
+        will get the whole table.
+        This is similar to what happens with a get_table() except it is
+        specific items
+        """
+        self.replyall = flag
+
+    def send_default(self, error=None):
+        """
+        Fire off all the callbacks with the default value
+        """
+        if self.replyall:
+            req = self.oids[0]
+            req['callback'](req['default'], error, **(req['data']))
+        else:
+            for req in self.oids.values():
+                req['callback'](req['default'], error, **(req['data']))
+
+    def get_oid(self, oid):
+        try:
+            return self.oids[oid]
+        except KeyError:
+            return None
+        return None
+
+    def is_get(self):
+        return (self.req_type == REQUEST_GET)
+
+    def is_getnext(self):
+        return (self.req_type == REQUEST_GETNEXT)
+
+    def is_getbulk(self):
+        return (self.req_type == REQUEST_GETBULK)
 
 class SNMPEngine():
     """ 
@@ -61,17 +128,19 @@ class SNMPEngine():
     default_timeout = 3 # number of seconds before item is considered gone
     max_attempts = 3
     value_filters = {}
+    address_families = [ socket.AF_INET, socket.AF_INET6 ] 
 
     def __init__(self, logger=None):
+        self.dispatchers = { af : SNMPDispatcher(af, self.receive_msg) for af in self.address_families}
         self.value_filters = {
             'int': self.filter_int,
             'str': self.filter_str
             }
-        self.dispatcher = AsynsockDispatcher()
-        self.dispatcher.registerTransport(
-                udp.domainName, udp.UdpSocketTransport().openClientMode()
-                )
-        self.dispatcher.registerRecvCbFun(self._receive_msg)
+        #self.dispatcher = AsynsockDispatcher()
+        #self.dispatcher.registerTransport(
+        #        udp.domainName, udp.UdpSocketTransport().openClientMode()
+        #        )
+        #self.dispatcher.registerRecvCbFun(self._receive_msg)
         self.scheduler = SNMPScheduler(logger=logger)
 
         if logger is not None:
@@ -97,40 +166,36 @@ class SNMPEngine():
             return api.protoModules[api_version]
         return None
 
-    def _return_value(self, value, request, error=None):
+    def _return_value(self, req_oid, value, error=None):
         """
         Filter the value returned by the SNMP stack and use the
         callback function.
         """
-        if request['filter'] is not None:
-            if request['filter'] in self.value_filters:
-                value = self.value_filters[request['filter']](value)
-        request['cb_func'](value, error, **(request['kwargs']))
-
-    def socketmap(self):
-        """ Returns the socket of the transportDispatcher """
-        return self.dispatcher.getSocketMap()
+        if req_oid['filter'] is not None:
+            try:
+                value = self.value_filters[req_oid['filter']](value)
+            except KeyError:
+                pass
+        if req_oid['data'] is None:
+            req_oid['callback'](value, error)
+        else:
+            req_oid['callback'](value, error, **(req_oid['data']))
 
     def poll(self):
         """
         This method should be periodically called to gather all pending
         requests and handle any responses from remote agents.
 
-        Returns true if there is still things to do
+        Returns number of jobs udner control if there is still things to do
         """
-        retval = False
+        jobcount = 0
         self.check_timeouts()
-        if self.scheduler.have_waiting_jobs():
-            retval = True
-        if self.scheduler.have_active_jobs():
-            try:
-                poll(0, self.dispatcher.getSocketMap())
-            except socket.error:
-                logger.warning("socket error")
-            else:
-                retval = True
         self.send_requests()
-        return retval
+        for dispatcher in self.dispatchers.values():
+            jobcount += len(dispatcher.waiting_jobs)
+        jobcount += len(self.scheduler.waiting_jobs)
+        jobcount += len(self.active_requests)
+        return jobcount
 
     def _get_request(self, reqid):
         return self.active_requests.get(reqid, None)
@@ -149,7 +214,7 @@ class SNMPEngine():
     def _requests_pending(self):
         return len(self.active_requests) > 0
 
-    def _receive_msg(self, dispatcher, trans_domain, trans_address, whole_msg):
+    def receive_msg(self, whole_msg, recv_addr, address_family):
         pmod = self._pmod_from_api(api.decodeMessageVersion(whole_msg))
         if pmod is None:
             self.logger.exception("Empty pmod from receive_msg()")
@@ -157,65 +222,94 @@ class SNMPEngine():
         while whole_msg:
             rcv_msg, whole_msg = decoder.decode(whole_msg, asn1Spec=pmod.Message())
             rcv_pdu = pmod.apiMessage.getPDU(rcv_msg)
+
             request_id = pmod.apiPDU.getRequestID(rcv_pdu)
-            if request_id not in self.active_requests:
+            self.dispatchers[address_family].del_job(request_id)
+            try:
+                request = self.active_requests[request_id]
+            except IndexError:
                 self.logger.debug("receive_msg(): Cannot find request id {0}".format(request_id))
-                return
-            request = self.active_requests[request_id]
+                continue
             # Check for error
             error_status = pmod.apiPDU.getErrorStatus(rcv_pdu)
             if error_status:
-                self.logger.debug("receive_msg(): Received packet wirh errors status {0}".format(error_status.prettyPrint()))
-                self._return_value(request['default'], request, error=error_status.prettyPrint())
+                self.logger.debug("receive_msg(): Received packet with errors status {0}".format(error_status.prettyPrint()))
+                request['request'].send_default()
                 self._request_finished(request['id'])
             else:
-                if request['type'] == REQUEST_GET:
+                if request['request'].is_get():
                     self._get_response(pmod, rcv_pdu, request)
-                elif request['type'] == REQUEST_GETNEXT:
-                    self._getnext_response(pmod, rcv_pdu, request)
+                elif request['request'].is_getnext():
+                    self._getnext_response(pmod, rcv_pdu, request, False)
+                elif request['request'].is_getbulk():
+                    self._getnext_response(pmod, rcv_pdu, request, True)
         return whole_msg
 
     def _get_response(self, pmod, rcv_pdu, request):
         """ Handle reception of a GET response """
-        varbinds = {}
+        reply_table = {}
+        first_req_oid = None
         for oid, val in pmod.apiPDU.getVarBinds(rcv_pdu):
-            pretty_val = val.prettyPrint()
-            if pretty_val == 'No Such Object currently exists at this OID' or pretty_val == 'No Such Instance currently exists at this OID' :
-                self._return_value(request['default'], request,
-                        error=pretty_val)
-                self._request_finished(request['id'])
-                return
+            req_oid = request['request'].get_oid(oid)
+            if req_oid is None:
+                self.logger.error('No request line for %s', oid)
+                continue
+            if first_req_oid is None:
+                first_req_oid = req_oid
+            if request['request'].oid_trim is None:
+                row_oid = oid.prettyPrint()
             else:
-                varbinds[oid.prettyPrint()] = pretty_val
-        if len(varbinds) > 0:
-            self._return_value(varbinds, request)
-        else:
-            self._return_value(request['default'], request)
+                row_oid = oid[-request['request'].oid_trim:].prettyPrint()
+            pretty_val = val.prettyPrint()
+            if pretty_val == 'noSuchName' or pretty_val == 'No Such Object currently exists at this OID' or pretty_val == 'No Such Instance currently exists at this OID' :
+                if request['request'].replyall:
+                    reply_table[row_oid] = req_oid['default']
+                else:
+                    self._return_value(req_oid, req_oid['default'])
+            else:
+                if request['request'].replyall:
+                    reply_table[row_oid] = val.prettyPrint()
+                else:
+                    self._return_value(req_oid, pretty_val)
+        if request['request'].replyall:
+            self._return_value(first_req_oid, reply_table)
         self._request_finished(request['id'])
 
-    def _getnext_response(self, pmod, rcv_pdu, request):
+    def _getnext_response(self, pmod, rcv_pdu, request, is_bulk):
         """ Handle reception of a GETNEXT response """
         if 'varbinds' not in request:
             request['varbinds'] = {}
 
         req_pdu = pmod.apiMessage.getPDU(request['msg'])
-        var_bind_table = pmod.apiPDU.getVarBindTable(req_pdu, rcv_pdu)
+        if is_bulk:
+            var_bind_table = pmod.apiBulkPDU.getVarBindTable(req_pdu, rcv_pdu)
+        else:
+            var_bind_table = pmod.apiPDU.getVarBindTable(req_pdu, rcv_pdu)
         for table_row in var_bind_table:
             for oid,val in table_row:
                 if request['table_oid'].isPrefixOf(oid):
-                    if request['table_trim'] is None:
+                    if request['request'].oid_trim is None:
                         request['varbinds'][oid.prettyPrint()] = val.prettyPrint()
                     else:
-                        request['varbinds'][oid[-request['table_trim']:].prettyPrint()] = val.prettyPrint()
+                        request['varbinds'][oid[-request['request'].oid_trim:].prettyPrint()] = val.prettyPrint()
                 else:
-                    self._return_value(request['varbinds'], request)
+                    for req_oid in request['request'].oids.values():
+                        self._return_value(req_oid, request['varbinds'])
                     self._request_finished(request['id'])
                     return
 
         oldid = request['id']
+        
+        # Stop on EOM
+        for oid, val in var_bind_table[-1]:
+            if not isinstance(val, pmod.Null):
+                break
+        else:
+            self._request_finished(oldid)
+            return
         # Create new request
         pmod.apiPDU.setVarBinds(req_pdu, 
-                map(lambda (x,y),n=pmod.Null(): ( x,n ), var_bind_table[-1]) )
+                [ (x, pmod.null) for x,y in var_bind_table[-1] ])
         new_reqid = pmod.getNextRequestID()
         pmod.apiPDU.setRequestID(req_pdu, new_reqid)
         self.scheduler.job_update(request['id'], new_reqid)
@@ -226,10 +320,10 @@ class SNMPEngine():
     def check_timeouts(self):
         now = time.time()
         for id,request in self.active_requests.items():
-            if request['timeout'] < now:
+            if 'timeout' in request and request['timeout'] < now:
                 if request['attempt'] >= self.max_attempts:
                     self.logger.debug("Request #{0} reach maximum attempts".format(request['id']))
-                    self._return_value(request['default'], request, error="Maximum poll attempts exceeded")
+                    request['request'].send_default()
                     self._request_finished(request['id'])
                 else:
                     self.send_request(request, False)
@@ -246,15 +340,22 @@ class SNMPEngine():
             self.send_request(request)
 
     def send_request(self, request, first=True):
-        self.dispatcher.sendMessage(
-            encoder.encode(request['msg']), udp.domainName, (request['host'].mgmt_address, 161))
+        try:
+            addrinfo = socket.getaddrinfo(request['host'].mgmt_address, 161)[0]
+        except socket.gaierror:
+            return False
+        addr_family, sockaddr = addrinfo[0], addrinfo[4]
+        request['sockaddr'] = sockaddr
+        self.dispatchers[addr_family].send_message(request)
+
+        #self.dispatcher.sendMessage( encoder.encode(request['msg']), udp.domainName, (request['host'].mgmt_address, 161))
         if first:
             self.scheduler.job_sent(request['id'])
             self.active_requests[request['id']] = request
             request['attempt'] = 1
         else:
             request['attempt'] += 1
-        request['timeout'] = time.time() + self.default_timeout
+        #request['timeout'] = time.time() + self.default_timeout
         #self.logger.debug("send_request(): Sending request #{0} to {1} attempt {2}".format(request['id'], request['host'].mgmt_address, request['attempt']))
 
     def is_busy(self):
@@ -263,13 +364,13 @@ class SNMPEngine():
         """
         return self.dispatcher.jobsArePending() or self.dispatcher.transportsAreWorking()
 
-    def _build_get_message(self, community, oid):
+    def _build_get_message(self, community, request):
         pmod = self._pmod_from_community(community)
         if pmod is None:
             return None,None
         pdu = pmod.GetRequestPDU()
         pmod.apiPDU.setDefaults(pdu)
-        pmod.apiPDU.setVarBinds(pdu, (((oid), pmod.Null()),))
+        pmod.apiPDU.setVarBinds(pdu, [(oid, pmod.Null()) for oid in request.oids.keys()])
         # Build Message
         msg = pmod.Message()
         pmod.apiMessage.setDefaults(msg)
@@ -277,7 +378,32 @@ class SNMPEngine():
         pmod.apiMessage.setPDU(msg, pdu)
         return msg,pmod
 
-    def _build_getnext_message(self, community, oid):
+    def _set_vars(self, pmod, var):
+        """
+        Returns the correct varbind type, used for set requests
+        """
+        var_type = type(var)
+        if var_type == str:
+            return pmod.OctectString(var)
+        elif var_type == int:
+            return pmod.Integer(var)
+        raise ValueError('unknown type')
+
+    def _build_set_message(self, community, request):
+        pmod = self._pmod_from_community(community)
+        if pmod is None:
+            return None,None
+        pdu = pmod.SetRequestPDU()
+        pmod.apiPDU.setDefaults(pdu)
+        pmod.apiPDU.setVarBinds(pdu, [(oid, self._set_vars(pmod,oid_atts['value'])) for oid,oid_atts in request.oids.items()])
+        # Build Message
+        msg = pmod.Message()
+        pmod.apiMessage.setDefaults(msg)
+        pmod.apiMessage.setCommunity(msg, community[1])
+        pmod.apiMessage.setPDU(msg, pdu)
+        return msg,pmod
+
+    def _build_getnext_message(self, community, oid, is_bulk):
         pmod = self._pmod_from_community(community)
         if pmod is None:
             self.logger.info('Could not get pmod from community %s',community)
@@ -285,11 +411,17 @@ class SNMPEngine():
 
         # SNMP table header
         head_vars = [ pmod.ObjectIdentifier(oid) ]
-
-        pdu = pmod.GetNextRequestPDU()
-        pmod.apiPDU.setDefaults(pdu)
+        
+        if is_bulk:
+            pdu = pmod.GetBulkRequestPDU()
+            pmod.apiPDU.setDefaults(pdu)
+            pmod.apiBulkPDU.setNonRepeaters(pdu, 0)
+            pmod.apiBulkPDU.setMaxRepetitions(pdu, 25)
+        else: 
+            pdu = pmod.GetNextRequestPDU()
+            pmod.apiPDU.setDefaults(pdu)
         pmod.apiPDU.setVarBinds(pdu,
-                map(lambda x, pmod=pmod: ( x, pmod.Null()), head_vars) )
+                [ (x, pmod.Null()) for x in head_vars])
         # Build Message
         msg = pmod.Message()
         pmod.apiMessage.setDefaults(msg)
@@ -297,24 +429,54 @@ class SNMPEngine():
         pmod.apiMessage.setPDU(msg, pdu)
         return msg,pmod
 
+    def get_int(self, host, oid, cb_func, **kw):
+        """
+        Function to query one SNMP item
+        """
+        req = SNMPRequest(host)
+        req.add_oid(oid,cb_func, data=kw, filt='int')
+        return self.get(req)
 
-    def get_int(self, host, oid, cb_function, default=None, **kwargs):
-        return self.get(host, oid, cb_function, default, filt="int", **kwargs)
-
-    def get_str(self, host, oid, cb_function, default=None, **kwargs):
-        return self.get(host, oid, cb_function, default, filt="str", **kwargs)
-
-    def get(self, host, oid, cb_function, default=None, filt=None, **kwargs):
-        if host.community_ro is None:
-            cb_function(default, host, kwargs)
+    def get_str(self, host, oid, cb_func, **kw):
+        """
+        Function to query one SNMP item
+        """
+        req = SNMPRequest(host)
+        req.add_oid(oid,cb_func, data=kw, filt='str')
+        return self.get(req)
+    
+    def get(self, request):
+        """
+        Proccess the given SNMPRequest to send out queries to a host. The
+        structure may have one of more OIDs
+        """
+        if request.host.community_ro is None:
+            request.send_default()
             return False
-        msg, pmod = self._build_get_message(host.community_ro, oid)
+        msg, pmod = self._build_get_message(request.host.community_ro, request)
         if msg is None:
-            cb_function(default, host, kwargs)
+            request.send_default()
             return False
         self.scheduler.job_add(
                 pmod.apiPDU.getRequestID(pmod.apiMessage.getPDU(msg)),
-                host, cb_function, REQUEST_GET, default, filt, kwargs, msg)
+                request, msg)
+        return True
+
+    def set(self, request):
+        """
+        Proccess the given SNMPRequest to send out queries to a host. The
+        structure may have one of more OIDs used for setting values
+        """
+        if request.host.community_rw is None:
+            request.send_default()
+            return False
+        msg, pmod = self._build_set_message(request.host.community_rw, request)
+        if msg is None:
+            request.send_default()
+            return False
+        self.scheduler.job_add(
+                pmod.apiPDU.getRequestID(pmod.apiMessage.getPDU(msg)),
+                request, msg)
         return True
 
     def get_table(self, host, oid, cb_function, default=None, filt=None, table_trim=None, **kwargs):
@@ -323,16 +485,22 @@ class SNMPEngine():
             prefix_trim: Number of numbers to return in table
         """
         if host.community_ro is None:
-            cb_function(default, host, kwargs)
+            cb_function(default, host, **kwargs)
             return False
-        msg, pmod = self._build_getnext_message(host.community_ro, oid)
+        is_getbulk = False
+        if str(host.community_ro[0]) == '2':
+            is_getbulk = True
+        msg, pmod = self._build_getnext_message(host.community_ro, oid, is_getbulk)
         if msg is None:
-            cb_function(default, host, kwargs)
+            cb_function(default, host, **kwargs)
             return False
         table_oid = pmod.ObjectIdentifier(oid) 
+        request = SNMPRequest(host, req_type=REQUEST_GETNEXT)
+        request.oid_trim = table_trim
+        request.add_oid(oid, cb_function, data=kwargs)
         self.scheduler.job_add(
                 pmod.apiPDU.getRequestID(pmod.apiMessage.getPDU(msg)),
-                host, cb_function, REQUEST_GETNEXT, default, filt, kwargs, msg, table_oid=table_oid, table_trim=table_trim)
+                request, msg, table_oid=table_oid)
         return True
                 
 

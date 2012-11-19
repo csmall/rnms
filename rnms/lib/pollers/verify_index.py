@@ -25,55 +25,98 @@ Index verification pollers
   to the backend, which updates or ignores it
 """
 
-def poll_verify_storage_index(poller_buffer, **kwargs):
+def filter_storage_name(value):
+    """
+    Change the raw storage name into something that makes sense and is
+    consistent
+    """
+    junos_sep = value.find(', mounted on: ')
+    if junos_sep >= 0:
+        return value[junos_sep+14:]
+    return value
+
+def poll_verify_storage_index(poller_buffer, **kw):
     """
     Use a table of stroage indexes via SNMP to see if it has changed
     """
     oid = (1,3,6,1,2,1,25,2,3,1,3)
+    inst_oid = oid + (int(kw['attribute'].index),)
 
-    kwargs['pobj'].snmp_engine.get_table(kwargs['attribute'].host, oid, cb_verify_storage_index, table_trim=1, kwargs=kwargs)
+    kw['pobj'].snmp_engine.get_str(kw['attribute'].host, inst_oid, cb_storage_index, **kw)
     return True
 
-def cb_verify_storage_index(values, error, kwargs):
+def cb_storage_index(value, error, **kw):
+    """
+    Receives the name of the storage, should equal what we already have.
+    If not, go find the new index
+    """
+    oid = (1,3,6,1,2,1,25,2,3,1,3)
+
+    if value is None:
+        kw['pobj'].poller_callback(kw['attribute'].id, kw['poller_row'], None)
+        return
+    value = filter_storage_name(value)
+    if kw['attribute'].display_name == value:
+        kw['pobj'].poller_callback(kw['attribute'].id, kw['poller_row'], kw['attribute'].index)
+    else:
+        kw['pobj'].snmp_engine.get_table(kw['attribute'].host, oid, cb_verify_storage_index, table_trim=1, **kw)
+
+
+def cb_verify_storage_index(values, error, pobj, attribute, poller_row, **kw):
     """
     CallBack function for a snmp table
     the return functions in the PollerRow
     """
 
-    for (inst, value) in values.items():
-        junos_sep = value.find(', mounted on: ')
-        if junos_sep >= 0:
-            value = value[junos_sep+14:]
-        if value == kwargs['attribute'].display_name:
-            try:
-                kwargs['pobj'].poller_callback(kwargs['attribute'], str(int(inst)))
-                return;
-            except ValueError:
-                pass
-    kwargs['pobj'].poller_callback(kwargs['attribute'], -1)
+    if values is not None:
+        for (inst, value) in values.items():
+            value = filter_storage_name(value)
+            if value == attribute.display_name:
+                try:
+                    pobj.poller_callback(attribute.id, poller_row, str(int(inst)))
+                    return;
+                except ValueError:
+                    pass
+    pobj.poller_callback(attribute.id, poller_row, None)
 
 
-def poll_verify_interface_number(poller_buffer, **kwargs):
+def poll_verify_interface_number(poller_buffer, **kw):
     """
     Use a table of ifIndex indexes via SNMP to see if it has changed
     """
     oid = (1,3,6,1,2,1,2,2,1,2)
-
-    kwargs['pobj'].snmp_engine.get_table(kwargs['attribute'].host, oid, cb_verify_interface_number, table_trim=1, kwargs=kwargs)
+    inst_oid = oid + (int(kw['attribute'].index),)
+    kw['pobj'].snmp_engine.get_str(kw['attribute'].host, inst_oid, cb_interface_index, **kw)
     return True
 
-def cb_verify_interface_number(values, error, kwargs):
+def cb_interface_index(value, error, **kw):
+    """
+    Receives the name of the interface, should equal what we already have.
+    If not, go find the new index
+    """
+    oid = (1,3,6,1,2,1,2,2,1,2)
+
+    if value is None:
+        kw['pobj'].poller_callback(kw['attribute'].id, kw['poller_row'], None)
+        return
+    if kw['attribute'].display_name == value:
+        kw['pobj'].poller_callback(kw['attribute'].id, kw['poller_row'], kw['attribute'].index)
+    else:
+        kw['pobj'].snmp_engine.get_table(kw['attribute'].host, oid, cb_verify_interface_number, table_trim=1, **kw)
+
+def cb_verify_interface_number(values, error, pobj, attribute, poller_row, **kw):
     """
     CallBack function for a snmp table
     the return functions in the PollerRow
     """
 
-    for (inst, value) in values.items():
-        if value == kwargs['attribute'].display_name:
-            try:
-                kwargs['pobj'].poller_callback(kwargs['attribute'], str(int(inst)))
-                return;
-            except ValueError:
-                pass
-    kwargs['pobj'].poller_callback(kwargs['attribute'], -1)
+    if values is not None:
+        for (inst, value) in values.items():
+            if value == attribute.display_name:
+                try:
+                    pobj.poller_callback(attribute.id, poller_row, str(int(inst)))
+                    return;
+                except ValueError:
+                    pass
+    pobj.poller_callback(attribute.id, poller_row, None)
 

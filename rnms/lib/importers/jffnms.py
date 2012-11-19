@@ -207,6 +207,7 @@ class JffnmsImporter(object):
             for row in result:
                 host = model.Host(mgmt_address=row[1],display_name=row[2])
                 host.community_ro = self.import_snmp(row[3])
+                host.community_rw = self.import_snmp(row[4])
                 host.zone_id = self.zone_id(row[5])
                 host.tftp_server = row[6]
                 host.autodiscovery_policy_id = row[7]

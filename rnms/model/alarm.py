@@ -71,6 +71,9 @@ class Alarm(DeclarativeBase):
                 self.stop_time = datetime.datetime.now() + datetime.timedelta(minutes=event.event_type.alarm_duration)
             self.analyze_triggers()
 
+    def __repr__(self):
+        return '<Alarm {0} A:{1} T:{2}>'.format(self.id, self.attribute_id, self.start_time)
+
     def substitutes(self):
         """
         Returns a dictionary of parameters that are used for replacing

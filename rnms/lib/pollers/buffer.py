@@ -17,26 +17,20 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-import logging
 
-logger = logging.getLogger('CiscoPing')
-
-def poll_cisco_snmp_ping_start(poller_buffer, **kwargs):
+def poll_buffer(poller_buffer, parsed_params, pobj, attribute, poller_row, **kw):
     """
+    A poller to yank items out of the poller_buffer
+    name comes from parameters
     """
-    logger.debug('Cisco Ping not implemented')
-    kwargs['pobj'].poller_callback(kwargs['attribute'].id, kwargs['poller_row'],None)
+    ret_fields = []
+    field_names =  poller_row.poller.field.split(',')
+    for field_name in field_names:
+        try:
+            ret_fields.append(poller_buffer[field_name])
+        except KeyError:
+            pass
+    pobj.poller_callback(attribute.id, poller_row, ret_fields)
     return True
 
-def poll_cisco_snmp_ping_wait(poller_buffer, **kwargs):
-    poll_cisco_snmp_ping_start(poller_buffer, **kwargs)
-
-def poll_cisco_snmp_ping_get_rtt(poller_buffer, **kwargs):
-    poll_cisco_snmp_ping_start(poller_buffer, **kwargs)
-
-def poll_cisco_snmp_ping_get_pl(poller_buffer, **kwargs):
-    poll_cisco_snmp_ping_start(poller_buffer, **kwargs)
-
-def poll_cisco_snmp_ping_end(poller_buffer, **kwargs):
-    poll_cisco_snmp_ping_start(poller_buffer, **kwargs)
 

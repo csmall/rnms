@@ -26,31 +26,31 @@ def poll_ntp_client(poller_buffer, **kwargs):
     """
     return kwargs['pobj'].ntp_client.get_peers(kwargs['attribute'].host, cb_ntp_peer_list, **kwargs)
 
-def cb_ntp_peer_list(host, response_packet, kwargs):
+def cb_ntp_peer_list(host, response_packet, **kw):
     """
     First callback with the list of peers """
     for assoc in response_packet.peers:
         if assoc.selection == 6: # system peer found
-            kwargs['pobj'].ntp_client.get_peer_by_id(host, assoc.assoc_id, cb_peer_details, **kwargs)
+            kw['pobj'].ntp_client.get_peer_by_id(host, assoc.assoc_id, cb_peer_details, **kw)
             return
-    ntp_reply(kwargs, False, 'no peer list returned')
+    ntp_reply(kw['pobj'], kw['attribute'].id, kw['poller_row'], False, 'no peer list returned')
 
-def cb_peer_details(host, response_packet, kwargs):
+def cb_peer_details(host, response_packet, pobj, attribute, poller_row, **kw):
     if response_packet.assoc_data == {}:
-        ntp_response(kwargs, False, 'no details returned')
+        ntp_reply(pobj, attribute.id, poller_row, False, 'no details returned')
         return
     # find the source address
     try:
         srcadr = response_packet.assoc_data['srcadr']
     except KeyError:
-        ntp_reply(kwargs, False, 'peer srcadr not found')
+        ntp_reply(pobj, attribute.id, poller_row, False, 'peer srcadr not found')
     else:
-        ntp_reply(kwargs, True, 'with {0}'.format(srcadr))
+        ntp_reply(pobj, attribute.id, poller_row, True, 'with {0}'.format(srcadr))
 
-def ntp_reply(kwargs, is_synch, info):
+def ntp_reply(pobj, attribute_id, poller_row, is_synch, info):
     if is_synch == True:
-        sync = 'synchronized'
+        sync = u'synchronized'
     else:
-        sync = 'unsynchronized'
-    kwargs['pobj'].poller_callback(kwargs['attribute'], {'state': sync, 'info': info})
+        sync = u'unsynchronized'
+    pobj.poller_callback(attribute_id, poller_row, {'state': sync, 'info': info})
         

@@ -125,7 +125,7 @@ class TCPDispatcher(asyncore.dispatcher):
     def _parse_response(self):
         if self.responded == False:
             self.close()
-            self.cb_fun(self.host, self.inbuf, self.connect_time, self.error, self.kwargs)
+            self.cb_fun(self.host, self.inbuf, self.connect_time, self.error, **self.kwargs)
             self.responded = True
 
     def poll(self):

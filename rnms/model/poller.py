@@ -141,9 +141,9 @@ class PollerRow(DeclarativeBase):
     poller_set = relationship('PollerSet')
     position = Column(SmallInteger, nullable=False, default=1, primary_key=True)
     poller_id = Column(Integer,  ForeignKey('pollers.id'))
-    poller = relationship('Poller')
+    poller = relationship('Poller', lazy='joined')
     backend_id = Column(Integer, ForeignKey('backends.id'))
-    backend = relationship('Backend')
+    backend = relationship('Backend', lazy='joined')
     #}
 
     def __init__(self, poller_set=None, poller=None, backend=None, position=1):

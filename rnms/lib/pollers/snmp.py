@@ -25,52 +25,52 @@ from pyasn1.error import PyAsn1Error
 
 logger = logging.getLogger('pSNMP')
 
-def poll_snmp_counter(poller_buffer, **kwargs):
-    """
-    SNMP get that returns an integer
-    Parameters: the OID in dotted decimal e.g. '1.3.6.1.1.9'
-    """
-    str_oid = str(kwargs['parsed_params'])
+def parse_oid(raw_oid):
+    str_oid = str(raw_oid)
     if str_oid[0] == '.':
         str_oid = str_oid[1:]
     try:
         oid = pyasn_types.ObjectIdentifier().prettyIn(str_oid)
     except PyAsn1Error as errmsg:
-        logger.warning("A%d: OID \"%s\" could not be parsed: %s", kwargs['attribute'].id, str_oid, errmsg)
+        logger.warning("OID \"%s\" could not be parsed: %s", str_oid, errmsg)
+        return None
+    return oid
+
+def poll_snmp_counter(poller_buffer, parsed_params, **kw):
+    """
+    SNMP get that returns an integer
+    Parameters: the OID in dotted decimal e.g. '1.3.6.1.1.9'
+    """
+    oid = parse_oid(parsed_params)
+    if oid is None:
         return False
-    kwargs['pobj'].snmp_engine.get_int(kwargs['attribute'].host, oid, cb_snmp_counter, kwargs=kwargs)
+    kw['pobj'].snmp_engine.get_int(kw['attribute'].host, oid, cb_snmp_counter, **kw)
     return True
 
-def poll_snmp_counter_mul(poller_buffer, **kwargs):
+def poll_snmp_counter_mul(poller_buffer, parsed_params, **kw):
     """
     SNMP get that returns an integer that is multiplier
     Parameters: <oid>|<multiplier>
       <oid>: the OID in dotted decimal e.g. '1.3.6.1.1.9'
       <multiplier>: value is multiplied by this
     """
-    params = kwargs['parsed_params'].split('|')
-    str_oid = str(params[0])
-
-    if str_oid[0] == '.':
-        str_oid = str_oid[1:]
-    try:
-        oid = pyasn_types.ObjectIdentifier().prettyIn(str_oid)
-    except PyAsn1Error as errmsg:
-        logger.warning("A%d: OID \"%s\" could not be parsed: %s", kwargs['attribute'].id, str_oid, errmsg)
+    params = parsed_params.split('|')
+    oid = parse_oid(params[0])
+    if oid is None:
         return False
-    kwargs['pobj'].snmp_engine.get_int(kwargs['attribute'].host, oid, cb_snmp_counter, kwargs=kwargs, multiplier=int(params[1]))
+    kw['pobj'].snmp_engine.get_int(kw['attribute'].host, oid, cb_snmp_counter, multiplier=int(params[1]), **kw)
     return True
 
-def cb_snmp_counter(value, error, kwargs, multiplier=None):
+def cb_snmp_counter(value, error, pobj, attribute, poller_row, multiplier=None, **kw):
     if error is not None:
-        kwargs['pobj'].poller_callback(kwargs['attribute'], None)
+        pobj.poller_callback(attribute.id, poller_row, None)
         return
     if multiplier is not None:
         value = value * multiplier
-    kwargs['pobj'].poller_callback(kwargs['attribute'], value)
+    pobj.poller_callback(attribute.id, poller_row, value)
         
 
-def poll_snmp_status(poller_buffer, **kwargs):
+def poll_snmp_status(poller_buffer, **kw):
     """
     Generic SNMP get that returns a status string
     Returns: a string based upon the SNMP value returned
@@ -81,39 +81,37 @@ def poll_snmp_status(poller_buffer, **kwargs):
     An optional default return value can be used, returns None if
     there is an error
     """
-    params = kwargs['parsed_params'].split('|')
+    params = kw['parsed_params'].split('|')
     param_count = len(params)
     try:
-        kwargs['mapping'] = params[1]
+        kw['mapping'] = params[1]
     except IndexError:
         pass
     try:
-        kwargs['default_value'] = params[2]
+        kw['default_value'] = params[2]
     except IndexError:
-        kwargs['default_value'] = None
-    try:
-        oid = pyasn_types.ObjectIdentifier().prettyIn(str(params[0]))
-    except PyAsn1Error as errmsg:
-        logger.warning("A%d: OID \"%s\" could not be parsed: %s", kwargs['attribute'].id, params[0], errmsg)
+        kw['default_value'] = None
+    oid = parse_oid(params[0])
+    if oid is None:
         return False
-    kwargs['pobj'].snmp_engine.get_int(kwargs['attribute'].host, oid, cb_snmp_status, kwargs=kwargs)
+    kw['pobj'].snmp_engine.get_int(kw['attribute'].host, oid, cb_snmp_status, **kw)
     return True
 
-def cb_snmp_status(value, error, kwargs):
+def cb_snmp_status(value, error, pobj, attribute, poller_row, **kw):
     if error is not None:
-        kwargs['pobj'].poller_callback(kwargs['attribute'], kwargs['default_value'])
+        pobj.poller_callback(attribute.id, poller_row, kw['default_value'])
     try:
-        for item in kwargs['mapping'].split(","):
+        for item in kw['mapping'].split(","):
             matchret = item.split("=")
             try:
                 if value == int(matchret[0]):
-                    kwargs['pobj'].poller_callback(kwargs['attribute'], matchret[1])
+                    pobj.poller_callback(attribute.id, poller_row, matchret[1])
                     return
             except IndexError:
                 pass
     except KeyError:
         pass
-    kwargs['pobj'].poller_callback(kwargs['attribute'], kwargs['default_value'])
+    pobj.poller_callback(attribute.id, poller_row, kw['default_value'])
 
 
     
