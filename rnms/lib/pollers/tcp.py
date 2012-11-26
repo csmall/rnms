@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
+import re
+
 def poll_tcp_status(poller_buffer, parsed_params, **kwargs):
     """
     Connect to the remote server on a port and collect some of the
@@ -33,8 +35,10 @@ def poll_tcp_status(poller_buffer, parsed_params, **kwargs):
         max_bytes = int(parsed_params)
     except ValueError:
         max_bytes = 1
+    if kwargs['attribute'].field('check_content') != '1':
+        max_bytes = None
 
-    return kwargs['pobj'].tcp_client.get_tcp(kwargs['attribute'].host, port, '', max_bytes, cb_tcp_status, **kwargs)
+    return kwargs['pobj'].tcp_client.get_tcp(kwargs['attribute'].host, port, ' ', max_bytes, cb_tcp_status, **kwargs)
 
 def cb_tcp_status(host, response, connect_time, error, **kwargs):
     """
@@ -42,10 +46,71 @@ def cb_tcp_status(host, response, connect_time, error, **kwargs):
     """
     response = response.rstrip()
     if error is None:
-        state = 'open'
+        state = u'open'
         tcp_error = None
     else:
-        state = 'closed'
+        state = u'closed'
         tcp_error = error[1]
+    if connect_time is not None:
+        connect_time = connect_time.total_seconds()
+
     kwargs['pobj'].poller_callback(kwargs['attribute'].id, kwargs['poller_row'],(state, response, connect_time, tcp_error))
         
+def poll_snmp_tcp_established(poller_buffer, parsed_params, **kw):
+    """
+    Get the  tcp.tcpConnTable.tcpConnEntry.tcpConnState SNMP table
+    to find the number of established TCP connections for the given
+    port
+    """
+    oid = (1,3,6,1,2,1,6,13,1,1)
+    kw['pobj'].snmp_engine.get_table(kw['attribute'].host, oid, cb_snmp_tcp_established, **kw)
+    return True
+
+def cb_snmp_tcp_established(values, error, pobj, attribute, poller_row, **kw):
+    if values is None:
+        pobj.poller_callback(attribute.id, poller_row, None)
+        return
+
+    port = str(attribute.index)
+    est_count = 0
+    for oid,val in values.items():
+        if val == '5' and oid.split('.')[-6] == port:
+            est_count += 1
+
+    pobj.poller_callback(attribute.id, poller_row, est_count)
+
+def poll_tcp_content(poller_buffer, parsed_params, pobj, attribute, poller_row, **kw):
+    """
+    Check tcp_content poller buffer for matches
+    Requires tcp_content from poller buffer as the string matched against
+    Attribute fields: 
+      check_content: 1 to run this check
+      check_regexp: PCRE pattern used for matching
+    """
+
+    if attribute.field('check_content') != '1':
+        pobj.poller_callback(attribute.id, poller_row, [u'valid', u'not checked'])
+        return True
+
+    try:
+        data = poller_buffer['tcp_content']
+    except KeyError:
+        pobj.poller_callback(attribute.id, poller_row, [u'invalid', u'missing buffer'])
+        return True
+    if data == '':
+        pobj.poller_callback(attribute.id, poller_row, [u'invalid', u'no data'])
+        return True
+
+    try:
+        regex = re.compile(attribute.field('check_regexp'), re.I)
+    except re.error:
+        pobj.poller_callback(attribute.id, poller_row, [u'invalid', u'bad regexp configured'])
+        return True
+
+    if regex.find(data) is not None:
+        pobj.poller_callback(attribute.id, poller_row, [u'valid', unicode(data[:40])])
+    else:
+        pobj.poller_callback(attribute.id, poller_row, u'invalid')
+
+
+    return False

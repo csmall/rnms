@@ -72,7 +72,7 @@ class Event(DeclarativeBase):
 
     @classmethod
     def add_admin(cls, host=None, attribute=None, field_list=None):
-        event_type = EventType.by_name('Administrative')
+        event_type = EventType.by_tag('admin')
         if event_type is not None:
             return Event(event_type=event_type, host=host, attribute=attribute, field_list=field_list)
 
@@ -196,6 +196,7 @@ class EventType(DeclarativeBase):
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(60), nullable=False, unique=True)
+    tag = Column(String(40), unique=True)
     text = Column(Unicode(250))
     showable = Column(SmallInteger,nullable=False,default=1)
     generate_alarm = Column(Boolean,nullable=False,default=False)
@@ -214,8 +215,13 @@ class EventType(DeclarativeBase):
         return '<EventType name={0}>'.format(self.display_name)
 
     @classmethod
+    def by_tag(cls, tag):
+        """ Return the Event Type with the given tag """
+        return DBSession.query(cls).filter(cls.tag==tag).first()
+
+    @classmethod
     def by_name(cls, name):
-        """ Return the Event Type whose display_name is ``name``."""
+        """ Return the Event Type with the given display_name """
         return DBSession.query(cls).filter(cls.display_name==name).first()
 
     @classmethod

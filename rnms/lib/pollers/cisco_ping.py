@@ -17,9 +17,38 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-import logging
+"""
+  Cisco ping implementation.
+  http://www.cisco.com/en/US/tech/tk648/tk362/technologies_tech_note09186a0080094e8e.shtml
 
+  Permits devices with snmp read/write community to ping remote devices
+"""
+
+import logging
 logger = logging.getLogger('CiscoPing')
+
+# Define the OIDs
+ciscoPingEntry = (1,3,6,1,4,1,9,9,16,1,1,1)
+ciscoPingEntryStatus = ciscoPingEntry + (16,)
+
+def set_ping_status(index, status, cb_fun, **kw):
+    """
+    Set the status of the ping entry
+    """
+    oid = ciscoPingEntryStatus + (int(index),)
+    req = snmp.Request(kw['attribute'].host)
+    req.add_oid(oid, cb_fun, data=kw, value=int(status))
+    kw['pobj'].snmp_engine.set(req)
+
+    kw['pobj'].snmp_engine.get_int(kw['attribute'].host, oid, cb_fun, **kw)
+
+def get_ping_status(index, cb_fun, **kw):
+    """
+    Get the status of the ping entry
+    """
+    oid = ciscoPingEntryStatus + (int(index),)
+    kw['pobj'].snmp_engine.get_int(kw['attribute'].host, oid, cb_fun, **kw)
+
 
 def poll_cisco_snmp_ping_start(poller_buffer, **kwargs):
     """

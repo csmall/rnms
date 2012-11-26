@@ -114,4 +114,29 @@ def cb_snmp_status(value, error, pobj, attribute, poller_row, **kw):
     pobj.poller_callback(attribute.id, poller_row, kw['default_value'])
 
 
-    
+def poll_snmp_walk_average(poller_buffer, parsed_params, **kw):
+    """
+    Walk an entire table and average out the values across the table
+    Parameters: the OID in dotted decimal e.g. '1.3.6.1.1.9'
+    """
+    if parsed_params == '':
+        return False
+    kw['pobj'].snmp_engine.get_table(kw['attribute'].host, parsed_params, cb_snmp_walk_average, table_trim=1, **kw)
+
+def cb_snmp_walk_average(values, error, pobj, attribute, poller_row, **kw):
+    """
+    Returns: float average of the returned table
+    """
+    if values is None or len(values) == 0:
+        pobj.poller_callback(attribute.id, poller_row, kw['default_value'])
+        return
+
+    total=0
+    for value in values.values():
+        try:
+            total += float(value)
+        except ValueError as errmsg:
+            logger.error('Non-float value %s in snmp_walk_average()', value)
+            pobj.poller_callback(attribute.id, poller_row, kw['default_value'])
+            return
+    pobj.poller_callback(attribute.id, poller_row, total/len(values))

@@ -45,6 +45,9 @@ STATE_DOWN = 2
 STATE_TESTING = 3
 STATE_UNKNOWN = 4
 
+REQUEST_SINGLE = 0
+REQUEST_TABLE = 1
+
 REQUEST_GET = 0
 REQUEST_GETNEXT = 1
 REQUEST_GETBULK = 2
@@ -61,11 +64,20 @@ class SNMPRequest(object):
 
     replyall = False
     oid_trim = None
+    req_type = REQUEST_SINGLE
+    snmp_type = REQUEST_GET
 
-    def __init__(self, host, req_type=REQUEST_GET):
+    def __init__(self, host, req_type=None):
         self.host = host
-        self.req_type = req_type
-        self.oids = {}
+        self.oids = []
+        if req_type is not None:
+            self.req_type = req_type
+            if req_type == REQUEST_SINGLE:
+                self.snmp_type = REQUEST_GET
+            elif str(host.community_ro[0]) == '2':
+                self.snmp_type = REQUEST_GETBULK
+            else:
+                self.snmp_type = REQUEST_GETNEXT
 
     def __repr__(self):
         return "<SNMPRequest Host:{0} #oids:{1}>".format(self.host.mgmt_address, len(self.oids))
@@ -75,7 +87,7 @@ class SNMPRequest(object):
         Add another OID to this request, there can be multiple queries to
         the same host
         """
-        self.oids[oid] = {'callback': callback, 'data': data, 'default': default, 'filter': filt, 'value': value }
+        self.oids.append({'oid': oid, 'callback': callback, 'data': data, 'default': default, 'filter': filt, 'value': value })
 
     def set_replyall(self, flag):
         """
@@ -106,13 +118,13 @@ class SNMPRequest(object):
         return None
 
     def is_get(self):
-        return (self.req_type == REQUEST_GET)
+        return (self.snmp_type == REQUEST_GET)
 
     def is_getnext(self):
-        return (self.req_type == REQUEST_GETNEXT)
+        return (self.snmp_type == REQUEST_GETNEXT)
 
     def is_getbulk(self):
-        return (self.req_type == REQUEST_GETBULK)
+        return (self.snmp_type == REQUEST_GETBULK)
 
 class SNMPEngine():
     """ 
@@ -240,17 +252,21 @@ class SNMPEngine():
                 if request['request'].is_get():
                     self._get_response(pmod, rcv_pdu, request)
                 elif request['request'].is_getnext():
-                    self._getnext_response(pmod, rcv_pdu, request, False)
+                    if self._getnext_response(pmod, rcv_pdu, request, False) == False:
+                        whole_msg = False
                 elif request['request'].is_getbulk():
-                    self._getnext_response(pmod, rcv_pdu, request, True)
+                    if self._getnext_response(pmod, rcv_pdu, request, True) == False:
+                        whole_msg = False
         return whole_msg
 
     def _get_response(self, pmod, rcv_pdu, request):
         """ Handle reception of a GET response """
         reply_table = {}
         first_req_oid = None
-        for oid, val in pmod.apiPDU.getVarBinds(rcv_pdu):
-            req_oid = request['request'].get_oid(oid)
+        var_binds = pmod.apiPDU.getVarBinds(rcv_pdu)
+        for idx in range(len(var_binds)):
+            oid, val = var_binds[idx]
+            req_oid = request['request'].oids[idx]
             if req_oid is None:
                 self.logger.error('No request line for %s', oid)
                 continue
@@ -278,43 +294,49 @@ class SNMPEngine():
     def _getnext_response(self, pmod, rcv_pdu, request, is_bulk):
         """ Handle reception of a GETNEXT response """
         if 'varbinds' not in request:
-            request['varbinds'] = {}
-
+            request['varbinds'] = [ {} for idx  in range(len(request['request'].oids))]
         req_pdu = pmod.apiMessage.getPDU(request['msg'])
         if is_bulk:
             var_bind_table = pmod.apiBulkPDU.getVarBindTable(req_pdu, rcv_pdu)
         else:
             var_bind_table = pmod.apiPDU.getVarBindTable(req_pdu, rcv_pdu)
+
         for table_row in var_bind_table:
-            for oid,val in table_row:
-                if request['table_oid'].isPrefixOf(oid):
+            for idx in range(len(table_row)):
+                oid,val = table_row[idx]
+                if request['table_oids'][idx].isPrefixOf(oid):
                     if request['request'].oid_trim is None:
-                        request['varbinds'][oid.prettyPrint()] = val.prettyPrint()
+                        request['varbinds'][idx][oid.prettyPrint()] = val.prettyPrint()
                     else:
-                        request['varbinds'][oid[-request['request'].oid_trim:].prettyPrint()] = val.prettyPrint()
-                else:
-                    for req_oid in request['request'].oids.values():
-                        self._return_value(req_oid, request['varbinds'])
-                    self._request_finished(request['id'])
-                    return
+                        request['varbinds'][idx][oid[-request['request'].oid_trim:].prettyPrint()] = val.prettyPrint()
 
         oldid = request['id']
         
         # Stop on EOM
-        for oid, val in var_bind_table[-1]:
-            if not isinstance(val, pmod.Null):
+        for idx in range(len(var_bind_table[-1])):
+            oid, val = var_bind_table[-1][idx]
+            if not isinstance(val, pmod.Null) and request['table_oids'][idx].isPrefixOf(oid):
                 break
         else:
-            self._request_finished(oldid)
-            return
+            if request['request'].replyall:
+                request['request'].oids[0]['callback'](request['varbinds'], None, **request['request'].oids[0]['data'])
+            else:
+                for idx in len(request['request'].oids):
+                    request['request'].oids[idx]['callback'](request['varbinds'][idx], None, **request['request'].oids[idx]['data'])
+            return False
         # Create new request
-        pmod.apiPDU.setVarBinds(req_pdu, 
-                [ (x, pmod.null) for x,y in var_bind_table[-1] ])
+        if request['request'].is_getbulk():
+            pmod.apiBulkPDU.setVarBinds(req_pdu,
+                    [ (x, pmod.null) for x,y in var_bind_table[-1]])
+        else:
+            pmod.apiPDU.setVarBinds(req_pdu, 
+                    [ (x, pmod.null) for x,y in var_bind_table[-1] ])
         new_reqid = pmod.getNextRequestID()
         pmod.apiPDU.setRequestID(req_pdu, new_reqid)
         self.scheduler.job_update(request['id'], new_reqid)
         self.send_request(request)
         self._request_finished(oldid)
+        return True
 
 
     def check_timeouts(self):
@@ -326,6 +348,7 @@ class SNMPEngine():
                     request['request'].send_default()
                     self._request_finished(request['id'])
                 else:
+                    print "resending"
                     self.send_request(request, False)
 
     def send_requests(self):
@@ -403,25 +426,27 @@ class SNMPEngine():
         pmod.apiMessage.setPDU(msg, pdu)
         return msg,pmod
 
-    def _build_getnext_message(self, community, oid, is_bulk):
+    def _build_getnext_message(self, community, oids, is_bulk):
         pmod = self._pmod_from_community(community)
         if pmod is None:
             self.logger.info('Could not get pmod from community %s',community)
             return None,None
 
         # SNMP table header
-        head_vars = [ pmod.ObjectIdentifier(oid) ]
+        head_vars = [ pmod.ObjectIdentifier(oid) for oid in oids ]
         
         if is_bulk:
             pdu = pmod.GetBulkRequestPDU()
             pmod.apiPDU.setDefaults(pdu)
             pmod.apiBulkPDU.setNonRepeaters(pdu, 0)
             pmod.apiBulkPDU.setMaxRepetitions(pdu, 25)
+            print "bulk"
         else: 
             pdu = pmod.GetNextRequestPDU()
             pmod.apiPDU.setDefaults(pdu)
+            print "next"
         pmod.apiPDU.setVarBinds(pdu,
-                [ (x, pmod.Null()) for x in head_vars])
+                [ (pmod.ObjectIdentifier(x), pmod.null) for x in oids])
         # Build Message
         msg = pmod.Message()
         pmod.apiMessage.setDefaults(msg)
@@ -479,7 +504,7 @@ class SNMPEngine():
                 request, msg)
         return True
 
-    def get_table(self, host, oid, cb_function, default=None, filt=None, table_trim=None, **kwargs):
+    def get_table(self, host, oids, cb_function, default=None, filt=None, table_trim=None, **kwargs):
         """ Get a SNMP table from the given host and pass it to the
             cb_function
             prefix_trim: Number of numbers to return in table
@@ -490,17 +515,19 @@ class SNMPEngine():
         is_getbulk = False
         if str(host.community_ro[0]) == '2':
             is_getbulk = True
-        msg, pmod = self._build_getnext_message(host.community_ro, oid, is_getbulk)
+        msg, pmod = self._build_getnext_message(host.community_ro, oids, is_getbulk)
         if msg is None:
             cb_function(default, host, **kwargs)
             return False
-        table_oid = pmod.ObjectIdentifier(oid) 
-        request = SNMPRequest(host, req_type=REQUEST_GETNEXT)
+        table_oids = [ pmod.ObjectIdentifier(oid)  for oid in oids ]
+        request = SNMPRequest(host, req_type=REQUEST_TABLE)
         request.oid_trim = table_trim
-        request.add_oid(oid, cb_function, data=kwargs)
+        request.set_replyall(True)
+        for oid in oids:
+            request.add_oid(oid, cb_function, data=kwargs)
         self.scheduler.job_add(
                 pmod.apiPDU.getRequestID(pmod.apiMessage.getPDU(msg)),
-                request, msg, table_oid=table_oid)
+                request, msg, table_oids=table_oids)
         return True
                 
 

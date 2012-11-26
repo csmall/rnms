@@ -57,11 +57,12 @@ class PingClient():
     def return_value(self, ping):
         """
         ping has finished, send the callback the data
+        values are (rtt,packetloss)
         """
         (ping_out, ping_err) = ping['popen'].communicate()
         match = self.fping_re.search(ping_err)
         if match:
-            values = (float(match.group(1)), float(match.group(2)))
+            values = (float(match.group(2)), float(match.group(1)))
             if ping['data'] is None:
                 ping['cb_fun'](values, None)
             else:

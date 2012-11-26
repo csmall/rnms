@@ -96,23 +96,20 @@ class Backend(DeclarativeBase):
         """
         Backend: event
         Raises an event if required.
-        poller parameters: <event_type_id>,[<default>],[<damp_time>]
-        event_type_id: ID for the event to raise
+        poller parameters: <event_type_tag>,[<default>],[<damp_time>]
+        event_type_tag: tag used to find the correct EventType
         default:       if poller_result is nothing use this string
         damp_time:     time to wait before raising event
-        poller_result: dictionary
+        poller_result: dictionary or (state,info) tuple
            state - optional display_name to match AlarmState model
            other items are copied into event fields
+           
         """
 
         params = self.parameters.split(',')
-        try:
-            event_type_id = int(params[0])
-        except ValueError:
-            return "EventType ID \"{0}\" is not an integer.".format(params[0])
-        event_type = EventType.by_id(event_type_id)
+        event_type = EventType.by_tag(params[0])
         if event_type is None:
-            return "ID \"{0}\" is not found in EventType table.".format(even_type_id)
+            return "Tag \"{0}\" is not found in EventType table.".format(params[0])
         try:
             default_input = params[1]
         except IndexError:
@@ -123,18 +120,26 @@ class Backend(DeclarativeBase):
         except IndexError, ValueError:
             damp_time = 1
 
+        if default_input == '':
+            alarm_description='down'
+        elif default_input != 'nothing':
+            alarm_description = default_input
+
         event_fields={}
-        if type(poller_result) is not dict:
-            alarm_description = unicode(poller_result)
-        else:
+        if type(poller_result) is list:
+            alarm_description = poller_result[0]
+            try:
+                event_fields['info'] = poller_result[1]
+            except IndexError:
+                pass # no additional info
+        elif type(poller_result) is dict:
             try:
                 alarm_description = poller_result['state']
-                event_fields = {k:v for k,v in poller_result.items() if k!='state'}
             except KeyError:
-                if default_input == '':
-                    alarm_description='down'
-                elif default_input != 'nothing':
-                    alarm_description = default_input
+                pass
+            event_fields = {k:v for k,v in poller_result.items() if k!='state'}
+        else:
+            alarm_description = poller_result
 
         alarm_state = AlarmState.by_name(alarm_description)
         if alarm_state is None:

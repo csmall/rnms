@@ -38,13 +38,16 @@ class SnmpTrap(DeclarativeBase):
     
     #{ Columns
     id = Column(Integer, primary_key=True)
-    ip = Column(String(40), nullable=False)
+    source_address = Column(String(40), nullable=False)
+    enterprise = Column(String(250), nullable=False)
+    agent_address = Column(String(40), nullable=False)
     trap_oid = Column(String(250), nullable=False)
     processed = Column(Boolean, nullable=False, default=False)
     #}
 
     def __init__(self, ip, trap_oid):
-        self.ip = ip
+        self.source_address = ip
+        self.agent_address = ip
         self.trap_oid = trap_oid
 
     def process(self):
@@ -75,7 +78,7 @@ class SnmpTrap(DeclarativeBase):
 
 
 class SnmpTrapVarbinds(DeclarativeBase):
-    __tablename__ = 'snmp_traps_varbinds'
+    __tablename__ = 'snmp_trap_varbinds'
     
     #{ Columns
     trap_id = Column(Integer, ForeignKey('snmp_traps.id'), nullable=False)

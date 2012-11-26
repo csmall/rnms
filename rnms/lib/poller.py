@@ -103,11 +103,17 @@ class Poller(object):
             if polls_running == False:
                 # If there are no pollers, we can sleep until we need to
                 # look for more attributes to poll
+                self.poller_sets = {}
+                transaction.commit()
+
                 if self.forced_attributes == True:
                     return
-                sleep_time = (self.next_find_attribute - datetime.datetime.now()).total_seconds()
-                self.logger.debug("Sleeping for {0} seconds".format(sleep_time))
-                time.sleep(sleep_time)
+                next_attribute = model.Attribute.next_polled()
+                self.logger.debug("Next poll time is %s", next_attribute.next_poll)
+                sleep_time = round((self.next_find_attribute - datetime.datetime.now()).total_seconds())
+                if sleep_time > 0:
+                    self.logger.debug("Sleeping for {0} seconds".format(sleep_time))
+                    time.sleep(sleep_time)
 
     def poller_callback(self, attribute_id, poller_row, poller_value):
         """
@@ -142,16 +148,36 @@ class Poller(object):
                         self.logger.warning('A:%d - Field "%s" has no value from poller', attribute_id, fkey)
 
             #poller_row = self.get_poller_row(patt['attribute'].poller_set_id, patt['index'])
+            poller_result = self._poller_prettyprint(poller_value)
             backend_result = poller_row.run_backend(patt['attribute'], poller_value)
             backend_finish_time = datetime.datetime.now()
             backend_time = backend_finish_time - patt['return_time']
             backend_time_ms = backend_time.seconds * 1000 + backend_time.microseconds / 1000
-            self.logger.debug("A:%d I:%d - %s:%s -> %s:%s (%d:%d)", attribute_id, poller_row.position, poller_row.poller.display_name, poller_value, poller_row.backend.display_name, backend_result, poller_time_ms, backend_time_ms)
+            self.logger.debug("A:%d I:%d - %s:%s -> %s:%s (%d:%d)", attribute_id, poller_row.position, poller_row.poller.display_name, poller_result, poller_row.backend.display_name, backend_result, poller_time_ms, backend_time_ms)
         else:
             self.logger.debug("A:%d I:%d - %s:%s -> N/A (%d:)", attribute_id, poller_row.position, poller_row.poller.display_name, poller_value, poller_time_ms )
 
         # Run the next poll row
         patt['in_poller'] = False
+    
+    def _poller_prettyprint(self, poller_value):
+        """
+        Print a nice output of the returned value from the poller for debugging
+        """
+        max_len=100
+        val_type = type(poller_value)
+        if val_type == str or val_type == unicode:
+            retval = str(poller_value)
+        elif val_type == int or val_type == float:
+            retval = str(poller_value)
+        elif val_type == list or val_type == tuple:
+            retval = u','.join([unicode(x) for x in poller_value])
+        elif val_type == dict:
+            retval = u','.join([str(x) for x in poller_value.values()])
+        else:
+            retval = poller_value
+        return retval[:max_len]
+
 
     def check_polling_attributes(self):
         """
@@ -195,7 +221,7 @@ class Poller(object):
         updated_rrds = []
         rrd_fields = model.DBSession.query(model.AttributeTypeRRD).filter(model.AttributeTypeRRD.attribute_type_id == patt['attribute'].attribute_type_id)
         for rrd_field in rrd_fields:
-            if rrd_field.name in self.poller_buffer[patt['attribute'].id]:
+            if rrd_field.name in self.poller_buffer[patt['attribute'].id] and self.poller_buffer[patt['attribute'].id][rrd_field.name] is not None:
                 updated_rrds.append('{0}:{1}'.format(rrd_field.name,
                     rrd_field.update(patt['attribute'], self.poller_buffer[patt['attribute'].id][rrd_field.name])))
         if len(updated_rrds) > 0:
@@ -205,7 +231,6 @@ class Poller(object):
         del (self.poller_buffer[patt['attribute'].id])
         del (self.polling_attributes[patt['attribute'].id])
         patt['attribute'].update_poll_date()
-        model.DBSession.flush()
 
     def _add_forced_attributes(self, att_ids):
         """
@@ -227,7 +252,7 @@ class Poller(object):
         now = datetime.datetime.now()
         attributes = model.DBSession.query(model.Attribute).filter(and_(
                 (model.Attribute.next_poll < now),
-                (model.Attribute.poller_set_id > 1))).order_by(model.Attribute.polled)
+                (model.Attribute.poll_enabled == True))).order_by(model.Attribute.polled)
         for attribute in attributes:
             # Skip if already polling
             if attribute.id in self.polling_attributes:

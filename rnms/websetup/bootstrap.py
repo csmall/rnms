@@ -8,9 +8,11 @@ from tg import config
 from rnms import model
 from rnms.websetup import database_data
 import transaction
+from sqlalchemy.sql import not_
 
 def bootstrap(command, conf, vars):
     """Place any commands to setup rnms here"""
+    used_event_types = []
 
     # <websetup.bootstrap.before.auth
     from sqlalchemy.exc import IntegrityError
@@ -62,8 +64,8 @@ def bootstrap(command, conf, vars):
 
         for row in database_data.attribute_types:
             at = model.AttributeType()
-            (at.display_name, at.ad_validate, at.ad_enabled, at.ad_function,
-                    at.ad_parameters, at.default_poller_id, 
+            (at.display_name, at.ad_validate, at.ad_enabled, at.ad_command,
+                    at.ad_parameters, at.default_poller_set_id, 
                     at.rra_cf, at.rra_rows, ignore_step, at.default_graph_id,
                     at.break_by_card, ignore_handler, at.permit_manual_add,
                     at.default_sla_id, ignore_tools, at.required_sysobjid, fields, rrds
@@ -102,7 +104,11 @@ def bootstrap(command, conf, vars):
 
         for row in database_data.event_types:
             et = model.EventType()
-            (et.display_name, severity, et.text, et.generate_alarm, et.up_event_id, et.alarm_duration, et.showable, et.show_host) = row
+            try:
+                (et.display_name, severity, et.tag, et.text, et.generate_alarm, et.up_event_id, et.alarm_duration, et.showable, et.show_host) = row
+            except ValueError as errmsg:
+                print("Bad event_type \"{0}\".\n{1}".format(row, errmsg))
+                exit()
             et.severity = model.EventSeverity.by_name(severity)
             #print("eseverity %s is %s" % (severity, et.severity))
             model.DBSession.add(et)
@@ -120,8 +126,13 @@ def bootstrap(command, conf, vars):
             try:
                 lmr = model.LogmatchRow()
                 (lmr.match_text, lmr.match_start, lmr.host_match, 
-                    lmr.attribute_match, lmr.state_match, lmr.event_type_id,
+                    lmr.attribute_match, lmr.state_match, event_tag,
                     fields) = row
+                lmr.event_type = model.EventType.by_tag(event_tag)
+                if lmr.event_type is None:
+                    print "Bad EventType tag \"{0}\" in LogMatchRow {1}".format(event_tag, lmr.match_text)
+                    exit()
+                used_event_types.append(lmr.event_type.id)
                 try:
                   lmr.match_sre = re.compile(row[0])
                 except re.error as errmsg:
@@ -164,6 +175,13 @@ def bootstrap(command, conf, vars):
         for row in database_data.backends:
             be = model.Backend()
             (be.display_name, be.command, be.parameters) = row
+            if be.command == 'event':
+                parms = be.parameters.split(',')
+                event_type = model.EventType.by_tag(parms[0])
+                if event_type is None:
+                    raise ValueError("EventType {0} not found in backend {1}".format(parms[0], be.display_name))
+                    exit()
+                used_event_types.append(event_type.id)
             model.DBSession.add(be)
 
         for row in database_data.poller_sets:
@@ -201,7 +219,6 @@ def bootstrap(command, conf, vars):
         model.DBSession.add(host)
 
 
-
         model.DBSession.flush()
         transaction.commit()
     except IntegrityError:
@@ -211,3 +228,6 @@ def bootstrap(command, conf, vars):
         transaction.abort()
 
     # <websetup.bootstrap.after.auth>
+    print "\n\n------------------------------------------------------------------------\n"
+    print "Validation of data"
+    print "Unused Event Types: {0}".format(', '.join([ et.display_name for et in model.DBSession.query(model.EventType).filter(not_(model.EventType.id.in_(used_event_types))).all()]))

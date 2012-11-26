@@ -21,10 +21,11 @@
 import datetime
 import logging
 import os
+import random
 
 from sqlalchemy import *
 from sqlalchemy.orm import mapper, relationship, subqueryload
-from sqlalchemy import Table, ForeignKey, Column, and_
+from sqlalchemy import Table, ForeignKey, Column, and_, desc
 from sqlalchemy.types import Integer, Unicode
 #from sqlalchemy.orm import relation, backref
 
@@ -35,6 +36,7 @@ __all__ = ['Attribute', 'AttributeField', 'AttributeType', 'AttributeTypeField',
 
 snmp_state_names = {1:'up', 2:'down', 3:'testing', 4:'unknown'}
 MINDATE=datetime.date(1900,1,1)
+poll_variance = 60 # +- 30 seconds for next poll
 
 class Attribute(DeclarativeBase):
     __tablename__ = 'attributes'
@@ -57,9 +59,10 @@ class Attribute(DeclarativeBase):
     index = Column(String(40), nullable=False) # Unique for host
     make_sound = Column(Boolean,nullable=False)
     poll_interval = Column(SmallInteger,nullable=False, default=0)
+    poll_enabled = Column(Boolean, nullable=False, default=True)
     check_status = Column(Boolean,nullable=False)
     poll_priority = Column(Boolean,nullable=False) #DMII
-    poller_set_id = Column(Integer, ForeignKey('poller_sets.id'), nullable=False, default=1)
+    poller_set_id = Column(Integer, ForeignKey('poller_sets.id'))
     poller_set = relationship('PollerSet')
     created = Column(DateTime, nullable=False, default=datetime.datetime.now)
     updated = Column(DateTime, nullable=False, default=datetime.datetime.now)
@@ -83,17 +86,34 @@ class Attribute(DeclarativeBase):
                 cls.host == host).filter(cls.display_name == display_name).first()
 
     @classmethod
-    def from_discovered(cls, discovered_attribute):
+    def next_polled(cls):
+        """
+        Return the attribute that would be the next polled one
+        Used for finding how long before we need to rescan again
+        """
+        return DBSession.query(cls).order_by(desc(cls.next_poll)).first()
+
+    @classmethod
+    def from_discovered(cls, discovered_attribute, ad_policy, logger):
+        """
+        Create a real Attribute object based upon data that is found in the
+        fake DiscoveredAttribute object
+        """
         a = cls()
         a.host_id = discovered_attribute.host_id
+        a.attribute_type = discovered_attribute.attribute_type
         a.attribute_id = discovered_attribute.attribute_id
         a.display_name = discovered_attribute.display_name
         a.index = discovered_attribute.index
         a.use_iface = discovered_attribute.use_iface
         a.admin_state = discovered_attribute.admin_state
         a.oper_state = discovered_attribute.oper_state
-        for field in discovered_attribute.fields:
-            print "Field is %s" % field
+
+        for tag,value in discovered_attribute.fields.items():
+            a.add_field(tag,value)
+
+        if ad_policy.set_poller and attribute_type.default_poller_set_id is not None:
+            a.poller_set_id = attribute_type.default_poller_set_id
         return a
 
     @classmethod
@@ -204,10 +224,13 @@ class Attribute(DeclarativeBase):
         if now == None:
             now = datetime.datetime.now()
         self.polled = now
+
+        next_poll_variance = datetime.timedelta(seconds=(random.random() - 0.5) * poll_variance)
         if self.poll_interval < 1:
-            self.next_poll = now + datetime.timedelta(minutes=self.default_poll_interval)
+            self.next_poll = now + datetime.timedelta(minutes=self.default_poll_interval) + next_poll_variance
         else:
-            self.next_poll = now + datetime.timedelta(minutes=self.poll_interval)
+            self.next_poll = now + datetime.timedelta(minutes=self.poll_interval) + next_poll_variance
+        print 'XXXXXX npd    {0}'.format(self.next_poll)
 
 class AttributeField(DeclarativeBase):
     __tablename__ = 'attribute_fields'
@@ -242,10 +265,10 @@ class AttributeType(DeclarativeBase):
     display_name = Column(Unicode(50),unique=True,nullable=False)
     ad_validate = Column(Boolean, nullable=False)
     ad_enabled = Column(Boolean, nullable=False)
-    ad_function = Column(String(50),nullable=False)
+    ad_command = Column(String(50),nullable=False)
     ad_parameters = Column(String(200))
-    #default_poller_id = Column(Integer, ForeignKey('poller_sets.id'))
-    #FIXME circular default_poller = relationship('PollerSet')
+    default_poller_set_id = Column(Integer, ForeignKey('poller_sets.id', use_alter=True, name='fk_atype_pollerset'))
+    default_poller_set = relationship('PollerSet', primaryjoin='PollerSet.id == AttributeType.default_poller_set_id')
     ds_heartbeat = Column(Integer, nullable=False, default=600)
     rra_cf = Column(String(10), nullable=False, default='AVERAGE')
     rra_rows = Column(Integer, nullable=False, default=103680)
@@ -261,11 +284,11 @@ class AttributeType(DeclarativeBase):
     fields = relationship('AttributeTypeField', order_by='AttributeTypeField.position', backref='attribute_type', cascade='all, delete, delete-orphan')
     rrds = relationship('AttributeTypeRRD', order_by='AttributeTypeRRD.position', backref='attribute_type', cascade='all, delete, delete-orphan')
     #}
-    def __init__(self, display_name=None, ad_function='none', ad_parameters=''):
+    def __init__(self, display_name=None, ad_command='none', ad_parameters=''):
         self.display_name=display_name
         self.ad_enabled=False
         self.ad_validate = False
-        self.ad_function = ad_function
+        self.ad_command = ad_command
         self.ad_parameters= ad_parameters
         self.required_sysobjid=''
 
@@ -275,6 +298,61 @@ class AttributeType(DeclarativeBase):
         if display_name is None:
             return None
         return DBSession.query(cls).filter(cls.display_name == display_name).first()
+
+    def autodiscover(self, dobj, host):
+        """
+        Attempt to autodiscover attributes of this object's type on the
+        given host.
+        Parameters:
+          host: The host to query
+        Returns:
+          True/False - if it was enabled
+          Will run a callback when the data is collected
+        """
+        if self.ad_enabled == False:
+            return False
+        if self._match_sysobjid(host) == False:
+            return False
+        if self.ad_command is None or self.ad_command == 'none':
+            return False
+
+        from rnms.lib import att_discovers
+        try:
+            real_discover = getattr(att_discovers, 'discover_'+self.ad_command)
+        except AttributeError:
+            dobj.logger.error('H:%d AT:%d - Attribute Discovery function discover_%s does not exist.', host.id, self.id, self.ad_command)
+            return False
+        return real_discover(dobj=dobj, att_type=self, host=host)
+        return True
+
+    def _match_sysobjid(self, host):
+        """
+        Check that the sysObjectId of the host matches or is a subset
+        of the required systemobject id
+        AttributeTypes may use ent. instead of 1.3.6.1.4.1.
+        Returns true/false
+        """
+        if self.required_sysobjid == '':
+            return True
+        if host.sysobjid is None:
+            return False
+        if self.required_sysobjid == '.' and host.sysobjid != '':
+            return True
+        if host.sysobjid[len(self.required_sysobjid):] == self.required_sysobjid:
+            return True
+        sysid = self.required_sysobjid.replace('ent.', '1.3.6.1.4.1.',1)
+        if host.sysobjid[len(self.required_sysobjid):] == sysid:
+            return True
+        return False
+
+    def field_by_tag(self, tag):
+        """
+        Return the AttributeType field that matches the tag or None
+        """
+        for f in self.fields:
+            if f.tag == tag:
+                return f
+        return None
 
 class AttributeTypeField(DeclarativeBase):
     __tablename__ = 'attribute_type_fields'
@@ -318,15 +396,20 @@ class DiscoveredAttribute():
     do not have any database backend but just lists
     """
 
-    def __init__(self, host_id=1, attribute_type_id=1):
+    def __init__(self, host_id=1, attribute_type=None):
         self.host_id=host_id
         self.display_name = ''
         self.oper_state = 2
         self.admin_state = 2
-        self.attribute_type_id=attribute_type_id
+        self.attribute_type=attribute_type
         self.index = ''
-        fields = {}
+        self.fields = {}
 
     def add_field(self, key, value):
         self.fields[key] = value
 
+    def get_field(self, key):
+        try:
+            return self.fields[key]
+        except KeyError:
+            return None

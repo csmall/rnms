@@ -95,9 +95,10 @@ class PollerSet(DeclarativeBase, GenericSet):
     #{ Columns
     id = Column(Integer, primary_key=True, nullable=False)
     display_name = Column(Unicode(40), nullable=False, unique=True)
-    attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'))
-    attribute_type = relationship('AttributeType', backref='poller_sets')
+    attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'), nullable=False)
+    attribute_type = relationship('AttributeType', backref='poller_sets', primaryjoin='PollerSet.attribute_type_id == AttributeType.id')
     poller_rows = relationship('PollerRow', order_by='PollerRow.position')
+    ForeignKeyConstraint(['attribute_type_id',], ['attribute_types.id',], use_alter=True, name='fk_poller_set_attribute_type_id')
 
     def __init__(self, display_name=None):
         self.display_name = display_name

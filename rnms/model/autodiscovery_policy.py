@@ -70,14 +70,14 @@ class AutodiscoveryPolicy(DeclarativeBase):
         if new_attribute.attribute_type.ad_validate == False:
             return True
 
-        ipaddr = new_attribute.get_field('ipaddr','')
+        ipaddr = new_attribute.get_field('address')
 
         # Policy doesnt permit loopback interfaces to be added
         if self.skip_loopback == True and ipaddr == '127.0.0.1':
             return False
 
         # Policy does not permit attributes with no addresses to be added
-        if self.check_address == True and ipaddr == '' or ipaddr == '0.0.0.0':
+        if self.check_address == True and ipaddr in (None,  u'', u'0.0.0.0'):
             return False
 
         # Policy does not permit attributes that are not up to be added

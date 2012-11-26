@@ -48,7 +48,7 @@ class SNMPScheduler():
         del self.active_jobs[oldid]
         self.active_jobs[newid]['id'] = newid
 
-    def job_add(self, reqid,  request, msg, table_oid = None, table_trim=None):
+    def job_add(self, reqid,  request, msg, table_oids = None, table_trim=None):
         """
         Adds a new job to the waiting queue
         """
@@ -57,7 +57,7 @@ class SNMPScheduler():
             'host' : request.host,
             'request': request,
             'msg': msg,
-            'table_oid' : table_oid,
+            'table_oids' : table_oids,
             'table_trim': table_trim,
             })
 

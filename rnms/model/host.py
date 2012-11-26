@@ -152,8 +152,6 @@ class Host(DeclarativeBase):
                 return True
         return False
 
-    
-
         
 
 class Iface(DeclarativeBase):

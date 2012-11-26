@@ -23,6 +23,7 @@ import struct
 import datetime
 import logging
 import os
+import string
 
 logger = logging.getLogger('TCPClient')
 
@@ -66,7 +67,7 @@ class TCPDispatcher(asyncore.dispatcher):
     """
     connect_timeout = 10
     total_timeout = 20
-    connect_time = -1
+    connect_time = None
     responded = False
 
     def __init__(self):
@@ -97,6 +98,8 @@ class TCPDispatcher(asyncore.dispatcher):
         if err != 0:
             self.error = (err, os.strerror(err))
             self._parse_response()
+        elif self.max_bytes is None:
+            self._parse_response()
 
     def handle_connect(self):
         self.connect_time = datetime.datetime.now() - self.start_connect
@@ -112,8 +115,11 @@ class TCPDispatcher(asyncore.dispatcher):
             self.error = errmsg
             self._parse_response()
         else:
-            if self.max_bytes != 0 and len(self.inbuf) > self.max_bytes:
+            if self.max_bytes is not None and self.max_bytes != 0 and len(self.inbuf) > self.max_bytes:
                 self._parse_response()
+
+    def readable(self):
+        return (self.max_bytes is not None)
 
     def writable(self):
         return (len(self.outbuf) > 0)
@@ -125,7 +131,8 @@ class TCPDispatcher(asyncore.dispatcher):
     def _parse_response(self):
         if self.responded == False:
             self.close()
-            self.cb_fun(self.host, self.inbuf, self.connect_time, self.error, **self.kwargs)
+            filtered_buf = ''.join([c for c in self.inbuf if c in string.printable])
+            self.cb_fun(self.host, filtered_buf, self.connect_time, self.error, **self.kwargs)
             self.responded = True
 
     def poll(self):
