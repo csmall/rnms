@@ -41,10 +41,11 @@ poll_variance = 60 # +- 30 seconds for next poll
 class Attribute(DeclarativeBase):
     __tablename__ = 'attributes'
     default_poll_interval = 5
+    display_name_len = 40
     
     #{ Columns
     id = Column(Integer, autoincrement=True,primary_key=True)
-    display_name = Column(Unicode(40))
+    display_name = Column(Unicode(display_name_len))
     oper_state = Column(SmallInteger, nullable=False) #IF-MIB
     admin_state = Column(SmallInteger, nullable=False) #IF-MIB
     attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'))
@@ -71,6 +72,25 @@ class Attribute(DeclarativeBase):
     fields = relationship('AttributeField', backref='attribute', cascade='all, delete, delete-orphan')
     #}
 
+    def __init__(self, host=None, attribute_type=None, display_name=None, index=''):
+        self.host=host
+        self.attribute_type=attribute_type
+        self.display_name=display_name
+        self.index = index
+        self.oper_state=2
+        self.admin_state=2
+        self.use_iface = False
+        self.user_id = 1
+        self.sla_id = 1
+        self.make_sound = True
+        self.poll_interval = 0
+        self.check_status = True
+        self.poll_priority = False
+        self.poller_set_id = 1
+
+    def __repr__(self):
+        return '<Attribute name=%s>' % self.display_name
+
     @classmethod
     def by_id(cls, attribute_id):
         """ Return the attribute with given id"""
@@ -94,7 +114,7 @@ class Attribute(DeclarativeBase):
         return DBSession.query(cls).order_by(desc(cls.next_poll)).first()
 
     @classmethod
-    def from_discovered(cls, discovered_attribute, ad_policy, logger):
+    def from_discovered(cls, host, discovered_attribute):
         """
         Create a real Attribute object based upon data that is found in the
         fake DiscoveredAttribute object
@@ -108,11 +128,13 @@ class Attribute(DeclarativeBase):
         a.use_iface = discovered_attribute.use_iface
         a.admin_state = discovered_attribute.admin_state
         a.oper_state = discovered_attribute.oper_state
+        a.user_id = host.default_user_id
+        # SLA default needed
 
         for tag,value in discovered_attribute.fields.items():
-            a.add_field(tag,value)
+            a.set_field(tag,value)
 
-        if ad_policy.set_poller and attribute_type.default_poller_set_id is not None:
+        if host.autodiscovery_policy.set_poller and attribute_type.default_poller_set_id is not None:
             a.poller_set_id = attribute_type.default_poller_set_id
         return a
 
@@ -125,33 +147,18 @@ class Attribute(DeclarativeBase):
         else:
             return DBSession.query(cls).join(Host).filter(and_( (cls.poller_set_id > 1),(Host.pollable==True), (cls.id == attribute_id)))
 
-    def __init__(self, host=None, attribute_type=None, display_name=None, index=''):
-        self.host=host
-        self.attribute_type=attribute_type
-        self.display_name=display_name
-        self.index = index
-        self.oper_state=2
-        self.admin_state=2
-        self.use_iface = False
-        self.user_id = 1
-        self.sla_id = 1
-        self.make_sound = True
-        self.poll_interval = 0
-        self.check_status = True
-        self.poll_priority = False
-        self.poller_set_id = 1
-
-    def __repr__(self):
-        return '<Attribute name=%s>' % self.display_name
-
-    def add_field(self, tag, value):
+    def set_field(self, tag, value):
         """ Add a new field that has ''tag'' with the value ''value''"""
         type_field = AttributeTypeField.by_tag(self.attribute_type, tag)
         if type_field is None:
             logging.warning("Cannot find field '%s' for attribute type.", tag)
             return
-        new_field = AttributeField(self,type_field)
-        new_field.value = value
+        for field in self.fields:
+            if field.attribute_type_field_id == at_field.id:
+                field.value = value
+        else:
+            new_field = AttributeField(self,type_field)
+            new_field.value = value
 
     def get_fields(self):
         """ Return a dictionary of all fields for this attribute"""
@@ -230,7 +237,16 @@ class Attribute(DeclarativeBase):
             self.next_poll = now + datetime.timedelta(minutes=self.default_poll_interval) + next_poll_variance
         else:
             self.next_poll = now + datetime.timedelta(minutes=self.poll_interval) + next_poll_variance
-        print 'XXXXXX npd    {0}'.format(self.next_poll)
+
+    def set_disabled(self):
+        """
+        Set this Attribute to disabled. This means that there will be no
+        ongoing polling for this Attibute and it's admin status is
+        down
+        """
+        self.poll_enabled = False
+        self.admin_status = 2
+
 
 class AttributeField(DeclarativeBase):
     __tablename__ = 'attribute_fields'
@@ -405,7 +421,7 @@ class DiscoveredAttribute():
         self.index = ''
         self.fields = {}
 
-    def add_field(self, key, value):
+    def set_field(self, key, value):
         self.fields[key] = value
 
     def get_field(self, key):

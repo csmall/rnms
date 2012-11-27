@@ -109,13 +109,88 @@ class AttDiscover(object):
                     )
 
             if idx not in known_atts:
-                # We have discovered an attribute that is not previously
-                # known
-                if host.autodiscovery_policy.can_add(discovered_atts[idx]) :
-                    self.logger.debug('H:%d AT:%d index:%s - New Interface Found', host_id, attribute_type.id, idx)
-                if host.autodiscovery_policy.permit_add:
-                    real_att = model.Attribute.from_discovered(discovered_atts[idx], host.autodiscovery_policy)
-                    
+                self._discovery_found(host, attribute_type, discovered_atts[idx])
+            elif idx not in discovered_atts:
+                self._discovery_lost(host, known_atts[idx])
+            else:
+                # We are in both
+                self._discovery_validate(host, attribute_type, known_atts[idx], discovered_atts[idx])
+                self._check_user(host, known_atts[idx])
+
+    def _discovery_found(self, host, attribute_type, attribute):
+        """
+        Autodiscovery has found a new attribute that is not stored in 
+        the database.
+        """
+        if host.autodiscovery_policy.can_add(attribute):
+            self.logger.debug('H:%d AT:%d index:%s - New Interface Found', host.id, attribute_type.id, attribute.index)
+        if host.autodiscovery_policy.permit_add:
+            real_att = model.Attribute.from_discovered(host, attribute)
+            model.DBSession.add(real_att)
+            self.logger.debug('H:%d AT:%d index:%s - Added', host.id, attribute_type.id, attribute.index)
+
+    def _discovery_lost(self, host, attribute_type, attribute):
+        """
+        Autodiscovery failed to find this attribute in the host but the
+        database has this attribute.  Possibly delete or set disabled this
+        Attribute.
+        """
+        # Host has this attribute but it wasn't discovered
+        if attribute_type.ad_validate and attribute.poll_enabled:
+            self.logger.debug('H:%d AT:%d index:%s - Not found in host', host.id, attribute_type.id, attribute.index)
+            if host.autodiscovery_policy.can_delete():
+                model.DBSession.delete(attribute)
+                event_info = u' - Deleted'
+            elif host.autodiscovery_policy.can_disable():
+                attribute.set_disabled()
+                event_info = u' - Disabled'
+            else:
+                event_info = u''
+            if host.autodiscovery_policy.alert_delete:
+                new_event = model.Event.create_admin(host, attribute,
+                        'Attribute not found in host{0}'.format(event_info))
+                if new_event is not None:
+                    model.DBSession.add(new_event)
+                    new_event.process()
+
+    def _discovery_validate(self, host, att_type, known_att, disc_att):
+        """
+        Autodiscovery has found an known Attribute.  If required this
+        method will validate the fields to the latest values
+        """
+        changed_fields=[]
+        if not att_type.ad_validate:
+            return
+
+        if known_att.display_name != disc_att.display_name[:known_att.display_name_len]:
+            changed_fields.append("Display Name to \"{0}\" was \"{1}\"".format(disc_att.display_name, known_att.display_name))
+            known_att.display_name = disc_att.display_name
+
+        tracked_fields = [ (f.tag,f.display_name) for f in att_type.fields if f.tracked == True]
+        for tag,fname  in tracked_fields:
+            known_value = known_att.get_field(tag)
+            disc_value = disc_att.get_field(tag)
+            if known_value is not None and disc_value is not None and known_value != disc_value:
+                changed_info = "{0} to \"{1}\" was \"{2}\"".format(fname, disc_value, known_value)
+                self.logger.debug("H:%d A:%d Changed Field %s", known_att.host.id, known_att.id, changed_info)
+                changed_fields.append(changed_info)
+                if host.autodiscovery_policy.permit_modify:
+                    known.att.set_field(tag, disc_value)
+        if changed_fields != []:
+            new_event = model.Event.create_admin(host, known_atts[idx], 
+                    'detected modification'+(', '.join(changed_fields)))
+            if new_event is not None:
+                model.DBSession.add(new_event)
+                new_event.process()
+
+    def _check_user(self, host, attribute):
+        """
+        Check that there is a valid user assigned to this attribute and
+        report if it is not
+        """
+        if attribute.user_id == 1:
+            pass #FIXME need to fix the customer/client/user stuff in attributes
+
 
 
 

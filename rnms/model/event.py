@@ -71,10 +71,23 @@ class Event(DeclarativeBase):
                 self.fields.append(EventField(field_tag,field_list[field_tag]))
 
     @classmethod
-    def add_admin(cls, host=None, attribute=None, field_list=None):
+    def create_admin(cls, host=None, attribute=None, info=None):
+        """
+        Create and return a new administrative event.
+        Parameters:
+          host: optional host object
+          attribute: optional attribute object
+          info: string of additional information
+        """
+
+        if info is None:
+            field_list = None
+        else:
+            field_list = {'info': info}
         event_type = EventType.by_tag('admin')
         if event_type is not None:
             return Event(event_type=event_type, host=host, attribute=attribute, field_list=field_list)
+        return None
 
     def text(self):
         """

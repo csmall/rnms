@@ -80,7 +80,7 @@ def cb_snmp_interfaces(values, error, host2, **kw):
             ifspeed = values[2][ifindex]
         except IndexError:
             ifspeed = 100000000 #default is 100 Mbps
-        new_att.add_field('speed', ifspeed)
+        new_att.set_field('speed', ifspeed)
 
         try:
             new_att.admin_state = int(values[3][ifindex])
@@ -96,7 +96,7 @@ def cb_snmp_interfaces(values, error, host2, **kw):
             pass
         else:
             for k,v in ipinfo.items():
-                new_att.add_field(k,v)
+                new_att.set_field(k,v)
         discovered_attributes[unicode(ifindex)] = new_att
 
     kw['dobj'].discover_callback(host2.id, discovered_attributes)
