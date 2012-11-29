@@ -63,7 +63,7 @@ def poll_snmp_tcp_established(poller_buffer, parsed_params, **kw):
     port
     """
     oid = (1,3,6,1,2,1,6,13,1,1)
-    kw['pobj'].snmp_engine.get_table(kw['attribute'].host, oid, cb_snmp_tcp_established, **kw)
+    kw['pobj'].snmp_engine.get_table(kw['attribute'].host, (oid,), cb_snmp_tcp_established, **kw)
     return True
 
 def cb_snmp_tcp_established(values, error, pobj, attribute, poller_row, **kw):
@@ -73,7 +73,7 @@ def cb_snmp_tcp_established(values, error, pobj, attribute, poller_row, **kw):
 
     port = str(attribute.index)
     est_count = 0
-    for oid,val in values.items():
+    for oid,val in values[0].items():
         if val == '5' and oid.split('.')[-6] == port:
             est_count += 1
 

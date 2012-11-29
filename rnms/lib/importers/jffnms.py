@@ -85,7 +85,7 @@ class JffnmsImporter(object):
         self.commit = commit
         self.delete = delete
         self.zones = {}
-        self.users = {}
+        self.groups = {}
         self.hosts = {}
         self.attributes = {}
         self.events = {}
@@ -159,9 +159,13 @@ class JffnmsImporter(object):
         return self.zones.get(jffnms_id,1)
 
     def _import_users(self):
+        """
+        Users in JFFNMS become users and groups in RNMS
+        """
         if self.delete == True:
             try:
                 delete_count = DBSession.query(model.User).filter(model.User.user_id>2).delete()
+                delete_group_count = DBSession.query(model.User).filter(model.User.user_id>1).delete()
             except IntegrityError as err:
                 print 'Error deleting users: %s'  % err
         add_count=0
@@ -174,8 +178,13 @@ class JffnmsImporter(object):
                 user.email_address=unicode(row[1])
                 user.password = u'password'
                 DBSession.add(user)
+                g = model.Group()
+                g.group_name = unicode(row[1])
+                g.display_name = unicode(row[2])
+                g.users.append(user)
+                DBSession.add(g)
                 DBSession.flush()
-                self.users[row[0]] = user.user_id
+                self.groups[row[0]] = g.group_id
                 add_count += 1
         except IntegrityError as err:
             print 'Error importing users: %s'  % err
@@ -186,8 +195,8 @@ class JffnmsImporter(object):
                 print 'Users: {0} deleted, {1} added.'.format(delete_count, add_count)
         return True
 
-    def user_id(self,jffnms_id):
-        return self.users.get(jffnms_id,1)
+    def group_id(self,jffnms_id):
+        return self.groups.get(jffnms_id,1)
 
     @classmethod
     def import_snmp(self,old_comm):
@@ -211,7 +220,7 @@ class JffnmsImporter(object):
                 host.zone_id = self.zone_id(row[5])
                 host.tftp_server = row[6]
                 host.autodiscovery_policy_id = row[7]
-                host.default_user_id = self.user_id(row[8])
+                #host.default_user_id = self.user_id(row[8])
                 host.show_host = (row[9] == 1)
                 host.pollable = (row[10] == 1)
                 host.created = date.fromtimestamp(row[11])
@@ -299,7 +308,7 @@ class JffnmsImporter(object):
                 att.display_name=unicode(row[2])
                 att.host_id = self.hosts.get(row[3],1)
                 att.index = self.get_interface_index(row[0])
-                att.user_id = self.user_id(row[4])
+                att.group_id = self.group_id(row[4])
                 att.sla_id = self.sla_id(row[5])
                 #FIXME sla poll group
                 att.make_sound = row[7]

@@ -86,5 +86,16 @@ class AutodiscoveryPolicy(DeclarativeBase):
 
         return True
 
+    def can_del(self):
+        """
+        Does this policy permit the deletion of a missing attribute?
+        """
+        return (self.permit_delete and not self.permit_disable)
 
+    def can_disable(self):
+        """
+        Does this policy permit the setting of an attribute polling to 
+        disabled
+        """
+        return (not self.permit_delete and self.permit_disable)
 

@@ -53,8 +53,8 @@ class Attribute(DeclarativeBase):
     host_id = Column(Integer, ForeignKey('hosts.id'))
     host = relationship('Host', backref='attributes')
     use_iface = Column(Boolean, nullable=False)
-    user_id = Column(Integer, ForeignKey('tg_user.user_id'),nullable=False)
-    user = relationship('User', backref='attributes')
+    group_id = Column(Integer, ForeignKey('tg_group.group_id'),nullable=False)
+    group = relationship('Group', backref='attributes')
     sla_id = Column(Integer, ForeignKey('slas.id', use_alter=True, name='fk_sla'),nullable=False)
     sla = relationship('Sla', primaryjoin='Attribute.sla_id==Sla.id', post_update=True)
     index = Column(String(40), nullable=False) # Unique for host

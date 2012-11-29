@@ -37,7 +37,8 @@ def load_config(filename):
 def parse_args():
     parser = ArgumentParser(description=__doc__)
     parser.add_argument('--conf_file', help="configuration to use", default='development.ini')
-    parser.add_argument('--atts', help='Attribute ids commar separated')
+    parser.add_argument('-a', '--atts', help='Attribute ids commar separated')
+    parser.add_argument('-H', '--host', help='Only polls attributes for these hosts', type=str, metavar='HOST,...' )
     return parser.parse_args()
 
 args = parse_args()
@@ -49,6 +50,10 @@ logger = logging.getLogger("Poller")
 attribute_ids=None
 if args.atts is not None:
     attribute_ids = args.atts.split(',')
-main_poller = Poller(attributes=attribute_ids,logger=logger)
+host_ids = None
+if args.host is not None:
+    host_ids = args.host.split(',')
+
+main_poller = Poller(attributes=attribute_ids,host_ids=host_ids)
 main_poller.main_loop()
 transaction.commit()

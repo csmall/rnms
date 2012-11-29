@@ -46,12 +46,13 @@ class Poller(object):
     next_find_attribute = datetime.datetime.min
     forced_attributes=False
 
-    def __init__(self, attributes=None, logger=None):
+    def __init__(self, attributes=None, host_ids=None):
         
-        if logger is not None:
-            self.logger = logger
-        else:
-            self.logger = logging.getLogger("poll")
+        self.logger = logging.getLogger("poll")
+        if host_ids is None:
+            self.host_ids = None
+        else: 
+            self.host_ids = [ int(h) for h in host_ids ]
         self.snmp_engine = SNMPEngine(logger=self.logger)
         self.ntp_client = ntpclient.NTPClient()
         self.tcp_client = TCPClient()
@@ -253,6 +254,8 @@ class Poller(object):
         attributes = model.DBSession.query(model.Attribute).filter(and_(
                 (model.Attribute.next_poll < now),
                 (model.Attribute.poll_enabled == True))).order_by(model.Attribute.polled)
+        if self.host_ids is not None:
+            attributes = attributes.filter(model.Attribute.host_id.in_(self.host_ids))
         for attribute in attributes:
             # Skip if already polling
             if attribute.id in self.polling_attributes:

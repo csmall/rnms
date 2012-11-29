@@ -107,7 +107,7 @@ class SNMPRequest(object):
             req = self.oids[0]
             req['callback'](req['default'], error, **(req['data']))
         else:
-            for req in self.oids.values():
+            for req in self.oids:
                 req['callback'](req['default'], error, **(req['data']))
 
     def get_oid(self, oid):
@@ -323,6 +323,7 @@ class SNMPEngine():
             else:
                 for idx in len(request['request'].oids):
                     request['request'].oids[idx]['callback'](request['varbinds'][idx], None, **request['request'].oids[idx]['data'])
+            self._request_finished(request['id'])
             return False
         # Create new request
         if request['request'].is_getbulk():
@@ -348,7 +349,7 @@ class SNMPEngine():
                     request['request'].send_default()
                     self._request_finished(request['id'])
                 else:
-                    print "resending"
+                    print "resending {0}".format(request)
                     self.send_request(request, False)
 
     def send_requests(self):
@@ -393,7 +394,7 @@ class SNMPEngine():
             return None,None
         pdu = pmod.GetRequestPDU()
         pmod.apiPDU.setDefaults(pdu)
-        pmod.apiPDU.setVarBinds(pdu, [(oid, pmod.Null()) for oid in request.oids.keys()])
+        pmod.apiPDU.setVarBinds(pdu, [(row['oid'], pmod.Null()) for row in request.oids])
         # Build Message
         msg = pmod.Message()
         pmod.apiMessage.setDefaults(msg)
@@ -418,7 +419,7 @@ class SNMPEngine():
             return None,None
         pdu = pmod.SetRequestPDU()
         pmod.apiPDU.setDefaults(pdu)
-        pmod.apiPDU.setVarBinds(pdu, [(oid, self._set_vars(pmod,oid_atts['value'])) for oid,oid_atts in request.oids.items()])
+        pmod.apiPDU.setVarBinds(pdu, [(row['oid'], self._set_vars(pmod,row['value'])) for row in request.oids])
         # Build Message
         msg = pmod.Message()
         pmod.apiMessage.setDefaults(msg)

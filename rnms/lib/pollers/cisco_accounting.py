@@ -59,7 +59,7 @@ def get_acct_table(value, error, **kw):
     Step 3: Actually fetch the accounting table
     """
     oid = (1,3,6,1,4,1,9,2,4,9)
-    kw['pobj'].snmp_engine.get_table(kw['attribute'].host, oid, cb_acct_table, **kw)
+    kw['pobj'].snmp_engine.get_table(kw['attribute'].host, (oid,), cb_acct_table, **kw)
 
 def cb_acct_table(value, error, pobj, attribute, poller_row, **kw):
     # FIXME - does anyone use this? is it required?

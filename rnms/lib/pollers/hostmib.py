@@ -27,7 +27,7 @@ from rnms.lib import snmp
 def poll_hostmib_apps(poller_buffer, parsed_params, **kw):
 
     oid = (1,3,6,1,2,1,25,4,2,1,2)
-    kw['pobj'].snmp_engine.get_table(kw['attribute'].host, oid, cb_hostmib_apps, table_trim=1, **kw)
+    kw['pobj'].snmp_engine.get_table(kw['attribute'].host, (oid,), cb_hostmib_apps, table_trim=1, **kw)
     return True
 
 def cb_hostmib_apps(values, error, pobj, attribute, poller_row, **kw):
@@ -36,10 +36,10 @@ def cb_hostmib_apps(values, error, pobj, attribute, poller_row, **kw):
     if values is None:
         pobj.poller_callback(attribute.id, poller_row, None)
         return
-    for pid, app in values.items():
+    for pid, app in values[0].items():
         if app == attribute.display_name:
             app_count += 1
-            pids.append(pid)
+            pids.append(int(pid))
     state = 'not_running'
     if app_count > 0:
         state = 'running'
@@ -54,8 +54,7 @@ def poll_hostmib_perf(poller_buffer, parsed_params, **kw):
     req = snmp.SNMPRequest(kw['attribute'].host)
     req.set_replyall(True)
     for pid in poller_buffer['pids']:
-        req.add_oid(oid + (int(pid),), cb_hostmib_perf, kw)
-        req.add_oid(oid + (int(1),), cb_hostmib_perf, kw)
+        req.add_oid(oid + (pid,), cb_hostmib_perf, kw)
     kw['pobj'].snmp_engine.get(req)
     return True
 

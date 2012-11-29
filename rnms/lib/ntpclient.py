@@ -95,7 +95,7 @@ class NTPDispatcher(asyncore.dispatcher):
 
     def handle_read(self):
         recv_msg, recv_addr =  self.recvfrom(8192)
-        logger.debug("Received message from %s", recv_addr)
+        #logger.debug("Received message from %s", recv_addr)
         try:
             recv_job = self.sent_jobs[recv_addr]
         except KeyError:

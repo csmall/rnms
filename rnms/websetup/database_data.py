@@ -847,6 +847,7 @@ backends = [
         ]
 
 poller_sets = [
+        [u'No Poller', u'No Interface Type', []],
         [u'Cisco Interface', u'Physical Interfaces', [
             [u'Cisco Verify Interface Number', u'Change Interface Number'],
             [u'Cisco SNMP Ping Start', u''],
