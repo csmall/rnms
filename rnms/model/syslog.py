@@ -19,15 +19,12 @@
 #
 #
 """ Raw syslog messages module """
-import datetime
 
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relation
-from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode
+from sqlalchemy import Column
+from sqlalchemy.types import DateTime, String, Boolean
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, metadata, DBSession
+from rnms.model import DeclarativeBase
 
 
 class Syslog(DeclarativeBase):
@@ -44,5 +41,5 @@ class Syslog(DeclarativeBase):
         self.hostname = hostname
         self.message = message
         if gentime is not None:
-            time_generated = gentime
+            self.time_generated = gentime
 

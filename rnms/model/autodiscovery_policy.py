@@ -19,13 +19,11 @@
 #
 """ Auto-discovery Policy """
 
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relation
-from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, String, Boolean
+from sqlalchemy import Column
+from sqlalchemy.types import Integer, Boolean, Unicode
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, metadata, DBSession
+from rnms.model import DeclarativeBase
 from rnms.lib import snmp
 
 

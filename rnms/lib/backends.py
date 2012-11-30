@@ -70,9 +70,9 @@ def alarm(host, attribute, parameters, poller_result):
     if 'state' in poller_result:
         alarm_description = poller_result['state']
     elif default_input == '':
-            alarm_description='down'
-        elif default_input != 'nothing':
-            alarm_description = default_input
+        alarm_description='down'
+    elif default_input != 'nothing':
+        alarm_description = default_input
     if 'info' in poller_result:
         event_info = poller_result['info']
 
@@ -184,7 +184,7 @@ def backend_raise_event(attribute, event_type, alarm_state,wait_time):
         else:
             if down_alarm.alarm_state != alarm_state:
                 return True
-   return False 
+    return False 
 
 
     event_type_id = int(parameters)

@@ -22,12 +22,14 @@ import logging
 # Import models for rnms
 from rnms.model import DBSession
 from rnms.model.logfile import Logfile, SyslogMessage
-from rnms import model
 
 class Consolidator():
     """
     Consolidator process, may have some sub-processes under it
     """
+
+    def __init__(self):
+        self.logger = logging.getLogger('cons')
 
     def consolidate(self):
         logfiles = DBSession.query(Logfile)
@@ -41,20 +43,20 @@ class Consolidator():
         """
         Consolidates syslog messages from database
         """
-        logger.info("LOGF: 1 (database)")
+        self.logger.info("LOGF: 1 (database)")
         line_count=0
         lines = DBSession.query(SyslogMessage).filter(SyslogMessage.consolidated==False)
         for line in lines:
             line_count += 1
             print line.message
-        logger.info("LOGF(1): %d syslog messages processed" % line_count)
+        self.logger.info("LOGF(1): %d syslog messages processed" % line_count)
 
     def consolidate_logfile(self, logfile):
 
-        logger.info("LOGF(%s): '%s'", logfile.id, logfile.pathname)
+        self.logger.info("LOGF(%s): '%s'", logfile.id, logfile.pathname)
         line_count = 0
         if logfile.is_new() == False:
-            logger.info("LOGF(%s): 0 messages processed ( No new lines).", logfile.id)
+            self.logger.info("LOGF(%s): 0 messages processed ( No new lines).", logfile.id)
             return
         lfile = open(logfile.pathname, "r")
         lfile.seek(logfile.file_offset)
@@ -64,7 +66,7 @@ class Consolidator():
                 print(f)
             line_count += 1
 
-        logger.info("LOGF(%s): %d messages processed" % (logfile.id, line_count))
+        self.logger.info("LOGF(%s): %d messages processed" % (logfile.id, line_count))
         logfile.update(lfile.tell())
 
 

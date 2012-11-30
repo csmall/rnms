@@ -24,15 +24,15 @@ import datetime
 import os
 import transaction
 import re 
+import socket
 
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relationship
-from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode, PickleType
+from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey, Column
+from sqlalchemy.types import Integer, Unicode, PickleType, DateTime, Boolean, SmallInteger, String
 
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, metadata, DBSession, Attribute, AlarmState
+from rnms.model import DeclarativeBase, Attribute, AlarmState, Host
 from rnms.lib.genericset import GenericSet
 
 syslog_host_match = re.compile(r'\w{3} [ :0-9]{11} ([._[a-z0-9]-]+)\s+',re.IGNORECASE)
@@ -71,7 +71,7 @@ class Logfile(DeclarativeBase):
         if self.file_offset == 0 or self.file_mtime == 0:
             return True
         if os.access(self.pathname, os.R_OK) == False:
-            logging.warning("Cannot access file \"%s\" for reading." % self.pathname)
+            #logging.warning("Cannot access file \"%s\" for reading." % self.pathname)
             return False
         if os.stat(self.pathname).st_mtime > self.file_mtime:
             return True

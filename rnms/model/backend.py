@@ -23,14 +23,13 @@ Model for Backend processes
 
 """
 import datetime
+import logging
 
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relation
-from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode
+from sqlalchemy import Column
+from sqlalchemy.types import Integer, Unicode, String
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, metadata, DBSession, EventType, AlarmState, Event, Alarm
+from rnms.model import DeclarativeBase, DBSession, EventType, AlarmState, Event, Alarm
 
 
 class Backend(DeclarativeBase):
@@ -117,7 +116,7 @@ class Backend(DeclarativeBase):
 
         try:
             damp_time = int(params[2])
-        except IndexError, ValueError:
+        except (IndexError, ValueError):
             damp_time = 1
 
         if default_input == '':
@@ -194,10 +193,10 @@ class Backend(DeclarativeBase):
             new_state = int(poller_result)
         except ValueError:
             return "Oper status received by poller is not a integer"
-        if attribute.oper_state == poller_result:
+        if attribute.oper_state == new_state:
             return "Oper status not changed."
-        attribute.oper_state = poller_result
-        return "Oper status set to "+str(poller_result)
+        attribute.oper_state = new_state
+        return "Oper status set to "+str(new_state)
 
     def _run_verify_index(self, poller_row, attribute, poller_result):
         """

@@ -19,7 +19,6 @@
 #
 import asyncore
 import socket
-import struct
 import datetime
 import logging
 import os

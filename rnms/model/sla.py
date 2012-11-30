@@ -17,17 +17,17 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
+""" Service Level Agreements - Checks the values of AttributeTypeField"""
+
 import operator
 import re
 
-""" Service Level Agreements - Checks the values of AttributeTypeField"""
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relationship, backref
-from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode
+from sqlalchemy.orm import relationship, backref
+from sqlalchemy import ForeignKey, Column
+from sqlalchemy.types import Integer, Unicode, Boolean, String, SmallInteger
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, metadata, DBSession, Event
+from rnms.model import DeclarativeBase, DBSession, Event
 from rnms.lib.parsers import RnmsTextTemplate, NumericStringParser
 from rnms.lib.genericset import GenericSet
 from rnms.lib import logger
@@ -122,8 +122,8 @@ class Sla(DeclarativeBase, GenericSet):
                     'info': self.event_text,
                     'details': ', '.join(event_details)}
             new_event = Event(event_type=self.event_type, attribute=attribute, alarm_state=self.alarm_state, field_list=event_fields)
-            
-
+            DBSession.add(new_event)
+            new_event.process()
 
 class SlaRow(DeclarativeBase):
     """

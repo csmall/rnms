@@ -20,8 +20,6 @@
 
 # Import models for rnms
 from rnms.lib import logger
-from rnms.model import DBSession
-from rnms.model.logfile import Logfile, SyslogMessage
 from rnms import model
 
 

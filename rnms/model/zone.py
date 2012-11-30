@@ -19,13 +19,10 @@
 #
 
 """ Template of one of the rnms.models"""
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relation
-from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode
-#from sqlalchemy.orm import relation, backref
+from sqlalchemy import Column
+from sqlalchemy.types import Integer, Unicode, String, Boolean
 
-from rnms.model import DeclarativeBase, metadata, DBSession
+from rnms.model import DeclarativeBase, DBSession
 
 
 class Zone(DeclarativeBase):

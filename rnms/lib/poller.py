@@ -20,13 +20,10 @@
 import logging
 import datetime
 import time
-from timeit import Timer
-import select
-import socket
 import asyncore
 import transaction
 
-from sqlalchemy import *
+from sqlalchemy.orm import and_
 
 from rnms import model
 from rnms.lib.snmp import SNMPEngine, SNMPRequest

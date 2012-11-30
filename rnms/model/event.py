@@ -17,20 +17,19 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-
 """ Event Handling """
-from rnms.lib.parsers import RnmsTextTemplate
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relationship
-from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode, String, Boolean
-#from sqlalchemy.orm import relation, backref
+
 import datetime
 import logging
 
-logger = logging.getLogger('Event')
+from sqlalchemy.orm import relationship, UniqueConstraint
+from sqlalchemy import ForeignKey, Column
+from sqlalchemy.types import Integer, Unicode, String, Boolean, SmallInteger
 
-from rnms.model import DeclarativeBase, metadata, DBSession, Attribute, Alarm, AlarmState
+from rnms.model import DeclarativeBase, DBSession, Alarm, AlarmState, DateTime
+from rnms.lib.parsers import RnmsTextTemplate
+
+logger = logging.getLogger('Event')
 
 class Event(DeclarativeBase):
     """

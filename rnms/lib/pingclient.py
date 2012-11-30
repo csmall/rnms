@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-import datetime
 import logging
 import subprocess
 import re
@@ -44,7 +43,7 @@ class PingClient():
 
         try:
             p = subprocess.Popen([self.fping_bin, '-c', str(num_pings), '-p', str(interval), '-q', ipaddr], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        except OSError as error:
+        except OSError:
             return False
         self.active_pings[ipaddr] = {
                 'popen': p,

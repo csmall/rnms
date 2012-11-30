@@ -20,13 +20,11 @@
 #
 """ SNMP Traps model """
 
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relation
-from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode
+from sqlalchemy import ForeignKey, Column, String, Boolean, relationship
+from sqlalchemy.types import Integer, Unicode, PickleType, SmallInteger
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, metadata, DBSession
+from rnms.model import DeclarativeBase, DBSession, Host
 
 
 class SnmpTrap(DeclarativeBase):
@@ -55,12 +53,12 @@ class SnmpTrap(DeclarativeBase):
         Process this trap, this is done by the consolidator and will create
         a new event, if required
         """
-        host = model.Host.by_address(self.ip)
+        host = Host.by_address(self.ip)
         if host is None:
             self.processed=1
             return
 
-        trap_matches = model.DBSession.query(model.TrapMatches)
+        trap_matches = DBSession.query(TrapMatches)
         for trap_match in trap_matches:
             match = trap_match.match_oid_sre.match(self.trap_oid)
             if match is not None:
@@ -94,7 +92,7 @@ class TrapMatches(DeclarativeBase):
     id = Column(Integer, autoincrement=True, primary_key=True)
     position = Column(SmallInteger, nullable=False, default=1)
     display_name = Column(Unicode(40), nullable=False, unique=True)
-    match_oid_text = Column(Unicode(250)), nullable=False, unique=True)
+    match_oid_text = Column(Unicode(250), nullable=False, unique=True)
     match_oid_sre = Column(PickleType)
     command = Column(Unicode(40), nullable=False)
     stop_if_match = Column(Boolean, nullable=False, default=True)

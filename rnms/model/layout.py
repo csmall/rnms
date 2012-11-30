@@ -20,13 +20,12 @@
 #
 """Sample model module."""
 
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relation
-from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode
+from sqlalchemy import ForeignKey, Column, relationship
+from sqlalchemy.types import Integer, Unicode, String, SmallInteger
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, metadata, DBSession
+from rnms.model import DeclarativeBase
+from rnms.lib.genericset import GenericSet
 
 
 class Layout(DeclarativeBase):

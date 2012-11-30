@@ -19,13 +19,12 @@
 #
 
 """ Action template """
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relationship
-from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode
+from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey, Column
+from sqlalchemy.types import Integer, Unicode, String
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, metadata, DBSession
+from rnms.model import DeclarativeBase
 
 
 class Action(DeclarativeBase):
@@ -62,7 +61,7 @@ class Action(DeclarativeBase):
         Run this action for an alarm trigger
         """
         raw_fields = self.get_trigger_fields(trigger)
-        subs = alarm.substitutes()
+        # FIXME subs = alarm.substitutes()
 
         self.email(raw_fields)
             

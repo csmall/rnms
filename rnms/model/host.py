@@ -20,12 +20,12 @@
 """ Host definition model """
 
 import datetime
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relationship
-from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode, Boolean, PickleType, String
 
-from rnms.model import DeclarativeBase, metadata, DBSession
+from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey, Column
+from sqlalchemy.types import Integer, Unicode, Boolean, PickleType, String, DateTime, Text, SmallInteger
+
+from rnms.model import DeclarativeBase, DBSession
 from rnms.lib import snmp
 
 __all__ = ['Host', 'Iface', 'ConfigTransfer', 'HostConfig']

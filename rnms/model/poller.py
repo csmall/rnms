@@ -19,16 +19,13 @@
 #
 #
 """Poller model module."""
-import time
-import logging
 
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relationship
-from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode
+from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey, Column, ForeignKeyConstraint
+from sqlalchemy.types import Integer, Unicode, String, SmallInteger
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, metadata, DBSession
+from rnms.model import DeclarativeBase, DBSession
 from rnms.lib import pollers
 from rnms.lib.genericset import GenericSet
 from rnms.lib.parsers import RnmsTextTemplate
@@ -171,7 +168,7 @@ class PollerRow(DeclarativeBase):
         Returns True if it worked or False if not
         """
         if self.poller is None:
-            logger.warning('run logger called with no poller!')
+            pobj.logger.warning('run logger called with no poller!')
             return False
         if self.poller.id == 1:
             self.run_backend(attribute, None)

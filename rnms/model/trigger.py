@@ -19,18 +19,16 @@
 #
 
 """ Trigger model """
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relationship
-from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode, SmallInteger
-#from sqlalchemy.orm import relation, backref
+from sqlalchemy import ForeignKey, Column
+from sqlalchemy import relationship
+from sqlalchemy.types import Integer, Unicode, SmallInteger, Boolean
 
-from rnms.model import DeclarativeBase, metadata, DBSession
+from rnms.model import DeclarativeBase, DBSession
 from rnms.lib.genericset import GenericSet
 
 match_types=('Alarm', 'Event')
 trigger_fields=('Active', 'Attribute', 'Attribute Type', 'Attribute Name', 'Hour', 'Type', 'Duration', 'Host', 'Map', 'Client', 'None')
-rule_operations=('=', '<>', '>', '<', '>=', '<=', 'IN', '!IN', 'C', '!C')
+rule_operators=('=', '<>', '>', '<', '>=', '<=', 'IN', '!IN', 'C', '!C')
 
 class Trigger(DeclarativeBase, GenericSet):
     __tablename__ = 'triggers'
@@ -132,7 +130,7 @@ class TriggerRule(DeclarativeBase):
         test_value = self._get_alarm_field(alarm)
         if test_value is None:
             return
-        test_result = test_rule(previous_result, test_value)
+        test_result = self.test_rule(previous_result, test_value)
         if test_result == True: # Rule fires
             if self.action is not None:
                 pass #FIXME trigger the action
@@ -142,9 +140,9 @@ class TriggerRule(DeclarativeBase):
         test_result = self._test_operation(test_value)
         if previous_result is not None:
             if self.and_rule == True:
-                test_result = test_rule and previous_result
+                test_result = test_result and previous_result
             else:
-                test_result = test_rule or previous_result
+                test_result = test_result or previous_result
         return test_result
 
     def _test_operation(self, test_value):
@@ -152,7 +150,7 @@ class TriggerRule(DeclarativeBase):
         Return the result if true
         """
         try:
-            op_name = rule_operations.index(self.operation)
+            op_name = rule_operators.index(self.operation)
         except ValueError:
             return False
         if op_name == '=':

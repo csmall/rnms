@@ -41,10 +41,10 @@ def bootstrap(command, conf, vars):
         model.DBSession.add(p)
     
         u1 = model.User()
-        u1.user_name = u'editor'
-        u1.display_name = u'Example editor'
-        u1.email_address = u'editor@somedomain.com'
-        u1.password = u'editpass'
+        u1.user_name = u'customer'
+        u1.display_name = u'Default Customer'
+        u1.email_address = u'customer@somedomain.com'
+        u1.password = u'customer'
     
         model.DBSession.add(u1)
         model.DBSession.flush()

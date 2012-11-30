@@ -20,15 +20,12 @@
 """ RRD field for Attribute Types """
 import os
 import rrdtool
-import time
 
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relationship, subqueryload
-from sqlalchemy import Table, ForeignKey, Column, and_
-from sqlalchemy.types import Integer, Unicode
+from sqlalchemy import ForeignKey, Column, and_
+from sqlalchemy.types import Integer, Unicode, String, SmallInteger
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, metadata, DBSession, AttributeField, AttributeTypeField
+from rnms.model import DeclarativeBase, DBSession, AttributeField, AttributeTypeField
 
 dst_names = { 0: 'GAUGE', 1: 'COUNTER', 2: 'ABSOLUTE' }
 

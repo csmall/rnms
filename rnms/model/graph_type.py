@@ -17,15 +17,13 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-
 """ Main description of a type of graph """
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relationship
-from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode
-#from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, metadata, DBSession
+from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey, Column
+from sqlalchemy.types import Integer, Unicode, SmallInteger, String
+
+from rnms.model import DeclarativeBase
 
 
 class GraphTypeGroup(DeclarativeBase):

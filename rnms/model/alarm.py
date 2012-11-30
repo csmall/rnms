@@ -20,13 +20,13 @@
 
 """ Alarm information """
 import datetime
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relationship
-from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode
+
+from sqlalchemy.orm import relationship, and_
+from sqlalchemy import ForeignKey, Column
+from sqlalchemy.types import Integer, Unicode, DateTime, Boolean, String, SmallInteger
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, metadata, DBSession, Trigger
+from rnms.model import DeclarativeBase, DBSession, Trigger
 
 # Alarm internal state defines
 ALARM_DOWN = 1
@@ -126,6 +126,7 @@ class Alarm(DeclarativeBase):
         triggers = Trigger.alarm_triggers()
         for trigger in triggers:
             trigger_result = trigger.process_alarm(self)
+        # FIXME
 
  
 

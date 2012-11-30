@@ -24,7 +24,7 @@ import asyncore
 from sqlalchemy import and_
 
 from rnms import model
-from rnms.lib.snmp import SNMPEngine, SNMPRequest
+from rnms.lib.snmp import SNMPEngine
 from rnms.lib import ntpclient
 from rnms.lib.tcpclient import TCPClient
 from rnms.lib.pingclient import PingClient
@@ -80,7 +80,6 @@ class AttDiscover(object):
                     asyncore.poll(0.1)
                 else:
                     asyncore.poll(3.0)
-                polls_running = True
 
             
     def discover_callback(self, host_id, discovered_atts):
@@ -175,9 +174,9 @@ class AttDiscover(object):
                 self.logger.debug("H:%d A:%d Changed Field %s", known_att.host.id, known_att.id, changed_info)
                 changed_fields.append(changed_info)
                 if host.autodiscovery_policy.permit_modify:
-                    known.att.set_field(tag, disc_value)
+                    known_att.set_field(tag, disc_value)
         if changed_fields != []:
-            new_event = model.Event.create_admin(host, known_atts[idx], 
+            new_event = model.Event.create_admin(host, known_att, 
                     'detected modification'+(', '.join(changed_fields)))
             if new_event is not None:
                 model.DBSession.add(new_event)

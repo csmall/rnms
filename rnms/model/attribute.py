@@ -20,17 +20,14 @@
 """Attributes for a host"""
 import datetime
 import logging
-import os
 import random
 
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relationship, subqueryload
-from sqlalchemy import Table, ForeignKey, Column, and_, desc
-from sqlalchemy.types import Integer, Unicode
+from sqlalchemy.orm import relationship, subqueryload
+from sqlalchemy import ForeignKey, Column, and_, desc
+from sqlalchemy.types import Integer, Unicode, String, Boolean, SmallInteger, DateTime
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, metadata, DBSession
-from rnms.model.host import Host
+from rnms.model import DeclarativeBase, DBSession, Host
 
 __all__ = ['Attribute', 'AttributeField', 'AttributeType', 'AttributeTypeField', 'DiscoveredAttribute']
 
@@ -53,8 +50,8 @@ class Attribute(DeclarativeBase):
     host_id = Column(Integer, ForeignKey('hosts.id'))
     host = relationship('Host', backref='attributes')
     use_iface = Column(Boolean, nullable=False)
-    group_id = Column(Integer, ForeignKey('tg_group.group_id'),nullable=False)
-    group = relationship('Group', backref='attributes')
+    user_id = Column(Integer, ForeignKey('tg_user.user_id'),nullable=False)
+    user = relationship('User', backref='attributes')
     sla_id = Column(Integer, ForeignKey('slas.id', use_alter=True, name='fk_sla'),nullable=False)
     sla = relationship('Sla', primaryjoin='Attribute.sla_id==Sla.id', post_update=True)
     index = Column(String(40), nullable=False) # Unique for host
@@ -134,8 +131,8 @@ class Attribute(DeclarativeBase):
         for tag,value in discovered_attribute.fields.items():
             a.set_field(tag,value)
 
-        if host.autodiscovery_policy.set_poller and attribute_type.default_poller_set_id is not None:
-            a.poller_set_id = attribute_type.default_poller_set_id
+        if host.autodiscovery_policy.set_poller and a.attribute_type.default_poller_set_id is not None:
+            a.poller_set_id = a.attribute_type.default_poller_set_id
         return a
 
     @classmethod
@@ -154,7 +151,7 @@ class Attribute(DeclarativeBase):
             logging.warning("Cannot find field '%s' for attribute type.", tag)
             return
         for field in self.fields:
-            if field.attribute_type_field_id == at_field.id:
+            if field.attribute_type_field_id == type_field.id:
                 field.value = value
         else:
             new_field = AttributeField(self,type_field)

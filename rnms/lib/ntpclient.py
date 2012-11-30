@@ -254,6 +254,6 @@ class NTPControl():
                 assoc.from_data(data[header_len+assoc_count*4:header_len+(assoc_count+1)*4])
                 self.peers.append(assoc)
         elif self.opcode == 2:
-            assoc_data = data[header_len:].split(",")
+            #assoc_data = data[header_len:].split(",")
             self.assoc_data.update(dict([tuple(ad.strip().split("=")) for ad in data[header_len:].split(",") if ad.find("=") > -1]))
 

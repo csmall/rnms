@@ -18,17 +18,13 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 import os
-import sys
 import logging
 from argparse import ArgumentParser
-import datetime
 import transaction
 
-import sqlalchemy 
 from paste.deploy import appconfig
 from rnms.config.environment import load_environment
 from rnms.lib.poller import Poller
-from rnms.lib import logger as rnms_logger
 
 def load_config(filename):
     conf = appconfig('config:' + os.path.abspath(filename))
