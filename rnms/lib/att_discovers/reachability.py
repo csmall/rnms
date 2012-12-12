@@ -17,25 +17,15 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-""" Apache status autodiscovery """
-import re
+""" Discover reachability (ping) """
+from rnms import model
 
-
-def discover_apache(host, **kw):
-    """
-    Make a http call to the host to see if we get the apache status screen
-    """
-    return kw['dobj'].tcp_client.get_tcp(host, 80, 'GET /server-status?auto HTTP/1.1\r\nHost: {0}\r\n\r\n'.format(host.mgmt_address), 40, cb_apache, **kw)
-
-def cb_apache(host, response, connect_time, error, dobj, att_type, **kw):
-    if type(response) is not str:
+def discover_reachability(host, dobj, att_type, **kw):
+    if dobj.ping_client.get_fping(host) is None:
         dobj.discover_callback(host.id, {})
-    elif r'HTTP\/1.1 200 OK' in response:
-        #do something
-        apache_att = DiscoveredAttribute(host.id, att_type)
-        apache_att.display_name = u'Apache Information'
-        apache_att.index = '{}:80'.format(host.mgmt_address)
-        dobj.discover_callback(host.id, {apache_att.index: apache_att})
     else:
-        dobj.discover_callback(host.id, {})
-    
+        new_att = model.DiscoveredAttribute(host.id, att_type)
+        new_att.display_name = 'Reachability to {}'.format(host.mgmt_address)
+        new_att.index = '1'
+        dobj.discover_callback(host.id, {'1': new_att})
+    return True

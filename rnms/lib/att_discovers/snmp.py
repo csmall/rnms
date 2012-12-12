@@ -41,7 +41,7 @@ def discover_snmp_interfaces(host, **kw):
 
 def cb_snmp_interfaces(values, error, host2, **kw):
     if values is None:
-        kw['dobj'].discover_callback(host2.id, [])
+        kw['dobj'].discover_callback(host2.id, {})
         return
     discovered_attributes = {}
 
@@ -100,4 +100,32 @@ def cb_snmp_interfaces(values, error, host2, **kw):
         discovered_attributes[unicode(ifindex)] = new_att
 
     kw['dobj'].discover_callback(host2.id, discovered_attributes)
+
+def discover_snmp_simple(host, **kw):
+    """
+    Check if the given OID exists and if so create the attribute
+    Autodiscovery Parameters: <oid>|<display_name>
+      oid: The SNMP OID to check
+      display_name: Name of the attribute if we create it
+    """
+    try:
+        tmpoid,display_name = kw['att_type'].ad_parameters.split('|')
+        oid = tuple([int(x) for x in tmpoid.split('.')])
+    except ValueError:
+        return False
+    kw['host'] = host
+    kw['display_name'] = display_name
+    req = snmp.SNMPRequest(host)
+    req.add_oid(oid, cb_snmp_simple, data=kw)
+    return kw['dobj'].snmp_engine.get(req)
+
+def cb_snmp_simple(values, error, host, dobj, att_type, display_name, **kw):
+    if values is None:
+        dobj.discover_callback(host.id, {})
+        return
+    new_att = model.DiscoveredAttribute(host.id, att_type)
+    new_att.display_name = display_name
+    new_att.index = 1
+    dobj.discover_callback(host.id, {'1': new_att})
+
 

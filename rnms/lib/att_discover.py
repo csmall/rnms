@@ -110,7 +110,7 @@ class AttDiscover(object):
             if idx not in known_atts:
                 self._discovery_found(host, attribute_type, discovered_atts[idx])
             elif idx not in discovered_atts:
-                self._discovery_lost(host, known_atts[idx])
+                self._discovery_lost(host, attribute_type, known_atts[idx])
             else:
                 # We are in both
                 self._discovery_validate(host, attribute_type, known_atts[idx], discovered_atts[idx])
@@ -137,7 +137,7 @@ class AttDiscover(object):
         # Host has this attribute but it wasn't discovered
         if attribute_type.ad_validate and attribute.poll_enabled:
             self.logger.debug('H:%d AT:%d index:%s - Not found in host', host.id, attribute_type.id, attribute.index)
-            if host.autodiscovery_policy.can_delete():
+            if host.autodiscovery_policy.can_del():
                 model.DBSession.delete(attribute)
                 event_info = u' - Deleted'
             elif host.autodiscovery_policy.can_disable():
@@ -205,7 +205,7 @@ class AttDiscover(object):
                     'id': new_host.id,
                     'host': new_host,
                     'in_discovery': False,
-                    'index': 0,
+                    'index': -1,
                     'attribute_type': None,
                     }
             new_count =- 1
@@ -244,7 +244,10 @@ class AttDiscover(object):
         for host_id,host in self._active_hosts.items():
             if host['in_discovery'] == True:
                 continue
-            self._run_discovery(host)
+            if host['index'] == -1:
+                self._check_sysobjid(host)
+            else:
+                self._run_discovery(host)
             host['index'] += 1
             
     def _run_discovery(self, host):
@@ -271,3 +274,28 @@ class AttDiscover(object):
             return self._attribute_types[index]
         except IndexError:
             return None
+
+    def _check_sysobjid(self, host):
+        """
+        Check that the given host has a system.sysObjectID, if possible
+        """
+        if host['host'].sysobjid is not None and host['host'].sysobjid != '':
+            return
+        if  host['host'].community_ro is None:
+            return
+
+        host['in_discovery'] = True
+        host['start_time'] = datetime.datetime.now()
+        self.snmp_engine.get_str(host['host'], (1,3,6,1,2,1,1,2,0), self._cb_check_sysobjid, host_id=host['host'].id)
+
+    def _cb_check_sysobjid(self, value, error, host_id):
+        try:
+            active_host = self._active_hosts[host_id]
+        except KeyError:
+            self.logger.warning('H:%d - sysobjd Discover called back but host not found in active list.', host_id)
+            return
+        active_host['in_discovery'] = False
+        if value is not None:
+            new_sysobjid = value.replace('1.3.6.1.4.1','ent')
+            active_host['host'].sysobjid = new_sysobjid
+

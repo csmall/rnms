@@ -17,25 +17,23 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-""" Apache status autodiscovery """
-import re
+""" Discover NTP clients """
+from rnms import model
 
+def discover_ntp_client(host, **kw):
+    return kw['dobj'].ntp_client.get_peers(host, cb_ntp_peer_list, **kw)
 
-def discover_apache(host, **kw):
-    """
-    Make a http call to the host to see if we get the apache status screen
-    """
-    return kw['dobj'].tcp_client.get_tcp(host, 80, 'GET /server-status?auto HTTP/1.1\r\nHost: {0}\r\n\r\n'.format(host.mgmt_address), 40, cb_apache, **kw)
-
-def cb_apache(host, response, connect_time, error, dobj, att_type, **kw):
-    if type(response) is not str:
+def cb_ntp_peer_list(host, ntp_response, dobj, att_type, **kw):
+    if ntp_response is None or ntp_response.peers == []:
         dobj.discover_callback(host.id, {})
-    elif r'HTTP\/1.1 200 OK' in response:
-        #do something
-        apache_att = DiscoveredAttribute(host.id, att_type)
-        apache_att.display_name = u'Apache Information'
-        apache_att.index = '{}:80'.format(host.mgmt_address)
-        dobj.discover_callback(host.id, {apache_att.index: apache_att})
+        return
+    new_att = model.DiscoveredAttribute(host.id, att_type)
+    new_att.display_name = u'Time'
+    new_att.index = '1'
+    for assoc in ntp_response.peers:
+        if assoc.selection == 6: # found a synchronised
+            break
     else:
-        dobj.discover_callback(host.id, {})
-    
+        new_att.oper_state = 2
+    dobj.discover_callback(host.id, {'1': new_att})
+
