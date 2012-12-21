@@ -20,8 +20,10 @@
 import logging
 import subprocess
 import re
+import socket
+import os
 
-logger = logging.getLogger('ping')
+logger = logging.getLogger('rnms')
 
 """ ping Client """
 
@@ -30,19 +32,45 @@ class PingClient():
     Base client to send and receive pings using fping
     """
     fping_bin='/usr/bin/fping'
+    fping6_bin='/usr/bin/fping6'
     fping_re = re.compile(r'\S+ : xmt\/rcv\/%loss = [0-9]+\/[0-9]+\/([0-9.]+)%(?:, min\/avg\/max = [0-9.]+\/([0-9.]+)\/[0-9]+)?')
 
     def __init__(self):
         self.active_pings = {}
+
+    def get_fping(self, host):
+        """
+        Work out which fping binary to use, depending on the address
+        family of the management IP address, returns None if we
+        dont have a valid binary
+        """
+        try:
+            addrinfo = socket.getaddrinfo(host.mgmt_address, 0)[0]
+        except socket.gaierror:
+            return None
+        addr_family = addrinfo[0]
+        if addr_family == socket.AF_INET:
+            fping = self.fping_bin
+        elif addr_family == socket.AF_INET6:
+            fping = self.fping6_bin
+        else:
+            return None
+        if os.access(fping, os.X_OK):
+            return fping
+        return None
+
 
     def ping_host(self, host, cb_fun, num_pings, interval, **kw):
         """
         Start the ping, return the popen object on success or None on error
         """
         ipaddr = host.mgmt_address
+        fping_bin = self.get_fping(host)
+        if fping_bin is None:
+            return False
 
         try:
-            p = subprocess.Popen([self.fping_bin, '-c', str(num_pings), '-p', str(interval), '-q', ipaddr], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p = subprocess.Popen([fping_bin, '-c', str(num_pings), '-p', str(interval), '-q', ipaddr], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except OSError:
             return False
         self.active_pings[ipaddr] = {

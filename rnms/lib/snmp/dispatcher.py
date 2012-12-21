@@ -39,8 +39,8 @@ class SNMPDispatcher(asyncore.dispatcher):
     def __init__(self, address_family, recv_cb):
         asyncore.dispatcher.__init__(self)
         self.create_socket(address_family, socket.SOCK_DGRAM)
-        self.waiting_jobs = []
-        self.sent_jobs = {}
+        self.waiting_requests = []
+        self.sent_requests = {}
         self.recv_cb = recv_cb
         self.address_family = address_family
 
@@ -55,26 +55,26 @@ class SNMPDispatcher(asyncore.dispatcher):
         self.recv_cb(recv_msg, recv_addr, self.address_family)
 
     def writable(self):
-        return self.have_waiting_jobs()
+        return self.have_waiting_requests()
 
     def handle_write(self):
         try:
-            new_job = self.waiting_jobs.pop()
+            new_request = self.waiting_requests.pop()
         except IndexError:
             return
-        new_job['timeout'] = time.time() + self.timeout
+        #new_request['timeout'] = time.time() + self.timeout
         try:
-            self.sendto(encoder.encode(new_job['msg']), new_job['sockaddr'])
+            self.sendto(encoder.encode(new_request.msg), new_request.sockaddr)
         except socket.error as errmsg:
-            logger.error("Socket error for sendto %s", new_job['sockaddr'])
-        self.sent_jobs[new_job['id']] = new_job
+            logger.error("Socket error for sendto %s", new_request.sockaddr)
+        self.sent_requests[new_request.id] = new_request
 
     def send_message(self, request):
-        self.waiting_jobs.append(request)
+        self.waiting_requests.append(request)
 
-    def del_job(self, job_id):
-        del(self.sent_jobs[job_id])
+    def del_request(self, request_id):
+        del(self.sent_requests[request_id])
 
-    def have_waiting_jobs(self):
-        return (self.waiting_jobs != [])
+    def have_waiting_requests(self):
+        return (self.waiting_requests != [])
 

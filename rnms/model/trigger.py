@@ -20,7 +20,7 @@
 
 """ Trigger model """
 from sqlalchemy import ForeignKey, Column
-from sqlalchemy import relationship
+from sqlalchemy.orm import relationship
 from sqlalchemy.types import Integer, Unicode, SmallInteger, Boolean
 
 from rnms.model import DeclarativeBase, DBSession

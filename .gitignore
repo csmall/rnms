@@ -6,4 +6,5 @@ devdata.db
 .build
 build
 dist
+cover/
 data/

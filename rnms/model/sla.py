@@ -19,6 +19,7 @@
 #
 """ Service Level Agreements - Checks the values of AttributeTypeField"""
 
+import logging
 import operator
 import re
 
@@ -30,8 +31,8 @@ from sqlalchemy.types import Integer, Unicode, Boolean, String, SmallInteger
 from rnms.model import DeclarativeBase, DBSession, Event
 from rnms.lib.parsers import RnmsTextTemplate, NumericStringParser
 from rnms.lib.genericset import GenericSet
-from rnms.lib import logger
 
+logger = logging.getLogger('rnms')
 
 class Sla(DeclarativeBase, GenericSet):
     __tablename__ = 'slas'
@@ -198,6 +199,7 @@ class SlaCondition(DeclarativeBase):
         nsp = NumericStringParser()
         text_template = RnmsTextTemplate(self.expression)
         parsed_expression = text_template.safe_substitute(rrd_values)
+        expression_output = nsp.eval(parsed_expression)
         try:
             expression_output = nsp.eval(parsed_expression)
         except:

@@ -74,52 +74,6 @@ class Host(DeclarativeBase):
         """ Return the host whose management addres is ``address''."""
         return DBSession.query(cls).filter(cls.mgmt_address==address).first()
 
-    def snmp_scan_ifaces(self):
-        for iface in self.ifaces:
-            print(iface.ifindex)
-        ifCount = snmp.get_int(self,(1,3,6,1,2,1,2,1,0),0)
-        if ifCount == 0:
-            return
-
-        ifDescrs = snmp.walk(self,(1,3,6,1,2,1,2,2,1,2),rowCount=ifCount)
-        if ifDescrs is None:
-            return
-        ifTypes = snmp.walk(self,(1,3,6,1,2,1,2,2,1,3),rowCount=ifCount)
-        ifSpeeds = snmp.walk(self,(1,3,6,1,2,1,2,2,1,5),rowCount=ifCount)
-        ifPhysAddrs = snmp.walk(self,(1,3,6,1,2,1,2,2,1,6),rowCount=ifCount)
-
-        for ifIndex,ifDescr in ifDescrs.items():
-            if any(iface.ifindex==ifIndex for iface in self.ifaces):
-                continue 
-            new_iface = Iface(ifindex=ifIndex,display_name=unicode(ifDescr))
-            new_iface.iftype = int(ifTypes.get(ifIndex,1)) #1= type other
-            new_iface.ifSpeed = int(ifSpeeds.get(ifIndex,0))
-            new_iface.PhysAddr = str(ifPhysAddrs.get(ifIndex,''))
-            self.ifaces.append(new_iface)
-
-    def SnmpScan(self):
-        updated = False
-        if (self.community_ro is None or self.mgmt_address is None):
-            return
-
-        new_sysobjid = snmp.get(self, (1,3,6,1,2,1,1,2,0))
-        if new_sysobjid:
-            updated = True
-            self.sysobjid = str(new_sysobjid)
-
-        if not self.display_name or self.display_name == '':
-            new_name = snmp.get(self, [1,3,6,1,2,1,1,5,0])
-            if new_name:
-                updated = True
-                self.display_name = new_name
-
-        self.snmp_scan_ifaces()
-
-
-        # Update the updated column
-        if updated:
-            self.updated = datetime.datetime.now()
-
     def attrib_by_index(self, index):
         """ Return a host's attribute that has the given ''index''."""
         if self.attributes is None:

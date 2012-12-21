@@ -28,6 +28,7 @@ from rnms.lib.snmp import SNMPEngine
 from rnms.lib import ntpclient
 from rnms.lib.tcpclient import TCPClient
 from rnms.lib.pingclient import PingClient
+from rnms.lib.nmapclient import NmapClient
 
 
 class AttDiscover(object):
@@ -47,15 +48,16 @@ class AttDiscover(object):
         self.ntp_client = ntpclient.NTPClient()
         self.tcp_client = TCPClient()
         self.ping_client = PingClient()
-        self.logger = logging.getLogger("aad")
+        self.nmap_client = NmapClient()
+        self.logger = logging.getLogger("rnms")
 
-    def discover(self, limit_hosts=None, limit_atypes=None, print_only=True):
+    def discover(self, limit_hosts=None, limit_atypes=None, print_only=True, force=False):
         """
         Run the discovery on either all hosts or the ones specified
         in this call. Returns the dictionary of hosts and found attributes
         """
         self._fill_host_table(limit_hosts)
-        self._fill_attribute_type_table(limit_atypes)
+        self._fill_attribute_type_table(force, limit_atypes)
 
         self.logger.debug('%d hosts requiring discovery.', len(self._waiting_hosts))
         while self._active_hosts != {} or self._waiting_hosts != []:
@@ -71,12 +73,15 @@ class AttDiscover(object):
             if snmp_jobs > 0:
                 need_asynpoll = True
                 host_count -= snmp_jobs
+            nmap_jobs = self.nmap_client.poll()
+            if nmap_jobs > 0:
+                host_count -= nmap_jobs
             if self.ntp_client.poll():
                 need_asynpoll = True
             if self.tcp_client.poll():
                 need_asynpoll = True
             if need_asynpoll > 0:
-                if host_count > 0:
+                if nmap_jobs > 0:
                     asyncore.poll(0.1)
                 else:
                     asyncore.poll(3.0)
@@ -93,7 +98,7 @@ class AttDiscover(object):
         try:
             active_host = self._active_hosts[host_id]
         except KeyError:
-            self.logger.warning('H:%d - Discover called back but host not found in active list.', host_id)
+            self.logger.warning('H:%d Discover called back but host not found in active list.', host_id)
             return
         active_host['in_discovery'] = False
         host = active_host['host']
@@ -122,11 +127,11 @@ class AttDiscover(object):
         the database.
         """
         if host.autodiscovery_policy.can_add(attribute):
-            self.logger.debug('H:%d AT:%d index:%s - New Interface Found', host.id, attribute_type.id, attribute.index)
+            self.logger.debug('H:%d AT:%d New Interface Found: %s', host.id, attribute_type.id, attribute.index)
         if host.autodiscovery_policy.permit_add:
             real_att = model.Attribute.from_discovered(host, attribute)
             model.DBSession.add(real_att)
-            self.logger.debug('H:%d AT:%d index:%s - Added', host.id, attribute_type.id, attribute.index)
+            self.logger.debug('H:%d AT:%d Added %s', host.id, attribute_type.id, attribute.index)
 
     def _discovery_lost(self, host, attribute_type, attribute):
         """
@@ -136,7 +141,7 @@ class AttDiscover(object):
         """
         # Host has this attribute but it wasn't discovered
         if attribute_type.ad_validate and attribute.poll_enabled:
-            self.logger.debug('H:%d AT:%d index:%s - Not found in host', host.id, attribute_type.id, attribute.index)
+            self.logger.debug('H:%d AT:%d Not found in host: %s', host.id, attribute_type.id, attribute.index)
             if host.autodiscovery_policy.can_del():
                 model.DBSession.delete(attribute)
                 event_info = u' - Deleted'
@@ -171,7 +176,7 @@ class AttDiscover(object):
             disc_value = disc_att.get_field(tag)
             if known_value is not None and disc_value is not None and known_value != disc_value:
                 changed_info = "{0} to \"{1}\" was \"{2}\"".format(fname, disc_value, known_value)
-                self.logger.debug("H:%d A:%d Changed Field %s", known_att.host.id, known_att.id, changed_info)
+                self.logger.debug("H:%d A:%d Changed Field: %s", known_att.host.id, known_att.id, changed_info)
                 changed_fields.append(changed_info)
                 if host.autodiscovery_policy.permit_modify:
                     known_att.set_field(tag, disc_value)
@@ -224,18 +229,26 @@ class AttDiscover(object):
         for host in hosts:
             self._waiting_hosts.append(host)
 
-    def _fill_attribute_type_table(self, limit_atypes=None):
+    def _fill_attribute_type_table(self, force, limit_atypes=None):
         """
         Cache the attribute type stuff once
         """
+        found_atypes = []
         self._attribute_types = []
-        if limit_atypes is None:
-            atypes = model.DBSession.query(model.AttributeType).filter(model.AttributeType.ad_enabled == True)
-        else:
-            atypes = model.DBSession.query(model.AttributeType).filter(and_(model.AttributeType.ad_enabled == True, model.AttributeType.id.in_(limit_atypes)))
+        conditions = []
+        if limit_atypes is not None:
+            conditions.append(model.AttributeType.id.in_(limit_atypes))
+        if force == False:
+            conditions.append(model.AttributeType.ad_enabled == True)
+        atypes = model.DBSession.query(model.AttributeType).filter(and_(*conditions))
         for atype in atypes:
             self._attribute_types.append(atype)
+            found_atypes.append(str(atype.id))
 
+        if force == True and limit_atypes is not None:
+            missing_atypes = set(limit_atypes).difference(set(found_atypes))
+            if missing_atypes != set():
+                print "Missing the following types: {}".format(','.join(missing_atypes))
 
     def _check_active_hosts(self):
         """
@@ -292,7 +305,7 @@ class AttDiscover(object):
         try:
             active_host = self._active_hosts[host_id]
         except KeyError:
-            self.logger.warning('H:%d - sysobjd Discover called back but host not found in active list.', host_id)
+            self.logger.warning('H:%d sysobjd Discover called back but host not found in active list.', host_id)
             return
         active_host['in_discovery'] = False
         if value is not None:

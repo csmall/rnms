@@ -43,13 +43,15 @@ load_config(args.conf_file)
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("Poller")
 
-attribute_ids=None
-if args.atts is not None:
+if args.atts is None:
+    attribute_ids=None
+else:
     attribute_ids = args.atts.split(',')
-host_ids = None
-if args.host is not None:
+if args.host is None:
+    host_ids = None
+else:
     host_ids = args.host.split(',')
 
-main_poller = Poller(attributes=attribute_ids,host_ids=host_ids)
+main_poller = Poller(attribute_ids=attribute_ids,host_ids=host_ids)
 main_poller.main_loop()
 transaction.commit()

@@ -27,15 +27,39 @@ from sqlalchemy import ForeignKey, Column, and_, desc
 from sqlalchemy.types import Integer, Unicode, String, Boolean, SmallInteger, DateTime
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, DBSession, Host
+from rnms.model import DeclarativeBase, DBSession
+from rnms.model.host import Host
+from rnms.lib import states
 
 __all__ = ['Attribute', 'AttributeField', 'AttributeType', 'AttributeTypeField', 'DiscoveredAttribute']
+logger = logging.getLogger('rnms')
 
 snmp_state_names = {1:'up', 2:'down', 3:'testing', 4:'unknown'}
 MINDATE=datetime.date(1900,1,1)
 poll_variance = 60 # +- 30 seconds for next poll
 
-class Attribute(DeclarativeBase):
+class AttributeBaseState(object):
+    """
+    Base Class that sets the admin and oper states
+    """
+    def set_admin_up(self):
+        self.admin_state = states.STATE_UP
+    def set_admin_down(self):
+        self.admin_state = states.STATE_DOWN
+    def set_admin_testing(self):
+        self.admin_state = states.STATE_TESTING
+    def set_admin_unknown(self):
+        self.admin_state = states.STATE_UNKNOWN
+    def set_oper_up(self):
+        self.oper_state = states.STATE_UP
+    def set_oper_down(self):
+        self.oper_state = states.STATE_DOWN
+    def set_oper_testing(self):
+        self.oper_state = states.STATE_TESTING
+    def set_oper_unknown(self):
+        self.oper_state = states.STATE_UNKNOWN
+
+class Attribute(DeclarativeBase, AttributeBaseState):
     __tablename__ = 'attributes'
     default_poll_interval = 5
     display_name_len = 40
@@ -74,8 +98,8 @@ class Attribute(DeclarativeBase):
         self.attribute_type=attribute_type
         self.display_name=display_name
         self.index = index
-        self.oper_state=2
-        self.admin_state=2
+        self.oper_state = states.STATE_UP
+        self.admin_state = states.STATE_UP
         self.use_iface = False
         self.user_id = 1
         self.sla_id = 1
@@ -148,7 +172,7 @@ class Attribute(DeclarativeBase):
         """ Add a new field that has ''tag'' with the value ''value''"""
         type_field = AttributeTypeField.by_tag(self.attribute_type, tag)
         if type_field is None:
-            logging.warning("Cannot find field '%s' for attribute type.", tag)
+            logger.warning("Cannot find field '%s' for attribute type.", tag)
             return
         for field in self.fields:
             if field.attribute_type_field_id == type_field.id:
@@ -164,7 +188,7 @@ class Attribute(DeclarativeBase):
             fields[at_field.tag]=self.field(id=at_field.id)
         return fields
 
-    def field(self, tag=None, id=None):
+    def get_field(self, tag=None, id=None):
         """ Get value of field for this attribute with tag='tag'. """
         at_field = None
         if tag is not None:
@@ -322,18 +346,20 @@ class AttributeType(DeclarativeBase):
           True/False - if it was enabled
           Will run a callback when the data is collected
         """
+        if self.ad_command is None or self.ad_command == 'none':
+            return False
+        
+        dobj.logger.debug('H:%d AT:%d Autodiscovering %s', host.id, self.id, self.display_name)
         if self.ad_enabled == False:
             return False
         if self._match_sysobjid(host) == False:
-            return False
-        if self.ad_command is None or self.ad_command == 'none':
             return False
 
         from rnms.lib import att_discovers
         try:
             real_discover = getattr(att_discovers, 'discover_'+self.ad_command)
         except AttributeError:
-            dobj.logger.error('H:%d AT:%d - Attribute Discovery function discover_%s does not exist.', host.id, self.id, self.ad_command)
+            dobj.logger.error('H:%d AT:%d Attribute Discovery function "discover_%s" does not exist.', host.id, self.id, self.ad_command)
             return False
         return real_discover(dobj=dobj, att_type=self, host=host)
         return True
@@ -347,15 +373,17 @@ class AttributeType(DeclarativeBase):
         """
         if self.required_sysobjid == '':
             return True
-        if host.sysobjid is None:
+        if host.sysobjid is None or host.sysobjid == '':
+            logger.debug('H:%d AT:%d Skipping due to missing sysObjectId', host.id, self.id)
             return False
         if self.required_sysobjid == '.' and host.sysobjid != '':
             return True
         if host.sysobjid[len(self.required_sysobjid):] == self.required_sysobjid:
             return True
-        sysid = self.required_sysobjid.replace('ent.', '1.3.6.1.4.1.',1)
-        if host.sysobjid[len(self.required_sysobjid):] == sysid:
+        sysid = self.required_sysobjid.replace('1.3.6.1.4.1.','ent.', 1)
+        if host.sysobjid[:len(sysid)] == sysid:
             return True
+        logger.debug('H:%d AT:%d Skipping due to sysObjectId (%s != %s)', host.id, self.id, host.sysobjid[:len(sysid)], sysid)
         return False
 
     def field_by_tag(self, tag):
@@ -403,7 +431,7 @@ class AttributeTypeField(DeclarativeBase):
 
 
 # Discovered Attributes do not have and database backend
-class DiscoveredAttribute():
+class DiscoveredAttribute(AttributeBaseState):
     """
     Attributes that are disocvered through the autodisovery process
     do not have any database backend but just lists
@@ -412,8 +440,8 @@ class DiscoveredAttribute():
     def __init__(self, host_id=1, attribute_type=None):
         self.host_id=host_id
         self.display_name = ''
-        self.oper_state = 2
-        self.admin_state = 2
+        self.oper_state = states.STATE_UP
+        self.admin_state = states.STATE_UP
         self.attribute_type=attribute_type
         self.index = ''
         self.fields = {}

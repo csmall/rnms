@@ -92,7 +92,7 @@ class PollerSet(DeclarativeBase, GenericSet):
     #{ Columns
     id = Column(Integer, primary_key=True, nullable=False)
     display_name = Column(Unicode(40), nullable=False, unique=True)
-    attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'), nullable=False)
+    attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'), nullable=False, default=0)
     attribute_type = relationship('AttributeType', backref='poller_sets', primaryjoin='PollerSet.attribute_type_id == AttributeType.id')
     poller_rows = relationship('PollerRow', order_by='PollerRow.position')
     ForeignKeyConstraint(['attribute_type_id',], ['attribute_types.id',], use_alter=True, name='fk_poller_set_attribute_type_id')
@@ -119,6 +119,11 @@ class PollerSet(DeclarativeBase, GenericSet):
     @classmethod
     def by_id(cls,pset_id):
         return DBSession.query(cls).filter(cls.id == pset_id).first()
+
+    @classmethod
+    def by_display_name(cls,display_name):
+        """ Return the PollerSet with the given display name """
+        return DBSession.query(cls).filter(cls.display_name == display_name).first()
 
     def run(self, attribute):
         """

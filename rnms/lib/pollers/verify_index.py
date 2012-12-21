@@ -123,3 +123,50 @@ def cb_verify_interface_number(values, error, pobj, attribute, poller_row, **kw)
                     pass
     pobj.poller_callback(attribute.id, poller_row, None)
 
+
+def poll_verify_sensor_index(poller_buffer, **kw):
+    """
+    Check the index used for the sensor
+    """
+    base_oid = (1,3,6,1,4,1,2021,13,16)
+    if kw['attribute'].index == '':
+        return False
+    inst_oid = base_oid + (int(kw['attribute'].get_field('table_index')),1,2,int(kw['attribute'].get_field('row_index')))
+
+    kw['pobj'].snmp_engine.get_str(kw['attribute'].host, inst_oid, cb_sensor_index, **kw)
+    return True
+
+def cb_sensor_index(value, error, **kw):
+    """
+    Receives the name of the sensor, should equal what we already have.
+    If not, go find the new index
+    """
+    base_oid = (1,3,6,1,4,1,2021,13,16)
+    table_oid = base_oid + (int(kw['attribute'].get_field('table_index')),1,2)
+
+    if value is None:
+        kw['pobj'].poller_callback(kw['attribute'].id, kw['poller_row'], None)
+        return
+    if kw['attribute'].display_name == value:
+        kw['pobj'].poller_callback(kw['attribute'].id, kw['poller_row'], kw['attribute'].index)
+    else:
+        kw['pobj'].snmp_engine.get_table(kw['attribute'].host, (table_oid,), cb_verify_sensor_index, table_trim=1, **kw)
+
+
+def cb_verify_sensor_index(values, error, pobj, attribute, poller_row, **kw):
+    """
+    CallBack function for a snmp table
+    the return functions in the PollerRow
+    """
+
+    if values is not None:
+        for (inst, value) in values.items():
+            if value == attribute.display_name:
+                try:
+                    pobj.poller_callback(attribute.id, poller_row, str(int(inst)))
+                    return;
+                except ValueError:
+                    pass
+    pobj.poller_callback(attribute.id, poller_row, None)
+
+

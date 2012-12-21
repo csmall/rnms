@@ -10,6 +10,7 @@ functional tests exercise the whole application and its WSGI stack.
 Please read http://pythonpaste.org/webtest/ for more information.
 
 """
+import asyncore
 from nose.tools import assert_true, nottest, eq_
 
 from rnms.lib.snmp import SNMPEngine
@@ -38,8 +39,8 @@ class TestSNMP(object):
         self.results = []
 
     def poll(self):
-        while (self.snmp_engine.poll()):
-            pass
+        while (self.snmp_engine.poll()> 0):
+            asyncore.poll(0.1)
 
     def test_valid_timeout(self):
         """ Valid timeout value updates default SNMP timeout """
@@ -108,11 +109,11 @@ class TestSNMP(object):
         eq_(len(self.results),1)
         table_length = self.results[0]
 
-        self.snmp_engine.get_table(host, '1.3.6.1.2.1.2.2.1.1', my_callback1, table_trim=1, obj=self )
+        self.snmp_engine.get_table(host, ('1.3.6.1.2.1.2.2.1.1',), my_callback1, table_trim=1, obj=self )
         self.poll()
         eq_(len(self.results),2)
-        eq_(len(self.results[1]),table_length)
-        for oid,val in self.results[1].items():
+        eq_(len(self.results[1][0]),table_length)
+        for oid,val in self.results[1][0].items():
             assert(oid == val)
 
     def test_v2_table(self):
@@ -128,6 +129,6 @@ class TestSNMP(object):
         self.snmp_engine.get_table(host, '1.3.6.1.2.1.2.2.1.1', my_callback1, table_trim=1, obj=self )
         self.poll()
         eq_(len(self.results),2)
-        eq_(len(self.results[1]),table_length)
-        for oid,val in self.results[1].items():
+        eq_(len(self.results[1][0]),table_length)
+        for oid,val in self.results[1][0].items():
             assert(oid == val)

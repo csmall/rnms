@@ -109,14 +109,13 @@ class JffnmsImporter(object):
                 logger.warning('Function _import_%s is not callable.',imp)
                 return False
             if func() == False:
+                transaction.abort()
                 return False
-
-        if self.commit:
-            transaction.commit()
-            print 'All imports committed'
-        else:
-            transaction.abort()
-            print 'All imports NOT committed'
+            else:
+                if self.commit:
+                    transaction.commit()
+                else:
+                    transaction.abort()
         return True
 
     def _delete_all(self,del_model, del_id):
@@ -183,14 +182,15 @@ class JffnmsImporter(object):
             except IntegrityError as errmsg:
                 logger.error('Error importing users: %s', errmsg)
                 transaction.abort()
-                exit()
-            self.users[row[0]] = user.user_id
-            add_count += 1
+                #exit()
+            else:
+                self.users[row[0]] = user.user_id
+                add_count += 1
         logging.info('Users: %d deleted, %d added.', delete_count, add_count)
         return True
 
-    def group_id(self,jffnms_id):
-        return self.groups.get(jffnms_id,1)
+    def user_id(self,jffnms_id):
+        return self.users.get(jffnms_id,1)
 
     @classmethod
     def import_snmp(self,old_comm):
@@ -214,7 +214,7 @@ class JffnmsImporter(object):
                 host.zone_id = self.zone_id(row[5])
                 host.tftp_server = row[6]
                 host.autodiscovery_policy_id = row[7]
-                #host.default_user_id = self.user_id(row[8])
+                host.default_user_id = self.user_id(row[8])
                 host.show_host = (row[9] == 1)
                 host.pollable = (row[10] == 1)
                 host.created = date.fromtimestamp(row[11])
@@ -302,7 +302,7 @@ class JffnmsImporter(object):
                 att.display_name=unicode(row[2])
                 att.host_id = self.hosts.get(row[3],1)
                 att.index = self.get_interface_index(row[0])
-                att.group_id = self.group_id(row[4])
+                att.user_id = self.user_id(row[4])
                 att.sla_id = self.sla_id(row[5])
                 #FIXME sla poll group
                 att.make_sound = row[7]

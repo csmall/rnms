@@ -23,7 +23,7 @@ import time
 import asyncore
 import transaction
 
-from sqlalchemy.orm import and_
+from sqlalchemy import and_
 
 from rnms import model
 from rnms.lib.snmp import SNMPEngine, SNMPRequest
@@ -43,13 +43,9 @@ class Poller(object):
     next_find_attribute = datetime.datetime.min
     forced_attributes=False
 
-    def __init__(self, attributes=None, host_ids=None):
+    def __init__(self, attribute_ids=None, host_ids=None):
         
         self.logger = logging.getLogger("poll")
-        if host_ids is None:
-            self.host_ids = None
-        else: 
-            self.host_ids = [ int(h) for h in host_ids ]
         self.snmp_engine = SNMPEngine(logger=self.logger)
         self.ntp_client = ntpclient.NTPClient()
         self.tcp_client = TCPClient()
@@ -59,8 +55,8 @@ class Poller(object):
         self.poller_buffer = {}
         self.poller_sets = {} # Cache for polling sets
 
-        if attributes is not None:
-            self._add_forced_attributes(attributes)
+        if attribute_ids is not None or host_ids is not None:
+            self._add_forced_attributes(attribute_ids, host_ids)
             self.forced_attributes=True
 
     def main_loop(self):
@@ -107,7 +103,10 @@ class Poller(object):
                 if self.forced_attributes == True:
                     return
                 next_attribute = model.Attribute.next_polled()
-                self.logger.debug("Next poll time is %s", next_attribute.next_poll)
+                if next_attribute is None:
+                    self.logger.debug('No next attribute. No attributes?')
+                else:
+                    self.logger.debug("Next poll time is %s", next_attribute.next_poll)
                 sleep_time = round((self.next_find_attribute - datetime.datetime.now()).total_seconds())
                 if sleep_time > 0:
                     self.logger.debug("Sleeping for {0} seconds".format(sleep_time))
@@ -230,15 +229,19 @@ class Poller(object):
         del (self.polling_attributes[patt['attribute'].id])
         patt['attribute'].update_poll_date()
 
-    def _add_forced_attributes(self, att_ids):
+    def _add_forced_attributes(self, attribute_ids=None, host_ids=None):
         """
         Add these attributes even if theyre not ready for polling.
-        Method expects a list of attribute IDs
+        Method expects a list of attribute IDs or host_ids
         """
-        assert(type(att_ids) == list)
-        attributes = model.DBSession.query(model.Attribute).filter(model.Attribute.id.in_(att_ids))
-        for attribute in attributes:
-            self.attribute_add(attribute)
+        if attribute_ids is not None:
+            assert(type(attribute_ids) == list )
+            for attribute in model.DBSession.query(model.Attribute).filter(model.Attribute.id.in_(attribute_ids)):
+                self.attribute_add(attribute)
+        if host_ids is not None:
+            assert(type(host_ids) == list )
+            for attribute in model.DBSession.query(model.Attribute).filter(model.Attribute.host_id.in_(host_ids)):
+                self.attribute_add(attribute)
 
 
     def find_new_attributes(self):

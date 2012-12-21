@@ -21,8 +21,8 @@
 """ Alarm information """
 import datetime
 
-from sqlalchemy.orm import relationship, and_
-from sqlalchemy import ForeignKey, Column
+from sqlalchemy import ForeignKey, Column, and_
+from sqlalchemy.orm import relationship
 from sqlalchemy.types import Integer, Unicode, DateTime, Boolean, String, SmallInteger
 #from sqlalchemy.orm import relation, backref
 

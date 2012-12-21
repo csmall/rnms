@@ -52,6 +52,7 @@ class TestBackend(ModelTest):
         self.obj.command = 'admin_status'
         self.obj.parameters = None
         att = model.Attribute(display_name=u'Test Attribute')
+        att.set_admin_down()
         for newstate in ['up','down', 'testing']:
             eq_('Admin status set to {0}'.format(newstate), self.obj.run(test_poller_row, att, newstate))
 

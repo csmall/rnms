@@ -67,8 +67,8 @@ autodiscovery_policies = [
 #showable 2=1,0 1=1,1 0=0,0
 #RRD Types = 1:gauge, 2:counter, 3:absolute
 attribute_types = [
-        ['No Interface Type',0,0,'none','',1,'AVERAGE','103680',300,1,0,'none',0,1,0,'.',[], [] ],
-        ['TCP Ports',0,1,'tcp_ports','-sT -p1-500,600-1024',5,'LAST','103680',1,23,0,'tcp_ports',1,1,1,'',[
+        ['No Interface Type',0,0,'none','',u'No Poller','AVERAGE','103680',300,1,0,'none',0,1,0,'.',[], [] ],
+        ['TCP Ports',0,1,'tcp_ports','500,600-1024',u'TCP/IP Port','LAST','103680',1,23,0,'tcp_ports',1,1,1,'',[
             ['Port Number','port',0,1,1,1,0,0,'',''],
             ['Check Content','check_content',0,1,0,1,0,0,'',''],
             ['Check Content URL','check_url',0,1,1,0,1,0,'',''],
@@ -77,7 +77,7 @@ attribute_types = [
             [u'Established Connections', 'tcp_established', 0,0,10000,0],
             [u'Connection Delay', 'conn_delay', 0,0,10000,0],
             ] ],
-        ['Cisco System Info',1,1,'host_information','cisco,9.1,9.5',3,'AVERAGE','103680',300,9,0,'none',0,7,0,'ent.9',[
+        ['Cisco System Info',1,1,'host_information','cisco,9.1,9.5',u'Cisco Router','AVERAGE','103680',300,9,0,'none',0,7,0,'ent.9',[
             ['Number of Processors','cpu_num',0,1,1,1,0,1,'',''],
             ['CPU Usage Threshold','cpu_threshold',0,1,0,1,0,60,'',''],
             ['System Name','name',1,1,1,1,0,1,'',''],
@@ -93,7 +93,7 @@ attribute_types = [
             [u'TCP Passive', 'tcp_passive', 1,0,10000000,''],
             [u'TCP Established', 'tcp_established', 1,0,10000000,''],
                ] ],
-        ['Physical Interfaces',1,1,'snmp_interfaces','',2,'AVERAGE','103680',300,3,1,'none',0,1,1,'.',[
+        ['Physical Interfaces',1,1,'snmp_interfaces','',u'SNMP Interface HC','AVERAGE','103680',300,3,1,'none',0,1,1,'.',[
             ['IP Address','address',1,1,1,1,0,'','',''],
             ['IP Mask','mask',0,1,1,1,0,'','',''],
             ['Peer Address','peer',0,1,1,1,0,'','',''],
@@ -114,7 +114,7 @@ attribute_types = [
             [u'Drops', 'drops', 1,0,0,'speed'],
                 ] ],
 
-        ['BGP Neighbors',1,1,'bgp_peers','',8,'AVERAGE','103680',300,90,0,'none',0,1,0,'.',[
+        ['BGP Neighbors',1,1,'bgp_peers','',u'BGP Neighbor','AVERAGE','103680',300,90,0,'none',0,1,0,'.',[
             ['Local IP','local',1,1,1,0,1,'','',''],
             ['Remote IP','remote',0,1,1,0,0,'','',''],
             ['Autonomous System','asn',1,1,1,0,1,'','',''],
@@ -125,7 +125,7 @@ attribute_types = [
             [u'Accepted Routes', 'accepted_routes', 0,0,9000000,''],
             [u'Advertised Routes', 'advertised_routes', 0,0,9000000,''],
                 ] ],
-        ['Storage',1,1,'storage','',9,'AVERAGE','103680',300,15,0,'none',0,9,0,'.',[
+        ['Storage',1,1,'storage','',u'Storage Device','AVERAGE','103680',300,15,0,'none',0,9,0,'.',[
             ['Disk Type','storage_type',1,1,1,0,0,'','',''],
             ['Size (bytes)','size',1,1,1,1,0,'','',''],
             ['Usage Threshold','usage_threshold',0,1,0,1,0,80,'',''],
@@ -134,15 +134,7 @@ attribute_types = [
             [u'Storage Block Count', 'storage_block_count', 0,0,0,'size'],
             [u'Storage Used Blocks', 'storage_used_blocks', 0,0,0,'size'],
                 ] ],
-        ['CSS VIPs',0,1,'css_vips','',10,'AVERAGE','103680',300,17,0,'none',0,1,0,'ent.9',[
-            [u'Owner','owner',1,1,1,0,1,'','',''],
-            [u'VIP Address','address',1,1,1,0,1,'','',''],
-            [u'Bandwidth','bandwidth',0,1,1,1,0,'','',''],
-            ], [
-            [u'Output', 'output', 1,0,0,'bandwidth'],
-            [u'Hits', 'hits', 1,0,0,'bandwidth'],
-                ] ],
-        ['Solaris System Info',1,1,'host_information','solaris,sparc,sun,11.2.3.10,8072.3.2.3',12,'AVERAGE','103680',300,20,0,'none',0,1,0,'.',[
+        ['Solaris System Info',1,1,'host_information','solaris,sparc,sun,11.2.3.10,8072.3.2.3',u'Solaris Host','AVERAGE','103680',300,20,0,'none',0,1,0,'.',[
             [u'Number of Processes','cpu_num',0,1,1,0,1,'1','',''],
             [u'System Name','name',1,1,1,0,1,'','',''],
             [u'Location','location',1,1,1,0,1,'','',''],
@@ -160,7 +152,7 @@ attribute_types = [
             [u'Load Average 5', 'load_average_5', 0,0,1000,''],
             [u'Load Average 15', 'load_average_15', 0,0,1000,''],
                 ] ],
-        ['Linux/Unix System Info',1,1,'host_information','2021.250.10,linux,2021.250.255,freebsd,netSnmp,8072',11,'AVERAGE','103680',300,21,0,'none',0,10,0,'.',[
+        ['Linux/Unix System Info',1,1,'host_information','2021.250.10,linux,2021.250.255,freebsd,netSnmp,8072',u'Linux/Unix Host','AVERAGE','103680',300,21,0,'none',0,10,0,'.',[
             [u'Number of Processes','cpu_num',0,1,1,0,1,'1','',''],
             [u'CPU Usage Threshold','cpu_threshold',0,0,1,0,1,'80','',''],
             [u'System Name','name',1,1,1,0,1,'','',''],
@@ -180,7 +172,7 @@ attribute_types = [
             [u'TCP Passive', 'tcp_passive', 1,0,10000,''],
             [u'TCP Established', 'tcp_established', 1,0,10000,''],
                 ] ],
-        ['Windows System Info',1,1,'host_information','enterprises.311',13,'AVERAGE','103680',300,28,0,'none',0,11,0,'.',[
+        ['Windows System Info',1,1,'host_information','enterprises.311',u'Windows Host','AVERAGE','103680',300,28,0,'none',0,11,0,'.',[
             [u'Number of Processes','cpu_num',0,1,1,0,1,'1','',''],
             [u'CPU Usage Threshold','cpu_threshold',0,0,1,0,1,'80','',''],
             [u'System Name','name',1,1,1,0,1,'','',''],
@@ -194,36 +186,22 @@ attribute_types = [
             [u'TCP Passive', 'tcp_passive', 1,0,10000,''],
             [u'TCP Established', 'tcp_established', 1,0,10000,''],
                 ] ],
-        ['Cisco MAC Accounting',1,1,'cisco_accounting','',14,'AVERAGE','103680',300,33,0,'none',0,1,0,'.',[
-            [u'IP Address','address',1,1,1,0,1,'','',''],
-            [u'MAC Address','mac',0,1,1,0,1,'','',''],
-            ], [
-            [u'Input', 'input', 0,0,100000000,''],
-            [u'Output', 'output', 0,0,100000000,''],
-            [u'Input Packets', 'inputpackets', 0,0,100000000,''],
-            [u'Output Packets', 'outputpackets', 0,0,100000000,''],
-                ] ],
-        ['Smokeping Host',1,1,'smokeping','/var/lib/smokeping',15,'AVERAGE','103680',300,34,0,'none',0,8,0,'',[
-            ], [
-            [u'RTT', 'tcp_active', 1,0,10000,''],
-            [u'Packet Loss', 'packetloss', 1,0,1000,''],
-                ] ],
-        ['Applications',1,0,'hostmib_apps','',16,'AVERAGE','103680',300,44,0,'none',0,1,0,'.',[
+        ['Applications',1,0,'hostmib_apps','',u'HostMIB Application','AVERAGE','103680',300,44,0,'none',0,1,0,'.',[
             [u'Instances at Discovery','instances',1,1,1,0,1,'','',''],
             [u'Ignore Case','ignore_case',1,1,1,0,1,'','',''],
             ], [
             [u'Current Instances', 'current_instances', 0,0,99999,''],
             [u'Used Memory', 'used_memory', 0,0,9999999,''],
                 ] ],
-        ['Cisco Power Supply',1,1,'cisco_envmib','PowerSupply,5.1.2,5.1.3',17,'','103680',300,1,1,'none',0,1,0,'ent.9',[
+        ['Cisco Power Supply',1,1,'cisco_envmib','PowerSupply,5.1.2,5.1.3',u'Cisco Power Supply','','103680',300,1,1,'none',0,1,0,'ent.9',[
             ], [
                 ] ],
-        ['Cisco Temperature',1,1,'cisco_envmib','Temperature,3.1.2,3.1.6',18,'AVERAGE','103680',300,37,1,'none',0,1,0,'ent.9',[
+        ['Cisco Temperature',1,1,'cisco_envmib','Temperature,3.1.2,3.1.6',u'Cisco Temperature','AVERAGE','103680',300,37,1,'none',0,1,0,'ent.9',[
             ], [
             [u'Temperature', 'temperature', 0,0,100,''],
                 ] ],
-        ['Cisco Voltage',1,1,'cisco_envmib','Voltage,2.1.2,2.1.7',19,'','103680',300,1,1,'none',0,1,0,'ent.9',[ ], [ ] ],
-        ['Cisco SA Agent',1,1,'cisco_saagent','',20,'AVERAGE','103680',300,39,0,'none',0,1,0,'ent.9',[
+        ['Cisco Voltage',1,1,'cisco_envmib','Voltage,2.1.2,2.1.7',u'Cisco Voltage','AVERAGE','103680',300,1,1,'none',0,1,0,'ent.9',[ ], [ ] ],
+        ['Cisco SA Agent',1,1,'cisco_saagent','',u'Cisco SA Agent','AVERAGE','103680',300,39,0,'none',0,1,0,'ent.9',[
             ], [
             [u'Forward Jitter', 'forward_jitter', 0,0,100,''],
             [u'Backward Jitter', 'backward_jitter', 0,0,100,''],
@@ -231,7 +209,7 @@ attribute_types = [
             [u'Forward Packetloss', 'forward_packetloss', 0,0,100,''],
             [u'Backward Packetloss', 'backward_packetloss', 0,0,100,''],
                 ] ],
-        ['Reachable',1,1,'reachability','',21,'AVERAGE','103680',300,41,0,'none',0,1,0,'',[
+        ['Reachable',1,1,'reachability','',u'Reachability','AVERAGE','103680',300,41,0,'none',0,1,0,'',[
             [u'Pings to Send','pings',0,1,0,1,0,'','',''],
             [u'Loss Threshold%','threshold',0,1,0,1,0,'','',''],
             [u'Interval (ms)','interval',0,1,0,1,0,'','',''],
@@ -239,38 +217,31 @@ attribute_types = [
             [u'RTT', 'rtt', 0,0,10000,''],
             [u'Packetloss', 'packetloss', 0,0,1000,''],
                 ] ],
-        ['Linux Traffic Control',1,1,'linux_tc','.1.3.6.1.4.1.2021.5001',22,'AVERAGE','103680',300,43,1,'none',0,1,0,'.',[
-            [u'Rate','rate',0,1,0,0,1,'','',''],
-            [u'Ceiling','ceil',0,1,0,0,1,'','',''],
-            ], [
-            [u'Bytes', 'bytes', 1,0,0,'ceil'],
-            [u'Packets', 'packets', 1,0,0,'ceil'],
-                ] ],
-        ['NTP',0,1,'ntp_client','',23,'AVERAGE','103680',300,1,0,'none',0,1,0,'',[], [] ],
-        ['UDP Ports',0,0,'tcp_ports','-sU -p1-500,600-1024 --host_timeout 15000',24,'AVERAGE','103680',300,45,0,'tcp_ports',1,1,0,'',[
+        ['NTP',0,1,'ntp_client','',u'NTP','AVERAGE','103680',300,1,0,'none',0,1,0,'',[], [] ],
+        ['UDP Ports',0,0,'tcp_ports','-sU -p1-500,600-1024 --host_timeout 15000',u'UDP/IP Port','AVERAGE','103680',300,45,0,'tcp_ports',1,1,0,'',[
             ], [
             [u'Connection Delay', 'conn_delay', 0,0,10000,''],
                 ] ],
-        ['Compaq Physical Drives',0,1,'cpqmib','phydrv',25,'AVERAGE','103680',300,1,0,'none',0,1,0,'.',[
+        ['Compaq Physical Drives',0,1,'cpqmib','phydrv',u'Compaq Physical Drive','AVERAGE','103680',300,1,0,'none',0,1,0,'.',[
             [u'Controller', 'controller', 1,1,0, 0,1, '','',''],
             [u'Drive', 'drvindex', 1,1,0, 0,1, '','',''],
             [u'Drive Model', 'drive', 0,1,0, 0,1, '','',''],
             ], [
                 ] ],
-        ['Compaq Fans',0,1,'cpqmib','fans',26,'AVERAGE','103680',300,1,0,'none',0,1,0,'.',[
+        ['Compaq Fans',0,1,'cpqmib','fans',u'Compaq Fan','AVERAGE','103680',300,1,0,'none',0,1,0,'.',[
             [u'Location', 'location', 1,1,1, 0,1, '','',''],
             [u'Chassis', 'chassis', 0,1,1, 0,1, '','',''],
             [u'Fan', 'fan_index', 0,1,1, 0,1, '','',''],
             ], [
                 ] ],
-        ['Compaq Temperature',0,1,'cpqmib','temperature',27,'AVERAGE','103680',300,46,0,'none',0,1,0,'.',[
+        ['Compaq Temperature',0,1,'cpqmib','temperature',u'Compaq Temperature','AVERAGE','103680',300,46,0,'none',0,1,0,'.',[
             [u'Location', 'location', 0,1,1, 0,1, '','',''],
             [u'Chassis', 'chassis', 0,1,1, 0,1, '','',''],
             [u'Sensor', 'temp_index', 0,1,1, 0,1, '','',''],
             ], [
             [u'Temperature', 'temperature', 0,0,1000,''],
                 ] ],
-        ['IIS Webserver Information',0,1,'iis_info','',28,'AVERAGE','103680',300,50,0,'none',0,1,0,'.',[
+        ['IIS Webserver Information',0,1,'snmp_simple','1.3.6.1.4.1.311.1.7.3.1.1.0|IIS Information',u'IIS Info','AVERAGE','103680',300,50,0,'none',0,1,0,'ent.311',[
             ], [
             [u'Total Bytes Received', 'tbr', 1,0,100000000,''],
             [u'Total CGI Requests', 'tcgir', 1,0,100000000,''],
@@ -278,7 +249,7 @@ attribute_types = [
             [u'Total Gets', 'tg', 1,0,100000000,''],
             [u'Total Posts', 'tp', 1,0,100000000,''],
                 ] ],
-        ['Apache',0,1,'apache','',30,'AVERAGE','103680',300,53,0,'none',1,1,0,'',[
+        ['Apache',0,1,'apache','',u'Apache','AVERAGE','103680',300,53,0,'none',1,1,0,'',[
             ], [
             [u'Total Accesses', 'tac', 1,0,100000000,''],
             [u'Total kBytes', 'tkb', 1,0,100000000,''],
@@ -288,7 +259,7 @@ attribute_types = [
             [u'Busy Workers', 'bw', 0,0,1000,''],
             [u'Idle Workers', 'iw', 0,0,1000,''],
                 ] ],
-        ['APC',1,1,'apc','enterprises.318',31,'AVERAGE','103680',300,61,0,'none',0,1,0,'.',[
+        ['APC',1,1,'apc','',u'APC','AVERAGE','103680',300,61,0,'none',0,1,0,'ent.318',[
             ], [
             [u'Battery Capacity', 'capacity', 0,0,100,''],
             [u'Output Load', 'load', 0,0,100,''],
@@ -297,7 +268,7 @@ attribute_types = [
             [u'Time Remaining', 'time_remaining', 0,0,100000000,''],
             [u'Temperature', 'temperature', 0,0,200,''],
                 ] ],
-        ['Alteon Real Server',1,1,'alteon_realservers','',33,'AVERAGE','103680',300,66,0,'none',0,1,0,'ent.1872',[
+        ['Alteon Real Server',1,1,'alteon_realservers','',u'Alteon Real Server','AVERAGE','103680',300,66,0,'none',0,1,0,'ent.1872',[
             [u'Hostname', 'hostname', 1,1,1, 1,0, '','',''],
             [u'Max Connections', 'max_connections', 0,1,1, 1,0, '','',''],
             ], [
@@ -306,14 +277,14 @@ attribute_types = [
             [u'Failures', 'failures', 1,0,10000,''],
             [u'Octets', 'octets', 1,0,100000000,''],
                 ] ],
-        ['Alteon Virtual Server',0,1,'alteon_virtualservers','',34,'AVERAGE','103680',300,70,0,'none',0,1,0,'ent.1872',[
+        ['Alteon Virtual Server',0,1,'alteon_virtualservers','',u'Alteon Virtual Server','AVERAGE','103680',300,70,0,'none',0,1,0,'ent.1872',[
             [u'Hostname', 'hostname', 1,1,1, 1,0, '','',''],
             ], [
             [u'Total Sessions', 'total_sessions', 1,0,100000000,''],
             [u'Current Sessions', 'current_sessions', 0,0,20000,''],
             [u'Octets', 'octets', 1,0,100000000,''],
                 ] ],
-        ['Alteon Real Services',0,1,'alteon_realservices','',35,'AVERAGE','103680',300,73,0,'none',0,1,0,'ent.1872',[
+        ['Alteon Real Services',0,1,'alteon_realservices','',u'Alteon Real Services','AVERAGE','103680',300,73,0,'none',0,1,0,'ent.1872',[
             [u'Hostname', 'hostname', 1,1,1, 1,0, '','',''],
             [u'Address', 'address', 1,1,1, 1,0, '','',''],
             [u'Port', 'port', 1,1,1, 1,0, '','',''],
@@ -321,7 +292,7 @@ attribute_types = [
             ], [
             [u'Response Time', 'response_time', 0,0,10000,''],
                 ] ],
-        ['Alteon System Info',1,1,'host_information','enterprises.1872',36,'AVERAGE','103680',300,75,0,'none',0,1,0,'ent.1872',[
+        ['Alteon System Info',1,1,'host_information','enterprises.1872',u'Alteon System Info','AVERAGE','103680',300,75,0,'none',0,1,0,'ent.1872',[
             [u'System Name','name',1,1,1,0,1,'','',''],
             [u'Location','location',1,1,1,0,1,'','',''],
             [u'Contact','contact',1,1,1,0,1,'','',''],
@@ -339,12 +310,12 @@ attribute_types = [
             [u'CPU B 4 sec', 'cpub_4sec', 0,0,1000,''],
             [u'CPU B 64 sec', 'cpub_64sec', 0,0,1000,''],
                 ] ],
-        ['Brocade Sensors',0,0,'brocade_sensors','',37,'AVERAGE','103680',300,77,0,'none',0,1,0,'ent.1588',[
+        ['Brocade Sensors',0,0,'brocade_sensors','',u'Brocade Sensors','AVERAGE','103680',300,77,0,'none',0,1,0,'ent.1588',[
             [u'Type','sensor_type',0,1,1, 0,0,'','',''],
             ], [
             [u'Sensor Value', 'sensor_value', 0,0,30000000,''],
                 ] ],
-        ['Brocade FC Port',0,0,'brocade_fcports','',38,'AVERAGE','103680',300,78,0,'none',0,1,0,'ent.1588',[
+        ['Brocade FC Ports',0,0,'brocade_fcports','',u'Brocade FC Ports','AVERAGE','103680',300,78,0,'none',0,1,0,'ent.1588',[
             [u'Physical Status','phy',0,1,1, 0,0,'','',''],
             ], [
             [u'Tx Words', 'tx_words', 1,0,100000000,''],
@@ -352,62 +323,55 @@ attribute_types = [
             [u'Tx Frames', 'rx_frames', 1,0,100000000,''],
             [u'Rx Words', 'rx_frames', 1,0,100000000,''],
                 ] ],
-        ['Windows Logical Disks',1,1,'informant_ldisks','',40,'AVERAGE','103680',300,82,0,'none',0,1,0,'.',[
-            ], [
-            [u'lDisk % Read Time', 'inf_d_read_time', 0,0,100,''],
-            [u'lDisk % Write Time', 'inf_d_write_time', 0,0,100,''],
-            [u'lDisk Read Rate', 'inf_d_read_rate', 0,0,1048576000,''],
-            [u'lDisk Write Rate', 'inf_d_write_rate', 0,0,1048576000,''],
-                ] ],
-        ['UPS',1,1,'ups','',41,'AVERAGE','103680',300,84,0,'none',0,1,0,'.',[
+        ['UPS',1,1,'ups','',u'UPS','AVERAGE','103680',300,84,0,'none',0,1,0,'.',[
             [u'Identification','ident',0,1,1, 0,1,'','',''],
-            [u'UPS Type','ups_type',0,1,1, 0,1,'','',''],
+            [u'UPS OID','ups_oid',0,1,1, 0,1,'','',''],
             ], [
             [u'Battery Temperature', 'temperature', 0,0,200,''],
             [u'Minutes Remaining', 'minutes_remaining', 0,0,10000200,''],
             [u'Charge Remaining', 'charge_remaining', 0,0,10000200,''],
                 ] ],
-        ['UPS Input Line',0,1,'ups_lines','',42,'AVERAGE','103680',300,85,0,'none',0,1,0,'.',[
+        ['UPS Input Line',0,1,'ups_lines','',u'UPS Input Line','AVERAGE','103680',300,85,0,'none',0,1,0,'.',[
             ], [
             [u'Voltage', 'voltage', 0,0,500,''],
             [u'Current', 'current', 0,0,500,''],
                 ] ],
-        ['UPS Output Line',0,1,'ups_lines','',42,'AVERAGE','103680',300,85,0,'none',0,1,0,'.',[
+        ['UPS Output Line',0,1,'ups_lines','',u'UPS Output Line','AVERAGE','103680',300,85,0,'none',0,1,0,'.',[
             ], [
             [u'Voltage', 'voltage', 0,0,500,''],
             [u'Current', 'current', 0,0,500,''],
             [u'Load', 'load', 0,0,100,''],
                 ] ],
-        ['Mitsubishi UPS Input Line',0,1,'mitsu_ups_lines','',42,'AVERAGE','103680',300,85,0,'none',0,1,0,'.',[
+        ['Mitsubishi UPS Input Line',0,1,'mitsu_ups_lines','',u'Mitsubishi UPS Input Line','AVERAGE','103680',300,85,0,'none',0,1,0,'.',[
             ], [
             [u'Voltage', 'voltage', 0,0,500,''],
             [u'Current', 'current', 0,0,500,''],
             [u'Power', 'power', 0,0,100000,''],
                 ] ],
-        ['Mitsubishi UPS Output Line',0,1,'mitsi_ups_lines','',42,'AVERAGE','103680',300,85,0,'none',0,1,0,'.',[
+        ['Mitsubishi UPS Output Line',0,1,'mitsi_ups_lines','',u'Mitsubishi UPS Output Line','AVERAGE','103680',300,85,0,'none',0,1,0,'.',[
             ], [
             [u'Voltage', 'voltage', 0,0,500,''],
             [u'Current', 'current', 0,0,500,''],
             [u'Power', 'power', 0,0,100000,''],
             [u'Load', 'load', 0,0,100,''],
                 ] ],
-        ['Cisco PIX',1,1,'pix_connections','',44,'AVERAGE','103680',300,91,0,'none',0,1,0,'ent.9',[], [] ],
-        ['Cisco NAT',0,1,'simple','.1.3.6.1.4.1.9.10.77.1.2.1.0,NAT',45,'AVERAGE','103680',300,93,0,'none',0,1,0,'ent.9',[], [] ],
-        ['Sensors',1,1,'sensors','',46,'AVERAGE','103680',300,94,1,'none',0,1,0,'.',[], [] ],
-        ['OS/400 System Info',1,1,'simple','.1.3.6.1.4.1.2.6.4.5.1.0,OS400',47,'AVERAGE','103680',300,95,0,'none',0,1,0,'.',[], [] ],
-        ['Dell Chassis',1,1,'simple','.1.3.6.1.4.1.674.10892.1.200.10.1.2.1,Chassis status',48,'AVERAGE','103680',300,1,0,'none',0,1,0,'.',[], [] ],
-        ['PDU',1,1,'pdu','',49,'AVERAGE','103680',300,1,0,'none',0,1,0,'.',[], [] ],
-        ['PDU Banks',0,1,'pdu_banks','',50,'AVERAGE','103680',300,99,0,'none',0,1,0,'.',[], [] ],
-        ['IBM Component Health',1,0,'ibm_ComponentHealth','',57,'AVERAGE','103680',300,1,0,'none',0,1,0,'.',[], [] ],
-        ['IBM Blade server',1,0,'ibm_blade_servers','',51,'AVERAGE','103680',300,106,0,'none',0,1,0,'.',[], [] ],
-        ['Generic FC Ports',1,0,'fc_ports','',52,'AVERAGE','103680',300,105,0,'none',0,1,0,'.',[], [] ],
-        ['Cisco 802.11X Device',1,0,'simple','.1.3.6.1.4.1.9.9.273.1.1.2.1.1.1,Cisco AP',53,'AVERAGE','103680',300,101,0,'none',0,1,0,'ent.9',[
+        ['Cisco PIX',1,1,'pix_connections','',u'PIX Connection Stat','AVERAGE','103680',300,91,0,'none',0,1,0,'ent.9',[], [] ],
+        ['Cisco NAT',0,1,'simple','.1.3.6.1.4.1.9.10.77.1.2.1.0,NAT',u'Cisco NAT','AVERAGE','103680',300,93,0,'none',0,1,0,'ent.9',[], [] ],
+        ['Sensors',1,1,'sensors','',u'Sensors','AVERAGE','103680',300,94,1,'none',0,1,0,'.',[
+            [u'Table Index','table_index',0,0,0, 0,1,'','',''],
+            [u'Row Index','row_index',0,0,0, 0,1,'','',''],
+            [u'Units','units',0,1,0, 1,0,'','',''],
+            ], [
+            [u'Value', 'value', 0,-100000,100000,''],
+                ] ],
+        ['OS/400 System Info',1,1,'simple','.1.3.6.1.4.1.2.6.4.5.1.0,OS400',u'OS/400 Host','AVERAGE','103680',300,95,0,'none',0,1,0,'.',[], [] ],
+        ['Dell Chassis',1,1,'simple','.1.3.6.1.4.1.674.10892.1.200.10.1.2.1,Chassis status',u'Dell Chassis','AVERAGE','103680',300,1,0,'none',0,1,0,'.',[], [] ],
+        ['Generic FC Ports',1,0,'fc_ports','',u'Fibre Channel Interface','AVERAGE','103680',300,105,0,'none',0,1,0,'.',[], [] ],
+        ['Cisco 802.11X Device',1,0,'simple','.1.3.6.1.4.1.9.9.273.1.1.2.1.1.1,Cisco AP',u'Cisco 802.11X Device','AVERAGE','103680',300,101,0,'none',0,1,0,'ent.9',[
             ], [
             [u'Associated', 'associated', 0,0,2100,''],
                 ]],
-        ['IBM Blade Power',1,0,'ibm_blade_power','',54,'AVERAGE','103680',300,107,0,'none',0,1,0,'.',[], [] ],
-        ['Compaq Power Supply',1,0,'cpqmib','powersupply',55,'AVERAGE','103680',300,1,0,'none',0,1,0,'.',[], [] ],
-        ['Informant Disks 64',1,1,'informant_adv_ldisks','',58,'AVERAGE','103680',300,102,0,'none',0,1,0,'.',[], [] ]
+        ['Compaq Power Supply',1,0,'cpqmib','powersupply',u'Compaq Power Supply','AVERAGE','103680',300,1,0,'none',0,1,0,'.',[], [] ],
         ]
     
 config_transfers = [
@@ -452,7 +416,6 @@ event_types = [
 
     [u'Brocade FC Port', u'Fault', 'brocade_fcport', u'<attribute> <state> (<info>)',1,1,0,1,1],
 
-    [u'IBM Warning',u'Warning', 'ibm_warning', u'<attribute> is in <state> state',1,1,0,1,1],
     [u'OS/400 Error', u'Critical', 'os400_error', u'A subsystem is <state> on the OS/400',1,1,0,1,1],
     [u'Storage Controller', u'Big Fault', 'storage_controller', u'<info>',1,1,0,1,1]
     ]
@@ -560,11 +523,6 @@ slas = [
             [27,1],
             [6,0],
             ]],
-        [u'Smokeping Host',3, u'Smokeping:',12,100,14, [
-            [23,1],
-            [2,1],
-            [6,0],
-            ]],
         [u'Storage',3, u'Storage',12,100,8, [ [24,1],],],
         [u'Linux/Unix CPU',3, u'',12,100,11, [
             [25,1],
@@ -649,8 +607,6 @@ pollers = [
         ['storage_block_count','Storage Device Total Blocks','snmp_counter','.1.3.6.1.2.1.25.2.3.1.5.<index>'],
         ['storage_block_size','Storage Device Block Size','snmp_counter','.1.3.6.1.2.1.25.2.3.1.4.<index>'],
         ['bgp_peer_status','BGP Peer Status','snmp_status','1.3.6.1.2.1.15.3.1.2.<remote>|6=up|down'],
-        ['hits','CSS VIP Hits','snmp_counter','.1.3.6.1.4.1.2467.1.16.4.1.18.\"<owner>\".\"<interface>\"'],
-        ['output','CSS VIP Traffic Rate','snmp_counter','.1.3.6.1.4.1.2467.1.16.4.1.25.\"<owner>\".\"<interface>\"'],
         ['cpu_kernel_ticks','CPU Kernel Time','snmp_counter','.1.3.6.1.4.1.2021.11.55.0'],
         ['cpu_idle_ticks','CPU Idle Time','snmp_counter','.1.3.6.1.4.1.2021.11.53.0'],
         ['cpu_wait_ticks','CPU Wait Time','snmp_counter','.1.3.6.1.4.1.2021.11.54.0'],
@@ -672,12 +628,6 @@ pollers = [
         ['tcp_active','TCP MIB Active Opens','snmp_counter','.1.3.6.1.2.1.6.5.0'],
         ['tcp_passive','TCP MIB Passive Opens','snmp_counter','.1.3.6.1.2.1.6.6.0'],
         ['tcp_established','TCP MIB Established Connections','snmp_counter','.1.3.6.1.2.1.6.9.0'],
-        ['inputpackets','Cisco MAC Accounting Input Packets','snmp_counter','.1.3.6.1.4.1.9.9.84.1.2.1.1.3.<ifindex>.1.<mac>'],
-        ['outputpackets','Cisco MAC Accounting Output Packets','snmp_counter','.1.3.6.1.4.1.9.9.84.1.2.1.1.3.<ifindex>.2.<mac>'],
-        ['input','Cisco MAC Accounting Input Bytes','snmp_counter','.1.3.6.1.4.1.9.9.84.1.2.1.1.4.<ifindex>.1.<mac>'],
-        ['output','Cisco MAC Accounting Output Bytes','snmp_counter','.1.3.6.1.4.1.9.9.84.1.2.1.1.4.<ifindex>.2.<mac>'],
-        ['packetloss','Smokeping Loss','smokeping','loss'],
-        ['rtt','Smokeping RTT','smokeping','median'],
         ['app_status,current_instances,pids','Host MIB Process Verifier','hostmib_apps','<interface>'],
         ['cisco_powersupply_status','Cisco Power Supply Status','snmp_status','1.3.6.1.4.1.9.9.13.1.5.1.3.<index>|1=up|down'],
         ['cisco_temperature_status','Cisco Temperature Status','snmp_status','1.3.6.1.4.1.9.9.13.1.3.1.6.<index>|1=up|down'],
@@ -687,13 +637,9 @@ pollers = [
         ['forward_jitter','SA Agent Forward Jitter','cisco_saagent','<index>|fwd_jitter'],
         ['backward_jitter','SA Agent Backward Jitter','cisco_saagent','<index>|bwd_jitter'],
         ['rt_latency,forward_packetloss,backward_packetloss','SA Agent Packetloss','cisco_saagent','<index>|packetloss'],
-        ['verify_smokeping_number','Verify Smokeping Number','verify_smokeping_number',''],
         ['tcp_content_analisis','TCP Content Check','tcp_content',''],
         ['rtt,pl','Reachability Ping','reach_ping',''],
         ['status','Reachability Status','reach_status',''],
-        ['bytes','Linux TC Bytes','snmp_counter','<autodiscovery_parameters>.1.6.<index>'],
-        ['packets','Linux TC Packets','snmp_counter','<autodiscovery_parameters>.1.7.<index>'],
-        ['verify_tc_number','Linux TC Verfy Interface Number','verify_tc_class_number',''],
         ['tcp_status','TCP Port Status','buffer',''],
         ['app_status','Host MIB Status','buffer',''],
         ['ntp_status','NTP Status','ntp_client',''],
@@ -748,14 +694,10 @@ pollers = [
         ['admin_state','Brocade FC Port Admin State','snmp_counter','1.3.6.1.4.1.1588.2.1.1.1.6.2.1.5.<index>'],
         ['oper_status','Brocade FC Port Oper Status','snmp_status','1.3.6.1.4.1.1588.2.1.1.1.6.2.1.4.<index>|1=up,3=testing'],
         ['phy_state','Brocade FC Port Phy State','brocade_fcport_phystate','<index>'],
-        ['inf_d_read_time','Informant Disk Read Time','snmp_counter','.1.3.6.1.4.1.9600.1.1.1.1.2.<index>'],
-        ['inf_d_write_time','Informant Disk Write Time','snmp_counter','.1.3.6.1.4.1.9600.1.1.1.1.4.<index>'],
-        ['inf_d_read_rate','Informant Disk Read Rate','snmp_counter','.1.3.6.1.4.1.9600.1.1.1.1.15.<index>'],
-        ['inf_d_write_rate','Informant Disk Write Rate','snmp_counter','.1.3.6.1.4.1.9600.1.1.1.1.18.<index>'],
-        ['status','UPS Battery Status','snmp_status','1.3.6.1.2.1.33.1.2.1.0|2=battery normal,1=battery unknown,3=battery low,3=battery depleted'],
-        ['temperature','UPS Battery Temperature','snmp_counter','.1.3.6.1.2.1.33.1.2.7.0'],
-        ['minutes_remaining','UPS Battery Minutes Remaining','snmp_counter','.1.3.6.1.2.1.33.1.2.3.0'],
-        ['charge_remaining','UPS Battery Charge Remaining','snmp_counter','.1.3.6.1.2.1.33.1.2.4.0'],
+        ['status','UPS Battery Status','snmp_status','<ups_oid>.2.1.0|2=battery normal,1=battery unknown,3=battery low,3=battery depleted'],
+        ['temperature','UPS Battery Temperature','snmp_counter','<ups_oid>.2.7.0'],
+        ['minutes_remaining','UPS Battery Minutes Remaining','snmp_counter','<ups_oid>.2.3.0'],
+        ['charge_remaining','UPS Battery Charge Remaining','snmp_counter','<ups_oid>.2.4.0'],
         ['voltage','UPS Input Voltage','snmp_counter','.1.3.6.1.2.1.33.1.3.3.1.3.<index>'],
         ['current','UPS Input Current','snmp_counter','.1.3.6.1.2.1.33.1.3.3.1.4.<index>'],
         ['voltage','UPS Output Voltage','snmp_counter','.1.3.6.1.2.1.33.1.4.4.1.2.<index>'],
@@ -780,7 +722,8 @@ pollers = [
         ['cisco_nat_udp_outbound','Cisco NAT UDP Outbound','snmp_counter','.1.3.6.1.4.1.9.10.77.1.3.1.1.3.3'],
         ['cisco_nat_tcp_outbound','Cisco NAT TCP Outbound','snmp_counter','.1.3.6.1.4.1.9.10.77.1.3.1.1.3.4'],
         ['cisco_nat_active_binds','Cisco NAT Active Binds','snmp_counter','.1.3.6.1.4.1.9.10.77.1.2.1.0'],
-        ['value','Sensor Value','snmp_counter','.1.3.6.1.2.1.25.8.1.5.<index>'],
+        ['sensor_verify','Verify Sensor Index','verify_sensor_index',''],
+        ['value','Sensor Value','snmp_counter','1.3.6.1.4.1.2021.13.16.<table_index>.1.3.<row_index>'],
         ['storage_verify','Verify Storage Index','verify_storage_index',''],
         ['cpu400','OS 400 System Load','snmp_counter','.1.3.6.1.4.1.2.6.4.5.1.0'],
         ['dell_om_chassis','Dell OpenManage Chassis','snmp_status','1.3.6.1.4.1.674.10892.1.200.10.1.2.1|1=other,2=unknown,3=ok,4=noncritical,5=critical,6=nonrecoverabl|unknown'],
@@ -792,14 +735,6 @@ pollers = [
         ['dell_om_fan_5','Dell OpenManage Fan RPM #5','snmp_counter','1.3.6.1.4.1.674.10892.1.700.12.1.6.1.5'],
         ['dell_om_fan_6','Dell OpenManage Fan RPM #6','snmp_counter','1.3.6.1.4.1.674.10892.1.700.12.1.6.1.6'],
         ['dell_om_fan_7','Dell OpenManage Fan RPM #7','snmp_counter','1.3.6.1.4.1.674.10892.1.700.12.1.6.1.7'],
-        ['status','PDU Load Status','snmp_status','1.3.6.1.4.1.318.1.1.12.2.3.1.1.3.<index>|1=load normal,2=load low,3=load near overload,4=load over'],
-        ['load','PDU Banks Load','pdu_banks',''],
-        ['ibm_component_health','IBM Component Health Status','snmp_status','1.3.6.1.4.1.2.6.159.1.1.30.3.1.2.<index>|0=up,1=warning,2=down'],
-        ['status','IBM Blade Server Health Status','snmp_status','1.3.6.1.4.1.2.3.51.2.22.1.5.1.1.5.<index>|1=up,2=warning|down'],
-        ['temperature','IBM Blade Server CPU1 Temp','snmp_ibm_temperature','.1.3.6.1.4.1.2.3.51.2.22.1.5.3.1.13.<index>'],
-        ['status','IBM Blade Power Status','snmp_status','1.3.6.1.4.1.2.3.51.2.2.10.1.1.1.3.<index>|1=up,2=warning|down'],
-        ['fuelGaugePowerInUse','IBM Blade Power Gauge','snmp_ibm_power','.1.3.6.1.4.1.2.3.51.2.2.10.1.1.1.10.<index>'],
-        ['temperature2','IBM Blade Server CPU2 Temp','snmp_ibm_temperature','.1.3.6.1.4.1.2.3.51.2.22.1.5.3.1.14.<index>'],
         ['status','FC Oper Status','snmp_status','1.3.6.1.2.1.75.1.2.2.1.2.<index>|1=up,2=offline,4=linkFailure'],
         ['rx_frames','FCPort RxFrames','snmp_counter','.1.3.6.1.2.1.75.1.4.3.1.1.<real_index>'],
         ['tx_frames','FCPort TxFrames','snmp_counter','.1.3.6.1.2.1.75.1.4.3.1.2.<real_index>'],
@@ -840,9 +775,7 @@ backends = [
         [u'Alarm Alteon Service','event','alteon_service'],
         [u'Alarm Alteon VServer','event','alteon_vserver'],
         [u'Brocade FC Admin View','admin_status','down=2|up=1,0'],
-        [u'Alarm IBM','event','ibm_warning'],
         [u'Change Interface Number','verify_index',''],
-        [u'IBM San Trap','event_always','ibm_san'],
         [u'Alarm OS/400','event','os400_error'],
         ]
 
@@ -894,10 +827,6 @@ poller_sets = [
             [u'Storage Device Total Blocks', u''],
             [u'Storage Device Used Blocks', u'']
             ]],
-        [u'CSS VIP', u'CSS VIPs', [
-            [u'CSS VIP Traffic Rate', u''],
-            [u'CSS VIP Hits', u'']
-            ]],
         [u'Linux/Unix Host', u'Linux/Unix System Info', [
             [u'CPU Nice Time', u''],
             [u'Host MIB Number of Processes', u''],
@@ -933,17 +862,6 @@ poller_sets = [
             [u'TCP MIB Established Connections', u''],
             [u'TCP MIB Passive Opens', u'']
             ]],
-        [u'Cisco Accounting', u'Cisco MAC Accounting', [
-            [u'Cisco MAC Accounting Input Packets', u''],
-            [u'Cisco MAC Accounting Input Bytes', u''],
-            [u'Cisco MAC Accounting Output Bytes', u''],
-            [u'Cisco MAC Accounting Output Packets', u'']
-            ]],
-        [u'Smokeping Host', u'Smokeping Host', [
-            [u'Verify Smokeping Number' ,u'Change Interface Number'],
-            [u'Smokeping Loss', u''],
-            [u'Smokeping RTT', u'']
-            ]],
         [u'HostMIB Application', u'Applications', [
             [u'Host MIB Process Verifier', u''],
             [u'Host MIB Status', u'Application Alarm'],
@@ -952,7 +870,7 @@ poller_sets = [
         [u'Cisco Power Supply', u'Cisco Power Supply', [
             [u'Cisco Power Supply Status', u'Alarm Environmental'],
             ]],
-        [u'Cisco Tempererature', u'Cisco Temperature', [
+        [u'Cisco Temperature', u'Cisco Temperature', [
             [u'Cisco Temperature Status', u'Alarm Environmental'],
             [u'Cisco Temperature', u'']
             ]],
@@ -967,11 +885,6 @@ poller_sets = [
         [u'Reachability', u'Reachable', [
             [u'Reachability Ping', u''],
             [u'Reachability Status', u'Alarm Reachability'],
-            ]],
-        [u'TC Class', u'Linux Traffic Control', [
-            [u'Linux TC Verfy Interface Number', u'Change Interface Number'],
-            [u'Linux TC Bytes', u''],
-            [u'Linux TC Packets', u''],
             ]],
         [u'NTP', u'NTP', [
             [u'NTP Status', u'Alarm NTP'],
@@ -1046,7 +959,7 @@ poller_sets = [
             [u'Brocade Sensor Oper', u'Alarm Verify Operational'],
             [u'Brocade Sensor Value', u''],
             ]],
-        [u'Brocade FC Port', u'Brocade FC Port', [
+        [u'Brocade FC Ports', u'Brocade FC Ports', [
             [u'Brocade FC Port Admin State', u'Brocade FC Admin View'],
             [u'Brocade FC Port Oper Status', u'Alarm Verify Operational'],
             [u'Brocade FC Port Phy State', u'Alarm Brocade FC Port'],
@@ -1054,12 +967,6 @@ poller_sets = [
             [u'Brocade FC Port RxWords', u''],
             [u'Brocade FC Port TxFrames', u''],
             [u'Brocade FC Port RxFrames', u'']
-            ]],
-        [u'Windows Informant Disks', u'Windows Logical Disks', [
-            [u'Informant Disk Read Rate', u''],
-            [u'Informant Disk Write Rate', u''],
-            [u'Informant Disk Read Time', u''],
-            [u'Informant Disk Write Time', u'']
             ]],
         [u'UPS', u'UPS', [
             [u'UPS Battery Status', u'Alarm Environmental'],
@@ -1102,6 +1009,7 @@ poller_sets = [
             [u'Cisco NAT Active Binds', u'']
             ]],
         [u'Sensors', u'Sensors', [
+            [u'Verify Sensor Index', u'Change Interface Number'],
             [u'Sensor Value', u''],
             ]],
         [u'OS/400 Host', u'OS/400 System Info', [
@@ -1129,36 +1037,6 @@ poller_sets = [
             [u'FC Oper Status', u'Alarm Environmental'],
             [u'FCPort RxFrames', u''],
             [u'FCPort TxFrames', u''],
-            ]],
-        [u'IBM Component Health', u'IBM Component Health', [
-            [u'IBM Component Health Status', u'Alarm IBM'],
-            ]],
-        [u'IBM Blade Servers', u'IBM Blade server', [
-            [u'IBM Blade Server Health Status', u'Alarm Environmental'],
-            [u'IBM Blade Server CPU1 Temp', u''],
-            [u'IBM Blade Server CPU2 Temp', u'']
-            ]],
-        [u'IBM Blade Power Module', u'IBM Blade Power', [
-            [u'IBM Blade Power Gauge', u''],
-            [u'IBM Blade Power Status', u'Alarm IBM']
-            ]],
-        [u'Informant Disks 64', u'Informant Disks 64', [
-            [u'Inf-64 Disk CurrentDiskQueue', u''],
-            [u'Inf-64 Disk AvgDiskQueu', u''],
-            [u'Inf-64 Disk avg Read DiskQueue', u''],
-            [u'Inf-64 Disk avg Write DiskQueue', u''],
-            [u'Inf-64 Disk Read Time', u''],
-            [u'Inf-64 Disk Write Time', u''],
-            [u'Inf-64 Disk Read rate', u''],
-            [u'Inf-64 Disk Write rate', u''],
-            [u'Inf-64 Disk Read Bytes', u''],
-            [u'Inf-64 Disk Write Bytes', u''],
-            ]],
-        [u'PDU', u'PDU', [
-            [u'PDU Load Status', u''],
-            ]],
-        [u'PDU Banks', u'PDU Banks', [
-            [u'PDU Banks Load', u''],
             ]],
         [u'Cisco Interface HC', u'Physical Interfaces', [
             [u'Cisco Verify Interface Number', u'Change Interface Number'],

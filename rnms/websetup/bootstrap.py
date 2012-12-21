@@ -62,14 +62,17 @@ def bootstrap(command, conf, vars):
             (a.display_name, a.alarm_level, a.sound_in, a.sound_out, a.internal_state) = row
             model.DBSession.add(a)
 
+        atype_psets = []
         for row in database_data.attribute_types:
             at = model.AttributeType()
+            #FIXME - The poller set must be a name not number at this point
             (at.display_name, at.ad_validate, at.ad_enabled, at.ad_command,
-                    at.ad_parameters, at.default_poller_set_id, 
+                    at.ad_parameters, default_poller_set,
                     at.rra_cf, at.rra_rows, ignore_step, at.default_graph_id,
                     at.break_by_card, ignore_handler, at.permit_manual_add,
                     at.default_sla_id, ignore_tools, at.required_sysobjid, fields, rrds
                     ) = row
+            atype_psets.append((at.display_name, default_poller_set))
             field_position = 1
             for field in fields:
                 f = model.AttributeTypeField()
@@ -210,6 +213,13 @@ def bootstrap(command, conf, vars):
                 poller_row_pos += 1
                 ps.poller_rows.append(pr)
             model.DBSession.add(ps)
+        # Now that the PollerSets are in, we can backfill the default
+        # PollerSet for an AttributeType
+        for at_name,ps_name in atype_psets:
+            ps = model.PollerSet.by_display_name(ps_name)
+            if ps is None:
+                raise ValueError("Bad default PollerSet name \"{}\" for AttributeType {}.".format(ps_name, at_name))
+            model.DBSession.query(model.AttributeType).filter(model.AttributeType.display_name == at_name).update({'default_poller_set_id': ps.id})
 
         # Default Single Setup
         zone = model.Zone(u'Default Zone',u'default')

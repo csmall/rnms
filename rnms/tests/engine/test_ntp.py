@@ -16,14 +16,14 @@ class DummyHost(object):
     def __init__(self, ip):
         self.mgmt_address = ip
 
-def my_cb_peer_by_id(host, response_packet, kwargs):
+def my_cb_peer_by_id(host, response_packet, **kwargs):
     if response_packet.assoc_data == {}:
         kwargs['obj'].results['noid'] = response_packet.assoc_id
     else:
         kwargs['obj'].results = response_packet.assoc_data
     return response_packet.more == 1
 
-def my_cb_peers(host, response_packet, kwargs):
+def my_cb_peers(host, response_packet, **kwargs):
     if len(response_packet.peers) == 0:
         kwargs['obj'].results['none']= True
         return

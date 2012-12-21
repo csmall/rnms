@@ -60,9 +60,18 @@ def cb_match_host(value, error, **kw):
         return
 
     # Query for processor table and system info
-    oids = ((1,3,6,1,2,1,1), #systerm
-            (1,3,6,1,2,1,25,3,2,1,2),) #hrDeviceType
-    kw['dobj'].snmp_engine.get_table(kw['host'], oids, cb_host_information, table_trim=2, **kw)
+    oids = (
+            (1,3,6,1,2,1,1,1,0),
+            (1,3,6,1,2,1,1,4,0),
+            (1,3,6,1,2,1,1,5,0),
+            (1,3,6,1,2,1,1,6,0),
+            )
+    req = snmp.SNMPRequest(kw['host'])
+    req.set_replyall(True)
+    req.oid_trim = 2
+    for oid in oids:
+        req.add_oid(oid, cb_host_information, data=kw)
+    kw['dobj'].snmp_engine.get(req)
 
 def cb_host_information(values, error, dobj, host, **kw):
     if values is None:
@@ -70,11 +79,10 @@ def cb_host_information(values, error, dobj, host, **kw):
 
     new_att = model.DiscoveredAttribute(host.id, kw['att_type'])
     new_att.display_name = u'CPU'
-    for node,fname in sys_fields:
-        try:
-            new_att.set_field(fname, unicode(values[0][node+'.0']))
-        except KeyError:
-            print "field {} not found".format(fname)
+    new_att.index = '1'
+    new_att.set_field('contact', values['4.0'])
+    new_att.set_field('name', values['5.0'])
+    new_att.set_field('location', values['6.0'])
     dobj.discover_callback(host.id, {'1': new_att})
 
 

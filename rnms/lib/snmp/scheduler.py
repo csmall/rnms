@@ -22,7 +22,7 @@ import logging
 
 class SNMPScheduler():
     """
-    The SNMP Scheuduler is given a series of SNMP polling jobs and stores 
+    The SNMP Scheuduler is given a series of SNMP polling requests and stores 
     them.  When the poller needs more items to poll, the scheduler determines
     the best items to use, dependent on what is currently been polling.
     """
@@ -32,98 +32,90 @@ class SNMPScheduler():
             self.logger = logging.getLogger("SNMPScheduler")
         else:
             self.logger = logger
-        self.waiting_jobs = []
-        self.active_jobs = {}
+        self.waiting_requests = []
+        self.active_requests = {}
         self.active_addresses = {}
 
-    def job_update(self, oldid, newid):
+    def request_update(self, oldid, newid):
         """
         For getnext methods we run the same request over and over. This
         method updates the ID and sends the updated request again.
         """
-        if oldid not in self.active_jobs:
-            self.logger.warn("Trying to update job {0} but not found.".format(oldid))
+        if oldid not in self.active_requests:
+            self.logger.warn("Trying to update request {0} but not found.".format(oldid))
             return False
-        self.active_jobs[newid] = self.active_jobs[oldid]
-        del self.active_jobs[oldid]
-        self.active_jobs[newid]['id'] = newid
+        self.active_requests[newid] = self.active_requests[oldid]
+        del self.active_requests[oldid]
+        self.active_requests[newid].id = newid
 
-    def job_add(self, reqid,  request, msg, table_oids = None, table_trim=None):
+    def request_add(self, request):
         """
-        Adds a new job to the waiting queue
+        Adds a new request to the waiting queue
         """
-        self.waiting_jobs.append({
-            'id': reqid,
-            'host' : request.host,
-            'request': request,
-            'msg': msg,
-            'table_oids' : table_oids,
-            'table_trim': table_trim,
-            })
-
+        self.waiting_requests.append(request)
             
 
-    def job_del_by_host(self, host):
+    def request_del_by_host(self, host):
         """
-        Delete all jobs in waiting and active queue for the given host
+        Delete all requests in waiting and active queue for the given host
         """
         if host.mgmt_address in self.active_addresses:
-            for job in self.active_jobs:
-                if job.host.mgmt_address == host.mgmt_address:
+            for request in self.active_requests:
+                if request.host.mgmt_address == host.mgmt_address:
                     self.address_del(host.mgmt_address)
-                    del(self.active_jobs[job.jobid])
+                    del(self.active_requests[request.requestid])
 
-        for i,job in self.waiting_jobs:
-            if job.host.mgmt_address == host.mgmt_address:
-                del(self.waiting_jobs[i])
+        for i,request in self.waiting_requests:
+            if request.host.mgmt_address == host.mgmt_address:
+                del(self.waiting_requests[i])
 
-    def job_pop(self):
+    def request_pop(self):
         """
-        Returns the "best" job to be polled next, depending what the
+        Returns the "best" request to be polled next, depending what the
         scheduler decides is "best". Returns None if there are no best
         items.
 
-        Callers should deal with each job first, for example calling
-        job_sent() before calling this method again.
+        Callers should deal with each request first, for example calling
+        request_sent() before calling this method again.
         """
-        for job in self.waiting_jobs:
-            if job['host'].mgmt_address not in self.active_addresses:
-                #self.logger.debug("job_pop(): Poping job {0}".format(job['id']))
-                return job
+        for request in self.waiting_requests:
+            if request.host.mgmt_address not in self.active_addresses:
+                #self.logger.debug("request_pop(): Poping request {0}".format(request['id']))
+                return request
         return None
 
 
-    def job_sent(self, reqid):
+    def request_sent(self, reqid):
         """
-        The Engine needs to tell the Scheduler that the job has been
-        sent. This will put this job into the active list and out
+        The Engine needs to tell the Scheduler that the request has been
+        sent. This will put this request into the active list and out
         of pending list.
         """
-        for i,job in enumerate(self.waiting_jobs):
-            if job['id'] == reqid:
-                self.address_add(job['host'].mgmt_address)
-                self.active_jobs[reqid] = job
-                del(self.waiting_jobs[i])
+        for idx,request in enumerate(self.waiting_requests):
+            if request.id == reqid:
+                self.address_add(request.host.mgmt_address)
+                self.active_requests[reqid] = request
+                del(self.waiting_requests[idx])
                 return
 
-    def job_received(self, reqid):
+    def request_received(self, reqid):
         """
         The Engine calls this when either there has been a reply OR
         the Engine has given up on trying to poll this item.  In any
         case it frees up the polling of the remote device.
         """
         #self.logger.debug("Scheduler attempting to remove request {0}".format(reqid))
-        if reqid in self.active_jobs:
-            job = self.active_jobs[reqid]
-            mgmt_address = job['host'].mgmt_address
+        if reqid in self.active_requests:
+            request = self.active_requests[reqid]
+            mgmt_address = request.host.mgmt_address
             self.address_del(mgmt_address)
-            del(self.active_jobs[reqid])
+            del(self.active_requests[reqid])
 
-    def have_active_jobs(self):
-        return self.active_jobs != {}
+    def have_active_requests(self):
+        return self.active_requests != {}
 
-    def have_waiting_jobs(self):
-        return self.waiting_jobs != []
+    def have_waiting_requests(self):
+        return self.waiting_requests != []
 
     def address_add(self, address):
         """

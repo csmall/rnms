@@ -91,3 +91,23 @@ def cb_cisco_saagent(values, error, host, dobj, **kw):
         saagents[key] = new_att
     dobj.discover_callback(host.id, saagents)
 
+def discover_pix_connections(host, **kw):
+    """
+    Walk the PIX Connection table
+    """
+    oids = (
+            (1,3,6,1,4,1,9,9,147,1,2,2,2,1,3),
+            )
+    return kw['dobj'].snmp_engine.get_table(host, oids, cb_pix_connections, table_trim=2, host=host, **kw)
+
+
+def cb_pix_connections(values, error, host, dobj, att_type, **kw):
+    conns = {}
+    for key,descr in values[0]:
+        new_att = model.DiscoveredAttribute(host.id, att_type)
+        new_att.display_name = unicode('FW Stat{}'.format(key))
+        new_att.index = key
+        new_att.add_field('description', descr)
+        conns[key] = new_att
+    dobj.discover_callback(host.id, conns)
+

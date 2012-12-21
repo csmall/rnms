@@ -35,6 +35,7 @@ def parse_args():
     parser.add_argument('--conf_file', help="configuration to use", default='development.ini')
     parser.add_argument('-H', '--host', help='Only autodiscover these hosts', type=str, metavar='HOST,...' )
     parser.add_argument('-t', '--atype', help='Autodiscover these attribute types', type=str, metavar='TYPE,...' )
+    parser.add_argument('-f', '--force', help='Force all attribute type discoveries', action='store_true')
     return parser.parse_args()
 
 args = parse_args()
@@ -50,5 +51,5 @@ if args.atype is not None:
 logging.basicConfig(level=logging.DEBUG)
 
 autodiscovery = AttDiscover()
-autodiscovery.discover(host_ids, atype_ids)
+autodiscovery.discover(limit_hosts=host_ids, limit_atypes=atype_ids, force=args.force)
 transaction.commit()

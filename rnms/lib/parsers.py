@@ -126,6 +126,6 @@ class NumericStringParser(object):
             return float( op )
     def eval(self,num_string,parseAll=True):
         self.exprStack=[]
-        #results=self.bnf.parseString(num_string,parseAll)
+        results=self.bnf.parseString(num_string,parseAll)
         val=self.evaluateStack( self.exprStack[:] )
         return val

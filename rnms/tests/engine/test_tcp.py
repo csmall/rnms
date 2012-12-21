@@ -16,8 +16,8 @@ class DummyHost(object):
     def __init__(self, ip):
         self.mgmt_address = ip
 
-def my_callback(host, response, connect_time, error, kwargs):
-    results = kwargs['obj'].results
+def my_callback(host, response, connect_time, error, obj, **kw):
+    results = obj.results
     results['response'] = response
     results['connect_time'] = connect_time
     results['error'] = error

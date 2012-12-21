@@ -22,11 +22,11 @@
 import datetime
 import logging
 
-from sqlalchemy.orm import relationship, UniqueConstraint
-from sqlalchemy import ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode, String, Boolean, SmallInteger
+from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey, Column, UniqueConstraint
+from sqlalchemy.types import Integer, Unicode, String, Boolean, SmallInteger, DateTime
 
-from rnms.model import DeclarativeBase, DBSession, Alarm, AlarmState, DateTime
+from rnms.model import DeclarativeBase, DBSession, Alarm, AlarmState
 from rnms.lib.parsers import RnmsTextTemplate
 
 logger = logging.getLogger('Event')

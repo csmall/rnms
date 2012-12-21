@@ -48,7 +48,7 @@ def parse_args():
 
 args = parse_args()
 load_config(args.conf_file)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 j = jffnms.JffnmsConfig(args.jffnms_conf)
 jffnms_db = sqlalchemy.create_engine(sqlalchemy.engine.url.URL(j.get('db_type'),username=j.get('dbuser'),password=j.get('dbpass'), host=j.get('dbhost'), database=j.get('db')))

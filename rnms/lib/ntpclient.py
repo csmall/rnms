@@ -99,7 +99,7 @@ class NTPDispatcher(asyncore.dispatcher):
         try:
             recv_job = self.sent_jobs[recv_addr]
         except KeyError:
-            logger.warning("No job for %s", recv_addr)
+            pass #logger.warning("No job for %s", recv_addr)
         else:
             self._parse_response(recv_job, recv_msg, recv_addr)
 
@@ -166,7 +166,7 @@ class NTPDispatcher(asyncore.dispatcher):
         for job in self.sent_jobs.values():
             if job['timeout'] < now:
                 # Job timed out
-                logger.debug('Job for %s timed out', job['sockaddr'])
+                #logger.debug('Job for %s timed out', job['sockaddr'])
                 self._parse_response(job, None, job['sockaddr'])
             else:
                 retval = True
