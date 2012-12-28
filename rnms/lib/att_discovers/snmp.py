@@ -36,12 +36,12 @@ def discover_snmp_interfaces(host, **kw):
             (1,3,6,1,2,1,4,20,1,2),
             (1,3,6,1,2,1,4,20,1,3),
             )
-    return kw['dobj'].snmp_engine.get_table(host, oids, cb_snmp_interfaces, table_trim=1, host2=host, **kw)
+    return kw['dobj'].snmp_engine.get_table(host, oids, cb_snmp_interfaces, table_trim=1, host=host, **kw)
 
 
-def cb_snmp_interfaces(values, error, host2, **kw):
+def cb_snmp_interfaces(values, error, host, **kw):
     if values is None:
-        kw['dobj'].discover_callback(host2.id, {})
+        kw['dobj'].discover_callback(host.id, {})
         return
     discovered_attributes = {}
 
@@ -70,7 +70,7 @@ def cb_snmp_interfaces(values, error, host2, **kw):
     for ifindex in values[0].values():
         try:
             ifdesc = values[1][ifindex]
-            new_att = model.DiscoveredAttribute(host2.id, kw['att_type'])
+            new_att = model.DiscoveredAttribute(host.id, kw['att_type'])
             new_att.display_name = ifdesc
             new_att.index = ifindex
         except IndexError:
@@ -99,7 +99,7 @@ def cb_snmp_interfaces(values, error, host2, **kw):
                 new_att.set_field(k,v)
         discovered_attributes[unicode(ifindex)] = new_att
 
-    kw['dobj'].discover_callback(host2.id, discovered_attributes)
+    kw['dobj'].discover_callback(host.id, discovered_attributes)
 
 def discover_snmp_simple(host, **kw):
     """
