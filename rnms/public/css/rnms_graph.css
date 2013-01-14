@@ -1,0 +1,20 @@
+/* CSS types for Rosenberg NMS graphs */
+
+div.rrdgraph {
+	font-family: Helvetica;
+	font-size: 10pt;
+}
+
+div.graph_title {
+	font-weight: bold;
+	font-size: 12pt;
+}
+
+div.graph_row_l {
+	float: left;
+	clear: both;
+}
+
+div.graph_row_r {
+	float: right;
+}
