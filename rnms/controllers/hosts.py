@@ -21,7 +21,7 @@
 """ Hosts controller """
 
 # turbogears imports
-from tg import expose
+from tg import expose, config
 #from tg import redirect, validate, flash
 
 # third party imports
@@ -30,12 +30,14 @@ from tg import expose
 from tw2.jqplugins import portlets
 import tw2.core as twc
 import tw2.forms as twf
+from tw2.jqplugins.ui import set_ui_theme_name
 
 # project specific imports
 from rnms.lib.base import BaseController
 from rnms.widgets import AttributeGrid,EventsWidget
 from rnms.model import DBSession, metadata, Host
 
+set_ui_theme_name(config['ui_theme'])
 class HostDetails(twf.TableLayout):
     """
     Returns a TableLayout Widget showing host details
@@ -84,6 +86,7 @@ class HostsController(BaseController):
                 class por2(portlets.Portlet):
                     title = 'Host Attributes'
                     widget = AttributeGrid()
+                    widget.host_id = host_id
                     widget.options['rowNum'] = 5
                     widget.options['rowList'] = [5]
                     widget.options['width'] = '100%'

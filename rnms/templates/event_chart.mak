@@ -1,6 +1,5 @@
 <%inherit file="local:templates.master"/>
 
-${plotwidget.display() | n}
-${rrdwidget.display() | n}
+${w}
 
 <%def name="sidebar_bottom()"></%def>

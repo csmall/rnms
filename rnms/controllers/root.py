@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Main Controller"""
 
-from tg import expose, flash, require, url, lurl, request, redirect, tmpl_context
+from tg import expose, flash, require, url, lurl, request, redirect, tmpl_context, config
 from tg.i18n import ugettext as _, lazy_ugettext as l_
 from tg import predicates
 from rnms import model
@@ -9,14 +9,18 @@ from rnms.controllers.secure import SecureController
 from rnms.model import DBSession, metadata
 from tgext.admin.tgadminconfig import TGAdminConfig
 from tgext.admin.controller import AdminController
+from tw2.jqplugins.ui import set_ui_theme_name
 
 from rnms.lib.base import BaseController
+from rnms.lib.statistics import get_overall_statistics
 from rnms.controllers.error import ErrorController
 from rnms.controllers.events import EventsController
+from rnms.controllers.graph import GraphController
 from rnms.controllers.attributes import AttributesController
 from rnms.controllers.hosts import HostsController
 from rnms.controllers.layouts import LayoutsController
 
+set_ui_theme_name(config['ui_theme'])
 __all__ = ['RootController']
 
 
@@ -40,19 +44,22 @@ class RootController(BaseController):
     error = ErrorController()
 
     """ Rosenberg NMS Specific controllers below """
-    events = EventsController()
     attributes = AttributesController()
+    events = EventsController()
+    graphs = GraphController()
     hosts = HostsController()
     layouts = LayoutsController()
 
 
     def _before(self, *args, **kw):
         tmpl_context.project_name = "rnms"
+        set_ui_theme_name(config['ui_theme'])
 
     @expose('rnms.templates.index')
     def index(self):
         """Handle the front-page."""
-        return dict(page='index')
+        statrows = get_overall_statistics()
+        return dict(page='index',statrows=statrows)
 
     @expose('rnms.templates.about')
     def about(self):

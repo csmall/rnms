@@ -3,7 +3,7 @@ from rnms import model
 #from tw2.jqplugins.jqplot import JQPlotWidget
 #from tw2.jqplugins.jqplot.base import categoryAxisRenderer_js, barRenderer_js
 #from tw2.core import JSSymbol
-#from tw2 import rrd
+from tw2 import rrd
 #from tw2.jqplugins.jqgrid import SQLAjqGridWidget
 
 #class AttributeGrid2(SQLAjqGridWidget):
@@ -47,6 +47,6 @@ from rnms import model
 #        }
 #    }
 
-#class RRDWidget(rrd.FlatRRDFlotWidget):
-#    id='foobar'
-#    datasource_name = 'data'
+class RRDWidget(rrd.FlatRRDFlotWidget):
+    id='foobar'
+    datasource_name = 'data'

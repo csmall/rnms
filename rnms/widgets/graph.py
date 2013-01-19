@@ -30,6 +30,7 @@ from tw2 import forms as twf
 import tw2.core as twc
 
 from rnms import model
+from rnms.lib.parsers import fill_fields
 
 logger = logging.getLogger('rnms')
 
@@ -112,6 +113,8 @@ class GraphWidget(twc.Widget):
     img_width = ''
     img_height = ''
     img_data = ''
+    start_time = None
+    end_time = None
 
     attribute = twc.Param('Attribute to graph on')
     graph_type = twc.Param('Graph Type to use')
@@ -128,13 +131,24 @@ class GraphWidget(twc.Widget):
                 if bracket > 6:
                     print_strings[k[6:bracket]] = v
         current_row=[]
+        add_space = False
         for pkey in sorted(print_strings.iterkeys()):
-            if print_strings[pkey][-2] == '\\':
-                current_row.append(print_strings[pkey][:-3])
-                self.legend.append((print_strings[pkey][-1], '  '.join(current_row)))
-                current_row=[]
+            if add_space:
+                current_row.append('  ')
+            if len(print_strings[pkey]) > 2 and print_strings[pkey][-2] == '\\':
+                current_row.append(print_strings[pkey][:-2])
+                if print_strings[pkey][-1] == 'g':
+                    add_space = False
+                else:
+                    self.legend.append((print_strings[pkey][-1], fill_fields(''.join(current_row),attribute=self.attribute)))
+                    current_row=[]
+                    add_space = False
             else:
                 current_row.append(print_strings[pkey])
+                add_space = True
+        if current_row != []:
+            self.legend.append(('l', fill_fields(''.join(current_row), attribute=self.attribute)))
+
 
     def get_graphv(self):
         """ Set the values for this widget using the output of graphv
@@ -146,20 +160,25 @@ class GraphWidget(twc.Widget):
         if not hasattr(self, 'attribute'):
             raise ValueError, 'attribute must be defined'
         attribute = getattr(self, 'attribute')
-        start_time=self.start_time
-        end_time=self.end_time
 
         graph_definition = graph_type.format(attribute)
-        graph_options = graph_type.graph_options(attribute, start_time, end_time)
-        graphv = rrdtool.graphv('-', graph_options + graph_definition)
-        self.create_legend(graphv)
-        self.img_data = b64encode(graphv['image'])
-        self.img_width = graphv['image_width']
-        self.img_height = graphv['image_height']
+        graph_options = graph_type.graph_options(attribute, self.start_time, self.end_time)
+        try:
+            graphv = rrdtool.graphv('-', graph_options + graph_definition)
+        except TypeError as errmsg:
+            flash('RRDTool error: {}'.format(errmsg))
+        else:
+            self.create_legend(graphv)
+            self.img_data = b64encode(graphv['image'])
+            self.img_width = graphv['image_width']
+            self.img_height = graphv['image_height']
 
     def prepare(self):
         self.get_graphv()
-        self.title = self.attribute.host.display_name + ' ' + self.attribute.display_name + self.graph_type.display_name
+        if self.graph_type.title != '':
+            self.title = ' '.join((self.attribute.host.display_name, self.attribute.display_name, fill_fields(self.graph_type.title, attribute=self.attribute)))
+        else:
+            self.title = ' '.join((self.attribute.host.display_name, self.attribute.display_name, self.graph_type.display_name))
         self.tg_url = url
 
         super(GraphWidget, self).prepare

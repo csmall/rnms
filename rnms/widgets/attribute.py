@@ -26,19 +26,23 @@ class AttributeGrid(jqgrid.jqGridWidget):
             'pager' : 'attribute-grid-pager',
             'url' : '/attributes/jqsumdata',
             'datatype': 'json',
-            'colNames' : ['Name', 'Description', 'Oper State', 'Admin State'],
+            'colNames' : ['Type', 'Name', 'Description', 'Oper', 'Admin'],
             'colModel' : [
                 {
+                    'name' : 'attribute_type',
+                    'width': 100,
+                } , {
                     'name' : 'display_name',
+                    'width': 100,
                 } , {
                     'description' : 'description',
-                    'width' : 300,
+                    'width' : 200,
                 } , {
                     'name' : 'oper_state',
-                    'width': 100,
+                    'width': 60,
                 },{
                     'name' : 'admin_state',
-                    'width': 100,
+                    'width': 60,
                 },],
             'rowNum': 15,
             'rowList': [15,30,50],
@@ -50,5 +54,11 @@ class AttributeGrid(jqgrid.jqGridWidget):
     pager_options = { "search" : True, "refresh" : True, "add" : False,
             "edit": False }
      
+    def prepare(self, **kw):
+        if self.host_id is not None:
+            self.options['postData'] = {'hostid': self.host_id}
+            pass#self.options['url'] = self.options['url'] + '/' + str(self.host_id)
+
+        super(AttributeGrid, self).prepare()
 
 

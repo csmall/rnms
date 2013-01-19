@@ -74,3 +74,8 @@ span#span_control {
   padding: 5px;
   left: 20%;
 }
+
+/* Statistics table */
+.statrow { clear: left; padding: 6px; }
+.statrow label { float: left; width: 10em; }
+.statrow .field { display: block; margin-left: 10em; }

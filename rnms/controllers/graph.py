@@ -71,9 +71,8 @@ class GraphController(BaseController):
     #allow_only = predicates.not_anonymous()
     
     @expose('rnms.templates.graph')
-    @validate(validators={'a':validators.Int(), 'preset_time':validators.Int(), 'start_time':validators.String(), 'end_time':validators.String()})
-    def _default(self, a, gt=None, preset_time=0, start_time=0, end_time=None, **kw):
-        set_ui_theme_name('hot-sneaks')
+    @validate(validators={'a':validators.Int(), 'gt':validators.Set(), 'preset_time':validators.Int(), 'start_time':validators.String(), 'end_time':validators.String()})
+    def _default(self, a, gt=[], preset_time=0, start_time=0, end_time=None, **kw):
         try:
             preset_time = int(kw['graph-layout:col1:graph-form:preset_time'])
         except KeyError:
@@ -112,6 +111,7 @@ class GraphController(BaseController):
 
         por = portlets.Portlet(id='graph-form', title='Graph Selection')
         por.children = [GraphForm2(),]
+        
         class LayoutWidget(portlets.ColumnLayout):
             id = 'graph-layout'
             class col1(portlets.Column):

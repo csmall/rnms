@@ -161,20 +161,6 @@ class EventsController(BaseController):
                     'ticks': ticks }}}
         return(dict(data=data, options=options))
 
-    @expose('rnms.templates.event_chart')
-    def chart(self):
-        rrdwidget = RRDWidget()
-        rrdwidget.rrd_filenames = [
-                '/var/local/jffnms-website/rrd/interface-2731-0.rrd'
-                ]
-        rrdwidget.start = (datetime.datetime.today() - datetime.timedelta(1))
-        #jqplot_params = self.blah()
-        #plotwidget = LogPlot(data=jqplot_params['data'])
-        #plotwidget.options = recursive_update(
-        #        plotwidget.options, jqplot_params['options'])
-        #return dict(page='graph', plotwidget=plotwidget, rrdwidget=rrdwidget)
-        return dict(page='graph', rrdwidget=rrdwidget)
-
     @expose('rnms.templates.event_detail')
     def _default(self, *args):
         event_id = int(args[0])
@@ -194,9 +180,3 @@ class EventsController(BaseController):
         value = event_filler.get_value(dict(limit=10))
         return dict(value=value)
 
-"""
-    @expose('rnms.templates.widget')
-    def grid(self, *args, **kw):
-        widget = EventsGrid()
-        return dict(widget=widget, page='events')
-"""

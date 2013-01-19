@@ -24,12 +24,15 @@ from sqlalchemy import select,func
 
 # turbogears imports
 from tg import expose, request
-#from tg import redirect, validate, flash
+from tg import redirect, validate, flash
+from sqlalchemy import and_
 
 # third party imports
 import tw2.sqla
 #from tg.i18n import ugettext as _
 #from repoze.what import predicates
+from formencode import validators
+from tw2.jqplugins.ui import set_ui_theme_name
 
 # project specific imports
 from rnms.lib.base import BaseController
@@ -68,18 +71,23 @@ class AttributesController(BaseController):
     #    return dict(widget=AttributeGrid2, page='attribute')
 
     @expose('json')
-    def jqsumdata(self, page=1, rows=1, *args, **kw):
+    @validate(validators={'hostid':validators.Int()})
+    def jqsumdata(self, hostid=0, page=1, rows=1, *args, **kw):
         rows = int(rows)
         page = int(page)
         start_row = page * rows
         end_row = (page+1) * rows
 
-        attributes =model.DBSession.query(model.Attribute)
+        conditions = []
+        if hostid > 0:
+            conditions.append(model.Attribute.host_id == hostid)
+        attributes =model.DBSession.query(model.Attribute).filter(and_(*conditions))
         row_count = attributes.count()
         data=[]
         for attribute in attributes[start_row:end_row]:
             data.append({
-                'cell' : [ attribute.display_name,
+                'cell' : [ attribute.attribute_type.display_name,
+                    attribute.display_name,
                 attribute.description(),
                 attribute.oper_state_name(),
                 attribute.admin_state_name(),
