@@ -25,10 +25,10 @@ from rnms import model
 # reply_row, snmp_table, unit
 # snmp_table is third last row of the oids defined below
 sensor_types = (
-        (0, '2', 'degC'),
-        (1, '3', 'RPM'),
-        (2, '4', 'V'),
-        (3, '5', 'V'),
+        (0, '2', 'degC', 'Temperature', '0.001'),
+        (1, '3', 'RPM', 'Fan Speed', '1'),
+        (2, '4', 'V', 'Voltage', '0.001'),
+        (3, '5', 'V', 'Voltage', '0.001'),
         )
 
 def discover_sensors(host, **kw):
@@ -46,7 +46,7 @@ def discover_sensors(host, **kw):
 def cb_sensors(values, error, host, dobj, att_type, **kw):
     sensors = {}
     last_sensor = ''
-    for valkey,table_index,sunit in sensor_types:
+    for valkey,table_index,sunit,measure,multiplier in sensor_types:
         keys = sorted([int(x) for x in values[valkey]])
         for key in keys:
             idx = str(key)
@@ -63,5 +63,9 @@ def cb_sensors(values, error, host, dobj, att_type, **kw):
             new_sensor.set_field('table_index', table_index)
             new_sensor.set_field('row_index', idx)
             new_sensor.set_field('units', sunit)
+            new_sensor.set_field('measure', measure)
+            new_sensor.set_field('multiplier', multiplier)
             sensors[new_sensor.index] = new_sensor
+            last_sensor = sensor_name
+
     dobj.discover_callback(host.id, sensors)

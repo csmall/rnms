@@ -20,7 +20,9 @@
 """ RRD field for Attribute Types """
 import os
 import rrdtool
+import logging
 
+from tg import config
 from sqlalchemy import ForeignKey, Column, and_
 from sqlalchemy.types import Integer, Unicode, String, SmallInteger
 #from sqlalchemy.orm import relation, backref
@@ -28,6 +30,7 @@ from sqlalchemy.types import Integer, Unicode, String, SmallInteger
 from rnms.model import DeclarativeBase, DBSession, AttributeField, AttributeTypeField
 
 dst_names = { 0: 'GAUGE', 1: 'COUNTER', 2: 'ABSOLUTE' }
+logger = logging.getLogger('rnms')
 
 class AttributeTypeRRD(DeclarativeBase):
     """
@@ -50,7 +53,6 @@ class AttributeTypeRRD(DeclarativeBase):
     @classmethod
     def by_name(cls, attribute_type, name):
         """ Return the RRD for this attribute_type with the given name """
-        print "by name {0} and name {1}".format(attribute_type.id, name)
         return DBSession.query(cls).filter(and_(
                 cls.attribute_type_id == attribute_type.id,
                 cls.name==name)).first()
@@ -83,7 +85,7 @@ class AttributeTypeRRD(DeclarativeBase):
         try:
             rrdtool.info(filename)
         except rrdtool.error as errmsg:
-            #FIXME - logging error
+            logger.error('RRDTool info error: %s', errmsg)
             return False
         return True
 
@@ -112,20 +114,22 @@ class AttributeTypeRRD(DeclarativeBase):
         Returns the on-disk filename for this RRD and the given attribute
         Returns none if attribute doesn't have this RRD field
         Format is <rrd_dir>/<attribute_id>-<rrd_position>.rrd
-        If the file doesn't exist, it is created
         """
-        # FIXME = dodgy fixed rrd dir
-        rrd_dir = '/var/tmp'
-        if self.attribute_type_id != attribute.attribute_type_id:
+        rrd_dir = config['rrd_dir']
+        if not os.path.isdir(rrd_dir):
+            logging.error('rrd_dir config setting "%s" is not a directory/', rrd_dir)
             return None
-        filename=  "{0}{1}{2}-{3}{4}rrd".format(
-                rrd_dir, os.sep, attribute.id, 
-                self.position, os.extsep)
-        if os.path.isfile(filename):
-            return filename
-        if self.create(filename, attribute):
-            return filename
-        return None
+        if self.attribute_type_id != attribute.attribute_type_id:
+            logging.error('AttributeTypeRRD type doesnt match Attribute: %s != %s', self.attribute_type_id, attribute.attribute_type_id)
+            return None
+        return ''.join((
+                rrd_dir,
+                os.sep,
+                str(attribute.id), 
+                '-',
+                str(self.position),
+                os.extsep,
+                'rrd'))
 
     def update(self, attribute, value):
         """
@@ -133,8 +137,9 @@ class AttributeTypeRRD(DeclarativeBase):
         Returns a key:value on success or error message
         """
         filename = self.filename(attribute)
-        if filename is None:
-            return '(No filename)'
+        if not os.path.isfile(filename):
+            if not self.create(filename, attribute):
+                return '(No filename)'
         try:
             rrdtool.update(filename, "N:{0}".format(value))
         except rrdtool.error as errmsg:
@@ -149,7 +154,7 @@ class AttributeTypeRRD(DeclarativeBase):
         try:
             rrdtool.tune(filename, "--minimum", new_min, "--maximum", new_max)
         except rrdtool.error:
-            # FIXME logging
+            logger.error('RRDTool tune error: %s', errmsg)
             return False
         return True
 

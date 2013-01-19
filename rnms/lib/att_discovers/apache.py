@@ -19,6 +19,7 @@
 #
 """ Apache status autodiscovery """
 import re
+from rnms.model.attribute import DiscoveredAttribute
 
 
 def discover_apache(host, **kw):
@@ -30,8 +31,8 @@ def discover_apache(host, **kw):
 def cb_apache(host, response, connect_time, error, dobj, att_type, **kw):
     if type(response) is not str:
         dobj.discover_callback(host.id, {})
-    elif r'HTTP\/1.1 200 OK' in response:
-        #do something
+
+    if response is not None and response[:15] == 'HTTP/1.1 200 OK':
         apache_att = DiscoveredAttribute(host.id, att_type)
         apache_att.display_name = u'Apache Information'
         apache_att.index = '{}:80'.format(host.mgmt_address)

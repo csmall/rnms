@@ -39,9 +39,10 @@ class AttDiscover(object):
     """
     _print_only = True
     max_active_hosts = 5
+    _force = False
 
 
-    def __init__(self, hosts=None, print_only=True):
+    def __init__(self, hosts=None, print_only=True, force=False):
         self._active_hosts = {}
         self._waiting_hosts = []
         self.snmp_engine = SNMPEngine()
@@ -50,14 +51,15 @@ class AttDiscover(object):
         self.ping_client = PingClient()
         self.nmap_client = NmapClient()
         self.logger = logging.getLogger("rnms")
+        self._force = force
 
-    def discover(self, limit_hosts=None, limit_atypes=None, print_only=True, force=False):
+    def discover(self, limit_hosts=None, limit_atypes=None, print_only=True):
         """
         Run the discovery on either all hosts or the ones specified
         in this call. Returns the dictionary of hosts and found attributes
         """
         self._fill_host_table(limit_hosts)
-        self._fill_attribute_type_table(force, limit_atypes)
+        self._fill_attribute_type_table(limit_atypes)
 
         self.logger.debug('%d hosts requiring discovery.', len(self._waiting_hosts))
         while self._active_hosts != {} or self._waiting_hosts != []:
@@ -131,7 +133,8 @@ class AttDiscover(object):
         if host.autodiscovery_policy.permit_add:
             real_att = model.Attribute.from_discovered(host, attribute)
             model.DBSession.add(real_att)
-            self.logger.debug('H:%d AT:%d Added %s', host.id, attribute_type.id, attribute.index)
+            model.DBSession.flush()
+            self.logger.debug('H:%d AT:%d Added %s = %d', host.id, attribute_type.id, attribute.index, real_att.id)
 
     def _discovery_lost(self, host, attribute_type, attribute):
         """
@@ -229,7 +232,7 @@ class AttDiscover(object):
         for host in hosts:
             self._waiting_hosts.append(host)
 
-    def _fill_attribute_type_table(self, force, limit_atypes=None):
+    def _fill_attribute_type_table(self, limit_atypes=None):
         """
         Cache the attribute type stuff once
         """
@@ -238,14 +241,14 @@ class AttDiscover(object):
         conditions = []
         if limit_atypes is not None:
             conditions.append(model.AttributeType.id.in_(limit_atypes))
-        if force == False:
+        if self._force == False:
             conditions.append(model.AttributeType.ad_enabled == True)
         atypes = model.DBSession.query(model.AttributeType).filter(and_(*conditions))
         for atype in atypes:
             self._attribute_types.append(atype)
             found_atypes.append(str(atype.id))
 
-        if force == True and limit_atypes is not None:
+        if self._force == True and limit_atypes is not None:
             missing_atypes = set(limit_atypes).difference(set(found_atypes))
             if missing_atypes != set():
                 print "Missing the following types: {}".format(','.join(missing_atypes))
@@ -274,7 +277,7 @@ class AttDiscover(object):
             self._finish_discovery(host)
             return
         host['attribute_type'] = attribute_type
-        if attribute_type.autodiscover(self, host['host']) == False:
+        if attribute_type.autodiscover(self, host['host'], self._force) == False:
             # it failed so skip it
             host['in_discovery'] = False
 

@@ -26,6 +26,13 @@ class TestBGP(AttDiscTest):
         self.assert_result_fields('local', {'192.0.2.250': '0.0.0.0'})
         self.assert_result_fields('asn', {'192.0.2.250': 'AS 65531'})
 
+    def test_bgp_peer_down(self):
+        """ BGP discovery finds one down peer """
+        values = [{'192.0.2.250': '203.0.113.1'}, {'192.0.2.250': '2'}, {'192.0.2.250': '0.0.0.0'}, {'192.0.2.250': '192.0.2.250'}, {'192.0.2.250': '65531'}]
+        cb_bgp_peers(values, None, **self.test_callback_kwargs)
+        self.assert_result_count(1)
+        self.assert_oper_state({'192.0.2.250': 2})
+
     def test_discover_bgp_peer(self):
         """ BGP discovery calls snmp correctly """
         eq_(discover_bgp_peers(self.test_host, **self.discover_kwargs), True)

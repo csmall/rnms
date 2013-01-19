@@ -48,6 +48,7 @@ def set_acct_checkpoint(value, error, **kw):
     oid = (1,3,6,1,4,1,9,2,4,11,0)
     if value is None:
         kw['pobj'].poller_callback(kw['attribute'].id, kw['poller_row'], None)
+        return
 
     kw['checkpoint'] = int(value)
     req = snmp.SNMPRequest(kw['attribute'].host)
@@ -61,6 +62,7 @@ def get_acct_table(value, error, **kw):
     oid = (1,3,6,1,4,1,9,2,4,9)
     kw['pobj'].snmp_engine.get_table(kw['attribute'].host, (oid,), cb_acct_table, **kw)
 
-def cb_acct_table(value, error, pobj, attribute, poller_row, **kw):
+def cb_acct_table(values, error, pobj, attribute, poller_row, **kw):
+    print values
     # FIXME - does anyone use this? is it required?
     pobj.poller_callback(attribute.id, poller_row, (0,0))

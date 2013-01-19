@@ -27,7 +27,7 @@ import transaction
 from sqlalchemy.exc import IntegrityError
 from datetime import date
 
-logger = logging.getLogger('jffnms')
+logger = logging.getLogger('rnms')
 
 class JffnmsConfig(object):
     """
@@ -96,13 +96,13 @@ class JffnmsImporter(object):
             self.slas[oldid] = newid
             newid += 1
 
-    def do_import(self):
+    def do_import(self, jffnms_rrd_path):
         """
         Start the JFFNMS importing process. Does not require any arguments.
         Returns False on failure.
         """
         importers = [ 'zones', 'users', 'hosts', 'interfaces', 'attributes',
-                'events' ]
+                ]#'events' ]
         for imp in importers:
             func = getattr(self, '_import_'+imp)
             if not callable(func):
@@ -116,9 +116,10 @@ class JffnmsImporter(object):
                     transaction.commit()
                 else:
                     transaction.abort()
+        self._print_conf_shell(jffnms_rrd_path)
         return True
 
-    def _delete_all(self,del_model, del_id):
+    def _delete_all(self,del_model, del_id=None):
         """ Delete all items of del_model with an ID higher than del_id 
             Returns number of deleted items
         """
@@ -126,9 +127,12 @@ class JffnmsImporter(object):
         if self.delete != True:
             return 0
         try:
-            deleted_items = DBSession.query(del_model).filter(del_model.id>del_id).delete()
+            if del_id is None:
+                deleted_items = DBSession.query(del_model).delete()
+            else:
+                deleted_items = DBSession.query(del_model).filter(del_model.id>del_id).delete()
         except IntegrityError as err:
-            logging.error('Error deleting: %s',err)
+            logger.error('Error deleting: %s',err)
         if deleted_items is None:
             return 0
         return deleted_items
@@ -186,7 +190,7 @@ class JffnmsImporter(object):
             else:
                 self.users[row[0]] = user.user_id
                 add_count += 1
-        logging.info('Users: %d deleted, %d added.', delete_count, add_count)
+        logger.info('Users: %d deleted, %d added.', delete_count, add_count)
         return True
 
     def user_id(self,jffnms_id):
@@ -229,12 +233,12 @@ class JffnmsImporter(object):
                 add_count += 1
 
         except IntegrityError as errmsg:
-            logging.error('Error importing users: %s', errmsg)
+            logger.error('Error importing users: %s', errmsg)
             transaction.abort()
             exit()
             return False
         else:
-            logging.info('Hosts: %d deleted, %d added.', delete_count, add_count)
+            logger.info('Hosts: %d deleted, %d added.', delete_count, add_count)
         return True
 
     def host_id(self,jffnms_id):
@@ -252,7 +256,7 @@ class JffnmsImporter(object):
             DBSession.add(conf)
             DBSession.flush()
             conf_count += 1
-            logging.info('Imported %d host configs.', conf_count)
+            logger.info('Imported %d host configs.', conf_count)
 
     def get_interface_index(self,int_id):
         result = self.dbhandle.execute('SELECT interfaces_values.value from interfaces_values,interface_types_fields where interface=%d and interfaces_values.field=interface_types_fields.id AND interface_types_fields.ftype=3'%int_id)
@@ -282,17 +286,18 @@ class JffnmsImporter(object):
                 DBSession.flush()
                 add_count += 1
         except IntegrityError as errmsg:
-            logging.error('Error importing interfaces: %s', errmsg)
+            logger.error('Error importing interfaces: %s', errmsg)
             transaction.abort()
             exit()
             return False
         else:
-            logging.info('Interfaces: %d deleted, %d added.', delete_count, add_count)
+            logger.info('Interfaces: %d deleted, %d added.', delete_count, add_count)
         return True
 
 
     def _import_attributes(self):
         delete_count = self._delete_all(model.Attribute, 1)
+        field_delete_count = self._delete_all(model.AttributeField)
         attribute_count=0
         field_count=0
         try:
@@ -330,7 +335,7 @@ class JffnmsImporter(object):
             exit()
         else:
             logger.info('Attributes: %d deleted, %d added.', delete_count, attribute_count)
-            logger.info('Attribute Fields: 0 deleted, %d added.', field_count)
+            logger.info('Attribute Fields: %d deleted, %d added.', field_delete_count, field_count)
         return True
 
     def sla_id(self,jffnms_id):
@@ -342,25 +347,29 @@ class JffnmsImporter(object):
     def _import_attribute_fields(self, attribute, old_att_id):
         field_count=0
         for field in attribute.attribute_type.fields:
-            result = self.dbhandle.execute("""
+            itf_name = field.tag
+            # Exceptions/changes between them
+            if itf_name == 'speed':
+                itf_name = 'bandwidthin'
+            row = self.dbhandle.execute("""
                 SELECT iv.value FROM interfaces_values iv,interface_types_fields itf
                 WHERE iv.field=itf.id
                 AND iv.interface=%s
-                AND itf.name="%s" LIMIT 1""" % (old_att_id, field.tag))
-            if result is None:
-                logger.info('Tag %s for old ID %d not found ininterface_values.', old_att_id, field.tag)
-            for row in result:
+                AND itf.name="%s" LIMIT 1""" % (old_att_id, itf_name)).first()
+            if row is None:
+                pass #logger.info('Tag %s for old ID %d not found in interface_values.', itf_name, old_att_id)
+            else:
                 af = model.AttributeField()
                 af.attribute_id = attribute.id
                 af.attribute_type_field = field
                 af.value = row[0]
                 model.DBSession.add(af)
                 field_count += 1
-                break
         return field_count
 
     def _import_events(self):
-        delete_count = self._delete_all(model.Event,0)
+        delete_count = self._delete_all(model.Event)
+        self._delete_all(model.EventField)
         add_count=0
         try:
             result = self.dbhandle.execute('SELECT e.id,e.date, e.host, e.interface, e.state, e.username, e.info, e.referer, e.ack, e.analized, et.description FROM events e, types et WHERE e.type = et.id AND date > adddate(now(),-7) ORDER by e.id')
@@ -406,9 +415,13 @@ class JffnmsImporter(object):
                 self.events[row[0]] = ev.id
                 add_count += 1
         except IntegrityError as errmsg:
-            logging.error('Error importing events: %s', errmsg)
+            logger.error('Error importing events: %s', errmsg)
             transaction.abort()
             exit()
         else:
-            logging.info('Events: %d deleted, %d added.', delete_count, add_count)
+            logger.info('Events: %d deleted, %d added.', delete_count, add_count)
         return True
+
+    def _print_conf_shell(self, jffnms_rrd_path):
+        print "JFFNMS_PATH="+jffnms_rrd_path
+        print "IDS='"+' '.join([str(x)+':'+str(y) for x,y in self.attributes.items()])+"'"

@@ -27,7 +27,7 @@ from sqlalchemy import and_
 
 from rnms import model
 from rnms.lib.snmp import SNMPEngine, SNMPRequest
-from rnms.lib.pollers.snmp import parse_oid, cb_snmp_counter
+from rnms.lib.pollers.snmp import parse_oid, cb_snmp_counter, split_oid
 from rnms.lib import ntpclient
 from rnms.lib.tcpclient import TCPClient
 from rnms.lib.pingclient import PingClient
@@ -42,6 +42,12 @@ class Poller(object):
     find_attribute_interval = 60 # Scan to find new items every 60secs
     next_find_attribute = datetime.datetime.min
     forced_attributes=False
+    host_ids = None
+    poller_buffer = None
+    snmp_engine = None
+    ntp_client = None
+    tcp_client = None
+    ping_client = None
 
     def __init__(self, attribute_ids=None, host_ids=None):
         
@@ -201,9 +207,11 @@ class Poller(object):
             self._finish_polling(patt)
             return
         # Special speed-up for snmp fetch, get it all in one group
-        if poller_row.poller.command == 'snmp_counter':
+        # This does NOT work for SNMP v1, or this implementaiton anyhow
+        if not patt['attribute'].host.ro_is_snmpv1() and poller_row.poller.command == 'snmp_counter':
             patt['skip_rows'] = self._multi_snmp_poll(patt)
-            return
+            if patt['skip_rows'] != []:
+                return
         if not poller_row.run_poller(self, patt['attribute'], self.poller_buffer[patt['attribute'].id]): # run was successful
             self.logger.warn('A:%d - row %d Poller run failed', patt['attribute'].id, patt['index'])
             self._finish_polling(patt)
@@ -288,7 +296,7 @@ class Poller(object):
             if self.cache_poller_set(poller_set_id):
                 return self.poller_sets[poller_set_id]
             else:
-                self.logger.info("PollerSet #%d not found",poller_set_id)
+                self.logger.info("PollerSet #%s not found",poller_set_id)
         return None
 
     def get_poller_row(self, poller_set_id, row_index):
@@ -331,16 +339,16 @@ class Poller(object):
         the strict poller order is not maintained
         """
         skip_rows = []
-        self.logger.debug("A#%d: multi_snmp start",patt['attribute'].id)
+        #self.logger.debug("A#%d: multi_snmp start",patt['attribute'].id)
         poller_set = self.get_poller_set(patt['attribute'].poller_set_id)
         if poller_set is None:
-            return False
+            return []
         req = SNMPRequest(patt['attribute'].host)
         for poller_row in poller_set:
             if poller_row.position < patt['index']:
                 continue
             if poller_row.poller.command == 'snmp_counter':
-                oid = parse_oid(poller_row.poller.parsed_parameters(patt['attribute']))
+                oid = parse_oid(split_oid(poller_row.poller.parsed_parameters(patt['attribute']), patt['attribute'].host))
                 if oid is not None:
                     data = {'pobj': self, 'poller_row': poller_row, 'attribute': patt['attribute']}
                     req.add_oid(oid, cb_snmp_counter, data=data)

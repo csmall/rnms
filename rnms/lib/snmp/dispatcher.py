@@ -73,7 +73,10 @@ class SNMPDispatcher(asyncore.dispatcher):
         self.waiting_requests.append(request)
 
     def del_request(self, request_id):
-        del(self.sent_requests[request_id])
+        try:
+            del(self.sent_requests[request_id])
+        except KeyError:
+            print 'request not found', request_id
 
     def have_waiting_requests(self):
         return (self.waiting_requests != [])

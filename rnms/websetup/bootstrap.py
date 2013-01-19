@@ -73,14 +73,14 @@ def bootstrap(command, conf, vars):
                     at.default_sla_id, ignore_tools, at.required_sysobjid, fields, rrds
                     ) = row
             atype_psets.append((at.display_name, default_poller_set))
-            field_position = 1
+            field_position = 0
             for field in fields:
                 f = model.AttributeTypeField()
                 (f.display_name, f.tag, f.description,f.showable_edit, f.showable_discovery, f.overwritable, f.tracked, f.default_value, f.parameters, f.backend) = field
                 f.position = field_position
                 field_position += 1
                 at.fields.append(f)
-            rrd_position = 1
+            rrd_position = 0
             for rrd in rrds:
                 r = model.AttributeTypeRRD()
                 (r.display_name, r.name, r.data_source_type, r.range_min, r.range_max, r.range_max_field) = rrd
@@ -96,7 +96,7 @@ def bootstrap(command, conf, vars):
 
         for row in database_data.autodiscovery_policies:
             p = model.AutodiscoveryPolicy()
-            (p.display_name,p.default_poller,p.permit_add,p.permit_delete,
+            (p.display_name,p.set_poller,p.permit_add,p.permit_delete,
                     p.alert_delete,p.permit_modify,p.permit_disable,
                     p.skip_loopback,p.check_state,p.check_address)=row
             model.DBSession.add(p)
@@ -167,6 +167,63 @@ def bootstrap(command, conf, vars):
                 sr.sla_condition_id = sla_row[0]
                 position += 1
                 model.DBSession.add(sr)
+
+        # Graph Types
+        for row in database_data.graph_types:
+            gt = model.GraphType()
+            (gt.display_name, atype_name, gt.title, gt.vertical_label, gt.extra_options, graph_defs, graph_vnames, graph_lines ) = row
+            attribute_type = model.AttributeType.by_display_name(atype_name)
+            if attribute_type is None:
+                raise ValueError("Attribute Type {} not found in GraphType {}".format(atype_name, gt.display_name))
+            gt.attribute_type = attribute_type
+            for graph_def in graph_defs:
+                at_rrd = model.AttributeTypeRRD.by_name(attribute_type, graph_def[1])
+                if at_rrd is None:
+                    raise ValueError("AttributeTypeRRD {} not found in GraphType {}".format(graph_def[1], gt.display_name))
+                gt_def = model.GraphTypeDef(gt, graph_def[0], at_rrd)
+                gt.defs.append(gt_def)
+
+            position=0
+            for vname in graph_vnames:
+                vn = model.GraphTypeVname()
+                (def_type, vn.name, vn.expression) = vname
+                vn.set_def_type(def_type)
+                vn.position = position
+                gt.vnames.append(vn)
+
+            position = 0
+            for graph_line in graph_lines:
+                gl = model.GraphTypeLine()
+                gl.position = position
+
+                if graph_line[0] == 'COMMENT':
+                    gl.set_comment(*graph_line[1:])
+                elif graph_line[0] == 'HRULE':
+                    gl.set_hrule(*graph_line[1:])
+                else:
+                    vname = gt.vname_by_name(graph_line[1])
+                    if vname is None:
+                        raise ValueError('Vname {} not found in GraphType {}'.format(graph_line[1], gt.display_name))
+                    if graph_line[0] == 'PRINT':
+                        gl.set_print(vname, graph_line[2])
+                    elif graph_line[0] == 'GPRINT':
+                        gl.set_gprint(vname, graph_line[2])
+                    elif graph_line[0] == 'VRULE':
+                        gl.set_vrule(vname, *graph_line[2:])
+                    elif graph_line[0] == 'LINE':
+                        gl.set_line(vname, *graph_line[2:])
+                    elif graph_line[0] == 'AREA':
+                        gl.set_area(vname, *graph_line[2:])
+                    elif graph_line[0] == 'TICK':
+                        gl.set_tick(vname, *graph_line[3:])
+                    else:
+                        raise ValueError('Bad GraphTypeLine type {} in GraphType {}'.format(graph_line[0], gt.display_name))
+                position += 1
+                gt.lines.append(gl)
+
+            model.DBSession.add(gt)
+
+
 
         # Pollers
         for row in database_data.pollers:

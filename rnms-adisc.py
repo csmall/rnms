@@ -50,6 +50,6 @@ if args.atype is not None:
 
 logging.basicConfig(level=logging.DEBUG)
 
-autodiscovery = AttDiscover()
-autodiscovery.discover(limit_hosts=host_ids, limit_atypes=atype_ids, force=args.force)
+autodiscovery = AttDiscover(force=args.force)
+autodiscovery.discover(limit_hosts=host_ids, limit_atypes=atype_ids)
 transaction.commit()

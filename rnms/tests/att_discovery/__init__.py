@@ -7,6 +7,7 @@ from nose.tools import eq_
 
 from rnms import model
 from rnms.lib.snmp.engine import SNMPRequest
+from rnms.lib import states
 
 class AttDiscTest(object):
     """ Base test case for the Attribute Discovery """
@@ -37,6 +38,19 @@ class AttDiscTest(object):
                 'dobj': self.dobj,
                 'att_type': self.test_att_type,
                 }
+
+    def get_values(self, changes=None, cvalue=None):
+        """
+        Return a copy of the default set of values with updates
+        """
+        values = self.values[:]
+        if changes is not None:
+            if cvalue is not None:
+                values[changes] = cvalue
+            else:
+                for k,v in changes:
+                    values[k] = v
+        return values
 
     def set_ad_parameters(self, params):
         """ Set the AttributeType autodiscovery parameters """
@@ -79,6 +93,13 @@ class AttDiscTest(object):
         for idx,exp_value in expected_fields.items():
             eq_(self.disc_cb.call_args[0][1][idx].get_field(field_name), exp_value)
 
+    def assert_oper_state(self, expected_states):
+        for idx,oper_state in expected_states.items():
+            eq_(self.disc_cb.call_args[0][1][idx].oper_state, oper_state)
+    
+    def assert_admin_state(self, expected_states):
+        for idx,admin_state in expected_states.items():
+            eq_(self.disc_cb.call_args[0][1][idx].admin_state, admin_state)
 
     # Discovery checks
     def assert_snmp_table_called(self):

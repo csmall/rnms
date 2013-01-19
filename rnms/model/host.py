@@ -106,6 +106,9 @@ class Host(DeclarativeBase):
                 return True
         return False
 
+    def ro_is_snmpv1(self):
+        """ Returns True if Read Only Community is SNMP v1 """
+        return self.community_ro[0] == '1'
         
 
 class Iface(DeclarativeBase):

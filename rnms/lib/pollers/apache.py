@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012,2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,19 +17,28 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-import httplib
+import re
 
-def run_apache(poller, attribute, poller_buffer):
-    hostname = attribute.get_field('hostname')
-    if hostname is None:
-        return None
-    conn = httplib.HTTPConnection(hostname)
-    conn.request("GET", "/server-status?auto")
-    resp = conn.getresponse()
-    #r1.status sghould be 200
-    response_data = r1.read()
-    for line in response_data.split('\n'):
-        pass #FIXME
-    conn.close()
+response_re = re.compile('([A-Z][ A-Za-z]+): ([0-9.]+)\s')
+return_fields = ('Total Accesses', 'Total kBytes', 'CPULoad', 'Uptime', 'BytesPerReq', 'BusyWorkers', 'IdleWorkers')
+
+def poll_apache(poller_buffer, parsed_params, **kw):
+    return kw['pobj'].tcp_client.get_tcp(kw['attribute'].host, 80, 'GET /server-status?auto HTTP/1.1\r\nHost: {}\r\n\r\n'.format(kw['attribute'].host.mgmt_address), 1000, cb_apache, **kw)
+
+def cb_apache(host, response, connect_time, error, pobj, poller_row, attribute, **kwargs):
+    if response is not None and response[:15] == 'HTTP/1.1 200 OK':
+        match = response_re.findall(response)
+        if match is not None:
+            retvals = [0 for x in return_fields]
+            for k,v in match:
+                try:
+                    idx = return_fields.index(k)
+                except ValueError:
+                    pass
+                else:
+                    retvals[idx] = v
+            pobj.poller_callback(attribute.id, poller_row, retvals)
+            return
+    pobj.poller_callback(attribute.id, poller_row, None)
 
 

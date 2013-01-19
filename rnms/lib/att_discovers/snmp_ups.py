@@ -17,7 +17,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-""" Discover BGP peers using RFC 1269 MIB information """
+""" 
+Discover UPS devices and lines using either the standard or Mitsubishi MIB
+  RFC: 1628
+"""
 
 from rnms.lib import snmp
 from rnms import model
@@ -73,14 +76,13 @@ def discover_ups_lines(host, **kw):
     if len(params) != 3:
         return False
     try:
-        oid = tuple([int(x) for x in kw['att_type'].params[0].split('.')])
+        oid = tuple([int(x) for x in params[0].split('.')])
     except ValueError:
         return False
-    if len(base_oid) > 3:
+    if params[1] not in ('in', 'out'):
         return False
-    kw['inout'] = int(params[1])
+    kw['inout'] = params[1]
     kw['add_index'] = int(params[2])
-    kw['host'] = host
     return kw['dobj'].snmp_engine.get_table(host, (oid,), cb_ups_lines, table_trim=1, host=host, **kw)
 
 def cb_ups_lines(values, error, host, dobj, att_type, **kw):

@@ -74,7 +74,7 @@ def discover_alteon_realservices(host, **kw):
             )
     return kw['dobj'].snmp_engine.get_table(host, oids, cb_alteon_realservices, table_trim=1, host=host, **kw)
 
-def cb_alteon_realservers(values, error, host, dobj, **kw):
+def cb_alteon_realservices(values, error, host, dobj, **kw):
     rservices = {}
     if values is not None:
         for key,virt_server in values[0].items():
@@ -89,12 +89,17 @@ def cb_alteon_realservers(values, error, host, dobj, **kw):
             new_att = model.DiscoveredAttribute(host.id, kw['att_type'])
             new_att.display_name = '{}:{}'.format(ipaddress, port)
             new_att.index = '{}.{}.{}'.format(virt_server, service_idx, real_server)
-            new_arr.set_field('ipaddress', ipaddress)
-            new_arr.set_field('port', port)
-            new_arr.set_field('real_server', real_server)
+            new_att.set_field('ipaddress', ipaddress)
+            new_att.set_field('port', port)
+            new_att.set_field('real_server', real_server)
             try:
-                if values[4][idx] != '2':
+                if values[4][key] != '2':
                     new_att.set_oper_down()
+            except (KeyError, IndexError):
+                pass
+            try:
+                if values[6][key] != '2':
+                    new_att.set_admin_down()
             except (KeyError, IndexError):
                 pass
             rservices[new_att.index] = new_att
@@ -134,7 +139,7 @@ def cb_alteon_virtualservers(values, error, host, dobj, **kw):
             new_att.set_field('hostname', servername)
             new_att.set_field('ipaddress', ipaddress)
             try:
-                if values[3][key] != '2':
+                if values[2][key] != '2':
                     new_att.set_oper_down()
             except KeyError:
                 pass

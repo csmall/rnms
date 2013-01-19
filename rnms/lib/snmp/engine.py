@@ -464,11 +464,9 @@ class SNMPEngine():
             pmod.apiPDU.setDefaults(pdu)
             pmod.apiBulkPDU.setNonRepeaters(pdu, 0)
             pmod.apiBulkPDU.setMaxRepetitions(pdu, 25)
-            print "bulk"
         else: 
             pdu = pmod.GetNextRequestPDU()
             pmod.apiPDU.setDefaults(pdu)
-            print "next"
         pmod.apiPDU.setVarBinds(pdu,
                 [ (pmod.ObjectIdentifier(x), pmod.null) for x in oids])
         # Build Message
@@ -507,7 +505,6 @@ class SNMPEngine():
             request.callback_default()
             return False
         request.id = pmod.apiPDU.getRequestID(pmod.apiMessage.getPDU(request.msg))
-
         self.scheduler.request_add(request)
         return True
 
@@ -523,7 +520,7 @@ class SNMPEngine():
         if request.msg is None:
             request.callback_default()
             return False
-        request.id = pmod.apiPDU.getRequestID(pmod.apiMessage.getPDU(msg)),
+        request.id = pmod.apiPDU.getRequestID(pmod.apiMessage.getPDU(request.msg))
         self.scheduler.request_add(request)
         return True
 

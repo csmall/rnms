@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2011 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,63 +19,169 @@
 #
 """ Main description of a type of graph """
 import re
+import logging
 
+from tg import config
 from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey, Column
 from sqlalchemy.types import Integer, Unicode, SmallInteger, String
 
-from rnms.model import DeclarativeBase
+from rnms.model import DeclarativeBase, DBSession
+from rnms.lib.parsers import fill_fields
+
+logger = logging.getLogger('rnms')
 
 class GraphTypeError(Exception): pass
 class GraphTypeLineError(Exception): pass
 
-class GraphTypeGroup(DeclarativeBase):
-    """
-    A group of graph types that are available for a particular attribute
-    type.  The display name is used to select the graphs for the attribute
-    in the GUI. There can be two graphs (left and right) within each
-    GraphTypeGroup entry.
-    """
-    __tablename__ = 'graph_type_groups'
-    
-    #{ Columns
-    id = Column(Integer, autoincrement=True, primary_key=True)
-    display_name = Column(Unicode(40), nullable=False)
-    attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'), nullable=False )
-    attribute_type = relationship('AttributeType', backref='graph_groups')
-    left_graph_id = Column(Integer, ForeignKey('graph_types.id'))
-    left_graph = relationship('GraphType', primaryjoin="GraphTypeGroup.left_graph_id==GraphType.id")
-    right_graph_id = Column(Integer, ForeignKey('graph_types.id'))
-    right_graph = relationship('GraphType', primaryjoin="GraphTypeGroup.right_graph_id==GraphType.id")
-    #}
-
 class GraphType(DeclarativeBase):
     """
-    Main definition of a graph. Referenced by the graph group.
+    Main definition of a graph.
     """
     __tablename__ = 'graph_types'
 
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
-    width = Column(Integer, nullable=False)
-    height = Column(Integer, nullable=False)
+    display_name = Column(Unicode(40), nullable=False)
+    attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'), nullable=False )
+    attribute_type = relationship('AttributeType', backref='graph_types')
+    title = Column(String(40), nullable=False, default='')
+    left_label = Column(String(40), nullable=False, default='')
+    width = Column(Integer, nullable=False, default=0)
+    height = Column(Integer, nullable=False, default=0)
+    extra_options = Column(String(200), nullable=False, default='')
+    defs = relationship('GraphTypeDef', backref='graph_type', cascade='all, delete, delete-orphan')
     vnames = relationship('GraphTypeVname', order_by='GraphTypeVname.position', backref='graph_type', cascade='all, delete, delete-orphan')
     lines = relationship('GraphTypeLine', order_by='GraphTypeLine.position', backref='graph_type', cascade='all, delete, delete-orphan')
+
+    allowed_options = ('lower-limit', 'upper-limit', 'rigid', 'logarithmic', 'base', 'right-axis', 'right-axis-label')
+    @classmethod
+    def by_id(cls, attribute_id):
+        """ Return the GraphType with given id"""
+        return DBSession.query(cls).filter( cls.id == attribute_id).first()
+
+    def vname_by_name(self, name):
+        """
+        Return the vname from this GraphType that matches the name
+        """
+        for vname in self.defs:
+            if vname.name == name:
+                return vname
+        for vname in self.vnames:
+            if vname.name == name:
+                return vname
+        return None
+
+    def format(self, attribute):
+        """
+        Return a tuple of rrdgraph lines based upon the definition of
+        this GraphType and the RRDValues of the given attribute
+        """
+
+        graph_defs = [ d.format(attribute) for d in self.defs ]
+        graph_vnames = [ vname.format(attribute) for vname in self.vnames ]
+        graph_lines = [ l.format(attribute) for l in self.lines ]
+        print graph_defs
+        return graph_defs + graph_vnames + graph_lines
+
+    def graph_options(self, attribute, start_time=0, end_time=0):
+        """
+        Return the graph_options for this graph
+        """
+        graph_options = [
+                '--pango-markup',
+                '--legend-position=east',
+                '-n', 'TITLE:12:Arial',
+                '-n', 'AXIS:7:Arial',
+                '-n', 'UNIT:9:Arial',
+                '-n', 'LEGEND:9:Arial',
+                '-c', 'BACK#ffff8800',
+                '-c', 'SHADEA#ffffff00',
+                '-c', 'SHADEB#ffffff00',
+                #'-t', str(attribute.host.display_name + ' - ' + attribute.display_name),
+                ]
+        for extra_option in self.extra_options.split('|'):
+            if extra_option == 'rigid':
+                graph_options.append('--rigid')
+            else:
+                try:
+                    opt_name,opt_val = extra_option.split('=')
+                except ValueError:
+                    pass
+                else:
+                    if opt_name in self.allowed_options:
+                        graph_options.extend(('--'+str(opt_name), str(opt_val)))
+
+        if start_time > 0:
+            graph_options.extend(('-s', str(start_time)))
+
+        if end_time > 0:
+            graph_options.extend(('-e', str(end_time)))
+
+        if self.width > 0:
+            graph_options.extend(('-w', str(self.width)))
+
+        if self.height > 0:
+            graph_options.extend(('-h', str(self.height)))
+
+        if self.left_label != '':
+            graph_options.extend(('-v', str(fill_fields(self.vertical_label,attribute=attribute))))
+
+        return graph_options
+                
+
+
+class GraphTypeDef(DeclarativeBase):
+    """
+    Graph Type DEF items - which RRD values are used by this graph
+    """
+    __tablename__ = 'graph_type_defs'
+    #{ Columns
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    graph_type_id = Column(Integer, ForeignKey('graph_types.id'), nullable=False, default=0)
+    name = Column(String(60), nullable=False, default='')
+    attribute_type_rrd_id = Column(Integer, ForeignKey('attribute_type_rrds.id'), nullable=False)
+    attribute_type_rrd = relationship('AttributeTypeRRD')
+    #}
+
+    def __init__(self, graph_type, name, attribute_type_rrd):
+        self.graph_type = graph_type
+        self.name = name
+        self.attribute_type_rrd = attribute_type_rrd
+
+    def format(self, attribute):
+        """
+        Return the DEF: line for this rrd graph definition
+        Format is
+        <dir>/<rrd_filename>:data:<attribute_type.rra_cf>
+        """
+        rrd_filename = self.attribute_type_rrd.filename(attribute)
+        if rrd_filename is None:
+            logger.warning('RRD filename not found')
+            return None
+        return str(''.join((
+                'DEF:',
+                self.name,
+                '=',
+                rrd_filename,
+                ':data:',
+                attribute.attribute_type.rra_cf)))
+
 
 class GraphTypeVname(DeclarativeBase):
     """
     Graph Variable Names
-    Each GraphType has one or more variable names which are the [CV|]DEF
+    Each GraphType has one or more variable names which are the [CV]DEF
     lines. See rrdgraph_data for more information.
     """
     __tablename__ = 'graph_type_vnames'
-    __valid_def_types = ('DEF', 'CDEF', 'VDEF')
+    __valid_def_types = ('CDEF', 'VDEF')
     
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     graph_type_id = Column(Integer, ForeignKey('graph_types.id'), nullable=False, default=0)
     position = Column(SmallInteger, nullable=False,default=0)
-    def_type = Column(SmallInteger, nullable=False, default=0) #0,1,2 DEF,CDEF,VDEF
+    def_type = Column(SmallInteger, nullable=False, default=0) #0,1 CDEF,VDEF
     name = Column(String(60), nullable=False, default='')
     expression = Column(String(250))
     #}
@@ -85,7 +191,7 @@ class GraphTypeVname(DeclarativeBase):
 
     @property
     def def_type_name(self):
-        if not 0 <= self.def_type <= 2:
+        if not 0 <= self.def_type <= 1:
             raise GraphTypeError('Invalid def_type')
         else:
             return self.__valid_def_types[self.def_type]
@@ -96,12 +202,6 @@ class GraphTypeVname(DeclarativeBase):
             self.def_type = self.__valid_def_types.index(def_type)
         except ValueError:
             raise GraphTypeError('Bad def type {} specified'.format(def_type))
-
-    def set_def(self, name, expression):
-        """ Create this object as a DEF """
-        self.set_def_type('DEF')
-        self.name = name
-        self.expression = expression
 
     def set_cdef(self, name, expression):
         """ Create this object as a CDEF """
@@ -115,29 +215,25 @@ class GraphTypeVname(DeclarativeBase):
         self.name = name
         self.expression = expression
 
-    def format(self):
+    def format(self, attribute):
         """
         Print the formatted DEF entry for use in rrdgraphs. If the
         data is not valid return none
-        DEF:name=name of attribute's RRD
         CDEF:name=expression
         VDEF:name=expression
         """
+        #print fill_fields(self.expression, attribute=attribute)
         if self.name == '' or self.expression == '' or not 0 <= self.def_type <= len(self.__valid_def_types):
             return None
-        return '{}:{}={}'.format(self.def_type_name, self.name, self.expression)
+        return '{}:{}={}'.format(self.def_type_name, self.name, fill_fields(self.expression, attribute=attribute))
 
-    def is_def(self):
-        """ Return True if this object is a DEF """
-        return self.def_type == 0
-    
     def is_cdef(self):
         """ Return True if this object is a CDEF """
-        return self.def_type == 1
+        return self.def_type == 0
 
     def is_vdef(self):
         """ Return True if this object is a CDEF """
-        return self.def_type == 2
+        return self.def_type == 1
 
 
 class GraphTypeLine(DeclarativeBase):
@@ -158,9 +254,11 @@ class GraphTypeLine(DeclarativeBase):
     line_type = Column(Integer, nullable=False, default=0) #LINE1,AREA<PRINT
     vname_id = Column(Integer, ForeignKey('graph_type_vnames.id'))
     vname = relationship('GraphTypeVname')
-    expression = Column(String(250), nullable=False, default='')
+    graph_type_def_id = Column(Integer, ForeignKey('graph_type_defs.id'))
+    graph_type_def = relationship('GraphTypeDef')
+    value = Column(String(40))
+    legend = Column(String(250), nullable=False, default='')
     color = Column(String(8))
-    legend= Column(Unicode(40))
 
     #}
     def __repr__(self):
@@ -197,40 +295,59 @@ class GraphTypeLine(DeclarativeBase):
                 raise GraphTypeLineError('Color should be 6 hex characters')
         self.color = color
 
+    def _set_vname(self, vname):
+        """
+        The vname could be either a VDEF or CDEF or a DEF. The first two
+        go into one column while the third goes in another.
+        This method handles that!
+        """
+        if type(vname) == GraphTypeVname:
+            self.vname = vname
+        elif type(vname) == GraphTypeDef:
+            self.graph_type_def = vname
+        else:
+            raise ValueError('Unknown vdef type')
+    
+    def _get_vname(self):
+        if not self.vname is None:
+            return self.vname
+        else:
+            return self.graph_type_def
+
     def set_print(self, vname, fmt):
         """
         Define this Line as a PRINT line using the given vname object
         and the format. vname must be a VDEF
-        Output is: PRINT:vname.name:expression
+        Output is: PRINT:vname.name:legend
         """
         if not vname.is_vdef():
             raise GraphTypeLineError('vname must be a VDEF')
 
         self.set_line_type('PRINT')
-        self.vname = vname
-        self.expression = fmt
+        self._set_vname(vname)
+        self.legend = fmt
 
     def set_gprint(self, vname, fmt):
         """
         Define this Line as a GPRINT line using the given vname object
         and the format. vname must be a VDEF
-        Output is GPRINT:vname.name:expression
+        Output is GPRINT:vname.name:legend
         """
         if not vname.is_vdef():
             raise GraphTypeLineError('vname must be a VDEF')
 
         self.set_line_type('GPRINT')
-        self.vname = vname
-        self.expression = fmt
+        self._set_vname(vname)
+        self.legend = fmt
 
     def set_comment(self, comment):
         """
         Define this Line as a COMMENT using the given comment string
         colons are escaped by this method.
-        Output is COMMENT:expression
+        Output is COMMENT:legend
         """
         self.set_line_type('COMMENT')
-        self.expression = comment
+        self.legend = comment
 
     def set_vrule(self, vname, value, color, legend=None):
         """
@@ -247,7 +364,7 @@ class GraphTypeLine(DeclarativeBase):
                 raise GraphTypeLineError('vrule vname must be a VDEF')
             if value is not None:
                 raise GraphTypeLineError('vrule requires ONE of value or vname only')
-            self.vname = vname
+            self._set_vname(vname)
         else:
             if value is None:
                 raise GraphTypeLineError('Either vname or value must be defined')
@@ -255,7 +372,7 @@ class GraphTypeLine(DeclarativeBase):
                 fvalue = float(value)
             except ValueError:
                 raise GraphTypeLineError('Vrule time must be a float or integer')
-            self.expression = value
+            self.value = value
         self.set_line_type('VRULE')
         self.set_color(color)
         self.legend = legend
@@ -265,16 +382,12 @@ class GraphTypeLine(DeclarativeBase):
         """
         Define this Line as a HRULE which is a horizontal line
         at the given value.
-        Value must be able to be converted into a float
-        Output is HRULE:expression#color[:legend]
+        Value must be able to be converted into a float but can be
+        a number or an attribute field
+        Output is HRULE:legend#color[:legend]
         """
-        try:
-            dummy = float(value)
-        except ValueError:
-            raise GraphTypeLineError('value must be a float')
-
         self.set_line_type('HRULE')
-        self.expression = value
+        self.value = value
         self.set_color(color)
         self.legend = legend
 
@@ -291,7 +404,7 @@ class GraphTypeLine(DeclarativeBase):
             raise GraphTypeLineError('Line width must be a float')
 
         self.set_line_type('LINE')
-        self.vname = vname
+        self._set_vname(vname)
         if color is not None:
             self.set_color(color)
         else:
@@ -299,9 +412,9 @@ class GraphTypeLine(DeclarativeBase):
                 raise GraphTypeLineError('legend cannot be specified with no color')
         self.legend = legend
         if stack:
-            self.expression = '{}:1'.format(width)
+            self.value = '{}:1'.format(width)
         else:
-            self.expression = '{}:0'.format(width)
+            self.value = '{}:0'.format(width)
     
     def set_area(self, vname, color=None, legend=None, stack=False):
         """
@@ -310,16 +423,16 @@ class GraphTypeLine(DeclarativeBase):
         Output is AREA:vname.name[#color][:[legend][:STACK]]
         """
         self.set_line_type('AREA')
-        self.vname = vname
+        self._set_vname(vname)
         if color is not None:
             self.set_color(color)
         elif legend is not None:
             raise GraphTypeLineError('AREA cannot have legend without color')
         self.legend = legend
         if stack:
-            self.expression = '1'
+            self.value = '1'
         else:
-            self.expression = '0'
+            self.value = '0'
     
     def set_tick(self, vname, color, fraction=None, legend=None):
         """
@@ -327,7 +440,7 @@ class GraphTypeLine(DeclarativeBase):
         The color can have an alpha
         """
         self.set_line_type('TICK')
-        self.vname = vname
+        self._set_vname(vname)
         self.set_color(color, True)
         if fraction is not None:
             try:
@@ -337,13 +450,13 @@ class GraphTypeLine(DeclarativeBase):
             else:
                 if float_fraction > 100.0:
                     raise GraphTypeLineError('TICK fraction cannot be over 100')
-            self.expression = fraction
+            self.value = fraction
         elif legend is not None:
             raise GraphTypeLineError('TICK cannot have legend without fraction')
         self.legend = legend
 
 
-    def format(self):
+    def format(self, attribute):
         """
         Print the formatted line entry for use in rrdgraph
         """
@@ -354,11 +467,11 @@ class GraphTypeLine(DeclarativeBase):
             real_format = getattr(self, 'format_'+line_type_name.lower())
         except AttributeError:
             raise GraphTypeLineError('No format method for {}'.format(line_type_name))
-        return real_format()
+        return real_format(attribute)
 
-    def get_legend(self):
+    def get_legend(self, attribute=None):
         if self.legend is not None:
-            return ':"'+self.legend.replace(':', r'\:')+'"'
+            return ':' + self.escape_legend(attribute)
         else:
             return ''
 
@@ -367,53 +480,70 @@ class GraphTypeLine(DeclarativeBase):
             return ''
         return '#'+self.color
 
-    def get_legend_stack(self, do_stack):
+    def get_legend_stack(self, do_stack, attribute=None):
         if self.legend is not None:
             if do_stack:
-                return '{}:STACK'.format(self.get_legend())
+                return self.get_legend(attribute) + ':STACK'
             else:
-                return self.get_legend()
+                return self.get_legend(attribute)
         elif do_stack:
             return '::STACK'
         else:
             return ''
 
-    def escape_expression(self):
-        """ Returns colon escaped expression """
-        return self.expression.replace(':',r'\:')
+    def escape_legend(self, attribute=None):
+        """
+        Returns colon escaped legendi
+        If attribute suppled, replace fields with attribute fields
+        """
+        if attribute is None:
+            return str(self.legend.replace(':',r'\:'))
+        else:
+            return str(fill_fields(self.legend, attribute=attribute).replace(':',r'\:'))
 
     # Format methods for returing the output
-    def format_print(self):
-        return 'PRINT:{}:{}'.format(self.vname.name, self.escape_expression())
+    def format_print(self, attribute):
+        return 'PRINT:{}:{}'.format(self._get_vname().name, self.escape_legend(attribute))
 
-    def format_gprint(self):
-        return 'GPRINT:{}:{}'.format(self.vname.name, self.escape_expression())
+    def format_gprint(self, attribute):
+        return 'GPRINT:{}:{}'.format(self._get_vname().name, self.escape_legend(attribute))
 
-    def format_comment(self):
-        return 'COMMENT:{}'.format(self.escape_expression())
+    def format_comment(self, attribute):
+        return 'COMMENT:'+self.escape_legend(attribute)
 
-    def format_vrule(self):
-        if self.vname:
-            return 'VRULE:{}#{}{}'.format(self.vname.name, self.color, self.get_legend())
+    def format_vrule(self, attribute):
+        if self._get_vname():
+            return 'VRULE:{}#{}{}'.format(self._get_vname().name, self.color, self.get_legend(attribute))
         else:
-            return 'VRULE:{}#{}{}'.format(self.expression, self.color, self.get_legend())
+            return 'VRULE:{}#{}{}'.format(self.value, self.color, self.get_legend(attribute))
 
-    def format_hrule(self):
-        return 'HRULE:{}#{}{}'.format(self.expression, self.color, self.get_legend())
+    def format_hrule(self, attribute):
+        try:
+            return 'HRULE:{}#{}{}'.format(float(self.value), self.color, self.get_legend(attribute))
+        except ValueError:
+            value = attribute.get_field(self.value)
+            if value is None:
+                logger.warning('Bad HRULE field %s', self.value)
+                return ''
+            try:
+                return 'HRULE:{}#{}{}'.format(float(value), self.color, self.get_legend(attribute))
+            except ValueError:
+                pass
+        return ''
 
-    def format_line(self):
-        width,do_stack = self.expression.split(':')
-        return 'LINE{}:{}{}{}'.format(width,self.vname.name, self.get_color(), self.get_legend_stack(do_stack=='1'))
+    def format_line(self, attribute):
+        width,do_stack = self.value.split(':')
+        return 'LINE{}:{}{}{}'.format(width,self._get_vname().name, self.get_color(), self.get_legend_stack(do_stack=='1', attribute))
 
-    def format_area(self):
-        return 'AREA:{}{}{}'.format(self.vname.name, self.get_color(), self.get_legend_stack(self.expression == '1'))
+    def format_area(self, attribute):
+        return 'AREA:{}{}{}'.format(self._get_vname().name, self.get_color(), self.get_legend_stack(self.value == '1', attribute))
 
 
-    def format_tick(self):
-        if self.expression is not None and self.expression != '':
-            fraction = ':'+str(self.expression)
+    def format_tick(self, attribute):
+        if self.value is not None and self.value != '':
+            fraction = ':'+str(self.value)
         else:
             fraction = ''
-        return 'TICK:{}#{}{}{}'.format(self.vname.name, self.color, fraction, self.get_legend())
+        return 'TICK:{}#{}{}{}'.format(self._get_vname().name, self.color, fraction, self.get_legend())
 
 

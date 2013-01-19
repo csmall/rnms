@@ -17,12 +17,92 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-""" Mathematic functions for Rosenberg  NMS"""
+""" Parsing functions for Rosenberg  NMS"""
 from pyparsing import (Literal,CaselessLiteral,Word,Combine,Group,Optional,
         ZeroOrMore,Forward,nums,alphas,oneOf)
 import math
 import operator
 from string import Template
+import re
+
+__field_re = re.compile(r'\${?([a-z0-9_-]+)',re.I)
+
+def fill_fields(string, host=None, attribute=None, event=None):
+    """
+    Parse the raw string and fill any fields with values obtained from the
+    given objects. Fields can be defined as $key or ${key} and use the
+    standard string.Template parsing to do its job.
+    Fields that are replaced are
+      attribute         attribute.display_name
+      attribute_id      attribute.id
+      index             attribute.index
+      description       attribute.description()
+      speed_units       attribute field speed converted to SI units (64k)
+      host              host.display_name or attribute.host.display_name
+
+      state             event.alarm_state.display_name
+
+      plus any fields from the event or attribute in that order
+    """
+    field_keys = __field_re.findall(string)
+    if field_keys == []:
+        return string
+    field_values = {}
+    # Event fields are firat as they may be overwritten
+    if event is not None:
+        field_values.update(dict([ef.tag,ef.data] for ef in event.fields))
+    if host is not None:
+        field_values['host'] = host.display_name
+    if attribute is not None:
+        field_values['attribute'] = attribute.display_name
+        field_values['attribute_id'] = str(attribute.id)
+        field_values['index'] = str(attribute.index)
+
+    for field_key in field_keys:
+        if field_key in field_values:
+            continue
+        if event is not None:
+            if field_key == 'state':
+                field_values[field_key] = event.alarm_state.display_name
+        if attribute is not None:
+            # expensive ones go here
+            if field_key == 'description':
+                field_values[field_key] = attribute.description()
+                continue
+            if  field_key == 'host':
+                field_values['host'] = attribute.host.display_name
+                continue
+            # Special case, speed defaults to 10000000 (100 Mbps) if 0
+            if field_key == 'speed':
+                att_field = attribute.get_field('speed')
+                if att_field is None or att_field == 0:
+                    att_field = 100000000
+                field_values['speed'] = att_field
+                continue
+
+            # Special case, speed_units convers 8000 -> '8.00 k'
+            if field_key == 'speed_units':
+                att_field = attribute.get_field('speed')
+                if att_field is not None:
+                    speed = float(att_field)
+                    for div,sym in ((1000000.0,'M'), (1000.0,'k')):
+                        if speed > div:
+                            field_values['speed_units'] = str(speed/div)+' '+sym
+                            break
+                    else:
+                        field_values['speed_units'] = att_field
+                continue
+            # Last thing to check, maybe attribute field?
+            att_field = attribute.get_field(field_key)
+            if att_field is not None:
+                field_values[field_key] = att_field
+    
+    text_template = Template(string)
+    return text_template.safe_substitute(field_values)
+
+
+
+
 
 class RnmsTextTemplate(Template):
     """ Sub-class of Template to parse the event type strings """

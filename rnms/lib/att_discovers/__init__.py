@@ -13,6 +13,7 @@ from ntp_client import discover_ntp_client
 from reachability import discover_reachability
 from sensors import discover_sensors
 from snmp import discover_snmp_interfaces, discover_snmp_simple
+from snmp_fcport import discover_fc_ports
 from snmp_ups import discover_ups, discover_ups_lines
 from storage import discover_storage
 from tcp_ports import discover_tcp_ports

@@ -90,10 +90,9 @@ class PingClient():
         match = self.fping_re.search(ping_err)
         if match:
             values = (float(match.group(2)), float(match.group(1)))
-            if ping['data'] is None:
-                ping['cb_fun'](values, None)
-            else:
-                ping['cb_fun'](values, None, **ping['data'])
+            ping['cb_fun'](values, None, **ping['data'])
+        else:
+            ping['cb_fun'](None, None, **ping['data'])
         del(self.active_pings[ping['ipaddr']])
 
     def poll(self):

@@ -35,7 +35,7 @@ def poll_tcp_status(poller_buffer, parsed_params, **kwargs):
         max_bytes = int(parsed_params)
     except ValueError:
         max_bytes = 1
-    if kwargs['attribute'].field('check_content') != '1':
+    if kwargs['attribute'].get_field('check_content') != '1':
         max_bytes = None
 
     return kwargs['pobj'].tcp_client.get_tcp(kwargs['attribute'].host, port, ' ', max_bytes, cb_tcp_status, **kwargs)
@@ -88,7 +88,7 @@ def poll_tcp_content(poller_buffer, parsed_params, pobj, attribute, poller_row, 
       check_regexp: PCRE pattern used for matching
     """
 
-    if attribute.field('check_content') != '1':
+    if attribute.get_field('check_content') != '1':
         pobj.poller_callback(attribute.id, poller_row, [u'valid', u'not checked'])
         return True
 
@@ -102,7 +102,7 @@ def poll_tcp_content(poller_buffer, parsed_params, pobj, attribute, poller_row, 
         return True
 
     try:
-        regex = re.compile(attribute.field('check_regexp'), re.I)
+        regex = re.compile(attribute.get_field('check_regexp'), re.I)
     except re.error:
         pobj.poller_callback(attribute.id, poller_row, [u'invalid', u'bad regexp configured'])
         return True

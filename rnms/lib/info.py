@@ -32,6 +32,17 @@ class RnmsInfo(object):
     Provides information about the various objects in rnms
     """
 
+    def _snmp_data(self,community):
+        if community is None:
+            return '(not set)'
+        elif community[0] == '1':
+            return 'SNMPv1 set'
+        elif community[0] == '2':
+            return 'SNMPv2c set'
+        elif community[0] == '3':
+            return 'SNMPv3 set'
+        return 'unknown'
+        
     def host_info(self, ids):
         hosts = model.DBSession.query(model.Host).filter(model.Host.id.in_(ids))
         if hosts.count() == 0:
@@ -40,15 +51,27 @@ class RnmsInfo(object):
         print
         for host in hosts:
             print '=' * 60
-            print 'Host          | {}: {}'.format(host.id, host.display_name)
+            print '{:<20} | {}: {}'.format('Host', host.id, host.display_name)
             print '-' * 60
-            print 'Zone          | {}: {}'.format(host.zone.id, host.zone.display_name)
-            print 'Management IP | {}'.format(host.mgmt_address)
-            print 'System ObjID  | {}'.format(host.sysobjid)
-            print 'Autodiscovery | {}: {}'.format(host.autodiscovery_policy.id, host.autodiscovery_policy.display_name)
-            print 'Created       | {}'.format(host.created)
-            print 'Polled        | {}'.format(host.polled)
-            print 'Attributes    | ({}) '.format(len(host.attributes)) +', '.join([str(a.id) for a in host.attributes])
+            print '''{:<20} | {}: {}
+{:<20} | {}
+{:<20} | {}
+{:<20} | {}
+{:<20} | {}
+{:<20} | {} : {}
+{:<20} | {}
+{:<20} | {}
+{:<20} | ({}) {}'''.format(
+        'Zone', host.zone.id, host.zone.display_name,
+        'Management IP', host.mgmt_address,
+        'System ObjID', host.sysobjid,
+        'SNMP RO', self._snmp_data(host.community_ro),
+        'SNMP RW', self._snmp_data(host.community_rw),
+        'Autodiscovery', host.autodiscovery_policy.id, host.autodiscovery_policy.display_name,
+        'Created', host.created,
+        'Polled', host.polled,
+        'Attributes', len(host.attributes), ', '.join([str(a.id) for a in host.attributes])
+        )
 
     def attribute_info(self, ids):
         attributes = model.DBSession.query(model.Attribute).filter(model.Attribute.id.in_(ids))
@@ -104,3 +127,84 @@ class RnmsInfo(object):
                         row.backend_id,
                         (row.backend.display_name+' ('+row.backend.command+')')[:25],
                         )
+
+    def autodiscovery_info(self, ids):
+        """ Information about the autodiscovery policy """
+        policies = model.DBSession.query(model.AutodiscoveryPolicy).filter(model.AutodiscoveryPolicy.id.in_(ids))
+        if policies.count() == 0:
+            print "No Autodiscovery Policies found"
+            return
+        print
+        for policy in policies:
+            print '=' * 60
+            print '{:<30} | {}: {}'.format('Autodiscovery Policy', policy.id, policy.display_name)
+            print '-' * 60
+            print '''Autodiscovery will not examine attribute if it:
+{:<30} | {}
+{:<30} | {}
+{:<30} | {}
+
+Attribute Autodiscovery can do the following:
+{:<30} | {}
+{:<30} | {}
+{:<30} | {}
+{:<30} | {}
+{:<30} | {}
+            '''.format(
+                    ' - is a Loopback', policy.skip_loopback,
+                    ' - is Oper Down', policy.check_state,
+                    ' - has no address', policy.check_address,
+                    ' - set the PollerSet', policy.set_poller,
+                    ' - add new attributes', policy.permit_add,
+                    ' - disable missing attributes', policy.permit_disable,
+                    ' - delete missing attributes ', policy.permit_delete,
+                    ' - alert on missing attributes', policy.alert_delete,
+                    ' - modify attribute fields', policy.permit_modify,
+                    )
+    
+    
+    def _parse_sysobjid(self, sysobjid):
+        if sysobjid is None or sysobjid == '':
+            return 'No SNMP required'
+        elif sysobjid == '.':
+            return 'All SNMP enabled hosts'
+        return 'sysObjectId='+ sysobjid
+
+    def attributetype_info(self, ids):
+        """ Information about the attribute types """
+        atypes = model.DBSession.query(model.AttributeType).filter(model.AttributeType.id.in_(ids))
+        if atypes.count() == 0:
+            print "No AttributeTypes found"
+            return
+        print
+        for atype in atypes:
+            print '=' * 60
+            print '{:<30} | {}: {}'.format('Attribute Type', atype.id, atype.display_name)
+            print '-' * 60
+            print '''{:<30} | (enabled: {})
+{:<30} | {}
+{:<30} | {}
+{:<30} | {}({})
+{:<30} | {}: {}
+{:<30} | {}: {}
+{:<30} | Heatbeat: {} CF: {} Rows: {}
+'''.format(
+        'Autodiscovery', atype.ad_enabled,
+        'Required Host SNMP', self._parse_sysobjid(atype.required_sysobjid),
+        'Validate', atype.ad_validate,
+        'Command', atype.ad_command, atype.ad_parameters,
+        'Default PollerSet', atype.default_poller_set_id, atype.default_poller_set.display_name,
+        'Default SLA', atype.default_sla_id, atype.default_sla.display_name,
+        'RRA Info', atype.ds_heartbeat, atype.rra_cf, atype.rra_rows,
+        )
+            print '-' * 60
+            print 'Fields'
+            for field in atype.fields:
+                print '{:<3} {:<26} | tag:{}'.format(field.position, field.display_name, field.tag)
+            
+            print '-' * 60
+            print 'RRDtool files'
+            for rrd in atype.rrds:
+                print '{:<3} {:<26} | {:<5} {}'.format(rrd.position, rrd.display_name, rrd.dst2str(), rrd.name)
+
+

@@ -143,10 +143,10 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         a = cls()
         a.host_id = discovered_attribute.host_id
         a.attribute_type = discovered_attribute.attribute_type
-        a.attribute_id = discovered_attribute.attribute_id
+        #a.attribute_id = discovered_attribute.attribute_id
         a.display_name = discovered_attribute.display_name
         a.index = discovered_attribute.index
-        a.use_iface = discovered_attribute.use_iface
+        #a.use_iface = discovered_attribute.use_iface
         a.admin_state = discovered_attribute.admin_state
         a.oper_state = discovered_attribute.oper_state
         a.user_id = host.default_user_id
@@ -185,7 +185,7 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         """ Return a dictionary of all fields for this attribute"""
         fields={}
         for at_field in self.attribute_type.fields:
-            fields[at_field.tag]=self.field(id=at_field.id)
+            fields[at_field.tag]=self.get_field(id=at_field.id)
         return fields
 
     def get_field(self, tag=None, id=None):
@@ -204,7 +204,7 @@ class Attribute(DeclarativeBase, AttributeBaseState):
 
     def description(self):
         """ Returns a string of all joined description fields """
-        descriptions = [ self.field(id=at_field.id) for at_field in self.attribute_type.fields if at_field.description]
+        descriptions = [ self.get_field(id=at_field.id) for at_field in self.attribute_type.fields if at_field.description]
         return " ".join(descriptions)
         
     def oper_state_name(self):
@@ -267,6 +267,13 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         """
         self.poll_enabled = False
         self.admin_status = 2
+
+    def parse_string(self, raw_string):
+        """
+        Parse a string by replacing all the <key> with values from this
+        attribute
+        """
+        return parsers.rnms_fill_fields(raw_string, self)
 
 
 class AttributeField(DeclarativeBase):
@@ -336,7 +343,7 @@ class AttributeType(DeclarativeBase):
             return None
         return DBSession.query(cls).filter(cls.display_name == display_name).first()
 
-    def autodiscover(self, dobj, host):
+    def autodiscover(self, dobj, host, force):
         """
         Attempt to autodiscover attributes of this object's type on the
         given host.
@@ -350,7 +357,7 @@ class AttributeType(DeclarativeBase):
             return False
         
         dobj.logger.debug('H:%d AT:%d Autodiscovering %s', host.id, self.id, self.display_name)
-        if self.ad_enabled == False:
+        if force == False and self.ad_enabled == False:
             return False
         if self._match_sysobjid(host) == False:
             return False
@@ -394,6 +401,14 @@ class AttributeType(DeclarativeBase):
             if f.tag == tag:
                 return f
         return None
+
+    def get_graph_type(self):
+        """ Return the default, or just one GraphType """
+        try:
+            return self.graph_types[0]
+        except IndexError:
+            return None
+
 
 class AttributeTypeField(DeclarativeBase):
     __tablename__ = 'attribute_type_fields'

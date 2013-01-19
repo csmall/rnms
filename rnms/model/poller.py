@@ -28,7 +28,7 @@ from sqlalchemy.types import Integer, Unicode, String, SmallInteger
 from rnms.model import DeclarativeBase, DBSession
 from rnms.lib import pollers
 from rnms.lib.genericset import GenericSet
-from rnms.lib.parsers import RnmsTextTemplate
+from rnms.lib.parsers import fill_fields
 
 __all__ = [ 'PollerSet', 'Poller', 'PollerRow']
 
@@ -79,12 +79,7 @@ class Poller(DeclarativeBase):
         Poller.parameters may have certain fields that need to be parsed
         by filling in <item> with some value from the attribute
         """
-        text_template = RnmsTextTemplate(self.parameters)
-        subs = {
-                'index': attribute.index
-                }
-        subs.update(dict([ef.attribute_type_field.tag,ef.value] for ef in attribute.fields))
-        return text_template.safe_substitute(subs)
+        return fill_fields(self.parameters, attribute=attribute)
 
 class PollerSet(DeclarativeBase, GenericSet):
     __tablename__ = 'poller_sets'

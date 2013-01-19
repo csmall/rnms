@@ -25,7 +25,21 @@ from pyasn1.error import PyAsn1Error
 
 logger = logging.getLogger('pSNMP')
 
+def split_oid(params, host):
+    """ Some devices have a second parameter which is the OID to use for
+    SNMPv1 hosts
+    """
+    oids = params.split('|')
+    if host.ro_is_snmpv1():
+        try:
+            return oids[1]
+        except IndexError:
+            pass
+    return oids[0]
+
 def parse_oid(raw_oid):
+    if raw_oid == '':
+        return None
     str_oid = str(raw_oid)
     if str_oid[0] == '.':
         str_oid = str_oid[1:]
@@ -39,9 +53,12 @@ def parse_oid(raw_oid):
 def poll_snmp_counter(poller_buffer, parsed_params, **kw):
     """
     SNMP get that returns an integer
-    Parameters: the OID in dotted decimal e.g. '1.3.6.1.1.9'
+    Parameters: <oid>|[snmpv1oid]
+      oid: the OID in dotted decimal e.g. '1.3.6.1.1.9'
+      snmpv1oid: if this exists and the host is using snmpv1 use this
+                 oid instead
     """
-    oid = parse_oid(parsed_params)
+    oid = parse_oid(split_oid(parsed_params, kw['attribute'].host))
     if oid is None:
         return False
     kw['pobj'].snmp_engine.get_int(kw['attribute'].host, oid, cb_snmp_counter, **kw)
@@ -61,16 +78,16 @@ def poll_snmp_counter_mul(poller_buffer, parsed_params, **kw):
     kw['pobj'].snmp_engine.get_int(kw['attribute'].host, oid, cb_snmp_counter, multiplier=int(params[1]), **kw)
     return True
 
-def cb_snmp_counter(value, error, pobj, attribute, poller_row, multiplier=None, **kw):
-    if error is not None:
-        pobj.poller_callback(attribute.id, poller_row, None)
+def cb_snmp_counter(value, error, pobj, attribute, poller_row, default_value=None, multiplier=None, **kw):
+    if value is None or error is not None:
+        pobj.poller_callback(attribute.id, poller_row, default_value)
         return
     if multiplier is not None:
-        value = value * multiplier
+        value = int(value) * float(multiplier)
     pobj.poller_callback(attribute.id, poller_row, value)
         
 
-def poll_snmp_status(poller_buffer, **kw):
+def poll_snmp_status(poller_buffer, parsed_params, **kw):
     """
     Generic SNMP get that returns a status string
     Returns: a string based upon the SNMP value returned
@@ -81,12 +98,11 @@ def poll_snmp_status(poller_buffer, **kw):
     An optional default return value can be used, returns None if
     there is an error
     """
-    params = kw['parsed_params'].split('|')
-    param_count = len(params)
+    params = parsed_params.split('|')
     try:
         kw['mapping'] = params[1]
     except IndexError:
-        pass
+        return False
     try:
         kw['default_value'] = params[2]
     except IndexError:
@@ -94,21 +110,25 @@ def poll_snmp_status(poller_buffer, **kw):
     oid = parse_oid(params[0])
     if oid is None:
         return False
-    kw['pobj'].snmp_engine.get_int(kw['attribute'].host, oid, cb_snmp_status, **kw)
-    return True
+    return kw['pobj'].snmp_engine.get_str(kw['attribute'].host, oid, cb_snmp_status, **kw)
 
 def cb_snmp_status(value, error, pobj, attribute, poller_row, **kw):
-    if error is not None:
+    if value is None or error is not None:
         pobj.poller_callback(attribute.id, poller_row, kw['default_value'])
+        return
     try:
         for item in kw['mapping'].split(","):
             matchret = item.split("=")
             try:
-                if value == int(matchret[0]):
-                    pobj.poller_callback(attribute.id, poller_row, matchret[1])
-                    return
+                if value == matchret[0]:
+                    retval = matchret[1]
+                else:
+                    continue
             except IndexError:
                 pass
+            else:
+                pobj.poller_callback(attribute.id, poller_row, retval)
+                return
     except KeyError:
         pass
     pobj.poller_callback(attribute.id, poller_row, kw['default_value'])
@@ -121,7 +141,7 @@ def poll_snmp_walk_average(poller_buffer, parsed_params, **kw):
     """
     if parsed_params == '':
         return False
-    kw['pobj'].snmp_engine.get_table(kw['attribute'].host, parsed_params, cb_snmp_walk_average, table_trim=1, **kw)
+    return kw['pobj'].snmp_engine.get_table(kw['attribute'].host, parsed_params, cb_snmp_walk_average, table_trim=1, **kw)
 
 def cb_snmp_walk_average(values, error, pobj, attribute, poller_row, **kw):
     """
