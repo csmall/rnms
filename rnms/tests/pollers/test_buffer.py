@@ -9,23 +9,26 @@ from rnms.lib import states
 from rnms.lib.pollers.buffer import poll_buffer
 
 class TestBufferPoller(PollerTest):
-    poller_buffer = {'status': 'up', 'maximum': 100, 'minimum': 0 }
 
-    def poll_empty(self):
+    def setUp(self):
+        super(TestBufferPoller, self).setUp()
+        self.poller_buffer = {'status': 'up', 'maximum': 100, 'minimum': 0 }
+
+    def test_poll_empty(self):
         """ poll_buffer with no parameters returns False """
         eq_(poll_buffer(self.poller_buffer, '', **self.test_kwargs), False) 
 
-    def poll_single_hit(self):
+    def test_poll_single_hit(self):
         """ poll_buffer with single hit returns value """
         eq_(poll_buffer(self.poller_buffer, 'status', **self.test_kwargs), True) 
         self.assert_callback(['up',])
     
-    def poll_multi_hit(self):
+    def test_poll_multi_hit(self):
         """ poll_buffer with two hits returns values """
         eq_(poll_buffer(self.poller_buffer, 'status,maximum', **self.test_kwargs), True) 
-        self.assert_callback(['up','100'])
+        self.assert_callback(['up',100])
     
-    def poll_miss_then_hit(self):
+    def test_poll_miss_then_hit(self):
         """ poll_buffer with one hit and one miss returns value """
         eq_(poll_buffer(self.poller_buffer, 'foo,maximum', **self.test_kwargs), True) 
-        self.assert_callback(['100',])
+        self.assert_callback([None,100])

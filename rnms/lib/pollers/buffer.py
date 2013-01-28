@@ -24,12 +24,14 @@ def poll_buffer(poller_buffer, parsed_params, pobj, attribute, poller_row, **kw)
     name comes from parameters
     """
     ret_fields = []
-    field_names =  poller_row.poller.field.split(',')
+    if parsed_params == '':
+        return False
+    field_names =  parsed_params.split(',')
     for field_name in field_names:
         try:
             ret_fields.append(poller_buffer[field_name])
         except KeyError:
-            pass
+            ret_fields.append(None)
     pobj.poller_callback(attribute.id, poller_row, ret_fields)
     return True
 

@@ -26,13 +26,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.types import Integer, Unicode, DateTime, Boolean, String, SmallInteger
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, DBSession, Trigger
-
-# Alarm internal state defines
-ALARM_DOWN = 1
-ALARM_UP = 2
-ALARM_ALERT = 3
-ALARM_TESTING = 4
+from rnms.model import DeclarativeBase, DBSession
+from rnms.lib.states import *
 
 class Alarm(DeclarativeBase):
     """
@@ -44,8 +39,7 @@ class Alarm(DeclarativeBase):
     id = Column(Integer, autoincrement=True, primary_key=True)
     start_time = Column(DateTime, nullable=False, default=datetime.datetime.now)
     stop_time = Column(DateTime)
-    active = Column(Boolean, nullable=False, default=True)
-    triggered = Column(Boolean, nullable=False, default=True)
+    processed = Column(Boolean, nullable=False, default=False)
     attribute_id = Column(Integer, ForeignKey('attributes.id'),nullable=False)
     attribute = relationship('Attribute', backref='alarms')
     alarm_state_id = Column(Integer, ForeignKey('alarm_states.id'),nullable=False)
@@ -69,7 +63,7 @@ class Alarm(DeclarativeBase):
             self.alarm_state = event.alarm_state
             if event.event_type.alarm_duration > 0:
                 self.stop_time = datetime.datetime.now() + datetime.timedelta(minutes=event.event_type.alarm_duration)
-            self.analyze_triggers()
+            self.process()
 
     def __repr__(self):
         return '<Alarm {0} A:{1} T:{2}>'.format(self.id, self.attribute_id, self.start_time)
@@ -115,22 +109,35 @@ class Alarm(DeclarativeBase):
             cls.attribute_id==attribute.id,
             cls.event_type_id==event_type.id,
             cls.alarm_state_id == AlarmState.id,
-            AlarmState.internal_state.in_([ALARM_DOWN, ALARM_TESTING]),
+            AlarmState.internal_state.in_([STATE_DOWN, STATE_TESTING]),
             )).first()
 
-    def analyze_triggers(self):
+    def process(self):
         """
         Run though all the triggers there are and attempt to fire
         any for this alarm.
         """
+
+        if self.processed == True:
+            return
+        from rnms.model import Trigger
+        
         triggers = Trigger.alarm_triggers()
         for trigger in triggers:
             trigger_result = trigger.process_alarm(self)
-        # FIXME
+        self.attribute.calculate_oper()
+        self.processed = True
 
  
 
 class AlarmState(DeclarativeBase):
+    """
+    All Alarms have an AlarmState which is the severity of an Alarm.
+    The alarm_level is a priority about which Alarms override others,
+    smaller the level, the more important it is.
+    Internal state should be one of the values from rnms.lib.states
+    """
+
     __tablename__ = 'alarm_states'
     
     #{ Columns
@@ -155,29 +162,29 @@ class AlarmState(DeclarativeBase):
         """
         Returns true if this alarm has internal state of up.
         """
-        return (self.internal_state==ALARM_UP)
+        return (self.internal_state==STATE_UP)
 
     def is_down(self):
         """
         Returns true if this alarm has internal state of down.
         """
-        return (self.internal_state==ALARM_DOWN)
+        return (self.internal_state==STATE_DOWN)
 
     def is_alert(self):
         """
         Returns true if this alarm has internal state of alert.
         """
-        return (self.internal_state==ALARM_ALERT)
+        return (self.internal_state==STATE_ALERT)
 
     def is_testing(self):
         """
         Returns true if this alarm has internal state of testing.
         """
-        return (self.internal_state==ALARM_TESTING)
+        return (self.internal_state==STATE_TESTING)
 
     def is_downtesting(self):
         """
         Returns true if this alarm has internal state of testing or down.
         """
-        return (self.internal_state==ALARM_DOWN or
-                self.internal_state==ALARM_TESTING)
+        return (self.internal_state==STATE_DOWN or
+                self.internal_state==STATE_TESTING)

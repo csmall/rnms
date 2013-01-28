@@ -89,8 +89,15 @@ class PingClient():
         (ping_out, ping_err) = ping['popen'].communicate()
         match = self.fping_re.search(ping_err)
         if match:
-            values = (float(match.group(2)), float(match.group(1)))
-            ping['cb_fun'](values, None, **ping['data'])
+            try:
+                pl = float(match.group(1))
+            except TypeError:
+                pl = 100
+            try:
+                rtt = float(match.group(2))
+            except TypeError:
+                rtt = None
+            ping['cb_fun']((rtt,pl), None, **ping['data'])
         else:
             ping['cb_fun'](None, None, **ping['data'])
         del(self.active_pings[ping['ipaddr']])

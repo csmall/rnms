@@ -38,6 +38,7 @@ from tw2.jqplugins.ui import set_ui_theme_name
 from rnms.lib.base import BaseController
 #from rnms.model import DBSession, metadata, Event, EventSeverity,EventType, DeclarativeBase
 #from rnms.widgets import AttributeGrid, RRDWidget, AttributeGrid2
+from rnms.widgets.attribute import AttributeSummary
 from rnms import model
 
 def recursive_update(d1, d2):
@@ -98,6 +99,10 @@ class AttributesController(BaseController):
     #def jqgrid(self, *args, **kwargs):
     #    return AttributeGrid2.request(request).body
 
+    @expose('rnms.templates.widget')
+    def att_summary(self):
+        w= AttributeSummary()
+        return dict(widget=w)
     #@expose('rnms.templates.attribute.graph')
     #def graph(self, graphid):
     #    rrdwidget = RRDWidget()

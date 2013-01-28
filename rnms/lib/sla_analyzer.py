@@ -19,16 +19,24 @@
 #
 
 # Import models for rnms
-from rnms.lib import logger
+import logging
 from rnms import model
 
+logger = logging.getLogger('rnms')
 
 class SLAanalyzer():
     """
     Analyze all of the SLA paramters on the attributes
     """
+    attribute_ids=None
+    host_ids=None
+
+    def __init__(self, attribute_ids=None, host_ids=None):
+        self.attribute_ids=attribute_ids
+        self.host_ids = host_ids
+
     def analyze(self):
-        attributes = model.Attribute.have_sla()
+        attributes = model.Attribute.have_sla(self.attribute_ids,self.host_ids)
         for attribute in attributes:
             if attribute.is_down():
                 logger.info('A%d: is DOWN, skipping',attribute.id)

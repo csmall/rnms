@@ -25,6 +25,7 @@ import os
 import transaction
 import re 
 import socket
+import logging
 
 from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey, Column
@@ -32,10 +33,11 @@ from sqlalchemy.types import Integer, Unicode, PickleType, DateTime, Boolean, Sm
 
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, Attribute, AlarmState, Host
+from rnms.model import DeclarativeBase, Attribute, AlarmState, Host, EventType
 from rnms.lib.genericset import GenericSet
 
-syslog_host_match = re.compile(r'\w{3} [ :0-9]{11} ([._[a-z0-9]-]+)\s+',re.IGNORECASE)
+logger = logging.getLogger('rnms')
+syslog_host_match = re.compile(r'\w{3} [ :0-9]{11} ([._a-z0-9-]+)\s+',re.IGNORECASE)
 
 class Logfile(DeclarativeBase):
     """
@@ -117,17 +119,6 @@ class LogmatchSet(DeclarativeBase,GenericSet):
         """
         self.cached_matches = [ row for row in self.logmatch_rows]
 
-    def _match_get_fields(self, match, logfile_row, syslog_host):
-        """
-        Return a dictionary of fields that are extracted from the match
-        """
-        host=logfile_row.matched_host(match, syslog_host)
-        return dict(event_type_id=logfile_row.event_type_id,
-                host=host,
-                attribute=logfile_row.matched_attribute(match,host),
-                state = logfile_row.matched_state(match),
-                fields = logfile_row.matched_fields(match)
-                )
 
     def find(self, text, is_syslog=True):
         """
@@ -138,22 +129,18 @@ class LogmatchSet(DeclarativeBase,GenericSet):
         syslog_match = syslog_host_match.match(text)
         syslog_host = None
         if is_syslog and syslog_match is None:
-            return False
+            return None
         syslog_host = syslog_match.group(1)
 
         if self.cached_matches is None:
             self.prime_cache()
 
         for row in self.cached_matches:
-            #print "trymatch: %s " % (row.match_text)
-            if row.match_start:
-                match = row.match_sre.match(text)
-            else:
-                match = row.match_sre.search(text)
-            match = re.search(row.match_text, text)
-            if match is not None: #we have a match!!
-                print "match"
-                return (self._match_get_fields(match, row, syslog_host))
+            match = row.try_match(syslog_host, text)
+            if match is not None:
+                logger.debug("LOGF(%s): Matched \"%s\"", self.id,row.match_text)
+                return match
+
 
 
 
@@ -182,6 +169,7 @@ class LogmatchRow(DeclarativeBase):
     attribute_match = Column(Unicode(60))
     state_match = Column(Unicode(60))
     event_type_id = Column(Integer, ForeignKey('event_types.id'), nullable=False, default=0)
+    event_type = relationship('EventType')
     fields = relationship('LogmatchField', backref='logmatch_row', cascade='all, delete, delete-orphan')
 
     def matched_host(self, match, syslog_host):
@@ -212,7 +200,7 @@ class LogmatchRow(DeclarativeBase):
 
     def matched_attribute(self, match,host):
         """
-        Return the matched host
+        Return the matched attribute
         """
         if self.attribute_match is None:
             return None
@@ -225,7 +213,7 @@ class LogmatchRow(DeclarativeBase):
             display_name = match.group(groupid)
         except IndexError:
             return None
-        return Attribute.by_display_name(host,display_name)
+        return Attribute.by_display_name(host,unicode(display_name))
 
     def matched_state(self, match):
         """
@@ -259,6 +247,26 @@ class LogmatchRow(DeclarativeBase):
                 mfields[field.event_field_tag]=field.field_match
         return mfields
 
+    def try_match(self, syslog_host, text):
+        """
+        Attempt to match this row against the given text.
+        If we have a match then return a dictionary of items
+        that can be used in an event, otherwise return None
+        """
+        if self.match_start:
+            match = self.match_sre.match(text)
+        else:
+            match = self.match_sre.search(text)
+        #match = re.search(row.match_text, text)
+        if match is not None: #we have a match!!
+            host=self.matched_host(match, syslog_host)
+            return dict(
+                    event_type=self.event_type,
+                    host=host,
+                    attribute=self.matched_attribute(match,host),
+                    alarm_state = self.matched_state(match),
+                    field_list = self.matched_fields(match),
+                    )
 
 class LogmatchField(DeclarativeBase):
     """

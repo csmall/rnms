@@ -17,8 +17,41 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
+from sqlalchemy import func
+
 from tw2.jqplugins import jqgrid
-from rnms.model import Attribute
+import tw2.core as twc
+
+from rnms.model import Attribute, DBSession
+from rnms.lib.states import *
+
+class AttributeSummary(twc.Widget):
+    state_names = (('Up', STATE_UP), ('Alert', STATE_ALERT), ('Down', STATE_DOWN), ('Admin Down', None), ('Unknown', STATE_UNKNOWN))
+
+    id = 'attribute-summary'
+    template = 'rnms.templates.widgets.attribute_summary'
+
+    host_id = twc.Param('Limit Attributes by this host id')
+
+    def prepare(self):
+        admin_down = DBSession.query(func.count(Attribute.id)).filter(Attribute.admin_state == STATE_DOWN).first()
+        self.att_total = int(admin_down[0])
+        db_states = DBSession.query(Attribute.oper_state,func.count(Attribute.id)).filter(Attribute.admin_state != STATE_DOWN).group_by(Attribute.oper_state)
+        tmp_states = {}
+        for att in db_states:
+            tmp_states[att[0]] = att[1]
+            self.att_total += att[1]
+        
+        self.att_states = []
+        for label,state_val in self.state_names:
+            if state_val is None:
+                self.att_states.append((label,admin_down[0]))
+            else:
+                try:
+                    self.att_states.append((label,tmp_states[state_val]))
+                except KeyError:
+                    self.att_states.append((label, 0 ))
+        super(AttributeSummary, self).prepare()
 
 class AttributeGrid(jqgrid.jqGridWidget):
     id ='attribute-grid-id'

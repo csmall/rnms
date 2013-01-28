@@ -71,11 +71,12 @@ class RootController(BaseController):
         """This method showcases TG's access to the wsgi environment."""
         return dict(page='environ', environment=request.environ)
 
-    @expose('rnms.templates.data')
     @expose('json')
+    #@expose('rnms.templates.data')
     def data(self, **kw):
         """This method showcases how you can use the same controller for a data page and a display page"""
         return dict(page='data', params=kw)
+
     @expose('rnms.templates.index')
     @require(predicates.has_permission('manage', msg=l_('Only for managers')))
     def manage_permission_only(self, **kw):

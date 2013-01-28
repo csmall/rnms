@@ -37,18 +37,18 @@ class TestAlteonRealServer(AttDiscTest):
         self.assert_result_count(0)
     
     def test_missing_missing_admin(self):
-        """ Alteon Rserver missing admin uses default up """
+        """ Alteon Rserver missing admin uses default unknown """
         values = self.get_values(3,{})
         cb_alteon_realservers(values, None, **self.test_callback_kwargs)
         self.assert_result_count(1)
-        self.assert_admin_state({'1': states.STATE_UP})
+        self.assert_admin_state({'1': states.STATE_UNKNOWN})
     
     def test_missing_missing_oper(self):
-        """ Alteon Rserver missing oper uses default up """
+        """ Alteon Rserver missing oper uses default unknown """
         values = self.get_values(5,{})
         cb_alteon_realservers(values, None, **self.test_callback_kwargs)
         self.assert_result_count(1)
-        self.assert_oper_state({'1': states.STATE_UP})
+        self.assert_oper_state({'1': states.STATE_UNKNOWN})
     
     def test_single_admin_down_rserver(self):
         """ Alteon Rserver finds one real server admin down """
@@ -109,6 +109,14 @@ class TestAlteonRealService(AttDiscTest):
         self.assert_result_count(1)
         self.assert_oper_state({'1.3.192.0.2.1': states.STATE_DOWN})
         self.assert_admin_state({'1.3.192.0.2.1': states.STATE_UP})
+    
+    def test_single_oper_missing_rservice(self):
+        """ Alteon Rservice with missing oper shows unknown """
+        values = self.get_values(4, {})
+        cb_alteon_realservices(values, None, **self.test_callback_kwargs)
+        self.assert_result_count(1)
+        self.assert_oper_state({'1.3.192.0.2.1': states.STATE_UNKNOWN})
+        self.assert_admin_state({'1.3.192.0.2.1': states.STATE_UP})
 
     def test_single_admin_down_rservice(self):
         values = self.get_values(6, {'1': '1'})
@@ -117,6 +125,14 @@ class TestAlteonRealService(AttDiscTest):
         self.assert_result_count(1)
         self.assert_oper_state({'1.3.192.0.2.1': states.STATE_UP})
         self.assert_admin_state({'1.3.192.0.2.1': states.STATE_DOWN})
+    
+    def test_single_admin_missing_rservice(self):
+        """ Alteon Rservice with misisng admin shows unknown """
+        values = self.get_values(6, {})
+        cb_alteon_realservices(values, None, **self.test_callback_kwargs)
+        self.assert_result_count(1)
+        self.assert_oper_state({'1.3.192.0.2.1': states.STATE_UP})
+        self.assert_admin_state({'1.3.192.0.2.1': states.STATE_UNKNOWN})
 
     def test_discover_alteon_rservice(self):
         """ Alteon Real Service calls snmp correctly """
@@ -153,7 +169,7 @@ class TestAlteonVirtualServer(AttDiscTest):
         self.assert_result_count(1)
         self.assert_result_fields('hostname', {'1': 'unknown'})
     
-    def test_missing_dname(self):
+    def test_missing_serviceidx(self):
         """ Alteon Rserver mising serviceindex skips entry """
         values = self.get_values(4, {})
         cb_alteon_virtualservers(values, None, **self.test_callback_kwargs)
@@ -167,11 +183,11 @@ class TestAlteonVirtualServer(AttDiscTest):
         self.assert_result_count(0)
 
     def test_missing_oper(self):
-        """ Alteon Rserver mising oper sets default up """
-        values = self.get_values(4, {})
+        """ Alteon Rserver mising oper sets unknown """
+        values = self.get_values(2, {})
         cb_alteon_virtualservers(values, None, **self.test_callback_kwargs)
         self.assert_result_count(1)
-        self.assert_oper_state({'1': states.STATE_UP})
+        self.assert_oper_state({'1': states.STATE_UNKNOWN})
         self.assert_admin_state({'1': states.STATE_UP})
 
     def test_oper_down(self):

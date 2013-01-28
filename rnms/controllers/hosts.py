@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012,2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 """ Hosts controller """
 
 # turbogears imports
-from tg import expose, config
+from tg import expose, config, validate, flash
 #from tg import redirect, validate, flash
 
 # third party imports
@@ -31,11 +31,12 @@ from tw2.jqplugins import portlets
 import tw2.core as twc
 import tw2.forms as twf
 from tw2.jqplugins.ui import set_ui_theme_name
+from formencode import validators
 
 # project specific imports
 from rnms.lib.base import BaseController
 from rnms.widgets import AttributeGrid,EventsWidget
-from rnms.model import DBSession, metadata, Host
+from rnms.model import DBSession, metadata, Host, SNMPEnterprise, SNMPEnterprise
 
 set_ui_theme_name(config['ui_theme'])
 class HostDetails(twf.TableLayout):
@@ -53,7 +54,7 @@ class HostDetails(twf.TableLayout):
             self.children[0].value = host.display_name
             self.children[1].value = host.mgmt_address
             self.children[2].value = host.zone.display_name
-            self.children[3].value = host.sysobjid
+            self.children[3].value = host.sysobjid + "ff"
 
 
 class HostsController(BaseController):
@@ -71,7 +72,16 @@ class HostsController(BaseController):
 
 
     @expose('rnms.templates.host')
-    def _default(self, *args):
+    @validate(validators={'h':validators.Int()})
+    def _default(self, h, *args, **kwargs):
+        host = Host.by_id(h)
+        if host is None:
+            flash('Host ID#{} not found'.format(h), 'error')
+            return {}
+        else:
+            vendor,devmodel = SNMPEnterprise.oid2name(host.sysobjid)
+            return dict(host=host, vendor=vendor, devmodel=devmodel, zone=host.zone.display_name)
+    def _idefault(self, *args):
         host_id = int(args[0])
         class LayoutWidget(portlets.ColumnLayout):
             id = 'host-layout'

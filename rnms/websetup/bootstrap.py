@@ -133,8 +133,7 @@ def bootstrap(command, conf, vars):
                     fields) = row
                 lmr.event_type = model.EventType.by_tag(event_tag)
                 if lmr.event_type is None:
-                    print "Bad EventType tag \"{0}\" in LogMatchRow {1}".format(event_tag, lmr.match_text)
-                    exit()
+                    raise ValueError("Bad EventType tag \"{}\" in LogMatchRow {}".format(event_tag, lmr.match_text))
                 used_event_types.append(lmr.event_type.id)
                 try:
                   lmr.match_sre = re.compile(row[0])
@@ -270,6 +269,31 @@ def bootstrap(command, conf, vars):
                 poller_row_pos += 1
                 ps.poller_rows.append(pr)
             model.DBSession.add(ps)
+        # Triggers
+        for trigger in database_data.triggers:
+            t = model.Trigger(trigger[0], trigger[1])
+            t.email_owner =trigger[2]
+            t.email_users =trigger[3]
+            t.subject = trigger[4]
+            t.body = trigger[5]
+            pos=0
+            for rule in trigger[6]:
+                r = model.TriggerRule()
+                (field, r.oper, limits, r.stop, r.and_rule) = rule
+                r.set_field(field)
+                r.set_limit(limits)
+                t.append(r)
+            model.DBSession.add(t)
+
+        # SNMP Enterprises
+        for ent in database_data.snmp_enterprises:
+            e = model.SNMPEnterprise(ent[0], ent[1], ent[2])
+            for device in ent[3]:
+                d = model.SNMPDevice(e,device[0],device[1])
+            model.DBSession.add(e)
+            
+
+
         # Now that the PollerSets are in, we can backfill the default
         # PollerSet for an AttributeType
         for at_name,ps_name in atype_psets:

@@ -34,7 +34,7 @@ def load_config(filename):
 def parse_args():
     parser = ArgumentParser(description=__doc__)
     parser.add_argument('--conf_file', help="configuration to use", default='development.ini')
-    parser.add_argument('qtype', type=str, choices=('attribute', 'atype', 'host', 'pollerset','autodiscovery'), help='Choose attribute, atype, autodiscovery, host or pollerset', metavar='<query_type>')
+    parser.add_argument('qtype', type=str, choices=('attribute', 'atype', 'host', 'pollerset','autodiscovery','trigger'), help='Choose attribute, atype, autodiscovery, host or pollerset,trigger', metavar='<query_type>')
     parser.add_argument('ids', metavar='ID ID...', type=int, nargs='+')
     return parser.parse_args()
 
@@ -56,4 +56,6 @@ elif args.qtype == 'autodiscovery':
     rnms_info.autodiscovery_info(args.ids)
 elif args.qtype == 'atype':
     rnms_info.attributetype_info(args.ids)
+elif args.qtype == 'trigger':
+    rnms_info.trigger_info(args.ids)
 

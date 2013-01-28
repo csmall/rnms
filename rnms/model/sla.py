@@ -22,6 +22,8 @@
 import logging
 import operator
 import re
+import time
+from string import Template
 
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import ForeignKey, Column
@@ -29,10 +31,13 @@ from sqlalchemy.types import Integer, Unicode, Boolean, String, SmallInteger
 #from sqlalchemy.orm import relation, backref
 
 from rnms.model import DeclarativeBase, DBSession, Event
-from rnms.lib.parsers import RnmsTextTemplate, NumericStringParser
+from rnms.lib.parsers import NumericStringParser, fields_regexp
 from rnms.lib.genericset import GenericSet
 
 logger = logging.getLogger('rnms')
+
+SLA_INTERVAL_MINUTES=30
+SLA_RESOLUTION=300
 
 class Sla(DeclarativeBase, GenericSet):
     __tablename__ = 'slas'
@@ -49,10 +54,14 @@ class Sla(DeclarativeBase, GenericSet):
     alarm_state = relationship('AlarmState', order_by='AlarmState.id', backref='slas')
     sla_rows = relationship('SlaRow', backref=backref('sla', lazy='joined'), order_by='SlaRow.position')
     #}
-    field_re = re.compile(r'<([a-z0-9_-]+)>')
 
     def __init__(self):
         self.rows = self.sla_rows
+
+    @classmethod
+    def by_display_name(cls, name):
+        """ Return the SLA with the given display_name """
+        return DBSession.query(cls).filter(cls.display_name == name).first()
 
     def insert(self, new_pos, new_row):
         new_row.sla = self
@@ -67,20 +76,18 @@ class Sla(DeclarativeBase, GenericSet):
         Given a string and existing rrd_values dictionary, add in the
         missing values
         """
-        new_fields = set(self.field_re.findall(text))
+        new_fields = set(fields_regexp.findall(text))
         for new_field in new_fields:
             if new_field not in rrd_values:
-                rrd_values[new_field] = attribute.fetch_rrd_value(start_time, end_time, new_field)
+                rrd_values[new_field] = attribute.get_rrd_value(new_field, start_time, end_time)
         return rrd_values
 
     def analyze(self, attribute):
         """
         Analyze this SLA against the given attribute
         """
-        time_end = 10
-        time_span = 30
-        start_time = (time_span-5+time_end) * 60
-        end_time = time_end * 60
+        end_time = str(int(time.time()/SLA_RESOLUTION)*SLA_RESOLUTION)
+        start_time = 'e-{}m'.format(SLA_INTERVAL_MINUTES)
 
         rrd_values = attribute.get_fields()
         cond_results=[]
@@ -110,15 +117,16 @@ class Sla(DeclarativeBase, GenericSet):
                 cond_results = cond_results[:-2] + [result]
             else:
                 (result, details) = cond.eval(rrd_values)
+                logger.info('A%d Row%d: %s', attribute.id, cond_row_count, cond.expression)
                 logger.info('A%d Row%d: %s := %s', attribute.id, cond_row_count, details, result)
                 cond_results.append(result)
                 if result != False:
                     event_details.append(details)
         logger.info("A%d VALUES %s",attribute.id, ', '.join(['{0}({1})'.format(k,v) for (k,v) in rrd_values.items()]))
         if (len(cond_results) < 1 or cond_results[-1] == False):
-            logger.info('A%d: Final Result: False', attribute.id)
+            logger.debug('A%d: Final Result: False', attribute.id)
         else:
-            logger.info('A%d: Final Result: True', attribute.id)
+            logger.debug('A%d: Final Result: True', attribute.id)
             event_fields={
                     'info': self.event_text,
                     'details': ', '.join(event_details)}
@@ -187,24 +195,27 @@ class SlaCondition(DeclarativeBase):
             output = int(float(output))
         except ValueError:
             return False
-        if (self.oper not in self.allowed_opers):
+        try:
+            this_oper = self.allowed_opers[self.oper]
+        except KeyError:
             logger.error('Invalid operator "%s"', self.oper)
             return False
-        return self.allowed_opers[self.oper](output,self.limit)
+        return this_oper(output,self.limit)
 
     def eval(self, rrd_values):
         """
         Evaluate this specific SLA condition against the given attribute
         """
         nsp = NumericStringParser()
-        text_template = RnmsTextTemplate(self.expression)
+        text_template = Template(self.expression)
         parsed_expression = text_template.safe_substitute(rrd_values)
-        expression_output = nsp.eval(parsed_expression)
         try:
             expression_output = nsp.eval(parsed_expression)
+        except ZeroDivisionError:
+            return (False, "{0} (divby0) {1} {2}".format(parsed_expression, self.oper, self.limit))
         except:
-            logger.error("Cannot parse \"%s\" (%s)", parsed_expression, rrd_values)
-            return (False, 'error')
+            logger.error("SlaCondition.eval() NSP error \"%s\" (%s)", parsed_expression, rrd_values)
+            return (False, "{0} (error) {1} {2}".format(parsed_expression, self.oper, self.limit))
         return (self.operate(expression_output),
                 "{0} ({1}) {2} {3}".format(parsed_expression, expression_output, self.oper, self.limit))
 

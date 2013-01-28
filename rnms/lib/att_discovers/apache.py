@@ -28,11 +28,17 @@ def discover_apache(host, **kw):
     """
     return kw['dobj'].tcp_client.get_tcp(host, 80, 'GET /server-status?auto HTTP/1.1\r\nHost: {0}\r\n\r\n'.format(host.mgmt_address), 40, cb_apache, **kw)
 
-def cb_apache(host, response, connect_time, error, dobj, att_type, **kw):
-    if type(response) is not str:
+def cb_apache(values, error, host, dobj, att_type, **kw):
+    # values is (response, connect_time)
+    if values is None or len(values) != 2:
         dobj.discover_callback(host.id, {})
+        return
+    if type(values[0]) is not str:
+        dobj.discover_callback(host.id, {})
+        return
+    response = values[0]
 
-    if response is not None and response[:15] == 'HTTP/1.1 200 OK':
+    if len(response) > 15 and response[:15] == 'HTTP/1.1 200 OK':
         apache_att = DiscoveredAttribute(host.id, att_type)
         apache_att.display_name = u'Apache Information'
         apache_att.index = '{}:80'.format(host.mgmt_address)

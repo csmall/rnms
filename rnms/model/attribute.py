@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2011,2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011,2012,2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,14 +27,13 @@ from sqlalchemy import ForeignKey, Column, and_, desc
 from sqlalchemy.types import Integer, Unicode, String, Boolean, SmallInteger, DateTime
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, DBSession
+from rnms.model import DeclarativeBase, DBSession, Alarm, AlarmState
 from rnms.model.host import Host
 from rnms.lib import states
 
 __all__ = ['Attribute', 'AttributeField', 'AttributeType', 'AttributeTypeField', 'DiscoveredAttribute']
 logger = logging.getLogger('rnms')
 
-snmp_state_names = {1:'up', 2:'down', 3:'testing', 4:'unknown'}
 MINDATE=datetime.date(1900,1,1)
 poll_variance = 60 # +- 30 seconds for next poll
 
@@ -76,7 +75,7 @@ class Attribute(DeclarativeBase, AttributeBaseState):
     use_iface = Column(Boolean, nullable=False)
     user_id = Column(Integer, ForeignKey('tg_user.user_id'),nullable=False)
     user = relationship('User', backref='attributes')
-    sla_id = Column(Integer, ForeignKey('slas.id', use_alter=True, name='fk_sla'),nullable=False)
+    sla_id = Column(Integer, ForeignKey('slas.id', use_alter=True, name='fk_sla'),nullable=False, default=1)
     sla = relationship('Sla', primaryjoin='Attribute.sla_id==Sla.id', post_update=True)
     index = Column(String(40), nullable=False) # Unique for host
     make_sound = Column(Boolean,nullable=False)
@@ -98,8 +97,8 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         self.attribute_type=attribute_type
         self.display_name=display_name
         self.index = index
-        self.oper_state = states.STATE_UP
-        self.admin_state = states.STATE_UP
+        self.oper_state = states.STATE_UNKNOWN
+        self.admin_state = states.STATE_UNKNOWN
         self.use_iface = False
         self.user_id = 1
         self.sla_id = 1
@@ -160,13 +159,15 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         return a
 
     @classmethod
-    def have_sla(cls, attribute_id=None):
+    def have_sla(cls, attribute_ids=None, host_ids=None):
         """ Return attributes have have a SLA set plus polling """
-        return DBSession.query(cls).options(subqueryload('sla')).filter(cls.sla_id > 1)
-        if attribute_id is None:
-            return DBSession.query(cls).join(Host).filter(and_( (cls.poller_set_id > 1),(Host.pollable==True)))
-        else:
-            return DBSession.query(cls).join(Host).filter(and_( (cls.poller_set_id > 1),(Host.pollable==True), (cls.id == attribute_id)))
+        conditions = [cls.sla_id > 1, cls.poller_set_id > 1 ]
+        if attribute_ids is not None:
+            conditions.append(cls.id.in_(attribute_ids))
+        if host_ids is not None:
+            conditions.append(cls.host_id.in_(host_ids))
+        return DBSession.query(cls).options(subqueryload('sla')).filter(and_(*conditions))
+        #return DBSession.query(cls).join(Host).filter(and_( (cls.poller_set_id > 1),(Host.pollable==True), (cls.id == attribute_id)))
 
     def set_field(self, tag, value):
         """ Add a new field that has ''tag'' with the value ''value''"""
@@ -202,6 +203,16 @@ class Attribute(DeclarativeBase, AttributeBaseState):
                 return field.value
         return at_field.default_value
 
+    def get_rrd_value(self, rrd_name, start_time, end_time):
+        """
+        Return the value for the RRD with start and stop time
+        Raises KeyError if rrd_name not found
+        """
+        for at_rrd in self.attribute_type.rrds:
+            if at_rrd.name == rrd_name:
+                return at_rrd.get_average_value(self, start_time, end_time)
+        raise KeyError('Attribute has no RRD {}'.format(rrd_name))
+
     def description(self):
         """ Returns a string of all joined description fields """
         descriptions = [ self.get_field(id=at_field.id) for at_field in self.attribute_type.fields if at_field.description]
@@ -209,19 +220,21 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         
     def oper_state_name(self):
         """ Return string representation of operational state"""
-        if self.oper_state in snmp_state_names:
-            return snmp_state_names[self.oper_state]
-        return u"Unknown {0}".format(self.oper_state)
+        try:
+            return states.STATE_NAMES[self.oper_state]
+        except KeyError:
+            return u"Unknown {0}".format(self.oper_state)
 
     def admin_state_name(self):
         """ Return string representation of admin state"""
-        if self.admin_state in snmp_state_names:
-            return snmp_state_names[self.admin_state]
-        return u"Unknown {0}".format(self.admin_state)
+        try:
+            return states.STATE_NAMES[self.admin_state]
+        except KeyError:
+            return u"Unknown {0}".format(self.admin_state)
 
     def set_oper_state(self, state_name):
         """ Set the oper_state based upon a state_name """
-        for state,name in snmp_state_names.items():
+        for state,name in states.STATE_NAMES.items():
             if state_name == name:
                 self.oper_state = state
                 return True
@@ -229,20 +242,15 @@ class Attribute(DeclarativeBase, AttributeBaseState):
 
     def set_admin_state(self, state_name):
         """ Set the admin_state based upon a state_name """
-        for state,name in snmp_state_names.items():
+        for state,name in states.STATE_NAMES.items():
             if state_name == name:
                 self.admin_state = state
                 return True
         return False
 
     def is_down(self):
-        """
-        Return true if this attribute is down. A down interface is one that
-        has current down alarms"""
-        for alarm in self.alarms:
-            if alarm.is_down():
-                return True
-        return False
+        """ Return true if this attribute is down. """
+        return self.oper_state == states.STATE_DOWN
 
     def update_poll_date(self, now=None):
         """
@@ -266,7 +274,7 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         down
         """
         self.poll_enabled = False
-        self.admin_status = 2
+        self.admin_status = states.STATE_DOWN
 
     def parse_string(self, raw_string):
         """
@@ -274,6 +282,19 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         attribute
         """
         return parsers.rnms_fill_fields(raw_string, self)
+
+    def calculate_oper(self):
+        """
+        Work out what the current Oper state is for this attribute by
+        looking at all the current events for this Attribute
+        The calculated result is placed into the oper field
+        """
+        alarm = DBSession.query(Alarm).join(AlarmState).filter(Alarm.attribute_id == self.id).order_by(desc(AlarmState.alarm_level)).first()
+        if alarm is None:
+            self.set_oper_up()
+        else:
+            self.oper_state = alarm.alarm_state.internal_state
+        DBSession.flush()
 
 
 class AttributeField(DeclarativeBase):

@@ -301,15 +301,14 @@ class JffnmsImporter(object):
         attribute_count=0
         field_count=0
         try:
-            result = self.dbhandle.execute('SELECT interfaces.*,interface_types.description as itype, pollers_groups.description FROM interfaces,interface_types,pollers_groups WHERE host > 1 AND interfaces.type=interface_types.id AND interfaces.poll=pollers_groups.id ORDER BY interfaces.id')
+            result = self.dbhandle.execute('SELECT interfaces.*,interface_types.description as itype, pollers_groups.description, slas.description FROM interfaces LEFT JOIN slas ON (slas.id=interfaces.sla),interface_types,pollers_groups WHERE host > 1 AND interfaces.type=interface_types.id AND interfaces.poll=pollers_groups.id ORDER BY interfaces.id')
             for row in result:
                 att = model.Attribute()
                 att.display_name=unicode(row[2])
                 att.host_id = self.hosts.get(row[3],1)
                 att.index = self.get_interface_index(row[0])
                 att.user_id = self.user_id(row[4])
-                att.sla_id = self.sla_id(row[5])
-                #FIXME sla poll group
+                #FIXME poll group
                 att.make_sound = row[7]
                 # show_rootmap is visible and admin_state
                 if row[8] == 0:
@@ -322,7 +321,20 @@ class JffnmsImporter(object):
                 att.updated = date.fromtimestamp(row[11])
                 att.polled = date.fromtimestamp(row[12])
                 att.attribute_type = DBSession.query(model.AttributeType).filter(model.AttributeType.display_name==unicode(row[15])).first()
-                att.poller_set = DBSession.query(model.PollerSet).filter(model.PollerSet.display_name==unicode(row[16])).first()
+
+                if row[16] == 'SNMP Interface HC':
+                    att.poller_set = DBSession.query(model.PollerSet).filter(model.PollerSet.display_name==unicode('SNMP Interface')).first()
+                else:
+                    att.poller_set = DBSession.query(model.PollerSet).filter(model.PollerSet.display_name==unicode(row[16])).first()
+                if att.poller_set is None:
+                    logger.info('PollerSet {} not found for {}, using default.'.format(row[16], att.display_name))
+                sla = model.Sla.by_display_name(row[17])
+                if sla is None:
+                    logger.info('SLA {} not found for {}, using default.'.format(row[17], att.display_name))
+                    att.sla_id = 1
+                else:
+                    att.sla_id = sla.id
+                
                 model.DBSession.add(att)
                 if att.attribute_type is not None:
                     field_count += self._import_attribute_fields(att,row[0])

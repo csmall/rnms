@@ -19,15 +19,16 @@
 #
 import os
 import sys
+import logging
 
 from argparse import ArgumentParser
 import sqlalchemy 
 from paste.deploy import appconfig
 
-from rnms.lib import logger
+
 from rnms.config.environment import load_environment
 from rnms import model
-
+from rnms.lib.consolidate import Consolidator
 
 def load_config(filename):
     conf = appconfig('config:' + os.path.abspath(filename))
@@ -36,13 +37,12 @@ def load_config(filename):
 def parse_args():
     parser = ArgumentParser(description=__doc__)
     parser.add_argument('--conf_file', help="configuration to use", default='development.ini')
-    parser.add_argument('--log', help="log level", default='WARNING')
+    parser.add_argument('--log', help="log level", default='DEBUG')
     return parser.parse_args()
 
 args = parse_args()
 load_config(args.conf_file)
-logger.init('SLA', args.log)
+logging.basicConfig(level=logging.DEBUG)
 
-from rnms.lib.sla_analyzer import SLAanalyzer
-slaa = SLAanalyzer()
-slaa.analyze()
+con = Consolidator()
+con.consolidate()

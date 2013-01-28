@@ -56,14 +56,14 @@ class TestSlaCondition(ModelTest):
         self.obj.limit=50
         self.obj.oper = '='
         eval_tests = (
-                ('<fifty>', True),
-                ('<answer>', False),
-                ('<one_hundred> / <two>', True),
-                ('( <one_hundred> + <two> ) / <two>', False),
-                ('<answer> + <other> / <two>', False),
-                ('( <answer> + <other> ) / <two>', True),
-                ('(<answer>+<other>)/<two>', True), # no space
-                ('<answer> + 8', True),
+                ('${fifty}', True),
+                ('${answer}', False),
+                ('${one_hundred} / ${two}', True),
+                ('( ${one_hundred} + ${two} ) / ${two}', False),
+                ('${answer} + ${other} / ${two}', False),
+                ('( ${answer} + ${other} ) / ${two}', True),
+                ('(${answer}+${other})/${two}', True), # no space
+                ('${answer} + 8', True),
                 )
         for (expr,result) in eval_tests:
             self.obj.expression = expr

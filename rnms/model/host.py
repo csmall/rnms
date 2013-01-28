@@ -70,6 +70,10 @@ class Host(DeclarativeBase):
         return self.display_name
 
     @classmethod
+    def by_id(cls, hostid):
+        """ Return the host whose id is hostid """
+        return DBSession.query(cls).filter(cls.id==hostid).first()
+    @classmethod
     def by_address(cls, address):
         """ Return the host whose management addres is ``address''."""
         return DBSession.query(cls).filter(cls.mgmt_address==address).first()

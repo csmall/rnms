@@ -36,6 +36,8 @@ class Action(DeclarativeBase):
     tag = Column(String(40),nullable=False)
     fields = relationship('ActionField')
     internal_fields = Column(String(120))
+    action_type = Column(Integer, nullable=False, default=0) #email,smsclient
+
     #}
     defined_actions = ('email', 'smsclient')
 
@@ -56,67 +58,38 @@ class Action(DeclarativeBase):
             fields[trigger_field.action_field.tag] = trigger_field.value
         return fields
 
-    def run_alarm(self, trigger, alarm):
+    def run(self, trigger, user, alarm=None):
         """
         Run this action for an alarm trigger
         """
-        raw_fields = self.get_trigger_fields(trigger)
-        # FIXME subs = alarm.substitutes()
+        subject = fill_fields(trigger.subject, alarm=alarm)
 
-        self.email(raw_fields)
+        if self.is_email():
+            body = fill_fields(trigger.body, alarm=alarm)
+            self.email(user, subject, body)
+        elif self.is_smsclient():
+            logger.error('A%d T%d: SMSCLIENT not implemented',alarm.attribute.id, trigger.id)
             
 
         
 
-    def email(self, fields):
+    def email(self, user, subject, body):
         """
         The email action. Sends an email to the specified user.
         """
-        to_address = fields['to']
-        from_address = fields['from']
-        subject = fields['subject']
-        body=[]
+        msg = MIMEText(body)
+        msg['Subject'] = subject
+        msg['From'] = config['email_from']
+        msg['To'] = '{} <{}>'.format(user.user_name, user.email_address)
 
-        if 'short' in fields and fields['short']==1:
-            short_email = True
-            body_delimiter=' '
-        else:
-            short_email = False
-            body.append('Hello {0}'.format(fields['']))
-            body_delimiter='\n'
+        s = smtplib.SMTP(config['smtp_server'])
+        s.sendmail(config['email_from'], user.email_address, msg.as_string())
+        s.quit()
 
-        if 'alarm' in fields:
-            alarm=fields['alarm']
-            alarm_text='Alarm Time:\t{0}'.format(alarm.start_time)
-            if alarm.is_up():
-                alarm_text +=' To {0}'.format(alarm.stop_time)
-            body.append(alarm_text)
-            body.append('Alarm Type: {0} {1}'.format(
-                alarm.event_type.display_name,
-                alarm.alarm_state.display_name))
-
-        if 'attribute' in fields:
-            att=fields['attribute']
-            body.append('Attribute:\t {0} {1} {2} {3} {4} {5}'.format(
-                att.attribute_type.display_name,
-                att.host.display_name,
-                att.zone.display_name,
-                att.user.display_name,
-                'FIXME'))
-        if 'events' in fields:
-            for event in events:
-                body.append('Event:\t {0} {1}'.format(
-                    event.created, event.event_type.display_name))
-
-        body_text = body_delimiter.join(body)
-            
-
-
-
-
-
-
-
+    def is_email(self):
+        return self.action_type == 0
+    def is_smsclient(self):
+        return self.action_type == 1
 
 class ActionField(DeclarativeBase):
     """

@@ -40,13 +40,13 @@ class TCPClient():
     def __init__(self):
         self.dispatchers = []
 
-    def get_tcp(self, host, port, send_msg, max_bytes, cb_fun, **kwargs):
+    def get_tcp(self, tcphost, port, send_msg, max_bytes, cb_fun, **kwargs):
         """
         Query a host with the given TCP port and collect the number
         of bytes. Returns a dictionary to the cb_fun 
         """
         new_dispatcher = TCPDispatcher()
-        if new_dispatcher.send_message(host, port, send_msg, max_bytes, cb_fun, **kwargs) == True:
+        if new_dispatcher.send_message(tcphost, port, send_msg, max_bytes, cb_fun, **kwargs) == True:
             self.dispatchers.append(new_dispatcher)
             return True
         return False
@@ -131,7 +131,7 @@ class TCPDispatcher(asyncore.dispatcher):
         if self.responded == False:
             self.close()
             filtered_buf = ''.join([c for c in self.inbuf if c in string.printable])
-            self.cb_fun(self.host, filtered_buf, self.connect_time, self.error, **self.kwargs)
+            self.cb_fun((filtered_buf,self.connect_time), self.error, **self.kwargs)
             self.responded = True
 
     def poll(self):

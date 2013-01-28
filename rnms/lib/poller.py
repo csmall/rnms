@@ -224,13 +224,17 @@ class Poller(object):
         """
         # Update all the relevant RRD files
         updated_rrds = []
+        start_time = datetime.datetime.now()
+
         rrd_fields = model.DBSession.query(model.AttributeTypeRRD).filter(model.AttributeTypeRRD.attribute_type_id == patt['attribute'].attribute_type_id)
         for rrd_field in rrd_fields:
             if rrd_field.name in self.poller_buffer[patt['attribute'].id] and self.poller_buffer[patt['attribute'].id][rrd_field.name] is not None:
                 updated_rrds.append('{0}:{1}'.format(rrd_field.name,
                     rrd_field.update(patt['attribute'], self.poller_buffer[patt['attribute'].id][rrd_field.name])))
         if len(updated_rrds) > 0:
-            self.logger.debug('A:%d - Polling complete - rrds: %s', patt['attribute'].id, ', '.join(updated_rrds))
+            rrd_time = datetime.datetime.now() - start_time
+            rrd_time_ms = rrd_time.seconds * 1000 + rrd_time.microseconds / 1000
+            self.logger.debug('A:%d - Polling complete - rrds: %s (%d)', patt['attribute'].id, ', '.join(updated_rrds), rrd_time_ms)
         else:
             self.logger.debug('A:%d - Polling complete - no rrds', patt['attribute'].id)
         del (self.poller_buffer[patt['attribute'].id])

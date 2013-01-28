@@ -25,9 +25,9 @@ import operator
 from string import Template
 import re
 
-__field_re = re.compile(r'\${?([a-z0-9_-]+)',re.I)
+fields_regexp = re.compile(r'\${?([a-z0-9_-]+)',re.I)
 
-def fill_fields(string, host=None, attribute=None, event=None):
+def fill_fields(string, host=None, attribute=None, event=None, alarm=None):
     """
     Parse the raw string and fill any fields with values obtained from the
     given objects. Fields can be defined as $key or ${key} and use the
@@ -37,17 +37,23 @@ def fill_fields(string, host=None, attribute=None, event=None):
       attribute_id      attribute.id
       index             attribute.index
       description       attribute.description()
+      client            attribute.user.display_name
       speed_units       attribute field speed converted to SI units (64k)
       host              host.display_name or attribute.host.display_name
 
       state             event.alarm_state.display_name
+                    or  alarm.alarm_state.diplay_name
+
 
       plus any fields from the event or attribute in that order
     """
-    field_keys = __field_re.findall(string)
+    field_keys = fields_regexp.findall(string)
     if field_keys == []:
         return string
     field_values = {}
+
+    if attribute is None and alarm is not None:
+        attribute = alarm.attribute
     # Event fields are firat as they may be overwritten
     if event is not None:
         field_values.update(dict([ef.tag,ef.data] for ef in event.fields))
@@ -61,8 +67,11 @@ def fill_fields(string, host=None, attribute=None, event=None):
     for field_key in field_keys:
         if field_key in field_values:
             continue
-        if event is not None:
+        if alarm is not None:
             if field_key == 'state':
+                field_values[field_key] = alarm.alarm_state.display_name
+        if event is not None:
+            if field_key == 'state' and alarm is None:
                 field_values[field_key] = event.alarm_state.display_name
         if attribute is not None:
             # expensive ones go here

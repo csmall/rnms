@@ -7,6 +7,7 @@ from nose.tools import eq_
 
 from rnms import model
 from rnms.lib.snmp.engine import SNMPRequest
+from rnms.lib.tcpclient import TCPClient
 from rnms.lib import states
 
 class AttDiscTest(object):
@@ -14,6 +15,7 @@ class AttDiscTest(object):
     klass = None
     atts = {}
     test_host_id = 123
+    test_host_ip = '127.0.0.2'
 
     def setUp(self):
         self.dobj = mock.MagicMock()
@@ -23,9 +25,13 @@ class AttDiscTest(object):
         self.snmp_engine.get_table = mock.Mock(return_value=True)
         self.snmp_engine.get = mock.Mock(return_value=True)
         self.dobj.snmp_engine = self.snmp_engine
+        self.tcp_client = mock.MagicMock(spec_set=TCPClient)
+        self.tcp_client.get_tcp = mock.Mock(return_value=True)
+        self.dobj.tcp_client = self.tcp_client
 
         self.test_host = mock.MagicMock(spec=model.Host)
         self.test_host.id = self.test_host_id
+        self.test_host.mgmt_address = self.test_host_ip
         self.test_att_type = mock.MagicMock(spec=model.AttributeType)
         self.test_att_type.id = 1
         self.test_att_type.ad_parameters = ''
@@ -121,4 +127,7 @@ class AttDiscTest(object):
         if oid_count is not None:
             eq_(len(req.oids), oid_count)
 
+
+    def assert_get_tcp_called(self, port, sendstr, maxbytes, cb_fun):
+        self.tcp_client.get_tcp.assert_called_once_with(self.test_host, port, sendstr, maxbytes, cb_fun, **self.discover_kwargs)
 

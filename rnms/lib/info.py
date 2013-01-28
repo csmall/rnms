@@ -87,6 +87,7 @@ class RnmsInfo(object):
 {:<20} | {}/{}
 {:<20} | {}: {}
 {:<20} | {}: {} (enabled:{})
+{:<20} | {}: {}
 {:<20} | {}
 {:<20} | {}
 {:<20} | {}""".format(
@@ -94,6 +95,7 @@ class RnmsInfo(object):
         'State (admin/oper)', attribute.admin_state_name(), attribute.oper_state_name(),
         'Attribute Type', attribute.attribute_type.id, attribute.attribute_type.display_name,
         'Poller Set', attribute.poller_set.id, attribute.poller_set.display_name, attribute.poll_enabled,
+        'SLA', attribute.sla.id, attribute.sla.display_name,
         'Created', attribute.created,
         'Polled', attribute.polled,
         'Next Poll', attribute.next_poll)
@@ -208,3 +210,25 @@ Attribute Autodiscovery can do the following:
                 print '{:<3} {:<26} | {:<5} {}'.format(rrd.position, rrd.display_name, rrd.dst2str(), rrd.name)
 
 
+    def trigger_info(self, ids):
+        """ Information about the triggers """
+        triggers = model.DBSession.query(model.Trigger).filter(model.Trigger.id.in_(ids))
+        if triggers.count() == 0:
+            print "No Triggers found"
+            return
+        print
+        for trigger in triggers:
+            print '=' * 60
+            print '''{:<30} | {}: {}
+{:<30} | {}
+{:<30} | {} - {}'''.format('Trigger', trigger.id, trigger.display_name,
+        'Match Type', trigger.match_type_name().capitalize(),
+        'Email: Owner - Users', trigger.email_owner, trigger.email_users,
+        )
+            print '-' * 60
+            print 'Rules'
+            for rule in trigger.rules:
+                stop = rule.stop and 'STOP' or 'CONTINUE'
+                andor = rule.and_rule and 'AND' or 'OR'
+                print '{}: {} {} {} ({} - {})'.format(
+                        rule.position, rule.field_name(), rule.oper, rule.limit,andor, stop)

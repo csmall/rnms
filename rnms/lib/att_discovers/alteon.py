@@ -50,12 +50,12 @@ def cb_alteon_realservers(values, error, host, dobj, **kw):
                 if values[3][idx] != '2':
                     new_att.set_admin_down()
             except (KeyError, IndexError):
-                pass
+                new_att.set_admin_unknown()
             try:
                 if values[5][idx] != '2':
                     new_att.set_oper_down()
             except (KeyError, IndexError):
-                pass
+                new_att.set_oper_unknown()
             rservers[idx] = new_att
     dobj.discover_callback(host.id, rservers)
 
@@ -96,12 +96,12 @@ def cb_alteon_realservices(values, error, host, dobj, **kw):
                 if values[4][key] != '2':
                     new_att.set_oper_down()
             except (KeyError, IndexError):
-                pass
+                new_att.set_oper_unknown()
             try:
                 if values[6][key] != '2':
                     new_att.set_admin_down()
             except (KeyError, IndexError):
-                pass
+                new_att.set_admin_unknown()
             rservices[new_att.index] = new_att
     dobj.discover_callback(host.id, rservices)
 
@@ -142,6 +142,6 @@ def cb_alteon_virtualservers(values, error, host, dobj, **kw):
                 if values[2][key] != '2':
                     new_att.set_oper_down()
             except KeyError:
-                pass
+                new_att.set_oper_unknown()
             vservers[idx] = new_att
     dobj.discover_callback(host.id, vservers)
