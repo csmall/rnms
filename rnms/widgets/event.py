@@ -33,30 +33,37 @@ class EventsGrid(jqGridWidget):
     options = {
             'pager' : 'events-grid-pager',
             'url' : '/events/griddata',
-            'colNames':[ 'Date', 'Type', 'Host', 'Description'],
+            'colNames':[ 'Date', 'State', 'Type', 'Host', 'Attribute', 'Description'],
             'datatype' : 'json',
             'colModel' : [
                 {
                     'name': 'created',
-                    'width': 75,
-                    'align': 'right',
+                    'width': 120,
+                    'align': 'left',
+                },{
+                    'name': 'state',
+                    'width': 120,
+                    'align': 'centre',
                 },{
                     'name': 'event_type',
-                    'width': 75,
-                    'align': 'right',
+                    'width': 120,
+                    'align': 'left',
                 },{
                     'name': 'host_display_name',
-                    'width': 75,
-                    'align': 'right',
+                    'width': 120,
+                    'align': 'left',
+                },{
+                    'name': 'attribute',
+                    'width': 120,
+                    'align': 'left',
                 },{
                     'name': 'event_description',
-                    'width': 75,
+                    'width': 500,
                     'align': 'left',
                 },
             ],
             'viewrecords':True,
             'imgpath': 'scripts/jqGrid/themes/green/images',
-            'width': 900,
             'height': 'auto',
             }
 

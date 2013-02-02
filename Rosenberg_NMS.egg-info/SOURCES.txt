@@ -123,7 +123,6 @@ rnms/public/javascript/bootstrap.min.js
 rnms/templates/__init__.py
 rnms/templates/__init__.pyc
 rnms/templates/about.mak
-rnms/templates/about.mak.old
 rnms/templates/attributes.mak
 rnms/templates/data.mak
 rnms/templates/environ.mak
@@ -148,6 +147,7 @@ rnms/templates/master.mak
 rnms/templates/severitycss.mak
 rnms/templates/simple_mako.mak
 rnms/templates/test.mak
+rnms/templates/testindex.mak
 rnms/templates/welcome.mak
 rnms/templates/widget.mak
 rnms/templates/attribute/__init__.py
@@ -159,6 +159,7 @@ rnms/templates/widgets/attribute_summary.mak
 rnms/tests/__init__.py
 rnms/tests/att_discovery/__init__.py
 rnms/tests/att_discovery/test_alteon.py
+rnms/tests/att_discovery/test_apache.py
 rnms/tests/att_discovery/test_bgp.py
 rnms/tests/att_discovery/test_snmp.py
 rnms/tests/engine/__init__.py

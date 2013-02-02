@@ -9,7 +9,7 @@
 <h2>Statistics</h2>
 %for statrow in statrows:
 	<div class="statrow">
-	    <label>${statrow[0]}</label>
+	    <label><a href="${statrow[2]}">${statrow[0]}</a></label>
 		<span class="field">${statrow[1]}</span>
 	</div>
 %endfor

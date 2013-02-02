@@ -43,8 +43,8 @@ class SNMPEnterprise(DeclarativeBase):
     display_name = Column(Unicode(40), nullable=False)
     device_offset = Column(Integer, nullable=False, default=0)
 
-    def __init__(self,ent_id=None, display_name=None, device_offset=None):
-        self.id = ent_id
+    def __init__(self,id=None, display_name=None, device_offset=None):
+        self.id = id
         self.display_name = display_name
         self.device_offset = device_offset
 
@@ -70,7 +70,7 @@ class SNMPEnterprise(DeclarativeBase):
             idx = 6
             offset = 10
         else:
-            return 'Unknown'
+            return ('unknown','')
         oid_nums = oid.split('.')[idx:]
 
         ent = cls.by_id(int(oid_nums[0]))

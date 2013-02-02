@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012,2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 #
-"""Sample controller module"""
+""" Event controller module"""
 import datetime
 import math
 from sqlalchemy import select,func,or_
@@ -26,7 +26,7 @@ from sqlalchemy.orm import subqueryload, subqueryload_all, contains_eager
 from formencode import validators
 
 # turbogears imports
-from tg import expose, tmpl_context, request
+from tg import expose, tmpl_context, request, url
 import tg
 from tg import redirect, validate, flash
 
@@ -41,21 +41,18 @@ import tw2.forms as twf
 
 # project specific imports
 from rnms.lib.base import BaseController
-from rnms.model import DBSession, metadata, Event, EventSeverity,EventType, Host
-from rnms.widgets.event import EventsWidget, EventsWidget2
+from rnms.model import DBSession, metadata, Event, EventSeverity,EventType, Host,Attribute
+from rnms.widgets.event import EventsGrid
+from rnms.lib.jsonquery import json_query
 
 class EventsController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = authorize.not_anonymous()
     
-    @expose('rnms.templates.host')
+    @expose('rnms.templates.event_index')
     def index(self, *args, **kwargs): 
-        class LayoutWidget(portlets.ColumnLayout):
-            id = 'event-layout'
-            class por1(portlets.Portlet):
-                title = 'Events'
-                widget = EventsWidget2
-        return dict(layoutwidget=LayoutWidget)
+        w = EventsGrid()
+        return dict(w=w)
 
     @expose('rnms.templates.host')
     def oldindex(self, *args): 
@@ -128,23 +125,34 @@ class EventsController(BaseController):
         return dict(widget=myw, page='attribute')
 
     @expose('json')
-    @validate(validators={'page':validators.Int()})
-    def griddata(self, page=1, rows=30, sidx=1, soid='asc', _search='false',
-            searchOper=u'', searchField=u'', searchString=u'', **kw):
+    @validate(validators={'page':validators.Int(), 'rows':validators.Int(), 'sidx':validators.String(), 'sord':validators.String(), '_search':validators.String(), 'searchOper':validators.String(), 'searchField':validators.String(), 'searchString':validators.String()})
+    def griddata(self, page, rows, sidx, sord, _search='false', searchOper=u'', searchField=u'', searchString=u'', **kw):
 
-        qry = DBSession.query(Event)
-        qry = qry.filter()
-        qry = qry.order_by()
-        result_count = qry.count()
+        qry = DBSession.query(Event).join(Event.event_type, Event.attribute).join(Event.host)
+        colnames = (('created', Event.created), ('event_type', EventType.display_name), ('host_display_name', Host.display_name), ('attribute', Attribute.display_name), ('event_description', None))
 
-        offset = (page-1) * rows
-        qry = qry.offset(offset).limit(rows)
+        result_count, qry = json_query(qry, colnames, page, rows, sidx, sord, _search=='true', searchOper, searchField, searchString)
 
         records = [{'id': rw.id,
-                'cell': [ rw.id, rw.host, rw.created]} for rw in qry]
-        total = int(ceil(result_count / float(rows)))
-        return dict(page=page, total=total, records=result_count, rows=records)
+                'cell': self.format_gridrow(rw.event_type.severity_id, (
+                    (rw.created, None),
+                    (rw.alarm_state.display_name, None),
+                    (rw.event_type.display_name, None),
+                    (rw.host.display_name, url('/hosts/'+str(rw.host_id))),
+                    (rw.attribute.display_name, url('/attributes/'+str(rw.attribute_id))),
+                    (rw.text(), None)
+                    ))} for rw in qry]
+        return dict(page=page, total=result_count, records=result_count, rows=records)
 
+    def format_gridrow(self, sev_id, cells):
+        """ Returned the cells formated with the severity ID """
+        retvals = []
+        for text,curl in cells:
+            if curl is not None:
+                retvals.append('<div class="severity{}"><a href="{}">{}</a></div>'.format(sev_id, curl, text))
+            else:
+                retvals.append('<div class="severity{}">{}</div>'.format(sev_id, text))
+        return retvals
 
     @expose('json')
     def blah(self):

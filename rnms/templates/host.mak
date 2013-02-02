@@ -25,7 +25,7 @@ Rosenberg NMS: Host ${host.display_name}
 	  <div class="span4">
 	    <div class="well" >
 		  <h2>Attribute Status</h2>
-	      attributes and their severity levels
+		  <div>${attw.display() | n}</div>
 		</div>
 	  </div>
     </div>

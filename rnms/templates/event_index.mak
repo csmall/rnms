@@ -1,7 +1,8 @@
 <%inherit file="local:templates.master"/>
+<link rel="stylesheet" type="text/css" media="screen" href="${tg.url('/events/severitycss')}" />
 
 <%def name="title()">
-Rosenberg NMS: Host List
+Rosenberg NMS: Event List
 </%def>
     
 	<div class="row">

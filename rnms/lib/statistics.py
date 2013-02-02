@@ -17,13 +17,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
+from tg import url 
 from rnms import model
 
 wanted_stats = (
-        ('Events', model.Event),
-        ('Hosts', model.Host),
-        ('Attributes', model.Attribute),
+        ('Events', model.Event, 'events'),
+        ('Hosts', model.Host, 'hosts'),
+        ('Attributes', model.Attribute, 'attributes'),
         )
 def get_overall_statistics():
     """ Return a list of statistics """
-    return [ (m[0], model.DBSession.query(m[1]).count()) for m in wanted_stats]
+    return [ (m[0], model.DBSession.query(m[1]).count(), url(m[2])) for m in wanted_stats]

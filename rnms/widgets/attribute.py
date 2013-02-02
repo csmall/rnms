@@ -18,6 +18,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 from sqlalchemy import func
+from sqlalchemy import and_
 
 from tw2.jqplugins import jqgrid
 import tw2.core as twc
@@ -34,9 +35,13 @@ class AttributeSummary(twc.Widget):
     host_id = twc.Param('Limit Attributes by this host id')
 
     def prepare(self):
-        admin_down = DBSession.query(func.count(Attribute.id)).filter(Attribute.admin_state == STATE_DOWN).first()
+        hostid_filter=[]
+        if self.host_id is not None:
+            hostid_filter = [Attribute.host_id == self.host_id]
+        
+        admin_down = DBSession.query(func.count(Attribute.id)).filter(and_(*(hostid_filter + [Attribute.admin_state == STATE_DOWN]))).first()
         self.att_total = int(admin_down[0])
-        db_states = DBSession.query(Attribute.oper_state,func.count(Attribute.id)).filter(Attribute.admin_state != STATE_DOWN).group_by(Attribute.oper_state)
+        db_states = DBSession.query(Attribute.oper_state,func.count(Attribute.id)).filter(and_(*(hostid_filter + [Attribute.admin_state != STATE_DOWN]))).group_by(Attribute.oper_state)
         tmp_states = {}
         for att in db_states:
             tmp_states[att[0]] = att[1]

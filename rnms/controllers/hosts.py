@@ -21,7 +21,7 @@
 """ Hosts controller """
 
 # turbogears imports
-from tg import expose, config, validate, flash
+from tg import expose, config, validate, flash,url
 #from tg import redirect, validate, flash
 
 # third party imports
@@ -35,8 +35,9 @@ from formencode import validators
 
 # project specific imports
 from rnms.lib.base import BaseController
-from rnms.widgets import AttributeGrid,EventsWidget
-from rnms.model import DBSession, metadata, Host, SNMPEnterprise, SNMPEnterprise
+from rnms.widgets import AttributeGrid,EventsWidget,AttributeSummary,HostsGrid
+from rnms.model import DBSession, metadata, Host, SNMPEnterprise, SNMPEnterprise, Zone
+from rnms.lib.jsonquery import json_query
 
 set_ui_theme_name(config['ui_theme'])
 class HostDetails(twf.TableLayout):
@@ -63,13 +64,20 @@ class HostsController(BaseController):
     
     @expose('rnms.templates.host_index')
     def index(self):
-        itemmap = {'width':170}
-        db_hosts = DBSession.query(Host)
-        hosts = []
-        for db_host in db_hosts:
-            hosts.append({'title':db_host.display_name})
-        return dict(itemmap=itemmap, items=hosts)
+        w = HostsGrid()
+        return dict(w=w)
 
+    @expose('json')
+    @validate(validators={'page':validators.Int(), 'rows':validators.Int(), 'sidx':validators.String(), 'sord':validators.String(), '_search':validators.String(), 'searchOper':validators.String(), 'searchField':validators.String(), 'searchString':validators.String()})
+    def griddata(self, page, rows, sidx, sord, _search='false', searchOper='', searchField='', searchString='', **kw):
+
+        qry = DBSession.query(Host).join(Host.zone)
+        colnames = (('display_name',Host.display_name),('zone_display_name',Zone.display_name))
+        result_count, qry = json_query(qry, colnames, page, rows, sidx, sord, _search=='true', searchOper, searchField, searchString)
+
+        records = [{'id': rw.id,
+            'cell': ['<a href="'+url('/hosts/'+str(rw.id))+'">'+rw.display_name+'</a>', rw.zone.display_name]} for rw in qry]
+        return dict(page=int(page), total=result_count, records=result_count, rows=records)
 
     @expose('rnms.templates.host')
     @validate(validators={'h':validators.Int()})
@@ -78,30 +86,8 @@ class HostsController(BaseController):
         if host is None:
             flash('Host ID#{} not found'.format(h), 'error')
             return {}
-        else:
-            vendor,devmodel = SNMPEnterprise.oid2name(host.sysobjid)
-            return dict(host=host, vendor=vendor, devmodel=devmodel, zone=host.zone.display_name)
-    def _idefault(self, *args):
-        host_id = int(args[0])
-        class LayoutWidget(portlets.ColumnLayout):
-            id = 'host-layout'
-            class col1(portlets.Column):
-                width= '30%'
-                class por1(portlets.Portlet):
-                    title = 'Host Details'
-                    widget = HostDetails()
-                    widget.host_id = host_id
-            class col2(portlets.Column):
-                width= '70%'
-                class por2(portlets.Portlet):
-                    title = 'Host Attributes'
-                    widget = AttributeGrid()
-                    widget.host_id = host_id
-                    widget.options['rowNum'] = 5
-                    widget.options['rowList'] = [5]
-                    widget.options['width'] = '100%'
-            class por2(portlets.Portlet):
-                title = 'Host Events'
-                widget = EventsWidget
-                widget.host = host_id
-        return dict(layoutwidget=LayoutWidget)
+        vendor,devmodel = SNMPEnterprise.oid2name(host.sysobjid)
+        attw = AttributeSummary()
+        attw.host_id = h
+        return dict(host=host, vendor=vendor, devmodel=devmodel, zone=host.zone.display_name, attw=attw)
+

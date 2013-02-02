@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012,2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ from sqlalchemy import ForeignKey, Column, UniqueConstraint
 from sqlalchemy.types import Integer, Unicode, String, Boolean, SmallInteger, DateTime
 
 from rnms.model import DeclarativeBase, DBSession
-from rnms.lib.parsers import RnmsTextTemplate
+from rnms.lib.parsers import fill_fields
 
 logger = logging.getLogger('Event')
 
@@ -104,20 +104,7 @@ class Event(DeclarativeBase):
 
           Other fields are just event fields
         """
-        text_template = RnmsTextTemplate(self.event_type.text)
-        subs = { 'attribute': '', 'client':'', 'host':'', 'state':'',
-                'info':'', 'user':'', 'attribute-description':'',}
-        if self.alarm_state:
-            subs['state'] = self.alarm_state.display_name
-        if self.attribute is not None:
-            subs['attribute'] = self.attribute.display_name
-            subs['attribute-description'] = self.attribute.description()
-            subs['client'] = self.attribute.user.display_name
-            subs['host'] = self.attribute.host.display_name
-        elif self.host:
-            subs['host'] = self.host.display_name
-        subs.update(dict([ef.tag,ef.data] for ef in self.fields))
-        return text_template.safe_substitute(subs)
+        return fill_fields(self.event_type.text, host=self.host, attribute=self.attribute, event=self) 
 
     def process(self):
         """
