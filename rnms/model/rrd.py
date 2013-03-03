@@ -162,24 +162,30 @@ class AttributeTypeRRD(DeclarativeBase):
         """ Return string representation of DST field"""
         return dst_names.get(self.data_source_type, None)
 
-    def fetch(self, attribute, start_time, end_time):
-        """ Return a list of values from the RRD for the given time 
+    def fetch_values(self, attribute, start_time, end_time):
+        """
+        Return a list of values from the RRD for the given time 
         specifications
         """
+        raw_vals = self.fetch(attribute, start_time, end_time)
+        if raw_vals is None:
+            return []
+        else:
+            return [float(value[0]) for value in raw_vals[2] if value[0]]
+
+    def fetch(self, attribute, start_time, end_time):
         filename = self.filename(attribute)
         if filename is None:
             return None
         try:
-            raw_vals = rrdtool.fetch(filename, str(self.attribute_type.rra_cf), '-s', start_time, '-e', end_time)
+            return rrdtool.fetch(filename, str(self.attribute_type.rra_cf), '-s', start_time, '-e', end_time)
         except rrdtool.error:
             logger.error('RRDTool fetch error: %s', errmsg)
-        else:
-            return [float(value[0]) for value in raw_vals[2] if value[0]]
-        return []
+        return None
 
     def get_average_value(self, attribute, start_time, end_time):
         """ Return the average RRD value for given time period """
-        values = self.fetch(attribute, start_time, end_time)
+        values = self.fetch_values(attribute, start_time, end_time)
         if values == []:
             return 0
         return sum(values)/len(values)

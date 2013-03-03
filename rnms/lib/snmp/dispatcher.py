@@ -19,7 +19,6 @@
 #
 import logging
 import time
-import asyncore
 import socket
 import datetime
 
@@ -29,15 +28,16 @@ from pyasn1.type import univ as pyasn_types
 from pyasn1.type import tag
 from pyasn1.codec.ber import encoder, decoder
 
+from rnms.lib import zmqcore
 logger = logging.getLogger('snmp')
 
-class SNMPDispatcher(asyncore.dispatcher):
+class SNMPDispatcher(zmqcore.Dispatcher):
 
     timeout = 3
     max_attempts = 3
 
     def __init__(self, address_family, recv_cb):
-        asyncore.dispatcher.__init__(self)
+        super(SNMPDispatcher, self).__init__()
         self.create_socket(address_family, socket.SOCK_DGRAM)
         self.waiting_requests = []
         self.sent_requests = {}
@@ -46,9 +46,6 @@ class SNMPDispatcher(asyncore.dispatcher):
 
     def handle_connect(self):
         pass
-
-    def handle_close(self):
-        self.close()
 
     def handle_read(self):
         recv_msg, recv_addr = self.recvfrom(8192)

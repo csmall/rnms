@@ -17,12 +17,13 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-import asyncore
 import socket
 import datetime
 import logging
 import os
 import string
+
+from rnms.lib import zmqcore
 
 logger = logging.getLogger('TCPClient')
 
@@ -53,14 +54,15 @@ class TCPClient():
 
     def poll(self):
         # Remove the old ones first
-        retval = False
+        retval = 0
         for disp_id,disp in enumerate(self.dispatchers):
             if not disp.connecting and not disp.connected:
                 del self.dispatchers[disp_id]
-            retval = disp.poll() or retval
+            if disp.poll():
+                retval += 1
         return retval
 
-class TCPDispatcher(asyncore.dispatcher):
+class TCPDispatcher(zmqcore.Dispatcher):
     """
     Dispatcher for each TCP queries
     """
@@ -69,8 +71,6 @@ class TCPDispatcher(asyncore.dispatcher):
     connect_time = None
     responded = False
 
-    def __init__(self):
-        asyncore.dispatcher.__init__(self)
 
     def send_message(self, host, port, send_msg, max_bytes, cb_fun, **kwargs):
         try:

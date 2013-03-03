@@ -60,12 +60,12 @@ class TestEvent(ModelTest):
 
     def test_text_subs(self):
         """ Event text with attribute and host shows display name. """
-        self.obj.event_type.text = u'start <host> <attribute> end'
+        self.obj.event_type.text = u'start $host ${attribute} end'
         eq_(self.obj.text(), u'start Test Host Test Attribute end')
 
     def test_text_client(self):
         """ Event text with client shows user display name. """
-        self.obj.event_type.text = u'start <client> end'
+        self.obj.event_type.text = u'start ${client} end'
         eq_(self.obj.text(), u'start Test User end')
 
 

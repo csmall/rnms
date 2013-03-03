@@ -102,7 +102,7 @@ class JffnmsImporter(object):
         Returns False on failure.
         """
         importers = [ 'zones', 'users', 'hosts', 'interfaces', 'attributes',
-                ]#'events' ]
+                'events' ]
         for imp in importers:
             func = getattr(self, '_import_'+imp)
             if not callable(func):
@@ -384,7 +384,7 @@ class JffnmsImporter(object):
         self._delete_all(model.EventField)
         add_count=0
         try:
-            result = self.dbhandle.execute('SELECT e.id,e.date, e.host, e.interface, e.state, e.username, e.info, e.referer, e.ack, e.analized, et.description FROM events e, types et WHERE e.type = et.id AND date > adddate(now(),-7) ORDER by e.id')
+            result = self.dbhandle.execute('SELECT e.id,e.date, e.host, e.interface, e.state, e.username, e.info, e.referer, e.ack, e.analized, et.description FROM events e, types et WHERE e.type = et.id AND date > adddate(now(),-7) ORDER by e.id LIMIT 300')
             for row in result:
                 ev = model.Event()
                 ev.host_id = self.host_id(row[2])

@@ -23,7 +23,7 @@ import logging
 import random
 
 from sqlalchemy.orm import relationship, subqueryload
-from sqlalchemy import ForeignKey, Column, and_, desc
+from sqlalchemy import ForeignKey, Column, and_, desc, asc
 from sqlalchemy.types import Integer, Unicode, String, Boolean, SmallInteger, DateTime
 #from sqlalchemy.orm import relation, backref
 
@@ -131,7 +131,7 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         Return the attribute that would be the next polled one
         Used for finding how long before we need to rescan again
         """
-        return DBSession.query(cls).order_by(desc(cls.next_poll)).first()
+        return DBSession.query(cls).order_by(asc(cls.next_poll)).first()
 
     @classmethod
     def from_discovered(cls, host, discovered_attribute):

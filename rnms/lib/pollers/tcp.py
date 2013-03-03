@@ -40,21 +40,23 @@ def poll_tcp_status(poller_buffer, parsed_params, **kwargs):
 
     return kwargs['pobj'].tcp_client.get_tcp(kwargs['attribute'].host, port, ' ', max_bytes, cb_tcp_status, **kwargs)
 
-def cb_tcp_status(host, response, connect_time, error, **kwargs):
+def cb_tcp_status(values, error, pobj, attribute, poller_row, **kwargs):
     """
     Callback for tcp_status. Store the content for later
     """
-    response = response.rstrip()
+    connect_time = values[1]
     if error is None:
         state = u'open'
         tcp_error = None
     else:
         state = u'closed'
         tcp_error = error[1]
-    if connect_time is not None:
-        connect_time = connect_time.total_seconds()
+    
+    response = values[0].rstrip()
+    if values[1] is not None:
+        connect_time = values[1].total_seconds()
 
-    kwargs['pobj'].poller_callback(kwargs['attribute'].id, kwargs['poller_row'],(state, response, connect_time, tcp_error))
+    pobj.poller_callback(attribute.id, poller_row,(state, response, connect_time, tcp_error))
         
 def poll_snmp_tcp_established(poller_buffer, parsed_params, **kw):
     """

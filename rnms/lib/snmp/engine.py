@@ -19,7 +19,6 @@
 #
 import logging
 import time
-import asyncore
 import socket
 import datetime
 
@@ -31,7 +30,6 @@ from pyasn1.type import tag
 # import for SNMP engine
 from pysnmp.carrier.asynsock.dispatch import AsynsockDispatcher
 from pysnmp.carrier.asynsock.dgram import udp
-from asyncore import poll
 from pyasn1.codec.ber import encoder, decoder
 from pysnmp.proto import api
 
@@ -49,7 +47,6 @@ REQUEST_GETBULK = 2
 
 DefaultSecurityName = 'Rosenberg'  # Arbitarily string really
 
-logger = logging.getLogger('snmp')
 
 # Filters
 def filter_int(value):

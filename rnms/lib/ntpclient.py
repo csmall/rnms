@@ -17,11 +17,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-import asyncore
 import socket
 import struct
 import datetime
 import logging
+
+from rnms.lib import zmqcore
 
 logger = logging.getLogger('NTPClient')
 
@@ -74,14 +75,14 @@ class NTPClient():
                 retval = True
         return retval
 
-class NTPDispatcher(asyncore.dispatcher):
+class NTPDispatcher(zmqcore.Dispatcher):
     """
     Dispatcher for each address family for NTP queries
     """
     timeout = 10
 
     def __init__(self, address_family):
-        asyncore.dispatcher.__init__(self)
+        super(NTPDispatcher, self).__init__()
         self.create_socket(address_family, socket.SOCK_DGRAM)
         self.waiting_jobs = []
         self.sent_jobs = {}
@@ -156,21 +157,16 @@ class NTPDispatcher(asyncore.dispatcher):
     def poll(self):
         """
         Check pending and waiting jobs
-        Returns true if there are things going on
         This method also checks timed out jobs
+        Returns number of current jobs
         """
-        retval = False
-        if self.waiting_jobs != []:
-            retval = True
         now = datetime.datetime.now()
         for job in self.sent_jobs.values():
             if job['timeout'] < now:
                 # Job timed out
                 #logger.debug('Job for %s timed out', job['sockaddr'])
                 self._parse_response(job, None, job['sockaddr'])
-            else:
-                retval = True
-        return retval
+        return len(self.waiting_jobs) + len(self.sent_jobs)
 
 
 class NTPAssoc():

@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012,2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,27 +17,67 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
+import threading
 import logging
+import json
 
-__all__ = [ 'init', 'info', 'warn' ]
+import zmq
 
-logger = None
+from rnms.lib import zmqmessage
 
-def init(name, loglevel=None):
-    global logger
-    logging.basicConfig(format='%(asctime)-6s: %(name)s - %(levelname)s - %(message)s')
-    logger = logging.getLogger(name)
-    if loglevel is not None:
-        numeric_level = getattr(logging, loglevel.upper(), None)
-        if not isinstance(numeric_level, int):
-            raise ValueError('Invalid log level: %s' % loglevel)
-    logger.setLevel(numeric_level)
+class LoggingClient(object):
+    """
+    Returns a ZeroMQ Socket for sending messages
+    """
+    socket = None
 
-def info(*args):
-    logger.info(*args)
+    def __init__(self, context):
+        self.socket = context.socket(zmq.PUSH)
+        self.socket.connect(zmqmessage.LOGGER_CLIENT)
 
-def warn(*args):
-    logger.warn(*args)
+    def critical(self,*args):
+        self.send(logging.CRITICAL, *args)
+    def debug(self,*args):
+        self.send(logging.DEBUG, *args)
+    def error(self,*args):
+        self.send(logging.ERROR, *args)
+    def info(self,*args):
+        self.send(logging.INFO, *args)
+    def warning(self,*args):
+        self.send(logging.WARNING, *args)
+    def warn(self,*args):
+        self.send(logging.WARNING, *args)
 
-def error(*args):
-    logger.warn(*args)
+    def send(self,level, *args):
+        self.socket.send(zmqmessage.IPC_LOG, zmq.SNDMORE)
+        self.socket.send(str(level), zmq.SNDMORE)
+        self.socket.send_json(args)
+
+class LoggingTask(threading.Thread):
+    """
+    This thread is responsible for all the logging that goes on
+    """
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.daemon = True
+
+    def run(self):
+        logger = logging.getLogger('rnms')
+        context = zmq.Context()
+        socket = context.socket(zmq.PULL)
+        socket.bind(zmqmessage.LOGGER_SERVER)
+        poller = zmq.Poller()
+        poller.register(socket, zmq.POLLIN)
+        logger.info('Logging Worker Started')
+
+        while True:
+            socks = dict(poller.poll())
+            if socket in socks and socks[socket] == zmq.POLLIN:
+                frames = socket.recv_multipart()
+                if frames[0] == zmqmessage.IPC_LOG:
+                    if len(frames) == 3:
+                        level = int(frames[1])
+                        msgs = json.loads(frames[2])
+                        logger.log(level,*msgs)
+        logger.info('Logging Worker Ending')
+
