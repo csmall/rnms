@@ -215,6 +215,8 @@ class Attribute(DeclarativeBase, AttributeBaseState):
 
     def description(self):
         """ Returns a string of all joined description fields """
+        if self.attribute_type is None:
+            return ''
         descriptions = [ self.get_field(id=at_field.id) for at_field in self.attribute_type.fields if at_field.description]
         return " ".join(descriptions)
         
@@ -283,13 +285,19 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         """
         return parsers.rnms_fill_fields(raw_string, self)
 
+    def highest_alarm(self):
+        """
+        Return the highest (based on alarm level) alarm for this attribute
+        """
+        return DBSession.query(Alarm).join(AlarmState).filter(Alarm.attribute_id == self.id).order_by(desc(AlarmState.alarm_level)).first()
+
     def calculate_oper(self):
         """
         Work out what the current Oper state is for this attribute by
         looking at all the current events for this Attribute
         The calculated result is placed into the oper field
         """
-        alarm = DBSession.query(Alarm).join(AlarmState).filter(Alarm.attribute_id == self.id).order_by(desc(AlarmState.alarm_level)).first()
+        alarm = self.highest_alarm()
         if alarm is None:
             self.set_oper_up()
         else:

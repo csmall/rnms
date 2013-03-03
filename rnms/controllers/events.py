@@ -94,6 +94,14 @@ class EventsController(BaseController):
         return dict(
                 severities=severities,
                 )
+    
+    @expose('rnms.templates.mapseveritycss', content_type='text/css')
+    def mapseveritycss(self):
+        severities = DBSession.query(EventSeverity)
+        return dict(
+                severities=[(s.id, s.bgcolor, '%.6x'%(int(s.bgcolor,16) & 0xfefefe >> 1)) for s in severities],
+                )
+
 
     @expose('rnms.templates.widget')
     def test3(self, *args, **kw):

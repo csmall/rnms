@@ -33,6 +33,7 @@ import tw2.sqla
 #from repoze.what import predicates
 from formencode import validators
 from tw2.jqplugins.ui import set_ui_theme_name
+from sqlalchemy import asc
 
 # project specific imports
 from rnms.lib.base import BaseController
@@ -70,6 +71,24 @@ class AttributesController(BaseController):
     #@expose('rnms.templates.widget')
     #def index(self, *args, **kw):
     #    return dict(widget=AttributeGrid2, page='attribute')
+    @expose('rnms.templates.widgets.map')
+    def map(self):
+        attributes = model.DBSession.query(model.Attribute).order_by(asc(model.Attribute.host_id))
+        host_groups = {}
+        for attribute in attributes:
+            alarm = attribute.highest_alarm()
+            if alarm is None:
+                astate = 0
+            else:
+                astate = alarm.event_type.severity_id
+            new_att = ('{} {}'.format(attribute.display_name, attribute.description()), astate)
+            try:
+                host_groups[attribute.host_id]['attributes'].append(new_att)
+            except KeyError:
+                host_groups[attribute.host_id] = {'display_name': attribute.host.display_name, 'attributes': [new_att,]}
+
+        return dict(att_groups = ([(hg['display_name'], hg['attributes']) for hg in host_groups.values()]
+            ))
 
     @expose('json')
     @validate(validators={'hostid':validators.Int()})

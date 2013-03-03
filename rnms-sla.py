@@ -25,7 +25,6 @@ from argparse import ArgumentParser
 import sqlalchemy 
 from paste.deploy import appconfig
 
-from rnms.lib import logger
 from rnms.config.environment import load_environment
 from rnms import model
 from rnms.lib.sla_analyzer import SLAanalyzer
@@ -45,7 +44,7 @@ def parse_args():
 
 args = parse_args()
 load_config(args.conf_file)
-logger.init('rnms', args.log)
+logging.basicConfig(level=args.log)
 
 if args.atts is None:
     attribute_ids=None

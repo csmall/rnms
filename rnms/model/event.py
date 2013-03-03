@@ -160,10 +160,10 @@ class Event(DeclarativeBase):
         """
         Process down or testing events
         """
-        from rnms.model import Alarm
+        from rnms.model import Alarm,AlarmState
         logger.info("A:%d E:%d - DOWN/TESTING", self.attribute.id, self.id)
         if other_alarm is not None:
-            other_alarm.set_stop(self, alarm_state=alarm.AlarmState.by_name('up'))
+            other_alarm.set_stop(self, alarm_state=AlarmState.by_name('up'))
             self.acknowledged=True
             other_alarm.start_event.acknowledged=True
 
