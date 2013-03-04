@@ -23,6 +23,7 @@ import datetime
 from sqlalchemy import select,func
 
 # turbogears imports
+import tg
 from tg import expose, request
 from tg import redirect, validate, flash
 from sqlalchemy import and_
@@ -39,7 +40,7 @@ from sqlalchemy import asc
 from rnms.lib.base import BaseController
 #from rnms.model import DBSession, metadata, Event, EventSeverity,EventType, DeclarativeBase
 #from rnms.widgets import AttributeGrid, RRDWidget, AttributeGrid2
-from rnms.widgets.attribute import AttributeSummary
+from rnms.widgets.attribute import AttributeSummary, AttributeMap
 from rnms import model
 
 def recursive_update(d1, d2):
@@ -71,6 +72,11 @@ class AttributesController(BaseController):
     #@expose('rnms.templates.widget')
     #def index(self, *args, **kw):
     #    return dict(widget=AttributeGrid2, page='attribute')
+    @expose('rnms.templates.widget')
+    def map2(self):
+        w = AttributeMap()
+        return dict(widget=w)
+
     @expose('rnms.templates.widgets.map')
     def map(self):
         attributes = model.DBSession.query(model.Attribute).order_by(asc(model.Attribute.host_id))

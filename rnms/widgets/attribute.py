@@ -17,17 +17,51 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-from sqlalchemy import func
-from sqlalchemy import and_
+from tg import url
+
+from sqlalchemy import and_, asc, func
 
 from tw2.jqplugins import jqgrid
 import tw2.core as twc
 
 from rnms.model import Attribute, DBSession
-from rnms.lib.states import *
+from rnms.lib import states
+
+class AttributeMap(twc.Widget):
+    id = 'attribute-map'
+    template = 'rnms.templates.widgets.map'
+    host_id = twc.Param('Limit Attributes by this host id')
+
+    def __init__(self):
+        self.host_id = None
+        self.url = url
+        super(AttributeMap, self).__init__()
+
+    def prepare(self):
+        conditions = []
+        if self.host_id is not None:
+            conditions.append(Attribute.host_id == self.host_id)
+        attributes = DBSession.query(Attribute).filter(and_(*conditions)).order_by(asc(Attribute.host_id))
+        host_groups = {}
+        for attribute in attributes:
+            if attribute.admin_state == states.STATE_DOWN:
+                astate = 'asd'
+            else:
+                alarm = attribute.highest_alarm()
+                if alarm is None:
+                    astate = 'ok'
+                else:
+                    astate = alarm.event_type.severity_id
+            new_att = (' '.join((attribute.display_name, attribute.description())), astate)
+            try:
+                host_groups[attribute.host_id][1].append(new_att)
+            except KeyError:
+                host_groups[attribute.host_id]=(attribute.host, [new_att,])
+        self.map_groups = [hg for hg in host_groups.values()]
+        super(AttributeMap,self).prepare()
+
 
 class AttributeSummary(twc.Widget):
-    state_names = (('Up', STATE_UP), ('Alert', STATE_ALERT), ('Down', STATE_DOWN), ('Admin Down', None), ('Unknown', STATE_UNKNOWN))
 
     id = 'attribute-summary'
     template = 'rnms.templates.widgets.attribute_summary'
@@ -39,16 +73,16 @@ class AttributeSummary(twc.Widget):
         if self.host_id is not None:
             hostid_filter = [Attribute.host_id == self.host_id]
         
-        admin_down = DBSession.query(func.count(Attribute.id)).filter(and_(*(hostid_filter + [Attribute.admin_state == STATE_DOWN]))).first()
+        admin_down = DBSession.query(func.count(Attribute.id)).filter(and_(*(hostid_filter + [Attribute.admin_state == states.STATE_DOWN]))).first()
         self.att_total = int(admin_down[0])
-        db_states = DBSession.query(Attribute.oper_state,func.count(Attribute.id)).filter(and_(*(hostid_filter + [Attribute.admin_state != STATE_DOWN]))).group_by(Attribute.oper_state)
+        db_states = DBSession.query(Attribute.oper_state,func.count(Attribute.id)).filter(and_(*(hostid_filter + [Attribute.admin_state != states.STATE_DOWN]))).group_by(Attribute.oper_state)
         tmp_states = {}
         for att in db_states:
             tmp_states[att[0]] = att[1]
             self.att_total += att[1]
         
         self.att_states = []
-        for label,state_val in self.state_names:
+        for state_val,label in states.STATE_NAMES.items():
             if state_val is None:
                 self.att_states.append((label,admin_down[0]))
             else:

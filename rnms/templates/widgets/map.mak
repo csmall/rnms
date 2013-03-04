@@ -1,17 +1,17 @@
-<link rel="stylesheet" type="text/css" href="${tg.url('/css/map.css')}" />
-<link rel="stylesheet" type="text/css" href="${tg.url('/events/mapseveritycss')}" />
+<link rel="stylesheet" type="text/css" href="${w.url('/css/map.css')}" />
+<link rel="stylesheet" type="text/css" href="${w.url('/events/mapseveritycss')}" />
 <div class="amap1">
   <div class="amap2">
-%for group_name in att_groups:
+%for map_group in w.map_groups:
 	<div class="mapheader">
 	  <ul class="maplist">
-	    <li>${group_name[0]}</li>
+	    <li>${map_group[0]}</li>
 	  </ul>
 	</div>
 	<div class="mapmain">
 	  <ul class="maplist">
-%for mapatts in group_name[1]:
-		<li class="mapseverity${mapatts[1]}">${mapatts[0]}</li>
+%for map_item in map_group[1]:
+		<li class="mapseverity${map_item[1]}">${map_item[0]}</li>
 %endfor	
 	  </ul>
 	</div>

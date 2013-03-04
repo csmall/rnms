@@ -1,14 +1,13 @@
 
 .amap1 {
     margin: 0px 0px 0px 0px;
-    width: 100%;
-    height: 100%;
+	float: left;
     background: #200020;
     padding: 10px;
 }
 
 .amap2 {
-    height: 100%;
+	float: left;
     border: 3px double #cccccc;
     border-radius: 5px 5px 5px 5px;
     padding: 20px;
