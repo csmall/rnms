@@ -51,7 +51,8 @@ install_requires=[
     "pysnmp",
     "python-rrdtool",
     "mysql-python",
-    "pyparsing"
+    "pyparsing",
+    "pyzmq"
     ]
 
 setup(
