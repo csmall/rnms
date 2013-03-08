@@ -1,6 +1,6 @@
 <%inherit file="local:templates.master"/>
 	<%def name="title()">
-	Wdiget Test
+	Widget Test
 	</%def>
 <div class="row">
 <div class="span12">

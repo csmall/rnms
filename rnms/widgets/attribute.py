@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-from tg import url
+from tg import url, flash
 
 from sqlalchemy import and_, asc, func
 
@@ -30,34 +30,49 @@ from rnms.lib import states
 class AttributeMap(twc.Widget):
     id = 'attribute-map'
     template = 'rnms.templates.widgets.map'
-    host_id = twc.Param('Limit Attributes by this host id')
+    host_id = None
 
     def __init__(self):
-        self.host_id = None
         self.url = url
         super(AttributeMap, self).__init__()
 
+    def attribute_state(self, attribute):
+        """ Returns the attribute state which is used for seveity class
+        and description box. Returns
+        (class,textual)
+        """
+        if attribute.admin_state == states.STATE_DOWN:
+            return ('asd','Admin Down')
+        else:
+            alarm = attribute.highest_alarm()
+            if alarm is None:
+                return ('ok', 'Up')
+            else:
+                return (str(alarm.event_type.severity_id), alarm.event_type.severity.display_name)
+    
     def prepare(self):
         conditions = []
         if self.host_id is not None:
             conditions.append(Attribute.host_id == self.host_id)
         attributes = DBSession.query(Attribute).filter(and_(*conditions)).order_by(asc(Attribute.host_id))
         host_groups = {}
-        for attribute in attributes:
-            if attribute.admin_state == states.STATE_DOWN:
-                astate = 'asd'
-            else:
-                alarm = attribute.highest_alarm()
-                if alarm is None:
-                    astate = 'ok'
-                else:
-                    astate = alarm.event_type.severity_id
-            new_att = (' '.join((attribute.display_name, attribute.description())), astate)
-            try:
-                host_groups[attribute.host_id][1].append(new_att)
-            except KeyError:
-                host_groups[attribute.host_id]=(attribute.host, [new_att,])
-        self.map_groups = [hg for hg in host_groups.values()]
+        if attributes.count() == 0:
+            flash('No Attributes Found','alert')
+            self.map_groups = None
+        else:
+            for attribute in attributes:
+                astate,state_desc = self.attribute_state(attribute)
+                
+                try:
+                    atype = attribute.attribute_type.display_name
+                except AttributeError:
+                    atype = 'Unknown'
+                new_att = (attribute.display_name, astate, attribute.host.display_name, atype, state_desc, ''.join(['<b>{}: </b>{}<br>'.format(k,v) for k,v in attribute.description_dict().items() if v != '']), url('/attributes',{'a':str(attribute.id)}))
+                try:
+                    host_groups[attribute.host_id][1].append(new_att)
+                except KeyError:
+                    host_groups[attribute.host_id]=(attribute.host, [new_att,])
+            self.map_groups = [hg for hg in host_groups.values()]
         super(AttributeMap,self).prepare()
 
 

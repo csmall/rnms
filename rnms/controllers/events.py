@@ -50,8 +50,12 @@ class EventsController(BaseController):
     #allow_only = authorize.not_anonymous()
     
     @expose('rnms.templates.event_index')
-    def index(self, *args, **kwargs): 
+    @validate(validators={'a':validators.Int()})
+    def _default(self, a=None):
+        
         w = EventsGrid()
+        if a is not None:
+            w.attribute_id = a
         return dict(w=w)
 
     @expose('rnms.templates.host')

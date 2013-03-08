@@ -8,6 +8,7 @@ Rosenberg NMS: Undefined Host
 Rosenberg NMS: Host ${host.display_name}
 % endif
 </%def>
+
 % if host is not DEFINED:
 	<div class="row">
       <div class="span12">

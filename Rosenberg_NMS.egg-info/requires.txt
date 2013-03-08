@@ -18,3 +18,4 @@ pysnmp
 python-rrdtool
 mysql-python
 pyparsing
+pyzmq

@@ -213,6 +213,14 @@ class Attribute(DeclarativeBase, AttributeBaseState):
                 return at_rrd.get_average_value(self, start_time, end_time)
         raise KeyError('Attribute has no RRD {}'.format(rrd_name))
 
+    def description_dict(self):
+        """
+        Return a dictionary of the Attributes description fields
+        """
+        if self.attribute_type is None:
+            return {}
+        return { at_field.display_name: self.get_field(id=at_field.id) for at_field in self.attribute_type.fields if at_field.description}
+
     def description(self):
         """ Returns a string of all joined description fields """
         if self.attribute_type is None:

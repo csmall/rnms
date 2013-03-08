@@ -38,16 +38,20 @@ rnms/lib/enterprises.py
 rnms/lib/genericset.py
 rnms/lib/helpers.py
 rnms/lib/info.py
+rnms/lib/jsonquery.py
 rnms/lib/logger.py
 rnms/lib/nmapclient.py
 rnms/lib/ntpclient.py
 rnms/lib/parsers.py
 rnms/lib/pingclient.py
 rnms/lib/poller.py
+rnms/lib/rrdworker.py
 rnms/lib/sla_analyzer.py
 rnms/lib/states.py
 rnms/lib/statistics.py
 rnms/lib/tcpclient.py
+rnms/lib/zmqcore.py
+rnms/lib/zmqmessage.py
 rnms/lib/att_discovers/__init__.py
 rnms/lib/att_discovers/alteon.py
 rnms/lib/att_discovers/apache.py
@@ -110,6 +114,7 @@ rnms/public/css/bootstrap-responsive.css
 rnms/public/css/bootstrap-responsive.min.css
 rnms/public/css/bootstrap.css
 rnms/public/css/bootstrap.min.css
+rnms/public/css/map.css
 rnms/public/css/rnms.css
 rnms/public/css/rnms_graph.css
 rnms/public/css/style.css
@@ -120,6 +125,7 @@ rnms/public/images/turbogears_logo_big.png
 rnms/public/images/under_the_hood_blue.png
 rnms/public/javascript/bootstrap.js
 rnms/public/javascript/bootstrap.min.js
+rnms/templates/.host_index.mak.swp
 rnms/templates/__init__.py
 rnms/templates/__init__.pyc
 rnms/templates/about.mak
@@ -129,6 +135,7 @@ rnms/templates/environ.mak
 rnms/templates/error.mak
 rnms/templates/event_chart.mak
 rnms/templates/event_detail.mak
+rnms/templates/event_index.mak
 rnms/templates/event_sprox.mak
 rnms/templates/events.mak
 rnms/templates/eventswidget.mak
@@ -142,6 +149,7 @@ rnms/templates/index.mak
 rnms/templates/layout.mak
 rnms/templates/login.mak
 rnms/templates/map.mak
+rnms/templates/mapseveritycss.mak
 rnms/templates/master.html
 rnms/templates/master.mak
 rnms/templates/severitycss.mak
@@ -156,6 +164,7 @@ rnms/templates/attribute/graph.mak
 rnms/templates/widgets/__init__.py
 rnms/templates/widgets/__init__.pyc
 rnms/templates/widgets/attribute_summary.mak
+rnms/templates/widgets/map.mak
 rnms/tests/__init__.py
 rnms/tests/att_discovery/__init__.py
 rnms/tests/att_discovery/test_alteon.py
@@ -181,6 +190,7 @@ rnms/tests/models/test_graph.py
 rnms/tests/models/test_host.py
 rnms/tests/models/test_poller.py
 rnms/tests/models/test_sla.py
+rnms/tests/models/test_snmp_names.py
 rnms/tests/models/test_zone.py
 rnms/tests/pollers/__init__.py
 rnms/tests/pollers/pollers.py
@@ -198,4 +208,5 @@ rnms/widgets/__init__.py
 rnms/widgets/attribute.py
 rnms/widgets/event.py
 rnms/widgets/graph.py
+rnms/widgets/host.py
 rnms/widgets/test.py

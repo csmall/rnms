@@ -30,6 +30,12 @@ from rnms import model
 
 class EventsGrid(jqGridWidget):
     id = 'events-grid-id'
+    attribute_id=None
+
+    def prepare(self):
+        if attribute_id is not None:
+            self.options['url'] = attribute_id
+
     options = {
             'pager' : 'events-grid-pager',
             'url' : '/events/griddata',
