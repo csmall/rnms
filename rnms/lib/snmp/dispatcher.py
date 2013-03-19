@@ -36,8 +36,8 @@ class SNMPDispatcher(zmqcore.Dispatcher):
     timeout = 3
     max_attempts = 3
 
-    def __init__(self, address_family, recv_cb):
-        super(SNMPDispatcher, self).__init__()
+    def __init__(self, zmq_core, address_family, recv_cb):
+        super(SNMPDispatcher, self).__init__(zmq_core)
         self.create_socket(address_family, socket.SOCK_DGRAM)
         self.waiting_requests = []
         self.sent_requests = {}

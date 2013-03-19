@@ -37,16 +37,18 @@ class TCPClient():
     TCP Client is the Base Class to make TCP control queries.
     Each request needs its own dispatcher
     """
+    zmq_core = None
 
-    def __init__(self):
+    def __init__(self, zmq_core):
         self.dispatchers = []
+        self.zmq_core = zmq_core
 
     def get_tcp(self, tcphost, port, send_msg, max_bytes, cb_fun, **kwargs):
         """
         Query a host with the given TCP port and collect the number
         of bytes. Returns a dictionary to the cb_fun 
         """
-        new_dispatcher = TCPDispatcher()
+        new_dispatcher = TCPDispatcher(self.zmq_core)
         if new_dispatcher.send_message(tcphost, port, send_msg, max_bytes, cb_fun, **kwargs) == True:
             self.dispatchers.append(new_dispatcher)
             return True

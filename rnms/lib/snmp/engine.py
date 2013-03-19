@@ -190,9 +190,10 @@ class SNMPEngine():
     default_timeout = 3 # number of seconds before item is considered gone
     max_attempts = 3
     address_families = [ socket.AF_INET, socket.AF_INET6 ] 
+    zmq_core = None
 
-    def __init__(self, logger=None):
-        self.dispatchers = { af : SNMPDispatcher(af, self.receive_msg) for af in self.address_families}
+    def __init__(self, zmq_core, logger=None):
+        self.dispatchers = { af : SNMPDispatcher(zmq_core, af, self.receive_msg) for af in self.address_families}
         self.scheduler = SNMPScheduler(logger=logger)
 
         if logger is not None:

@@ -38,8 +38,8 @@ class NTPClient():
     """
     address_families = [ socket.AF_INET, socket.AF_INET6 ]
 
-    def __init__(self):
-        self.dispatchers = { af : NTPDispatcher(af) for af in self.address_families}
+    def __init__(self, zmq_core):
+        self.dispatchers = { af : NTPDispatcher(zmq_core, af) for af in self.address_families}
 
     def get_peers(self, host, cb_fun, **kwargs):
         """
@@ -81,8 +81,8 @@ class NTPDispatcher(zmqcore.Dispatcher):
     """
     timeout = 10
 
-    def __init__(self, address_family):
-        super(NTPDispatcher, self).__init__()
+    def __init__(self, zmq_core, address_family):
+        super(NTPDispatcher, self).__init__(zmq_core)
         self.create_socket(address_family, socket.SOCK_DGRAM)
         self.waiting_jobs = []
         self.sent_jobs = {}

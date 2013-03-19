@@ -4,12 +4,12 @@ RRD Workers - update the RRD files with these workers
 """
 import zmq
 import threading
+import logging
 
 from tg import config
 
 from rnms.lib import zmqmessage
 from rnms.lib import zmqcore
-from rnms.lib.logger import LoggingClient
 
 WORKER_PATH = 'inproc://rrd-update'
 
@@ -27,6 +27,7 @@ class RRDClient(object):
     waiting_jobs = 0
 
     def __init__(self, context, required_workers=1):
+        self.logger = logging.getLogger('rrdc')
         self.socket = context.socket(zmq.ROUTER)
         self.socket.bind(WORKER_PATH)
         zmqcore.register(self.socket, self.recv)
@@ -51,7 +52,7 @@ class RRDClient(object):
         assert sock == self.socket
         frames = sock.recv_multipart()
         if len(frames) < 3:
-            print "damn" #FIXME logging
+            self.logger.error('zmq socket expected 3 frames, got %d',len(frames))
             return
 
         worker_addr = frames[0]
@@ -80,9 +81,6 @@ class RRDClient(object):
             worker_id = self.workers_list.pop()
             self.send_update(worker_id, *new_job)
 
-
-
-
     def send_update(self,worker_addr, filename, value):
         self.socket.send(worker_addr, zmq.SNDMORE)
         self.socket.send('', zmq.SNDMORE)
@@ -110,17 +108,17 @@ class RRDTask(threading.Thread):
         threading.Thread.__init__(self)
         self.daemon = True
         self.context = context
+        self.logger = logging.getLogger('rrdw')
 
     def run(self):
         """ The main loop of the RRD update thread """
         import os
         import rrdtool
 
-        self.logger = LoggingClient(self.context)
         rrdworker = self.context.socket(zmq.REQ)
         zmqcore.set_id(rrdworker)
         rrdworker.connect(WORKER_PATH)
-        self.logger.debug('RRDworker started')
+        self.logger.info('RRD worker started PID:%d', os.getpid())
 
         conf = zmqmessage.init_and_config(rrdworker)
         if conf is None:

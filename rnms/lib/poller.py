@@ -20,12 +20,13 @@
 import datetime
 import time
 import transaction
+import logging
 
 from sqlalchemy import and_
 import zmq
 
 from rnms import model
-from rnms.lib import zmqcore, logger
+from rnms.lib import zmqcore, zmqmessage
 from rnms.lib.snmp import SNMPEngine, SNMPRequest
 from rnms.lib.pollers.snmp import parse_oid, cb_snmp_counter, split_oid
 from rnms.lib import ntpclient
@@ -42,6 +43,7 @@ class Poller(object):
     find_attribute_interval = 60 # Scan to find new items every 60secs
     next_find_attribute = datetime.datetime.min
     forced_attributes=False
+    do_loop = False
     host_ids = None
     poller_buffer = None
     snmp_engine = None
@@ -49,16 +51,21 @@ class Poller(object):
     tcp_client = None
     ping_client = None
     zmq_context = None
+    zmq_core = None
 
-    def __init__(self, attribute_ids=None, host_ids=None):
+    def __init__(self, attribute_ids=None, host_ids=None, zmq_context=None):
+        self.zmq_core = zmqcore.ZmqCore()
         
-        self.zmq_context = zmq.Context()
-        self.log_task = logger.LoggingTask()
-        self.log_task.start()
-        self.logger = logger.LoggingClient(self.zmq_context)
-        self.snmp_engine = SNMPEngine(logger=self.logger)
-        self.ntp_client = ntpclient.NTPClient()
-        self.tcp_client = TCPClient()
+        if zmq_context is not None:
+            self.zmq_context = zmq_context
+            self.control_socket = zmqmessage.control_client(self.zmq_context)
+            self.zmq_core.register_zmq(self.control_socket, self.control_callback)
+        else:
+            self.zmq_context = zmq.Context()
+        self.logger = logging.getLogger('poller')
+        self.snmp_engine = SNMPEngine(self.zmq_core, logger=self.logger)
+        self.ntp_client = ntpclient.NTPClient(self.zmq_core)
+        self.tcp_client = TCPClient(self.zmq_core)
         self.ping_client = PingClient()
         self.polling_attributes = {} # The attributes we are currently polling
         self.poller_buffer = {}
@@ -74,8 +81,8 @@ class Poller(object):
         This will only exit if we have forced attributes and they are all
         polled.
         """
-        #print select.select([], self.snmp_engine.dispatcher.getSocketMap().keys(), [], self.find_attribute_interval)
-        while True:
+        self.do_loop = True
+        while self.do_loop:
             now = datetime.datetime.now()
             polls_running = False
             if self.forced_attributes == False and self.next_find_attribute < now:
@@ -98,7 +105,7 @@ class Poller(object):
             if ping_jobs > 0:
                 att_count -= ping_jobs
 
-            if zmqcore.poll(0.1) == False:
+            if self.zmq_core.poll(0.1) == False:
                 return
             #if ping_jobs > 0:
             #    poll_timeout=0.1
@@ -106,8 +113,7 @@ class Poller(object):
             #        return
             #else:
             #    zmqcore.poll(3.0)
-            if not polls_running and (self.polling_attributes == {}):
-                print "waiting now"
+            if self.do_loop and not polls_running and (self.polling_attributes == {}):
                 # If there are no pollers, we can sleep until we need to
                 # look for more attributes to poll
                 self.poller_sets = {}
@@ -119,12 +125,14 @@ class Poller(object):
                 if next_attribute is None:
                     self.logger.debug('No next attribute. No attributes?')
                 else:
-                    self.logger.debug("Next poll time is %d %s", next_attribute.id, next_attribute.next_poll.ctime())
+                    self.logger.debug("Next polled attribute #%d at %s", next_attribute.id, next_attribute.next_poll.ctime())
+                if next_attribute.next_poll < self.next_find_attribute:
+                    self.next_find_attribute = next_attribute.next_poll
                 sleep_time = round((self.next_find_attribute - datetime.datetime.now()).total_seconds())
-                if sleep_time > 0:
-                    self.logger.debug("Sleeping for {0} seconds".format(sleep_time))
-                while (sleep_time > 0):
-                    if not zmqcore.poll(sleep_time):
+                #if sleep_time > 0:
+                    #self.logger.debug("Sleeping for {0} seconds".format(sleep_time))
+                while (self.do_loop and sleep_time > 0):
+                    if not self.zmq_core.poll(sleep_time):
                         return
                     sleep_time = round((self.next_find_attribute - datetime.datetime.now()).total_seconds())
 
@@ -227,6 +235,15 @@ class Poller(object):
             self._finish_polling(patt)
 
 
+    def control_callback(self, socket):
+        """
+        Callback method for the control socket
+        """
+        frames = socket.recv_multipart()
+        if frames[0] == zmqmessage.IPC_END:
+            self.do_loop = False
+
+
     def _finish_polling(self, patt):
         """
         Complete all the finishing up that is required once a poller has
@@ -289,7 +306,6 @@ class Poller(object):
                     hosts_down[attribute.host_id] = attribute.host.main_attributes_down()
                 if hosts_down[attribute.host_id]:
                     continue
-            print 'XXX adding {}'.format(attribute.id)
             self.attribute_add(attribute)
 
     def attribute_add(self, attribute):

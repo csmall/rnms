@@ -34,25 +34,85 @@ from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, EINVAL, \
 _DISCONNECTED = frozenset((ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE,
                            EBADF))
 
-try:
-    socket_map
-except NameError:
-    socket_map = {}
-
-try:
-    zmq_map
-except NameError:
-    zmq_map = {}
-
-try:
-    zmq_poller
-except NameError:
-    zmq_poller = zmq.Poller()
-
 def set_id(zsocket):
     identity = "%04x-%04x" % (randint(0, 0x10000), randint(0, 0x10000))
     zsocket.setsockopt(zmq.IDENTITY, identity)
 
+class ZmqCore(object):
+
+    def __init__(self):
+        self.socket_map = {}
+        self.zmq_map = {}
+        self.zmq_poller = zmq.Poller()
+
+    def register_zmq(self, sock, read_cb):
+        """ Zero MQ sockets that want to be called back on data that is received
+        using this poller need to register here
+        """
+        self.zmq_poller.register(sock, zmq.POLLIN)
+        self.zmq_map[sock] = read_cb
+
+    def unregister_zmq(self, sock):
+        """ Unregister from this poller """
+        self.zmq_poller.unregister(sock)
+        del self.zmq_map[sock]
+
+    def register_sock(self, sockfd, dispatcher):
+        """ Register a regular socket """
+        self.socket_map[sockfd] = dispatcher
+
+    def unregister_sock(self, sockfd):
+        """ Unregister a socket form the zmq core with the given socket
+        fd """
+        try:
+            self.zmq_poller.unregister(sockfd)
+        except KeyError:
+            pass
+        try:
+            del self.socket_map[sockfd]
+        except KeyError:
+            pass
+
+    def poll(self, timeout=0.0):
+        """
+        One-shot poller for all of the normal and ZeroMQ sockets, timeout is just like the
+        select timeout.  normal sockets need to use the Dispatcher as found in this module for it to work
+        """
+        # ZMQ objects should of already registered here
+
+        for fd, obj in self.socket_map.items():
+            flags = 0
+            if obj.readable():
+                flags |= zmq.POLLIN
+            if obj.writable():
+                flags |= zmq.POLLOUT
+            self.zmq_poller.register(fd, flags)
+        try:
+            events = dict(self.zmq_poller.poll(timeout*1000))
+        except KeyboardInterrupt:
+            return False
+
+        for sock,cb_func in self.zmq_map.items():
+            try:
+                event = events[sock]
+            except KeyError:
+                pass
+            else:
+                if event == zmq.POLLIN:
+                    cb_func(sock)
+
+        for fd,obj in self.socket_map.items():
+            try:
+                event = events[fd]
+            except KeyError:
+                pass
+            else:
+                if event & zmq.POLLIN:
+                    obj.handle_read_event()
+                if event & zmq.POLLOUT:
+                    obj.handle_write_event()
+        return True
+                
 class ZmqDispatcher(object):
     socket = None
     socket_obj = None
@@ -65,7 +125,8 @@ class ZmqDispatcher(object):
 
     def set_socket(self, sock):
         self.socket = sock
-        self._map[sock] = self
+        register(sock, self)
+        #self._map[sock] = self
 
     def readable(self):
         return True
@@ -97,8 +158,8 @@ class Dispatcher(object):
     connected = False
     connecting = False
 
-    def __init(self):
-        self._map = socket_map
+    def __init__(self, zmq_core):
+        self.zmq_core = zmq_core
         self._fileno = None
         self.socket = None
     
@@ -107,7 +168,7 @@ class Dispatcher(object):
         self.socket = socket.socket(family, type)
         self.socket.setblocking(0)
         self._fileno = self.socket.fileno()
-        socket_map[self._fileno] = self
+        self.zmq_core.register_sock(self._fileno, self)
 
     def readable(self):
         return True
@@ -159,22 +220,15 @@ class Dispatcher(object):
                 return ''
             else:
                 raise
+    
     def recvfrom(self, buffer_size=None):
         return self.socket.recvfrom(buffer_size)
-
 
     def close(self):
         self.connected = False
         self.connecting = False
-        fd = self._fileno
-        try:
-            zmq_poller.unregister(fd)
-        except KeyError:
-            pass
-        try:
-            del socket_map[fd]
-        except KeyError:
-            pass
+        self.zmq_core.unregister_sock(self._fileno)
+
         try:
             self.socket.close()
         except socket.error, why:
@@ -210,55 +264,3 @@ class Dispatcher(object):
     def handle_close(self):
         self.close()
 
-def register(sock, read_cb):
-    """ Zero MQ sockets that want to be called back on data that is received
-    using this poller need to register here
-    """
-    zmq_poller.register(sock, zmq.POLLIN)
-    zmq_map[sock] = read_cb
-
-def unregister(sock):
-    """ Unregister from this poller """
-    zmq_poller.unregister(sock)
-    del zmq_map[sock]
-
-def poll(timeout=0.0):
-    """
-    One-shot poller for all of the normal and ZeroMQ sockets, timeout is just like the
-    select timeout.  normal sockets need to use the Dispatcher as found in this module for it to work
-    """
-    # ZMQ objects should of already registered here
-
-    for fd, obj in socket_map.items():
-        flags = 0
-        if obj.readable():
-            flags |= zmq.POLLIN
-        if obj.writable():
-            flags |= zmq.POLLOUT
-        zmq_poller.register(fd, flags)
-    try:
-        events = dict(zmq_poller.poll(timeout*1000))
-    except KeyboardInterrupt:
-        return False
-
-    for sock,read_cb in zmq_map.items():
-        try:
-            event = events[sock]
-        except KeyError:
-            pass
-        else:
-            if event == zmq.POLLIN:
-                read_cb(sock)
-
-    for fd,obj in socket_map.items():
-        try:
-            event = events[fd]
-        except KeyError:
-            pass
-        else:
-            if event & zmq.POLLIN:
-                obj.handle_read_event()
-            if event & zmq.POLLOUT:
-                obj.handle_write_event()
-    return True
-                

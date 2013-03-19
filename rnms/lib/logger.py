@@ -60,6 +60,7 @@ class LoggingTask(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.daemon = True
+        self.name='Rnms logger'
 
     def run(self):
         logger = logging.getLogger('rnms')
@@ -68,7 +69,7 @@ class LoggingTask(threading.Thread):
         socket.bind(zmqmessage.LOGGER_SERVER)
         poller = zmq.Poller()
         poller.register(socket, zmq.POLLIN)
-        logger.info('Logging Worker Started')
+        logger.info('Logging Worker Started log level {}'.format(logging.getLevelName(logger.getEffectiveLevel())))
 
         while True:
             socks = dict(poller.poll())

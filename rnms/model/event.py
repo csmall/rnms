@@ -150,8 +150,10 @@ class Event(DeclarativeBase):
         only around for some time.
         Alert level events must have an attribute to raise an alarm.
         """
+        from rnms.model.alarm import Alarm
+
         logger.info("A:%d E:%d - ALERT Event", self.attribute.id, self.id)
-        new_alarm = alarm.Alarm(event=self)
+        new_alarm = Alarm(event=self)
         new_alarm.stop_time = datetime.datetime.now() + datetime.timedelta(minutes=(self.event_type.alarm_duration+30))
         new_alarm.stop_event = self
         DBSession.add(new_alarm)

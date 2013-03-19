@@ -35,6 +35,13 @@ class SNMPEnterprise(DeclarativeBase):
     1.3.6.1.4.1.X where X is the Enterprise Number
     The device offset is how many digits in the OID to swallow before the
     device ID starts
+    
+    For example, a Cisco 1720 router has the OID .1.3.6.1.4.1.9.1.201
+    where:
+      .1.3.6.1.4.1 is systemObjID
+      9 is the enterprise (Cisco)
+      The offset is 2, meaning we start at the 2nd digit (the 201)
+      201 is the device (1720)
     """
     __tablename__ = 'snmp_enterprises'
 
