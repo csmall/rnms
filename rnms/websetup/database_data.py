@@ -58,370 +58,487 @@ alarm_states = [
     ]
 
 autodiscovery_policies = [
-    [u'No Autodiscovery',1,0,0,0,0,0,1,1,1],
-    [u'Standard'        ,1,1,0,1,0,1,1,1,1],
-    [u'Automagic'       ,1,1,1,1,1,0,1,1,1],
-    [u'Administrative'  ,0,1,1,1,0,1,1,1,1],
-    [u'Just Inform'     ,0,0,0,1,0,0,0,1,1],
-    [u'Standard (for Switches)',1,1,0,1,1,0,1,1,0]
+    [u'No Autodiscovery', True,False,False,False,False,False, True, True, True],
+    [u'Standard'        , True, True,False, True,False, True, True, True, True],
+    [u'Automagic'       , True, True, True, True, True,False, True, True, True],
+    [u'Administrative'  ,False, True, True, True,False, True, True, True, True],
+    [u'Just Inform'     ,False,False,False, True,False,False,False, True, True],
+    [u'Standard (for Switches)', True, True,False, True, True,False, True, True,False]
     ]
 #showable 2=1,0 1=1,1 0=0,0
 #RRD Types = 1:gauge, 2:counter, 3:absolute
-attribute_types = [
-        ['No Interface Type',0,0,'none','',u'No Poller','AVERAGE','103680',300,1,0,'none',0,1,0,'.',[], [] ],
-        ['TCP Ports',0,1,'tcp_ports','500,600-1024',u'TCP/IP Port','LAST','103680',1,23,0,'tcp_ports',1,1,1,'',[
-            ['Port Number','port',0,1,1,1,0,0,'',''],
-            ['Check Content','check_content',0,1,0,1,0,0,'',''],
-            ['Check Content URL','check_url',0,1,1,0,1,0,'',''],
-            ['Check Content RegExp','check_regexp',0,1,0,1,0,0,'','']
-            ], [
-            [u'Established Connections', 'tcp_established', 0,0,10000,0],
-            [u'Connection Delay', 'conn_delay', 0,0,10000,0],
-            ] ],
-        ['Cisco System Info',1,1,'host_information','cisco,9.1,9.5',u'Cisco Router','AVERAGE','103680',300,9,0,'none',0,7,0,'ent.9',[
-            ['Number of Processors','cpu_num',0,1,1,1,0,1,'',''],
-            ['CPU Usage Threshold','cpu_threshold',0,1,0,1,0,60,'',''],
-            ['System Name','name',1,1,1,1,0,1,'',''],
-            ['Location','location',1,1,1,1,0,1,'',''],
-            ['Contact','contact',1,1,1,1,0,1,'',''],
-           ], [
-            [u'CPU', 'cpu', 0,0,100,''],
-            [u'Mem Used', 'mem_used', 0,0,100000000000,''],
-            [u'Mem Free', 'mem_free', 0,0,100000000000,''],
-            [u'Acct Packets', 'acct_packets', 2,0,100000000000,''],
-            [u'Acct Bytes', 'acct_bytes', 0,0,100000000000,''],
-            [u'TCP Active', 'tcp_active', 1,0,10000000,''],
-            [u'TCP Passive', 'tcp_passive', 1,0,10000000,''],
-            [u'TCP Established', 'tcp_established', 1,0,10000000,''],
-               ] ],
-        ['Physical Interfaces',1,1,'snmp_interfaces','',u'SNMP Interface','AVERAGE','103680',300,3,1,'none',0,1,1,'.',[
-            ['IP Address','address',1,1,1,1,0,'','',''],
-            ['IP Mask','mask',0,1,1,1,0,'','',''],
-            ['Peer Address','peer',0,1,1,1,0,'','',''],
-            ['Speed','speed',0,1,1,1,0,1,'',''],
-            ['Percentile','percentile',0,1,0,1,0,'','',''],
-            ['Flip In Out in Graphs','flipinout',0,1,1,1,0,0,'',''],
-            ['Pings to Send','pings',0,1,1,1,0,50,'',''],
-            ['Fixed Admin Status','fixed_admin_status',0,1,1,1,0,0,'','']
-            ], [
-            [u'Input Bytes', 'input', 1,0,0,'speed'],
-            [u'Output Bytes', 'output', 1,0,0,'speed'],
-            [u'Input Errors', 'inputerrors', 1,0,0,'speed'],
-            [u'Output Errors', 'outputerrors', 1,0,0,'speed'],
-            [u'Round Trip Time', 'rtt', 0,0,10000,''],
-            [u'Packet Loss', 'packetloss', 0,0,1000,''],
-            [u'Input Packets', 'inpackets', 1,0,0,'speed'],
-            [u'Output Packets', 'outpackets', 1,0,0,'speed'],
-            [u'Drops', 'drops', 1,0,0,'speed'],
-                ] ],
+attribute_types = (
+        (u'No Interface Type',
+            'none', '', False, False,
+            u'No Polling', '', '',
+            'AVERAGE',103680, False, False, '', 
+                () , () ),
+        (u'TCP Ports',
+            'tcp_ports','500,600-1024', False, True,
+            u'TCP/IP Port', '', '',
+            'LAST',103680, True, True, '', (
+            ('Port Number','port',False, True, True, True, False, '0','',''),
+            ('Check Content','check_content',False, True, False, True, False,'0','',''),
+            ('Check Content URL','check_url',False, True, True, False, True, '','',''),
+            ('Check Content RegExp','check_regexp',False, True, False, True, False, '','','')
+            ), (
+            (u'Established Connections', 'tcp_established', 0,0,10000,0),
+            (u'Connection Delay', 'conn_delay', 0,0,10000,0),
+            ) ),
+        ('Cisco System Info',
+            'host_information','cisco,9.1,9.5',True, True,
+            u'Cisco Router', '', '',
+            'AVERAGE',103680,False, False,'ent.9',(
+            ('Number of Processors','cpu_num',False, True, True, True, False, '1','',''),
+            ('CPU Usage Threshold','cpu_threshold',False, True, False, True, False, '60','',''),
+            ('System Name','name',True, True, True, True, False, '','',''),
+            ('Location','location',True, True, True, True, False, '','',''),
+            ('Contact','contact',True, True, True, True, False, '','',''),
+           ), (
+            (u'CPU', 'cpu', 0,0,100,''),
+            (u'Mem Used', 'mem_used', 0,0,100000000000,''),
+            (u'Mem Free', 'mem_free', 0,0,100000000000,''),
+            (u'Acct Packets', 'acct_packets', 2,0,100000000000,''),
+            (u'Acct Bytes', 'acct_bytes', 0,0,100000000000,''),
+            (u'TCP Active', 'tcp_active', 1,0,10000000,''),
+            (u'TCP Passive', 'tcp_passive', 1,0,10000000,''),
+            (u'TCP Established', 'tcp_established', 1,0,10000000,''),
+               ) ),
+        ('Physical Interfaces',
+            'snmp_interfaces','', True, True,
+            u'SNMP Interface', '', '',
+            'AVERAGE',103680, True, False, '.',(
+            ('IP Address','address', True, True, True, True, False, False,'',''),
+            ('IP Mask','mask',False, True, True, True, False,'','',''),
+            ('Peer Address','peer',False, True, True, True, False,'','',''),
+            ('Speed','speed',False, True, True, True, False,1,'',''),
+            ('Percentile','percentile',False, True, False, True, False,'','',''),
+            ('Flip In Out in Graphs','flipinout',False, True, True, True, False,0,'',''),
+            ('Pings to Send','pings',False, True, True, True, False,50,'',''),
+            ('Fixed Admin Status','fixed_admin_status',False, True, True, True, False,0,'','')
+            ), (
+            (u'Input Bytes', 'input', 1,0,0,'speed'),
+            (u'Output Bytes', 'output', 1,0,0,'speed'),
+            (u'Input Errors', 'inputerrors', 1,0,0,'speed'),
+            (u'Output Errors', 'outputerrors', 1,0,0,'speed'),
+            (u'Round Trip Time', 'rtt', 0,0,10000,''),
+            (u'Packet Loss', 'packetloss', 0,0,1000,''),
+            (u'Input Packets', 'inpackets', 1,0,0,'speed'),
+            (u'Output Packets', 'outpackets', 1,0,0,'speed'),
+            (u'Drops', 'drops', 1,0,0,'speed'),
+                ) ),
 
-        ['BGP Neighbors',1,1,'bgp_peers','',u'BGP Neighbor','AVERAGE','103680',300,90,0,'none',0,1,0,'.',[
-            ['Local IP','local',1,1,1,0,1,'','',''],
-            ['Remote IP','remote',0,1,1,0,0,'','',''],
-            ['Autonomous System','asn',1,1,1,0,1,'','',''],
-            ], [
-            [u'BGP In Updates', 'bgpin', 1,0,10000000,''],
-            [u'BGP Out Updates', 'bgpout', 1,0,10000000,''],
-            [u'BGP Uptime', 'bgpuptime', 0,0,10000000,''],
-            [u'Accepted Routes', 'accepted_routes', 0,0,9000000,''],
-            [u'Advertised Routes', 'advertised_routes', 0,0,9000000,''],
-                ] ],
-        ['Storage',1,1,'storage','',u'Storage Device','AVERAGE','103680',300,15,0,'none',0,9,0,'.',[
-            ['Disk Type','storage_type',1,1,1,0,0,'','',''],
-            ['Size (bytes)','size',1,1,1,1,0,'','',''],
-            ['Usage Threshold','usage_threshold',0,1,0,1,0,80,'',''],
-            ], [
-            [u'Storage Block Size', 'storage_block_size', 0,0,0,'size'],
-            [u'Storage Block Count', 'storage_block_count', 0,0,0,'size'],
-            [u'Storage Used Blocks', 'storage_used_blocks', 0,0,0,'size'],
-                ] ],
-        ['Solaris System Info',1,1,'host_information','solaris,sparc,sun,11.2.3.10,8072.3.2.3',u'Solaris Host','AVERAGE','103680',300,20,0,'none',0,1,0,'.',[
-            [u'Number of Processes','cpu_num',0,1,1,0,1,'1','',''],
-            [u'System Name','name',1,1,1,0,1,'','',''],
-            [u'Location','location',1,1,1,0,1,'','',''],
-            [u'Contact','contact',1,1,1,0,1,'','',''],
-            ], [
-            [u'CPU User Ticks', 'cpu_user_ticks', 1,0,86400,''],
-            [u'CPU Idle Ticks', 'cpu_idle_ticks', 1,0,86400,''],
-            [u'CPU Wait Ticks', 'cpu_wait_ticks', 1,0,86400,''],
-            [u'CPU Kernel Ticks', 'cpu_kernel_ticks', 1,0,86400,''],
-            [u'Swap Total', 'swap_total', 0,0,10000000000,''],
-            [u'Swap Available', 'swap_available', 0,0,10000000000,''],
-            [u'Mem Total', 'mem_total', 0,0,10000000000,''],
-            [u'Mem Available', 'mem_available', 0,0,10000000000,''],
-            [u'Load Average 1', 'load_average_1', 0,0,1000,''],
-            [u'Load Average 5', 'load_average_5', 0,0,1000,''],
-            [u'Load Average 15', 'load_average_15', 0,0,1000,''],
-                ] ],
-        ['Linux/Unix System Info',1,1,'host_information','2021.250.10,linux,2021.250.255,freebsd,netSnmp,8072',u'Linux/Unix Host','AVERAGE','103680',300,21,0,'none',0,10,0,'.',[
-            [u'Number of Processes','cpu_num',0,1,1,0,1,'1','',''],
-            [u'CPU Usage Threshold','cpu_threshold',0,0,1,0,1,'80','',''],
-            [u'System Name','name',1,1,1,0,1,'','',''],
-            [u'Location','location',1,1,1,0,1,'','',''],
-            [u'Contact','contact',1,1,1,0,1,'','',''],
-            ], [
-            [u'CPU User Ticks', 'cpu_user_ticks', 1,0,86400,''],
-            [u'CPU Idle Ticks', 'cpu_idle_ticks', 1,0,86400,''],
-            [u'CPU Nice Ticks', 'cpu_nice_ticks', 1,0,86400,''],
-            [u'CPU System Ticks', 'cpu_system_ticks', 1,0,86400,''],
-            [u'Load Average 1', 'load_average_1', 0,0,1000,''],
-            [u'Load Average 5', 'load_average_5', 0,0,1000,''],
-            [u'Load Average 15', 'load_average_15', 0,0,1000,''],
-            [u'Num Users', 'num_users', 0,0,10000,''],
-            [u'Num Procs', 'num_procs', 0,0,10000,''],
-            [u'TCP Active', 'tcp_active', 1,0,10000,''],
-            [u'TCP Passive', 'tcp_passive', 1,0,10000,''],
-            [u'TCP Established', 'tcp_established', 1,0,10000,''],
-                ] ],
-        ['Windows System Info',1,1,'host_information','enterprises.311',u'Windows Host','AVERAGE','103680',300,28,0,'none',0,11,0,'.',[
-            [u'Number of Processes','cpu_num',0,1,1,0,1,'1','',''],
-            [u'CPU Usage Threshold','cpu_threshold',0,0,1,0,1,'80','',''],
-            [u'System Name','name',1,1,1,0,1,'','',''],
-            [u'Location','location',1,1,1,0,1,'','',''],
-            [u'Contact','contact',1,1,1,0,1,'','',''],
-            ], [
-            [u'CPU', 'cpu', 0,0,100,''],
-            [u'Num Users', 'num_users', 0,0,10000,''],
-            [u'Num Procs', 'num_procs', 0,0,10000,''],
-            [u'TCP Active', 'tcp_active', 1,0,10000,''],
-            [u'TCP Passive', 'tcp_passive', 1,0,10000,''],
-            [u'TCP Established', 'tcp_established', 1,0,10000,''],
-                ] ],
-        ['Applications',1,0,'hostmib_apps','',u'HostMIB Application','AVERAGE','103680',300,44,0,'none',0,1,0,'.',[
-            [u'Instances at Discovery','instances',1,1,1,0,1,'','',''],
-            [u'Ignore Case','ignore_case',1,1,1,0,1,'','',''],
-            ], [
-            [u'Current Instances', 'current_instances', 0,0,99999,''],
-            [u'Used Memory', 'used_memory', 0,0,9999999,''],
-                ] ],
-        ['Cisco Power Supply',1,1,'cisco_envmib','PowerSupply,5.1.2,5.1.3',u'Cisco Power Supply','','103680',300,1,1,'none',0,1,0,'ent.9',[
-            ], [
-                ] ],
-        ['Cisco Temperature',1,1,'cisco_envmib','Temperature,3.1.2,3.1.6',u'Cisco Temperature','AVERAGE','103680',300,37,1,'none',0,1,0,'ent.9',[
-            ], [
-            [u'Temperature', 'temperature', 0,0,100,''],
-                ] ],
-        ['Cisco Voltage',1,1,'cisco_envmib','Voltage,2.1.2,2.1.7',u'Cisco Voltage','AVERAGE','103680',300,1,1,'none',0,1,0,'ent.9',[ ], [ ] ],
-        ['Cisco SA Agent',1,1,'cisco_saagent','',u'Cisco SA Agent','AVERAGE','103680',300,39,0,'none',0,1,0,'ent.9',[
-            ], [
-            [u'Forward Jitter', 'forward_jitter', 0,0,100,''],
-            [u'Backward Jitter', 'backward_jitter', 0,0,100,''],
-            [u'RT Latency', 'rt_latency', 0,0,100,''],
-            [u'Forward Packetloss', 'forward_packetloss', 0,0,100,''],
-            [u'Backward Packetloss', 'backward_packetloss', 0,0,100,''],
-                ] ],
-        ['Reachable',1,1,'reachability','',u'Reachability','AVERAGE','103680',300,41,0,'none',0,1,0,'',[
-            [u'Pings to Send','pings',0,1,0,1,0,'','',''],
-            [u'Loss Threshold%','threshold',0,1,0,1,0,'','',''],
-            [u'Interval (ms)','interval',0,1,0,1,0,'','',''],
-            ], [
-            [u'RTT', 'rtt', 0,0,10000,''],
-            [u'Packetloss', 'packetloss', 0,0,1000,''],
-                ] ],
-        ['NTP',0,1,'ntp_client','',u'NTP','AVERAGE','103680',300,1,0,'none',0,1,0,'',[], [] ],
-        ['UDP Ports',0,0,'tcp_ports','-sU -p1-500,600-1024 --host_timeout 15000',u'UDP/IP Port','AVERAGE','103680',300,45,0,'tcp_ports',1,1,0,'',[
-            ], [
-            [u'Connection Delay', 'conn_delay', 0,0,10000,''],
-                ] ],
-        ['Compaq Physical Drives',0,1,'cpqmib','phydrv',u'Compaq Physical Drive','AVERAGE','103680',300,1,0,'none',0,1,0,'.',[
-            [u'Controller', 'controller', 1,1,0, 0,1, '','',''],
-            [u'Drive', 'drvindex', 1,1,0, 0,1, '','',''],
-            [u'Drive Model', 'drive', 0,1,0, 0,1, '','',''],
-            ], [
-                ] ],
-        ['Compaq Fans',0,1,'cpqmib','fans',u'Compaq Fan','AVERAGE','103680',300,1,0,'none',0,1,0,'.',[
-            [u'Location', 'location', 1,1,1, 0,1, '','',''],
-            [u'Chassis', 'chassis', 0,1,1, 0,1, '','',''],
-            [u'Fan', 'fan_index', 0,1,1, 0,1, '','',''],
-            ], [
-                ] ],
-        ['Compaq Temperature',0,1,'cpqmib','temperature',u'Compaq Temperature','AVERAGE','103680',300,46,0,'none',0,1,0,'.',[
-            [u'Location', 'location', 0,1,1, 0,1, '','',''],
-            [u'Chassis', 'chassis', 0,1,1, 0,1, '','',''],
-            [u'Sensor', 'temp_index', 0,1,1, 0,1, '','',''],
-            ], [
-            [u'Temperature', 'temperature', 0,0,1000,''],
-                ] ],
-        ['IIS Webserver Information',0,1,'snmp_simple','1.3.6.1.4.1.311.1.7.3.1.1.0|IIS Information',u'IIS Info','AVERAGE','103680',300,50,0,'none',0,1,0,'ent.311',[
-            ], [
-            [u'Total Bytes Received', 'tbr', 1,0,100000000,''],
-            [u'Total CGI Requests', 'tcgir', 1,0,100000000,''],
-            [u'Total Files Sent', 'tfs', 1,0,100000000,''],
-            [u'Total Gets', 'tg', 1,0,100000000,''],
-            [u'Total Posts', 'tp', 1,0,100000000,''],
-                ] ],
-        ['Apache',0,1,'apache','',u'Apache','AVERAGE','103680',300,53,0,'none',1,1,0,'',[
-            ], [
-            [u'Total Accesses', 'tac', 1,0,100000000,''],
-            [u'Total kBytes', 'tkb', 1,0,100000000,''],
-            [u'CPU Load', 'cplo', 0,0,1000,''],
-            [u'Uptime', 'up', 0,0,10000000,''],
-            [u'Bytes Per Request', 'bpr', 0,0,10000000,''],
-            [u'Busy Workers', 'bw', 0,0,1000,''],
-            [u'Idle Workers', 'iw', 0,0,1000,''],
-                ] ],
-        ['APC',1,1,'apc','',u'APC','AVERAGE','103680',300,61,0,'none',0,1,0,'ent.318',[
-            ], [
-            [u'Battery Capacity', 'capacity', 0,0,100,''],
-            [u'Output Load', 'load', 0,0,100,''],
-            [u'Input Voltage', 'in_voltage', 0,0,400,''],
-            [u'Output Voltage', 'out_voltage', 0,0,400,''],
-            [u'Time Remaining', 'time_remaining', 0,0,100000000,''],
-            [u'Temperature', 'temperature', 0,0,200,''],
-                ] ],
-        ['Alteon Real Server',1,1,'alteon_realservers','',u'Alteon Real Server','AVERAGE','103680',300,66,0,'none',0,1,0,'ent.1872',[
-            [u'Hostname', 'hostname', 1,1,1, 1,0, '','',''],
-            [u'Max Connections', 'max_connections', 0,1,1, 1,0, '','',''],
-            ], [
-            [u'Total Sessions', 'total_sessions', 1,0,100000000,''],
-            [u'Current Sessions', 'current_sessions', 0,0,0,'max_connections'],
-            [u'Failures', 'failures', 1,0,10000,''],
-            [u'Octets', 'octets', 1,0,100000000,''],
-                ] ],
-        ['Alteon Virtual Server',0,1,'alteon_virtualservers','',u'Alteon Virtual Server','AVERAGE','103680',300,70,0,'none',0,1,0,'ent.1872',[
-            [u'Hostname', 'hostname', 1,1,1, 1,0, '','',''],
-            ], [
-            [u'Total Sessions', 'total_sessions', 1,0,100000000,''],
-            [u'Current Sessions', 'current_sessions', 0,0,20000,''],
-            [u'Octets', 'octets', 1,0,100000000,''],
-                ] ],
-        ['Alteon Real Services',0,1,'alteon_realservices','',u'Alteon Real Services','AVERAGE','103680',300,73,0,'none',0,1,0,'ent.1872',[
-            [u'Hostname', 'hostname', 1,1,1, 1,0, '','',''],
-            [u'Address', 'address', 1,1,1, 1,0, '','',''],
-            [u'Port', 'port', 1,1,1, 1,0, '','',''],
-            [u'Real Server', 'real_server', 0,0,1, 0,1, '','',''],
-            ], [
-            [u'Response Time', 'response_time', 0,0,10000,''],
-                ] ],
-        ['Alteon System Info',1,1,'host_information','enterprises.1872',u'Alteon System Info','AVERAGE','103680',300,75,0,'none',0,1,0,'ent.1872',[
-            [u'System Name','name',1,1,1,0,1,'','',''],
-            [u'Location','location',1,1,1,0,1,'','',''],
-            [u'Contact','contact',1,1,1,0,1,'','',''],
-            [u'Number of CPUs','cpu_num',0,0,1, 0,0, '','',''],
-            ], [
-            [u'TCP Active', 'tcp_active', 1,0,10000,''],
-            [u'TCP Passive', 'tcp_passive', 1,0,10000,''],
-            [u'TCP Established', 'tcp_established', 1,0,10000,''],
-            [u'Memory Total', 'mem_total', 0,0,10000000000,''],
-            [u'Memory Used', 'mem_used', 0,0,10000000000,''],
-            [u'CPU A 1 sec', 'cpua_1sec', 0,0,1000,''],
-            [u'CPU A 4 sec', 'cpua_4sec', 0,0,1000,''],
-            [u'CPU A 64 sec', 'cpua_64sec', 0,0,1000,''],
-            [u'CPU B 1 sec', 'cpub_1sec', 0,0,1000,''],
-            [u'CPU B 4 sec', 'cpub_4sec', 0,0,1000,''],
-            [u'CPU B 64 sec', 'cpub_64sec', 0,0,1000,''],
-                ] ],
-        ['Brocade Sensors',0,0,'brocade_sensors','',u'Brocade Sensors','AVERAGE','103680',300,77,0,'none',0,1,0,'ent.1588',[
-            [u'Type','sensor_type',0,1,1, 0,0,'','',''],
-            ], [
-            [u'Sensor Value', 'sensor_value', 0,0,30000000,''],
-                ] ],
-        ['Brocade FC Ports',0,0,'brocade_fcports','',u'Brocade FC Ports','AVERAGE','103680',300,78,0,'none',0,1,0,'ent.1588',[
-            [u'Physical Status','phy',0,1,1, 0,0,'','',''],
-            ], [
-            [u'Tx Words', 'tx_words', 1,0,100000000,''],
-            [u'Rx Words', 'rx_words', 1,0,100000000,''],
-            [u'Tx Frames', 'rx_frames', 1,0,100000000,''],
-            [u'Rx Words', 'rx_frames', 1,0,100000000,''],
-                ] ],
-        ['UPS',1,1,'ups','',u'UPS','AVERAGE','103680',300,84,0,'none',0,1,0,'.',[
-            [u'Identification','ident',0,1,1, 0,1,'','',''],
-            [u'UPS OID','ups_oid',0,1,1, 0,1,'','',''],
-            ], [
-            [u'Battery Temperature', 'temperature', 0,0,200,''],
-            [u'Minutes Remaining', 'minutes_remaining', 0,0,10000200,''],
-            [u'Charge Remaining', 'charge_remaining', 0,0,10000200,''],
-                ] ],
-        ['UPS Input Line',0,1,'ups_lines','1.3.6.1.2.1.33.1|in|0',u'UPS Input Line','AVERAGE','103680',300,85,0,'none',0,1,0,'.',[
-            ], [
-            [u'Voltage', 'voltage', 0,0,500,''],
-            [u'Current', 'current', 0,0,500,''],
-                ] ],
-        ['UPS Output Line',0,1,'ups_lines','1.3.6.1.2.1.33.1|out|0',u'UPS Output Line','AVERAGE','103680',300,85,0,'none',0,1,0,'.',[
-            ], [
-            [u'Voltage', 'voltage', 0,0,500,''],
-            [u'Current', 'current', 0,0,500,''],
-            [u'Load', 'load', 0,0,100,''],
-                ] ],
-        ['Mitsubishi UPS Input Line',0,1,'ups_lines','1.3.6.1.4.1.13891.101|in|1',u'Mitsubishi UPS Input Line','AVERAGE','103680',300,85,0,'none',0,1,0,'.',[
-            ], [
-            [u'Voltage', 'voltage', 0,0,500,''],
-            [u'Current', 'current', 0,0,500,''],
-            [u'Power', 'power', 0,0,100000,''],
-                ] ],
-        ['Mitsubishi UPS Output Line',0,1,'ups_lines','1.3.6.1.4.1.13891.101|out|1',u'Mitsubishi UPS Output Line','AVERAGE','103680',300,85,0,'none',0,1,0,'.',[
-            ], [
-            [u'Voltage', 'voltage', 0,0,500,''],
-            [u'Current', 'current', 0,0,500,''],
-            [u'Power', 'power', 0,0,100000,''],
-            [u'Load', 'load', 0,0,100,''],
-                ] ],
-        ['Cisco PIX',1,1,'pix_connections','',u'PIX Connection Stat','AVERAGE','103680',300,91,0,'none',0,1,0,'ent.9',[], [] ],
-        ['Cisco NAT',0,1,'snmp_simple','.1.3.6.1.4.1.9.10.77.1.2.1.0|NAT',u'Cisco NAT','AVERAGE','103680',300,93,0,'none',0,1,0,'ent.9',[], [] ],
-        ['Sensors',1,1,'sensors','',u'Sensors','AVERAGE','103680',300,94,1,'none',0,1,0,'.',[
-            [u'Table Index','table_index',0,0,0, 0,1,'','',''],
-            [u'Row Index','row_index',0,0,0, 0,1,'','',''],
-            [u'Units','units',0,1,0, 1,0,'','',''],
-            [u'Measure','measure',0,1,0, 1,0,'','',''],
-            [u'Multiplier','multiplier',0,1,0, 1,0,'','',''],
-            ], [
-            [u'Value', 'value', 0,-100000,100000,''],
-                ] ],
-        ['OS/400 System Info',1,1,'snmp_simple','.1.3.6.1.4.1.2.6.4.5.1.0|OS400',u'OS/400 Host','AVERAGE','103680',300,95,0,'none',0,1,0,'.',[], [] ],
-        ['Dell Chassis',1,1,'snmp_simple','.1.3.6.1.4.1.674.10892.1.200.10.1.2.1|Chassis status',u'Dell Chassis','AVERAGE','103680',300,1,0,'none',0,1,0,'.',[], [] ],
-        ['Generic FC Ports',1,0,'fc_ports','',u'Fibre Channel Interface','AVERAGE','103680',300,105,0,'none',0,1,0,'.',[], [] ],
-        ['Cisco 802.11X Device',1,0,'snmp_simple','.1.3.6.1.4.1.9.9.273.1.1.2.1.1.1|Cisco AP',u'Cisco 802.11X Device','AVERAGE','103680',300,101,0,'none',0,1,0,'ent.9',[
-            ], [
-            [u'Associated', 'associated', 0,0,2100,''],
-                ]],
-        ['Compaq Power Supply',1,0,'cpqmib','powersupply',u'Compaq Power Supply','AVERAGE','103680',300,1,0,'none',0,1,0,'.',[], [] ],
-        ]
+        ('BGP Neighbors',
+                'bgp_peers','', True, True,
+                u'BGP Neighbor', '' , '',
+                'AVERAGE',103680, False, False, '.',(
+            ('Local IP','local',True, True, True, False, True, False,'',''),
+            ('Remote IP','remote', False, True, True, False, False ,False,'',''),
+            ('Autonomous System','asn',True, True, True, False, True, False,'',''),
+            ), (
+            (u'BGP In Updates', 'bgpin', 1,0,10000000,''),
+            (u'BGP Out Updates', 'bgpout', 1,0,10000000,''),
+            (u'BGP Uptime', 'bgpuptime', 0,0,10000000,''),
+            (u'Accepted Routes', 'accepted_routes', 0,0,9000000,''),
+            (u'Advertised Routes', 'advertised_routes', 0,0,9000000,''),
+                ) ),
+        (u'Storage',
+                'storage','', True, True,
+                u'Storage Device', '', '',
+                'AVERAGE',103680, False, False, '.',(
+            ('Disk Type','storage_type', True, True, True, False, False, False,'',''),
+            ('Size (bytes)','size', True, True, True, True, False, False,'',''),
+            ('Usage Threshold','usage_threshold',False, True, False, True, False,80,'',''),
+            ), (
+            (u'Storage Block Size', 'storage_block_size', 0,0,0,'size'),
+            (u'Storage Block Count', 'storage_block_count', 0,0,0,'size'),
+            (u'Storage Used Blocks', 'storage_used_blocks', 0,0,0,'size'),
+                ) ),
+        (u'Solaris System Info',
+                'host_information','solaris,sparc,sun,11.2.3.10,8072.3.2.3', True, True,
+                u'Solaris Host', '', '',
+                'AVERAGE',103680, False, False, '.',(
+            (u'Number of Processes','cpu_num', False, True, True, False, True, '','',''),
+            (u'System Name','name',True, True, True, False, True, '','',''),
+            (u'Location','location',True, True, True, False, True, '','',''),
+            (u'Contact','contact',True, True, True, False, True, '','',''),
+            ), (
+            (u'CPU User Ticks', 'cpu_user_ticks', 1,0,86400,''),
+            (u'CPU Idle Ticks', 'cpu_idle_ticks', 1,0,86400,''),
+            (u'CPU Wait Ticks', 'cpu_wait_ticks', 1,0,86400,''),
+            (u'CPU Kernel Ticks', 'cpu_kernel_ticks', 1,0,86400,''),
+            (u'Swap Total', 'swap_total', 0,0,10000000000,''),
+            (u'Swap Available', 'swap_available', 0,0,10000000000,''),
+            (u'Mem Total', 'mem_total', 0,0,10000000000,''),
+            (u'Mem Available', 'mem_available', 0,0,10000000000,''),
+            (u'Load Average 1', 'load_average_1', 0,0,1000,''),
+            (u'Load Average 5', 'load_average_5', 0,0,1000,''),
+            (u'Load Average 15', 'load_average_15', 0,0,1000,''),
+                ) ),
+        (u'Linux/Unix System Info',
+                'host_information','2021.250.10,linux,2021.250.255,freebsd,netSnmp,8072', True, True,
+                u'Linux/Unix Host', '', '',
+                'AVERAGE',103680, False, False,'.',(
+            (u'Number of Processes','cpu_num', False, True, True, False, True, '','',''),
+            (u'CPU Usage Threshold','cpu_threshold', False, False, True, False, True,'80','',''),
+            (u'System Name','name',True, True, True, False, True, '','',''),
+            (u'Location','location',True, True, True, False, True, '','',''),
+            (u'Contact','contact',True, True, True, False, True, '','',''),
+            ), (
+            (u'CPU User Ticks', 'cpu_user_ticks', 1,0,86400,''),
+            (u'CPU Idle Ticks', 'cpu_idle_ticks', 1,0,86400,''),
+            (u'CPU Nice Ticks', 'cpu_nice_ticks', 1,0,86400,''),
+            (u'CPU System Ticks', 'cpu_system_ticks', 1,0,86400,''),
+            (u'Load Average 1', 'load_average_1', 0,0,1000,''),
+            (u'Load Average 5', 'load_average_5', 0,0,1000,''),
+            (u'Load Average 15', 'load_average_15', 0,0,1000,''),
+            (u'Num Users', 'num_users', 0,0,10000,''),
+            (u'Num Procs', 'num_procs', 0,0,10000,''),
+            (u'TCP Active', 'tcp_active', 1,0,10000,''),
+            (u'TCP Passive', 'tcp_passive', 1,0,10000,''),
+            (u'TCP Established', 'tcp_established', 1,0,10000,''),
+                ) ),
+        (u'Windows System Info',
+                'host_information','enterprises.311', True, True,
+                u'Windows Host', '', '', 
+                'AVERAGE',103680, False, False,'.',(
+            (u'Number of Processes','cpu_num', False, True, True, False, True, '1','',''),
+            (u'CPU Usage Threshold','cpu_threshold', False, False, True, False, True,'80','',''),
+            (u'System Name','name',True, True, True, False, True, '','',''),
+            (u'Location','location',True, True, True, False, True, '','',''),
+            (u'Contact','contact',True, True, True, False, True, '','',''),
+            ), (
+            (u'CPU', 'cpu', 0,0,100,''),
+            (u'Num Users', 'num_users', 0,0,10000,''),
+            (u'Num Procs', 'num_procs', 0,0,10000,''),
+            (u'TCP Active', 'tcp_active', 1,0,10000,''),
+            (u'TCP Passive', 'tcp_passive', 1,0,10000,''),
+            (u'TCP Established', 'tcp_established', 1,0,10000,''),
+                ) ),
+        ('Applications',
+                'hostmib_apps','', True, False,
+                u'HostMIB Application', '', '',
+                'AVERAGE',103680, False, False, '.',(
+            (u'Instances at Discovery','instances',True, True, True, False, True, '','',''),
+            (u'Ignore Case','ignore_case',True, True, True, False, True, '','',''),
+            ), (
+            (u'Current Instances', 'current_instances', 0,0,99999,''),
+            (u'Used Memory', 'used_memory', 0,0,9999999,''),
+                ) ),
+        ('Cisco Power Supply',
+                'cisco_envmib','PowerSupply,5.1.2,5.1.3', True, True,
+                u'Cisco Power Supply','', '',
+                'AVERAGE', 103680, True, False,'ent.9',(
+            ), (
+                ) ),
+        ('Cisco Temperature',
+                'cisco_envmib','Temperature,3.1.2,3.1.6', True, True,
+                u'Cisco Temperature', '', '',
+                'AVERAGE',103680, False, False,'ent.9',(
+            ), (
+            (u'Temperature', 'temperature', 0,0,100,''),
+                ) ),
+        ('Cisco Voltage',
+                'cisco_envmib','Voltage,2.1.2,2.1.7', True, True,
+                u'Cisco Voltage', '', '',
+                'AVERAGE', 103680, False, False, 'ent.9',( ), ( ) ),
+        ('Cisco SA Agent',
+                'cisco_saagent', '', True, True,
+                u'Cisco SA Agent', '', '',
+                'AVERAGE',103680, False, False, 'ent.9',(
+            ), (
+            (u'Forward Jitter', 'forward_jitter', 0,0,100,''),
+            (u'Backward Jitter', 'backward_jitter', 0,0,100,''),
+            (u'RT Latency', 'rt_latency', 0,0,100,''),
+            (u'Forward Packetloss', 'forward_packetloss', 0,0,100,''),
+            (u'Backward Packetloss', 'backward_packetloss', 0,0,100,''),
+                ) ),
+        ('Reachable',
+                'reachability','', True, True, 
+                u'Reachability', '', '',
+                'AVERAGE',103680, False, False,'',(
+            (u'Pings to Send','pings',False, True, False, True, False,'','',''),
+            (u'Loss Threshold%','threshold',False, True, False, True, False,'','',''),
+            (u'Interval (ms)','interval',False, True, False, True, False,'','',''),
+            ), (
+            (u'RTT', 'rtt', 0,0,10000,''),
+            (u'Packetloss', 'packetloss', 0,0,1000,''),
+                ) ),
+        ('NTP',
+                'ntp_client','', False, True,
+                u'NTP', '', '',
+                'AVERAGE', 103680, False, False,'',(), () ),
+        ('Compaq Physical Drives',
+                'cpqmib','phydrv', False, True,
+                u'Compaq Physical Drive', '', '',
+                'AVERAGE', 103680, True, False, '.',(
+            (u'Controller', 'controller', True, True, False, False, True, '','',''),
+            (u'Drive', 'drvindex', True, True, False, False, True, '','',''),
+            (u'Drive Model', 'drive', False, True, False, False, True, '','',''),
+            ), (
+                ) ),
+        ('Compaq Fans',
+                'cpqmib','fans', False, True,
+                u'Compaq Fan', '', '',
+                'AVERAGE', 103680, False, False, '.',(
+            (u'Location', 'location', True, True, True, False, True, '','',''),
+            (u'Chassis', 'chassis', False, True, True, False, True, '','',''),
+            (u'Fan', 'fan_index', False, True, True, False, True, '','',''),
+            ), (
+                ) ),
+        ('Compaq Temperature',
+                'cpqmib','temperature', False, True,
+                u'Compaq Temperature', '', '',
+                'AVERAGE',103680, False, False, '.',(
+            (u'Location', 'location', False, True, True, False, True,  '','',''),
+            (u'Chassis', 'chassis', False, True, True, False, True,  '','',''),
+            (u'Sensor', 'temp_index', False, True, True, False, True,  '','',''),
+            ), (
+            (u'Temperature', 'temperature', 0,0,1000,''),
+                ) ),
+        ('IIS Webserver Information',
+                'snmp_simple','1.3.6.1.4.1.311.1.7.3.1.1.0|IIS Information', False, True,
+                u'IIS Info', '', '',
+                'AVERAGE', 103680, False, False,'ent.311',(
+            ), (
+            (u'Total Bytes Received', 'tbr', 1,0,100000000,''),
+            (u'Total CGI Requests', 'tcgir', 1,0,100000000,''),
+            (u'Total Files Sent', 'tfs', 1,0,100000000,''),
+            (u'Total Gets', 'tg', 1,0,100000000,''),
+            (u'Total Posts', 'tp', 1,0,100000000,''),
+                ) ),
+        ('Apache',
+                'apache','', False, True,
+                u'Apache' ,'', '',
+                'AVERAGE', 103680, False, False, '', (
+            ), (
+            (u'Total Accesses', 'tac', 1,0,100000000,''),
+            (u'Total kBytes', 'tkb', 1,0,100000000,''),
+            (u'CPU Load', 'cplo', 0,0,1000,''),
+            (u'Uptime', 'up', 0,0,10000000,''),
+            (u'Bytes Per Request', 'bpr', 0,0,10000000,''),
+            (u'Busy Workers', 'bw', 0,0,1000,''),
+            (u'Idle Workers', 'iw', 0,0,1000,''),
+                ) ),
+        ('APC',
+                'apc','', True, True,
+                u'APC', '', '',
+                'AVERAGE', 103680, False, False, 'ent.318',(
+            ), (
+            (u'Battery Capacity', 'capacity', 0,0,100,''),
+            (u'Output Load', 'load', 0,0,100,''),
+            (u'Input Voltage', 'in_voltage', 0,0,400,''),
+            (u'Output Voltage', 'out_voltage', 0,0,400,''),
+            (u'Time Remaining', 'time_remaining', 0,0,100000000,''),
+            (u'Temperature', 'temperature', 0,0,200,''),
+                ) ),
+        ('Alteon Real Server',
+                'alteon_realservers','', True, True,
+                u'Alteon Real Server', '', '',
+                'AVERAGE', 103680, False, False, 'ent.1872',(
+            (u'Hostname', 'hostname', True, True, True, True, False,  '','',''),
+            (u'Max Connections', 'max_connections', False, True, True, True, False,  '','',''),
+            ), (
+            (u'Total Sessions', 'total_sessions', 1,0,100000000,''),
+            (u'Current Sessions', 'current_sessions', 0,0,0,'max_connections'),
+            (u'Failures', 'failures', 1,0,10000,''),
+            (u'Octets', 'octets', 1,0,100000000,''),
+                ) ),
+        ('Alteon Virtual Server',
+                'alteon_virtualservers','', False, True,
+                u'Alteon Virtual Server', '', '',
+                'AVERAGE', 103680, False, False, 'ent.1872',(
+            (u'Hostname', 'hostname', True, True, True, True, False,  '','',''),
+            ), (
+            (u'Total Sessions', 'total_sessions', 1,0,100000000,''),
+            (u'Current Sessions', 'current_sessions', 0,0,20000,''),
+            (u'Octets', 'octets', 1,0,100000000,''),
+                ) ),
+        ('Alteon Real Services',
+                'alteon_realservices','', False, True,
+                u'Alteon Real Services', '', '',
+                'AVERAGE', 103680, False, False, 'ent.1872',(
+            (u'Hostname', 'hostname', True, True, True, True, False,  '','',''),
+            (u'Address', 'address', True, True, True, True, False,  '','',''),
+            (u'Port', 'port', True, True, True, True, False,  '','',''),
+            (u'Real Server', 'real_server', False, False, True, False, True,  '','',''),
+            ), (
+            (u'Response Time', 'response_time', 0,0,10000,''),
+                ) ),
+        ('Alteon System Info',
+                'host_information','enterprises.1872', True, True,
+                u'Alteon System Info', '', '',
+                'AVERAGE', 103680, False, False, 'ent.1872',(
+            (u'System Name','name',True, True, True, False, True, False,'',''),
+            (u'Location','location',True, True, True, False, True, False,'',''),
+            (u'Contact','contact',True, True, True, False, True, False,'',''),
+            (u'Number of CPUs','cpu_num',False, False, True, False, False, False,'',''),
+            ), (
+            (u'TCP Active', 'tcp_active', 1,0,10000,''),
+            (u'TCP Passive', 'tcp_passive', 1,0,10000,''),
+            (u'TCP Established', 'tcp_established', 1,0,10000,''),
+            (u'Memory Total', 'mem_total', 0,0,10000000000,''),
+            (u'Memory Used', 'mem_used', 0,0,10000000000,''),
+            (u'CPU A 1 sec', 'cpua_1sec', 0,0,1000,''),
+            (u'CPU A 4 sec', 'cpua_4sec', 0,0,1000,''),
+            (u'CPU A 64 sec', 'cpua_64sec', 0,0,1000,''),
+            (u'CPU B 1 sec', 'cpub_1sec', 0,0,1000,''),
+            (u'CPU B 4 sec', 'cpub_4sec', 0,0,1000,''),
+            (u'CPU B 64 sec', 'cpub_64sec', 0,0,1000,''),
+                ) ),
+        ('Brocade Sensors',
+                'brocade_sensors','', False, False,
+                u'Brocade Sensors', '', '',
+                'AVERAGE', 103680, False, False, 'ent.1588',(
+            (u'Type','sensor_type',False, True, True, False, False, False,'',''),
+            ), (
+            (u'Sensor Value', 'sensor_value', 0,0,30000000,''),
+                ) ),
+        ('Brocade FC Ports',
+                'brocade_fcports','', False, False,
+                u'Brocade FC Ports', '', '',
+                'AVERAGE', 103680, False, False, 'ent.1588',(
+            (u'Physical Status','phy', False, True, True, False, False, False,'',''),
+            ), (
+            (u'Tx Words', 'tx_words', 1,0,100000000,''),
+            (u'Rx Words', 'rx_words', 1,0,100000000,''),
+            (u'Tx Frames', 'rx_frames', 1,0,100000000,''),
+            (u'Rx Words', 'rx_frames', 1,0,100000000,''),
+                ) ),
+        ('UPS',
+                'ups','', True, True,
+                u'UPS', '', '',
+                'AVERAGE', 103680, False, False, '.',(
+            (u'Identification','ident',False, True, True, False, True,'','',''),
+            (u'UPS OID','ups_oid',False, True, True, False, True,'','',''),
+            ), (
+            (u'Battery Temperature', 'temperature', 0,0,200,''),
+            (u'Minutes Remaining', 'minutes_remaining', 0,0,10000200,''),
+            (u'Charge Remaining', 'charge_remaining', 0,0,10000200,''),
+                ) ),
+        ('UPS Input Line',
+                'ups_lines','1.3.6.1.2.1.33.1|in|0', False, True,
+                u'UPS Input Line', '', '',
+                'AVERAGE', 103680, False, False, '.',(
+            ), (
+            (u'Voltage', 'voltage', 0,0,500,''),
+            (u'Current', 'current', 0,0,500,''),
+                ) ),
+        ('UPS Output Line',
+                'ups_lines','1.3.6.1.2.1.33.1|out|0', False, True,
+                u'UPS Output Line', '', '',
+                'AVERAGE', 103680, False, False, '.',(
+            ), (
+            (u'Voltage', 'voltage', 0,0,500,''),
+            (u'Current', 'current', 0,0,500,''),
+            (u'Load', 'load', 0,0,100,''),
+                ) ),
+        ('Mitsubishi UPS Input Line',
+                'ups_lines','1.3.6.1.4.1.13891.101|in|1', False, True,
+                u'Mitsubishi UPS Input Line', '', '',
+                'AVERAGE', 103680, False, False, '.',(
+            ), (
+            (u'Voltage', 'voltage', 0,0,500,''),
+            (u'Current', 'current', 0,0,500,''),
+            (u'Power', 'power', 0,0,100000,''),
+                ) ),
+        ('Mitsubishi UPS Output Line',
+                'ups_lines','1.3.6.1.4.1.13891.101|out|1', False, True,
+                u'Mitsubishi UPS Output Line', '', '',
+                'AVERAGE', 103680, False, False, '.',(
+            ), (
+            (u'Voltage', 'voltage', 0,0,500,''),
+            (u'Current', 'current', 0,0,500,''),
+            (u'Power', 'power', 0,0,100000,''),
+            (u'Load', 'load', 0,0,100,''),
+                ) ),
+        ('Cisco PIX',
+                'pix_connections','', True, True,
+                u'PIX Connection Stat', '', '',
+                'AVERAGE', 103680, False,  False,'ent.9',
+                (), () ),
+        ('Cisco NAT',
+                'snmp_simple','.1.3.6.1.4.1.9.10.77.1.2.1.0|NAT', False, True,
+                u'Cisco NAT', '', '',
+                'AVERAGE',103680, False, False, 'ent.9',(), () ),
+        ('Sensors',
+                'sensors','', True, True,
+                u'Sensors', '', '',
+                'AVERAGE', 103680, False, False, '.',(
+            (u'Table Index','table_index',False, False, False, False, True,'','',''),
+            (u'Row Index','row_index',False, False, False, False, True,'','',''),
+            (u'Units','units',False, True, False, True, False,'','',''),
+            (u'Measure','measure',False, True, False, True, False,'','',''),
+            (u'Multiplier','multiplier',False, True, False, True, False,'','',''),
+            ), (
+            (u'Value', 'value', 0,-100000,100000,''),
+                ) ),
+        ('OS/400 System Info',
+                'snmp_simple','.1.3.6.1.4.1.2.6.4.5.1.0|OS400', True, True,
+                u'OS/400 Host', '', '',
+                'AVERAGE', 103680, False, False, '.',(), () ),
+        ('Dell Chassis',
+                'snmp_simple','.1.3.6.1.4.1.674.10892.1.200.10.1.2.1|Chassis status', True, True,
+                u'Dell Chassis', '', '',
+                'AVERAGE', 103680, False, False, '.',(), () ),
+        ('Generic FC Ports',
+                'fc_ports','', True, False,
+                u'Fibre Channel Interface', '', '',
+                'AVERAGE', 103680, False, False, '.',(), () ),
+        ('Cisco 802.11X Device',
+                'snmp_simple','.1.3.6.1.4.1.9.9.273.1.1.2.1.1.1|Cisco AP', False, True, 
+                u'Cisco 802.11X Device', '', '',
+                'AVERAGE', 103680, False, False, 'ent.9',(
+            ), (
+            (u'Associated', 'associated', 0,0,2100,''),
+                )),
+        ('Compaq Power Supply',
+                'cpqmib','powersupply', False, True,
+                u'Compaq Power Supply', '', '',
+                'AVERAGE', 103680, False, False, '.',(), () ),
+        )
     
 config_transfers = [
-    [u'No Configuration Transfer','none'],
-    [u'Cisco IOS, Newer than 12.0 (CONFIG-COPY-MIB)','cisco_cc'],
-    [u'Cisco IOS, Older than 12.0 (SYS-MIB)','cisco_sys'],
-    [u'Cisco CatOS, Catalyst Switches (STACK-MIB)','cisco_catos']
     ]
 
-event_types = [
+event_types = (
         # display_name, severity, tag, text, gen_alm, alm_up, alm_dur, show, sh_host
-    [u'Unknown', u'Warning', 'unknown', u'$attribute $state $info',0,1,0,1,1],
-    [u'Administrative', u'Administrative', 'admin', u'$attribute $info',1,1,1800,1,1],
-    [u'SLA', u'Information', 'sla', u'$attribute $info (${client} ${description})',1,1,1800,1,1],
-    [u'Internal', u'Information', 'internal', u'$user $attribute $state $info',0,1,0,1,0],
+    (u'Unknown', u'Warning', 'unknown', u'$attribute $state $info',False, 1, 0, True, True),
+    (u'Administrative', u'Administrative', 'admin', u'$attribute $info',True, 1, 1800, True, True),
+    (u'SLA', u'Information', 'sla', u'$attribute $info (${client} ${description})',True, 1, 1800, True, True),
+    (u'Internal', u'Information', 'internal', u'$user $attribute $state $info',False,1,0,True,False),
 
-    [u'BGP Status', u'Critical', 'bgp_status', u'BGP Neighbor $attribute $state $info (${client} ${description})',1,1,0,1,1],
-    [u'BGP Notification', u'Information', 'bgp_notify', u'Notification $state $attribute $info',0,1,0,1,1],
+    (u'BGP Status', u'Critical', 'bgp_status', u'BGP Neighbor $attribute $state $info (${client} ${description})',True, 1, 0, True, True),
+    (u'BGP Notification', u'Information', 'bgp_notify', u'Notification $state $attribute $info',False, 1, 0, True, True),
 
-    [u'TCP/UDP Service', u'Service', 'tcpudp_service', u'TCP/UDP Service $attribute $state (${client} ${description}) $info',1,1,0,1,1],
-    [u'TCP Content', u'Service', 'tcp_content', u'Content Response on $attribute is $state (${client} ${description}) $info',1,1,0,1,1],
+    (u'TCP/UDP Service', u'Service', 'tcpudp_service', u'TCP/UDP Service $attribute $state (${client} ${description}) $info',True, 1, 0, True, True),
+    (u'TCP Content', u'Service', 'tcp_content', u'Content Response on $attribute is $state (${client} ${description}) $info',True, 1, 0, True, True),
 
-    [u'Configuration', u'Warning', 'configuration', u'$user changed configuration from $source',0,1,0,1,1],
-    [u'Interface Protocol', u'Fault', 'interface_protocol', u'Interface $attribute Protocol $state $info (${client} ${description})',1,1,0,1,1],
-    [u'Interface Link', u'Big Fault', 'interface_link', u'Interface $attribute Link $state $info (${client} ${description})',0,1,0,1,1],
-    [u'Controller Status', u'Big Fault', 'controller_status', u'Controller  $info $attribute $state',0,1,0,1,1],
-    [u'Interface Shutdown', u'Big Fault', 'interface_shutdown', u'Interface $attribute $info $state (${client} ${description})',0,4,0,1,1],
-    [u'Clear Counters', u'Information', 'clear_counters', u'<user> Cleared Counters of $attribute  (${client} ${description})',0,1,0,1,1],
-    [u'Environmental', u'Critical', 'environment', u'$attribute $state $info',1,1,0,1,1],
-    [u'Duplex Mismatch', u'Warning', 'duplex_mismatch', u'Duplex Mismatch, $attribute is not full duplex and <user> $info is full duplex',0,1,0,1,1],
-    [u'ACL', u'Information', 'acl', u'ACL $attribute $state $info packets from <user>',0,1,0,1,1],
-    [u'Excess Collisions', u'Warning', 'collision', u'Excess Collisions on Interface $attribute',0,1,0,1,1],
-    [u'Application', u'Critical', 'application', u'Application $attribute is $state $info (${client} ${description})',1,1,0,1,1],
-    [u'Reachability', u'Critical', 'reachability', u'Host is $state with $info',1,1,0,1,1],
-    [u'NTP', u'Information', 'ntp', u'$attribute is $state $info',1,1,0,1,1],
+    (u'Configuration', u'Warning', 'configuration', u'$user changed configuration from $source',False, 1, 0, True, True),
+    (u'Interface Protocol', u'Fault', 'interface_protocol', u'Interface $attribute Protocol $state $info (${client} ${description})',True, 1, 0, True, True),
+    (u'Interface Link', u'Big Fault', 'interface_link', u'Interface $attribute Link $state $info (${client} ${description})',False, 1, 0, True, True),
+    (u'Controller Status', u'Big Fault', 'controller_status', u'Controller  $info $attribute $state',False, 1, 0, True, True),
+    (u'Interface Shutdown', u'Big Fault', 'interface_shutdown', u'Interface $attribute $info $state (${client} ${description})',False, 4, 0, True, True),
+    (u'Clear Counters', u'Information', 'clear_counters', u'<user> Cleared Counters of $attribute  (${client} ${description})',False, 1, 0, True, True),
+    (u'Environmental', u'Critical', 'environment', u'$attribute $state $info',True, 1, 0, True, True),
+    (u'Duplex Mismatch', u'Warning', 'duplex_mismatch', u'Duplex Mismatch, $attribute is not full duplex and <user> $info is full duplex',False, 1, 0, True, True),
+    (u'ACL', u'Information', 'acl', u'ACL $attribute $state $info packets from <user>',False, 1, 0, True, True),
+    (u'Excess Collisions', u'Warning', 'collision', u'Excess Collisions on Interface $attribute',False, 1, 0, True, True),
+    (u'Application', u'Critical', 'application', u'Application $attribute is $state $info (${client} ${description})',True, 1, 0, True, True),
+    (u'Reachability', u'Critical', 'reachability', u'Host is $state with $info',True, 1, 0, True, True),
+    (u'NTP', u'Information', 'ntp', u'$attribute is $state $info',True, 1, 0, True, True),
 
-    [u'APC Status', u'Critical', 'apc_status', u'$attribute is $state $info',1,1,0,1,1],
+    (u'APC Status', u'Critical', 'apc_status', u'$attribute is $state $info',True, 1, 0, True, True),
 
-    [u'Alteon RServer', u'Fault', 'alteon_rserver', u'Real Server $attribute is $state',1,1,0,1,1],
-    [u'Alteon Service', u'Fault', 'alteon_service', u'Real Service $attribute is $state $info',1,1,0,1,1],
-    [u'Alteon VServer', u'Fault', 'alteon_vserver', u'Virtual Server $attribute is $state $info',0,1,0,1,1],
+    (u'Alteon RServer', u'Fault', 'alteon_rserver', u'Real Server $attribute is $state',True, 1, 0, True, True),
+    (u'Alteon Service', u'Fault', 'alteon_service', u'Real Service $attribute is $state $info',True, 1, 0, True, True),
+    (u'Alteon VServer', u'Fault', 'alteon_vserver', u'Virtual Server $attribute is $state $info',False, 1, 0, True, True),
 
-    [u'Brocade FC Port', u'Fault', 'brocade_fcport', u'$attribute $state ($info)',1,1,0,1,1],
+    (u'Brocade FC Port', u'Fault', 'brocade_fcport', u'$attribute $state ($info)',True, 1, 0, True, True),
 
-    [u'OS/400 Error', u'Critical', 'os400_error', u'A subsystem is $state on the OS/400',1,1,0,1,1],
-    [u'Storage Controller', u'Big Fault', 'storage_controller', u'$info',1,1,0,1,1]
-    ]
+    (u'OS/400 Error', u'Critical', 'os400_error', u'A subsystem is $state on the OS/400',True, 1, 0, True, True),
+    (u'Storage Controller', u'Big Fault', 'storage_controller', u'$info',True, 1, 0, True, True)
+    )
 
 event_severities = [
     [u'Unknown', 127, '000000', 'ffffff'],
@@ -484,62 +601,65 @@ logmatch_default_rows = [
 
     ]
 
-slas = [
-        [u'No SLA',3, u'No SLA',12,100,1, []],
+slas = (
+        (u'Physical Interface', u'Interface', 75, u'Physical Interfaces', [
+            ]),
+        )
+old_slas = [
         [u'Customer Satellite Link',3, u'Customer Sat Link:',12,75,4, [
-            [15,1],
-            [13,0],
-            [4,0],
-            [7,1],
-            [18,1],
-            [16,1],
-            [6,0],
-            [6,0],
-            [5,0],
-            [5,0],
+            [15,True],
+            [13,False],
+            [4,False],
+            [7,True],
+            [18,True],
+            [16,True],
+            [6,False],
+            [6,False],
+            [5,False],
+            [5,False],
             [6,0]
             ]],
         [u'Main Fiber Link',3, u'Main Link:',12,100,4, [
-            [10,1],
-            [12,1],
-            [2,1],
-            [15,1],
-            [18,1],
-            [6,0],
-            [6,0],
-            [6,0],
-            [6,0],
+            [10,True],
+            [12,True],
+            [2,True],
+            [15,True],
+            [18,True],
+            [6,False],
+            [6,False],
+            [6,False],
+            [6,False],
             ]],
         [u'Main Satellite Link',3, u'Main Sat Link:',12,100,4, [
-            [10,1],
-            [12,1],
-            [7,1],
-            [3,1],
-            [15,1],
-            [6,0],
-            [6,0],
-            [6,0],
-            [6,0],
+            [10,True],
+            [12,True],
+            [7,True],
+            [3,True],
+            [15,True],
+            [6,False],
+            [6,False],
+            [6,False],
+            [6,False],
             ]],
         [u'Cisco Router',3, u'Router:',12,100,3, [
-            [22,1],
-            [27,1],
-            [6,0],
+            [22,True],
+            [27,True],
+            [6,False],
             ]],
-        [u'Storage',3, u'Storage',12,100,8, [ [24,1],],],
+        [u'Storage',3, u'Storage',12,100,8, [ [24,True],],],
         [u'Linux/Unix CPU',3, u'',12,100,11, [
-            [25,1],
-            [26,1],
-            [6,0],
+            [25,True],
+            [26,True],
+            [6,False],
             ]],
         [u'Windows CPU',3, u'',12,100,12, [
-            [28,1],
-            [29,1],
-            [6,0],
+            [28,True],
+            [29,True],
+            [6,False],
             ]],
         [u'APC UPS',3, u'APC UPS',12,100,31, [
-            [31,1],
-            [30,1],
+            [31,True],
+            [30,True],
             ]]
         ]
 
@@ -581,7 +701,7 @@ sla_conditions = [
         ]
 
 pollers = [
-        ['no_poller','No Poller','no_poller',''],
+        ['no_poller','No Polling','no_poller',''],
 
         ['input','SNMP Input Rate','snmp_counter','1.3.6.1.2.1.31.1.1.1.6.${index}|1.3.6.1.2.1.2.2.1.10.${index}'],
         ['verify_interface_number','SNMP Verify Interface Number','verify_interface_number',''],
@@ -642,12 +762,10 @@ pollers = [
         ['tcp_content_analisis','TCP Content Check','tcp_content',''],
         ['rtt,pl','Reachability Ping','reach_ping',''],
         ['status','Reachability Status','reach_status',''],
-        ['tcp_status','TCP Port Status','buffer',''],
-        ['app_status','Host MIB Status','buffer',''],
+        ['','TCP Port Status','buffer','tcp_status'],
+        ['','Host MIB Status','buffer','app_status'],
         ['ntp_status','NTP Status','ntp_client',''],
         ['used_memory','Host MIB Process Memory Usage','hostmib_perf','2'],
-        ['udp_status,conn_delay','UDP Port Status & Delay','udp_status',''],
-        ['udp_status','UDP Port Status','buffer',''],
         ['temperature','Compaq Temperature','snmp_counter','1.3.6.1.4.1.232.6.2.6.8.1.4.${chassis}.${tempindex}'],
         ['temp_status','Compaq Temperature Status','snmp_status','1.3.6.1.4.1.232.6.2.6.8.1.6.${chassis}.${tempindex}|2=up|down'],
         ['fan_status','Compaq Fan Condition','snmp_status','1.3.6.1.4.1.232.6.2.6.7.1.9.${chassis}.${fanindex}|2=up|down'],
@@ -778,10 +896,10 @@ backends = [
         ]
 
 poller_sets = [
-        [u'No Poller', u'No Interface Type', []],
+        [u'No Polling', u'No Interface Type', []],
         [u'Cisco Interface', u'Physical Interfaces', [
             [u'SNMP Verify Interface Number', u'Change Interface Number'],
-            [u'Cisco SNMP Ping Start', u''],
+#            [u'Cisco SNMP Ping Start', u''],
             [u'SNMP Interface Operational Status', u'Alarm Verify Operational'],
             [u'SNMP Interface Administrative Status', u'Set Admin Status'],
             [u'SNMP Input Rate', u''],
@@ -791,10 +909,10 @@ poller_sets = [
             [u'SNMP Output Errors', u''],
             [u'SNMP Input Errors', u''],
             [u'SNMP Drops', u''],
-            [u'Cisco SNMP Ping Wait', u''],
-            [u'Cisco SNMP Ping Get PL', u''],
-            [u'Cisco SNMP Ping Get RTT', u''],
-            [u'Cisco SNMP Ping End', u''],
+#            [u'Cisco SNMP Ping Wait', u''],
+#            [u'Cisco SNMP Ping Get PL', u''],
+#            [u'Cisco SNMP Ping Get RTT', u''],
+#            [u'Cisco SNMP Ping End', u''],
             ]],
         [u'Cisco Router', u'Cisco System Info', [
             [u'Cisco CPU Utilization', u''],
@@ -885,10 +1003,6 @@ poller_sets = [
             ]],
         [u'NTP', u'NTP', [
             [u'NTP Status', u'Alarm NTP'],
-            ]],
-        [u'UDP/IP Port', u'UDP Ports', [
-            [u'UDP Port Status & Delay', u''],
-            [u'UDP Port Status', u'Alarm TCP Port']
             ]],
         [u'Compaq Physical Drive', u'Compaq Physical Drives', [
             [u'Compaq Drive Condition', u'Alarm Environmental'],
@@ -1327,9 +1441,9 @@ graph_types = [
 
 triggers = (
         (
-        u'Interface Status Change', 'alarm', 0, 1, u'${attribute} ${state}', 
+        u'Interface Status Change', 'alarm', False, True, u'${attribute} ${state}', 
         u'The attribute ${attribute} is ${state} on host ${host}.', ( #rules
-            ('event_type', '!IN', 'sla,admin', 0, 0),
+            ('event_type', '!IN', 'sla,admin', False, False),
             )),
     ) # end oftriggers
 

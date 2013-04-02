@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2011 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011,2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 """ Host definition model """
 
 import datetime
+import transaction
 
 from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey, Column
@@ -29,6 +30,10 @@ from rnms.model import DeclarativeBase, DBSession
 from rnms.lib import snmp
 
 __all__ = ['Host', 'Iface', 'ConfigTransfer', 'HostConfig']
+
+MINDATE=datetime.date(1900,1,1)
+discover_interval = 30.0 # 30 min
+discover_variance = 10.0 # +- 5 minutes next discovery
 
 class Host(DeclarativeBase):
     __tablename__ = 'hosts'
@@ -42,9 +47,9 @@ class Host(DeclarativeBase):
     zone_id = Column(Integer, ForeignKey('zones.id'))
     zone = relationship('Zone', backref='hosts')
     tftp_server = Column(String(40))
-    autodiscovery_policy_id = Column(Integer, ForeignKey("autodiscovery_policies.id"), nullable=False, default=1)
+    autodiscovery_policy_id = Column(Integer, ForeignKey("autodiscovery_policies.id") )
     autodiscovery_policy = relationship('AutodiscoveryPolicy', backref='hosts')
-    config_transfer_id = Column(Integer, ForeignKey('config_transfers.id'), nullable=False, default=1)
+    config_transfer_id = Column(Integer, ForeignKey('config_transfers.id'), nullable=False)
     config_transfer = relationship('ConfigTransfer')
     default_user_id = Column(Integer, ForeignKey('tg_user.user_id'))
     default_user = relationship('User')
@@ -54,7 +59,7 @@ class Host(DeclarativeBase):
     pollable = Column(Boolean, default=True)
     created = Column(DateTime, nullable=False, default=datetime.datetime.now)
     updated = Column(DateTime, nullable=False, default=datetime.datetime.now)
-    polled = Column(DateTime, nullable=False, default=datetime.datetime.now)
+    next_discover = Column(DateTime, nullable=False, default=datetime.datetime.now)
     sysobjid = Column(String(250))
     #}
 
@@ -114,6 +119,15 @@ class Host(DeclarativeBase):
         """ Returns True if Read Only Community is SNMP v1 """
         return self.community_ro[0] == '1'
         
+
+    def update_discover_time(self):
+        """
+        Update the next discover date to the next time we auto-discover
+        on this host.
+        """
+        self.next_discover = datetime.datetime.now() + datetime.timedelta(
+                seconds = (discover_interval + (random.random() - 0.5) * discover_variance) * 60.0)
+        transaction.commit()
 
 class Iface(DeclarativeBase):
     __tablename__ = 'interfaces'

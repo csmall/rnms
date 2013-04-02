@@ -24,7 +24,7 @@ import logging
 
 from tg import config
 from sqlalchemy import ForeignKey, Column, and_
-from sqlalchemy.types import Integer, Unicode, String, SmallInteger
+from sqlalchemy.types import Integer, Unicode, String, SmallInteger, BigInteger
 #from sqlalchemy.orm import relation, backref
 
 from rnms.model import DeclarativeBase, DBSession, AttributeField, AttributeTypeField
@@ -46,7 +46,7 @@ class AttributeTypeRRD(DeclarativeBase):
     position = Column(SmallInteger,nullable=False,default=1)
     data_source_type = Column(SmallInteger) # gauge,counter,absolute
     range_min = Column(Integer)
-    range_max = Column(Integer)
+    range_max = Column(BigInteger)
     range_max_field = Column(String(40)) # matches tag in fields
     #}
 
@@ -131,7 +131,7 @@ class AttributeTypeRRD(DeclarativeBase):
                 os.extsep,
                 'rrd'))
 
-    def update(self, attribute, value):
+    def update(self, attribute, value, rrd_client=None):
         """
         Update the RRD file for the given attribute with the given value
         Returns a key:value on success or error message
@@ -140,10 +140,14 @@ class AttributeTypeRRD(DeclarativeBase):
         if not os.path.isfile(filename):
             if not self.create(filename, attribute):
                 return '(No filename)'
-        try:
-            rrdtool.update(filename, "N:{0}".format(value))
-        except rrdtool.error as errmsg:
-            return '(error {0})'.format(errmsg)
+
+        if rrd_client is None:
+            try:
+                rrdtool.update(filename, "N:{0}".format(value))
+            except rrdtool.error as errmsg:
+                return '(error {0})'.format(errmsg)
+        else:
+            rrd_client.update(filename, value)
         return value
 
     def adjust_limits(self, attribute, new_min, new_max):

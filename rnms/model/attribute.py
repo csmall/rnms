@@ -35,7 +35,11 @@ __all__ = ['Attribute', 'AttributeField', 'AttributeType', 'AttributeTypeField',
 logger = logging.getLogger('rnms')
 
 MINDATE=datetime.date(1900,1,1)
-poll_variance = 60 # +- 30 seconds for next poll
+POLL_VARIANCE_MINUTES = 1 # +- 30 seconds for next poll
+
+# Check the SLAs every 30 minuts += 2 minutes
+SLA_INTERVAL_MINUTES = 30
+SLA_VARIANCE_MINUTES = 2
 
 class AttributeBaseState(object):
     """
@@ -87,8 +91,8 @@ class Attribute(DeclarativeBase, AttributeBaseState):
     poller_set = relationship('PollerSet')
     created = Column(DateTime, nullable=False, default=datetime.datetime.now)
     updated = Column(DateTime, nullable=False, default=datetime.datetime.now)
-    polled = Column(DateTime, nullable=False, default=MINDATE)
     next_poll = Column(DateTime, nullable=False, default=datetime.datetime.now)
+    next_sla = Column(DateTime, nullable=False, default=datetime.datetime.now)
     fields = relationship('AttributeField', backref='attribute', cascade='all, delete, delete-orphan')
     #}
 
@@ -132,6 +136,14 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         Used for finding how long before we need to rescan again
         """
         return DBSession.query(cls).order_by(asc(cls.next_poll)).first()
+    
+    @classmethod
+    def next_sla_analysis(cls):
+        """
+        Return the attribute that would be the next one for SLA
+        Used for finding how long before we need to rescan again
+        """
+        return DBSession.query(cls).filter(and_(cls.sla_id > 1, cls.poller_set_id > 1)).order_by(asc(cls.next_sla)).first()
 
     @classmethod
     def from_discovered(cls, host, discovered_attribute):
@@ -159,9 +171,11 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         return a
 
     @classmethod
-    def have_sla(cls, attribute_ids=None, host_ids=None):
+    def have_sla(cls, next_sla_time=None, attribute_ids=None, host_ids=None):
         """ Return attributes have have a SLA set plus polling """
-        conditions = [cls.sla_id > 1, cls.poller_set_id > 1 ]
+        conditions = [cls.sla_id > 1, cls.poller_set_id > 1]
+        if next_sla_time is not None:
+            conditions.append(cls.next_sla < next_sla_time)
         if attribute_ids is not None:
             conditions.append(cls.id.in_(attribute_ids))
         if host_ids is not None:
@@ -177,7 +191,8 @@ class Attribute(DeclarativeBase, AttributeBaseState):
             return
         for field in self.fields:
             if field.attribute_type_field_id == type_field.id:
-                field.value = value
+                if field.value != value:
+                    field.value = value
         else:
             new_field = AttributeField(self,type_field)
             new_field.value = value
@@ -262,20 +277,23 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         """ Return true if this attribute is down. """
         return self.oper_state == states.STATE_DOWN
 
-    def update_poll_date(self, now=None):
+    def update_poll_time(self):
         """
-        Update the poll date and next poll date to the given datetime
-        or if None to now
+        Update the next poll time 
         """
-        if now == None:
-            now = datetime.datetime.now()
-        self.polled = now
-
-        next_poll_variance = datetime.timedelta(seconds=(random.random() - 0.5) * poll_variance)
+        now = datetime.datetime.now()
+        next_poll_variance = datetime.timedelta(minutes=(random.random() - 0.5) * POLL_VARIANCE_MINUTES * 2)
         if self.poll_interval < 1:
             self.next_poll = now + datetime.timedelta(minutes=self.default_poll_interval) + next_poll_variance
         else:
             self.next_poll = now + datetime.timedelta(minutes=self.poll_interval) + next_poll_variance
+    
+    def update_sla_time(self):
+        """
+        Update the next time we run the SLA analysis for this attribute
+        """
+        self.next_sla = datetime.datetime.now() + datetime.timedelta(minutes=(
+            SLA_INTERVAL_MINUTES + (random.random()-0.5) * SLA_VARIANCE_MINUTES * 2))
 
     def set_disabled(self):
         """
@@ -310,7 +328,6 @@ class Attribute(DeclarativeBase, AttributeBaseState):
             self.set_oper_up()
         else:
             self.oper_state = alarm.alarm_state.internal_state
-        DBSession.flush()
 
 
 class AttributeField(DeclarativeBase):

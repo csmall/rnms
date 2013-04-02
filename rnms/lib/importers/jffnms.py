@@ -21,11 +21,12 @@
 """ JFFNMS data importer """
 import re
 import logging
+import datetime
+import transaction
+
 from rnms import model
 from rnms.model import DBSession
-import transaction
 from sqlalchemy.exc import IntegrityError
-from datetime import date
 
 logger = logging.getLogger('rnms')
 
@@ -221,9 +222,10 @@ class JffnmsImporter(object):
                 host.default_user_id = self.user_id(row[8])
                 host.show_host = (row[9] == 1)
                 host.pollable = (row[10] == 1)
-                host.created = date.fromtimestamp(row[11])
-                host.updated = date.fromtimestamp(row[12])
-                host.polled = date.fromtimestamp(row[13])
+                host.created = datetime.datetime.fromtimestamp(row[11])
+                host.updated = datetime.datetime.fromtimestamp(row[12])
+                host.discovered = datetime.datetime.now()
+                host.next_discover = host.discovered + datetime.timedelta(minutes=30)
                 host.sysobjid = row[14]
                 host.config_transfer_id = row[15]
 
@@ -250,7 +252,7 @@ class JffnmsImporter(object):
         result = self.dbhandle.execute("SELECT date,host,config FROM hosts_config WHERE id > 1 ORDER BY id")
         for row in result:
             conf = model.HostConfig()
-            conf.created = date.fromtimestamp(row[0])
+            conf.created = datetime.datetime.fromtimestamp(row[0])
             conf.host_id = self.host_id(row[1])
             conf.config = row[2]
             DBSession.add(conf)
@@ -317,9 +319,9 @@ class JffnmsImporter(object):
                     att.admin_state = 1
                 elif row[8] == 2:
                     att.admin_state = 2
-                att.created = date.fromtimestamp(row[10])
-                att.updated = date.fromtimestamp(row[11])
-                att.polled = date.fromtimestamp(row[12])
+                att.created = datetime.datetime.fromtimestamp(row[10])
+                att.updated = datetime.datetime.fromtimestamp(row[11])
+                att.next_poll = datetime.datetime.fromtimestamp(row[12]) + datetime.timedelta(minutes=5)
                 att.attribute_type = DBSession.query(model.AttributeType).filter(model.AttributeType.display_name==unicode(row[15])).first()
 
                 if row[16] == 'SNMP Interface HC':

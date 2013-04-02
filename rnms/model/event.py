@@ -114,10 +114,9 @@ class Event(DeclarativeBase):
         if self.processed == True:
             return #done it already
 
-        DBSession.flush()
         from rnms.model import Alarm
 
-        logger.info('E%d New %s event: Host %d Attribute %d',self.id, self.event_type.display_name, self.host_id or 0, self.attribute_id or 0)
+        logger.info('E New %s event: Host %d Attribute %d',self.event_type.display_name, self.host_id or 0, self.attribute_id or 0)
 
         if self.alarm_state is None:
             self.processed = True

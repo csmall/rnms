@@ -48,10 +48,6 @@ class Sla(DeclarativeBase, GenericSet):
     display_name = Column(Unicode(60), nullable=False, unique=True)
     event_text = Column(Unicode(60))
     threshold = Column(SmallInteger)
-    event_type_id = Column(Integer,ForeignKey('event_types.id'))
-    event_type = relationship('EventType', order_by='EventType.id', backref='slas')
-    alarm_state_id = Column(Integer,ForeignKey('alarm_states.id'))
-    alarm_state = relationship('AlarmState', order_by='AlarmState.id', backref='slas')
     sla_rows = relationship('SlaRow', backref=backref('sla', lazy='joined'), order_by='SlaRow.position')
     #}
 
@@ -82,10 +78,13 @@ class Sla(DeclarativeBase, GenericSet):
                 rrd_values[new_field] = attribute.get_rrd_value(new_field, start_time, end_time)
         return rrd_values
 
-    def analyze(self, attribute):
+    def analyze(self, attribute, sla_logger=None):
         """
         Analyze this SLA against the given attribute
         """
+        if sla_logger is not None:
+            logger = sla_logger
+
         end_time = str(int(time.time()/SLA_RESOLUTION)*SLA_RESOLUTION)
         start_time = 'e-{}m'.format(SLA_INTERVAL_MINUTES)
 

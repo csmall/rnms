@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012.2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,50 +19,57 @@
 #
 import logging
 import datetime
-import asyncore
+import transaction
 
 from sqlalchemy import and_
 
 from rnms import model
-from rnms.lib.snmp import SNMPEngine
-from rnms.lib import ntpclient
-from rnms.lib.tcpclient import TCPClient
-from rnms.lib.pingclient import PingClient
-from rnms.lib.nmapclient import NmapClient
+from rnms.lib.engine import RnmsEngine
 
+SCAN_TABLE_SECONDS=300
 
-class AttDiscover(object):
+class AttDiscover(RnmsEngine):
     """
     Attribute Discovery object
     Can be given a host to scan or will scan all hosts looking for 
     new attributes
     """
     _print_only = True
+    do_once = True
     max_active_hosts = 5
     _force = False
+    scan_host_table_time = datetime.datetime.min
+
+    _active_hosts = None
+    _waiting_hosts = None
+
+    NEED_CLIENTS = ('snmp', 'ntp', 'tcp', 'ping', 'nmap')
 
 
-    def __init__(self, hosts=None, print_only=True, force=False):
+    def __init__(self, attribute_ids=None, host_ids=None, print_only=True, force=False, zmq_context=None, do_once=True):
+        super(AttDiscover, self).__init__('adisc', zmq_context)
+
         self._active_hosts = {}
         self._waiting_hosts = []
-        self.snmp_engine = SNMPEngine()
-        self.ntp_client = ntpclient.NTPClient()
-        self.tcp_client = TCPClient()
-        self.ping_client = PingClient()
-        self.nmap_client = NmapClient()
-        self.logger = logging.getLogger("rnms")
+
         self._force = force
+        self.do_once = do_once
 
     def discover(self, limit_hosts=None, limit_atypes=None, print_only=True):
         """
         Run the discovery on either all hosts or the ones specified
         in this call. Returns the dictionary of hosts and found attributes
         """
-        self._fill_host_table(limit_hosts)
-        self._fill_attribute_type_table(limit_atypes)
 
-        self.logger.debug('%d hosts requiring discovery.', len(self._waiting_hosts))
-        while self._active_hosts != {} or self._waiting_hosts != []:
+        self._fill_attribute_type_table(limit_atypes)
+        if self.do_once:
+            self._fill_host_table(limit_hosts)
+        while True:
+            now = datetime.datetime.now()
+            if not self.do_once and self.scan_host_table_time < now:
+                self._fill_host_table(limit_hosts)
+                self.scan_host_table_time = now + datetime.timedelta(seconds=SCAN_TABLE_SECONDS)
+
             num_active_hosts = len(self._active_hosts)
             if num_active_hosts < self.max_active_hosts:
                 self._activate_hosts(self.max_active_hosts - num_active_hosts)
@@ -70,23 +77,22 @@ class AttDiscover(object):
 
             # Check through all the engines and sockets
             host_count = len(self._active_hosts)
-            need_asynpoll = False
-            snmp_jobs = self.snmp_engine.poll()
-            if snmp_jobs > 0:
-                need_asynpoll = True
-                host_count -= snmp_jobs
-            nmap_jobs = self.nmap_client.poll()
-            if nmap_jobs > 0:
-                host_count -= nmap_jobs
-            if self.ntp_client.poll():
-                need_asynpoll = True
-            if self.tcp_client.poll():
-                need_asynpoll = True
-            if need_asynpoll > 0:
-                if nmap_jobs > 0:
-                    asyncore.poll(0.1)
-                else:
-                    asyncore.poll(3.0)
+            self.snmp_engine.poll()
+            self.nmap_client.poll()
+            self.ntp_client.poll()
+            self.tcp_client.poll()
+            if self.zmq_core.poll(0.1) == False:
+                return
+            if self._active_hosts == {} and self._waiting_hosts == []:
+                # No more hosts to check
+                # sleep until we need more things to do 
+                if self.do_once == True or self.end_thread == True:
+                    break
+                transaction.commit()
+                if self._sleep_until_next() == False:
+                    return
+            # Done, lets get out of here
+            transaction.commit()
 
             
     def discover_callback(self, host_id, discovered_atts):
@@ -283,6 +289,11 @@ class AttDiscover(object):
 
 
     def _finish_discovery(self, host):
+        """
+        This method is called once we have finished discovering all
+        Attribute Types for this Host.
+        """
+        host['host'].update_discover_time()
         del (self._active_hosts[host['id']])
 
     def _get_discovery_row(self, index):
@@ -315,3 +326,11 @@ class AttDiscover(object):
             new_sysobjid = value.replace('1.3.6.1.4.1','ent')
             active_host['host'].sysobjid = new_sysobjid
 
+    def _sleep_until_next(self):
+        """ Stay in this loop until we need to scan more hosts """
+        next_host = model.Host.next_autodiscover()
+        if next_host is None:
+            return self.sleep(self.scan_host_table_time)
+        else:
+            self.logger.info('Next atribute discovery #%d at %s', next_host.id, next_host.next_discover.ctime())
+            return self.sleep(min(next_host.next_discover, self.scan_host_table_time))

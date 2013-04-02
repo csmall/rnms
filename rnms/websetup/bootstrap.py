@@ -66,12 +66,17 @@ def bootstrap(command, conf, vars):
         for row in database_data.attribute_types:
             at = model.AttributeType()
             #FIXME - The poller set must be a name not number at this point
-            (at.display_name, at.ad_validate, at.ad_enabled, at.ad_command,
-                    at.ad_parameters, default_poller_set,
-                    at.rra_cf, at.rra_rows, ignore_step, at.default_graph_id,
-                    at.break_by_card, ignore_handler, at.permit_manual_add,
-                    at.default_sla_id, ignore_tools, at.required_sysobjid, fields, rrds
+            try:
+                (at.display_name, at.ad_command,
+                    at.ad_parameters, at_ad_validate, at.ad_enabled, 
+                    default_poller_set, default_sla, default_graph,
+                    at.rra_cf, at.rra_rows,
+                    at.break_by_card, at.permit_manual_add,
+                    at.required_sysobjid, fields, rrds
                     ) = row
+            except ValueError:
+                print "problem with row", row
+                raise
             atype_psets.append((at.display_name, default_poller_set))
             field_position = 0
             for field in fields:
@@ -88,6 +93,15 @@ def bootstrap(command, conf, vars):
                 rrd_position += 1
                 at.rrds.append(r)
             model.DBSession.add(at)
+        model.DBSession.flush()
+        transaction.commit()
+    except IntegrityError:
+        print 'Problem adding attribute type data'
+        import traceback
+        print traceback.format_exc()
+        transaction.abort()
+        exit
+    try:
 
 
         for row in database_data.config_transfers:
@@ -108,7 +122,7 @@ def bootstrap(command, conf, vars):
         for row in database_data.event_types:
             et = model.EventType()
             try:
-                (et.display_name, severity, et.tag, et.text, et.generate_alarm, et.up_event_id, et.alarm_duration, et.showable, et.show_host) = row
+                (et.display_name, severity, et.tag, et.text, et.generate_alarm, ignore_up_event_id, et.alarm_duration, ignore_showable, et.show_host) = row
             except ValueError as errmsg:
                 print("Bad event_type \"{0}\".\n{1}".format(row, errmsg))
                 exit()
@@ -157,8 +171,10 @@ def bootstrap(command, conf, vars):
 
         for row in database_data.slas:
             s = model.Sla()
-            (s.display_name, s.alarm_state_id, s.event_text, event_id, s.threshold, s.attribute_type_id, sla_rows) = row
-            s.event_type_id = 10 # SLA evne_type
+            (s.display_name, s.event_text, s.threshold, attribute_type, sla_rows) = row
+            s.attribute_type = model.AttributeType.by_display_name(attribute_type)
+            if s.attribute_type is None:
+                raise ValueError("Bad AttributeType name \"{}\" in SLA {}".format(attribute_type, s.display_name))
             model.DBSession.add(s)
             position=1
             for sla_row in sla_rows:
@@ -242,6 +258,14 @@ def bootstrap(command, conf, vars):
                     exit()
                 used_event_types.append(event_type.id)
             model.DBSession.add(be)
+        transaction.commit()
+    except IntegrityError:
+        print 'Problem adding backend type data'
+        import traceback
+        print traceback.format_exc()
+        transaction.abort()
+        exit
+    try:
 
         for row in database_data.poller_sets:
             (ps_name, at_name, poller_rows) = row
@@ -251,17 +275,16 @@ def bootstrap(command, conf, vars):
             ps = model.PollerSet(ps_name)
             ps.attribute_type = atype
             poller_row_pos = 0
-            default_backend = model.Backend.default()
             for poller_row in poller_rows:
                 pr_poller = model.Poller.by_display_name(poller_row[0])
                 if pr_poller is None:
                     raise ValueError("Bad poller name \"{0}\".".format(poller_row[0]))
-                if poller_row[1] == u'':
-                    pr_backend = default_backend
-                else:
+
+                pr_backend = None
+                if poller_row[1] != '':
                     pr_backend = model.Backend.by_display_name(poller_row[1])
-                if pr_backend is None:
-                    raise ValueError("Bad backend name \"{0}\".".format(poller_row[1]))
+                    if pr_backend is None:
+                        raise ValueError("Bad backend name \"{0}\".".format(poller_row[1]))
                 pr = model.PollerRow()
                 pr.poller = pr_poller
                 pr.backend = pr_backend
