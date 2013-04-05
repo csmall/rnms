@@ -69,7 +69,7 @@ class RnmsInfo(object):
         'SNMP RW', self._snmp_data(host.community_rw),
         'Autodiscovery', host.autodiscovery_policy.id, host.autodiscovery_policy.display_name,
         'Created', host.created,
-        'Polled', host.polled,
+        'Next Discovery', host.next_discover,
         'Attributes', len(host.attributes), ', '.join([str(a.id) for a in host.attributes])
         )
 
@@ -97,7 +97,7 @@ class RnmsInfo(object):
         'Poller Set', attribute.poller_set.id, attribute.poller_set.display_name, attribute.poll_enabled,
         'SLA', attribute.sla.id, attribute.sla.display_name,
         'Created', attribute.created,
-        'Polled', attribute.polled,
+        'Next SLA', attribute.next_sla,
         'Next Poll', attribute.next_poll)
             print '-' * 60
             print 'Fields'
@@ -129,6 +129,7 @@ class RnmsInfo(object):
                         row.backend_id,
                         (row.backend.display_name+' ('+row.backend.command+')')[:25],
                         )
+        print '=' * 60
 
     def autodiscovery_info(self, ids):
         """ Information about the autodiscovery policy """
@@ -209,6 +210,35 @@ Attribute Autodiscovery can do the following:
             for rrd in atype.rrds:
                 print '{:<3} {:<26} | {:<5} {}'.format(rrd.position, rrd.display_name, rrd.dst2str(), rrd.name)
 
+
+    def sla_info(self, ids):
+        """ Information about SLAs """
+        slas = model.DBSession.query(model.Sla).filter(model.Sla.id.in_(ids))
+        if slas.count() == 0:
+            print "No SLAs found"
+            return
+        print
+        for sla in slas:
+            try:
+                at_name = sla.attribute_type.display_name
+            except AttributeError:
+                at_name = 'None'
+            print '=' * 60
+            print '{:<30} | {}: {}'.format('SLA', sla.id, sla.display_name)
+            print '-' * 60
+            print '''{:<30} | {}: {}
+{:<30} | {}% '''.format( 'Attribute Type', sla.attribute_type_id, at_name,
+        'Threshold', sla.threshold,
+        )
+            print '-' * 60
+            print 'Rules\nPos|  Show | {:<40}'.format('SLA')
+            for row in sla.sla_rows:
+                print '{:<3}| {:>5} | {:>3}: {:<35}'.format(
+                        row.position, 
+                        str(row.show_result),
+                        row.sla_condition_id, row.sla_condition.display_name,
+                        )
+        print '=' * 60
 
     def trigger_info(self, ids):
         """ Information about the triggers """

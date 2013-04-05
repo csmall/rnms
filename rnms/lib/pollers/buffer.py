@@ -21,10 +21,11 @@
 def poll_buffer(poller_buffer, parsed_params, pobj, attribute, poller_row, **kw):
     """
     A poller to yank items out of the poller_buffer
-    name comes from parameters
+    The parameters define which key is used from the poller_buffer
     """
     ret_fields = []
     if parsed_params == '':
+        print 'no params'
         return False
     field_names =  parsed_params.split(',')
     for field_name in field_names:

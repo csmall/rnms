@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2011 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -93,10 +93,13 @@ class Sla(DeclarativeBase, GenericSet):
         event_details=[]
         cond_rows = DBSession.query(SlaRow).filter(SlaRow.sla_id==self.id)
         cond_row_count = 0
-        for cond_row in cond_rows:
+        for cond in cond_rows:
             cond_row_count += 1
-            cond = cond_row.sla_condition
-            rrd_values = self._update_rrd_values(rrd_values, attribute, cond.expression, start_time, end_time)
+            try:
+                rrd_values = self._update_rrd_values(rrd_values, attribute, cond.expression, start_time, end_time)
+            except KeyError as errmsg:
+                logger.error('A%d %s',attribute.id, errmsg)
+                return
             if len(rrd_values) == 0:
                 return
             # AND/OR remove the last two items from stack and replace with reasult
@@ -126,12 +129,11 @@ class Sla(DeclarativeBase, GenericSet):
             logger.debug('A%d: Final Result: False', attribute.id)
         else:
             logger.debug('A%d: Final Result: True', attribute.id)
-            event_fields={
-                    'info': self.event_text,
-                    'details': ', '.join(event_details)}
-            new_event = Event(event_type=self.event_type, attribute=attribute, alarm_state=self.alarm_state, field_list=event_fields)
-            DBSession.add(new_event)
-            new_event.process()
+            new_event = Event.create_sla(attribute, self.event_text, ', '.join(event_details))
+            if new_event is None:
+                logger.error('A%d: Cannot create event', attribute.id)
+            else:
+                DBSession.add(new_event)
 
 class SlaRow(DeclarativeBase):
     """
@@ -141,35 +143,8 @@ class SlaRow(DeclarativeBase):
     
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
-    sla_id = Column(Integer, ForeignKey('slas.id'), nullable=False)
+    sla_id = Column(Integer, ForeignKey('slas.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
     position = Column(Integer, nullable=False, default=1)
-    show_result = Column(Boolean, nullable=False, default=True)
-    sla_condition_id = Column(Integer, ForeignKey('sla_conditions.id'))
-    sla_condition = relationship('SlaCondition', lazy='joined')
-
-    def __init__(self,sla=None, sla_condition=None, show_result=True, position=1):
-        self.sla = sla
-        self.sla_condition = sla_condition
-        self.show_result = show_result
-        self.position = position
-
-    def __repr__(self):
-        if self.sla is not None:
-            sla_name = self.sla.display_name
-        else:
-            sla_name = 'None'
-        if self.sla_condition is not None:
-            cond_name = self.sla_condition.display_name
-        else:
-            cond_name = 'None'
-        return '<SlaRow position={0} sla={1} conditiion={2}'.format(self.position, sla_name, cond_name)
-
-class SlaCondition(DeclarativeBase):
-    __tablename__ = 'sla_conditions'
-    
-    #{ Columns
-    id = Column(Integer, autoincrement=True, primary_key=True)
-    display_name = Column(Unicode(60), nullable=False, unique=True)
     expression = Column(String(250))
     oper = Column(Unicode(5))
     limit = Column(Integer)
@@ -183,7 +158,19 @@ class SlaCondition(DeclarativeBase):
             '>' : operator.gt,
             '<' : operator.lt,
             '>=': operator.ge,
-            '<=': operator.le}
+            '<=': operator.le,
+            }
+
+    def __init__(self,sla=None, position=1):
+        self.sla = sla
+        self.position = position
+
+    def __repr__(self):
+        if self.sla is not None:
+            sla_name = self.sla.display_name
+        else:
+            sla_name = 'None'
+        return '<SlaRow position={} sla={}>'.format(self.position, sla_name)
 
     def operate(self, output):
         """

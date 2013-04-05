@@ -31,7 +31,14 @@ from rnms.lib.states import *
 
 class Alarm(DeclarativeBase):
     """
-    An alarm is some sort of alert on an attribute
+    An alarm is some sort of alert on an attribute. They are created by
+    an Event and share its Severity and EventType.
+    If the EventType has a duration then the stop event is the same as the
+    start Event and the stop time is after the duration expires.
+
+    Alarms can also be stopped with an UP Event for the same EventType
+    and Attribute.
+
     """
     __tablename__ = 'alarms'
 
@@ -63,7 +70,7 @@ class Alarm(DeclarativeBase):
             self.alarm_state = event.alarm_state
             if event.event_type.alarm_duration > 0:
                 self.stop_time = datetime.datetime.now() + datetime.timedelta(minutes=event.event_type.alarm_duration)
-            self.process()
+                self.stop_event = event
 
     def __repr__(self):
         return '<Alarm {0} A:{1} T:{2}>'.format(self.id, self.attribute_id, self.start_time)
@@ -89,6 +96,8 @@ class Alarm(DeclarativeBase):
         Set the stop attributes for this alarm.  
         Requires the event that stopped the alarm and an optional
         new alarm_state to set the alarm to.
+        Processed flag is cleared for the consolidator to trigger on
+        an up alarm
         """
         if alarm_state is None:
             self.alarm_state = stop_event.alarm_state
@@ -96,6 +105,7 @@ class Alarm(DeclarativeBase):
             self.alarm_state = alarm_state
         self.stop_time = stop_event.created
         self.stop_event = stop_event
+        self.processed = False
 
     @classmethod
     def find_down(cls,attribute,event_type):

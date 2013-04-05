@@ -39,7 +39,7 @@ class Poller(DeclarativeBase):
     id = Column(Integer, primary_key=True, nullable=False)
     display_name = Column(Unicode(40), nullable=False, unique=True)
     command = Column(String(60), nullable=False, default='none')
-    field = Column(String(20))
+    field = Column(String(80))
     parameters = Column(String(250), nullable=False, default='')
 
     def __init__(self,display_name=None, command='none', tag='', parameters=''):
@@ -138,9 +138,9 @@ class PollerRow(DeclarativeBase):
     poller_set_id = Column(Integer, ForeignKey('poller_sets.id'), primary_key=True, nullable=False)
     poller_set = relationship('PollerSet')
     position = Column(SmallInteger, nullable=False, default=1, primary_key=True)
-    poller_id = Column(Integer,  ForeignKey('pollers.id'))
+    poller_id = Column(Integer,  ForeignKey('pollers.id'), nullable=False, default=1)
     poller = relationship('Poller', lazy='joined')
-    backend_id = Column(Integer, ForeignKey('backends.id'))
+    backend_id = Column(Integer, ForeignKey('backends.id'), nullable=False, default=1)
     backend = relationship('Backend', lazy='joined')
     #}
 

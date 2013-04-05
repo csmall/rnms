@@ -157,7 +157,7 @@ class AttributeTypeRRD(DeclarativeBase):
             return False
         try:
             rrdtool.tune(filename, "--minimum", new_min, "--maximum", new_max)
-        except rrdtool.error:
+        except rrdtool.error as errmsg:
             logger.error('RRDTool tune error: %s', errmsg)
             return False
         return True
@@ -183,7 +183,7 @@ class AttributeTypeRRD(DeclarativeBase):
             return None
         try:
             return rrdtool.fetch(filename, str(self.attribute_type.rra_cf), '-s', start_time, '-e', end_time)
-        except rrdtool.error:
+        except rrdtool.error as errmsg:
             logger.error('RRDTool fetch error: %s', errmsg)
         return None
 

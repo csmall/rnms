@@ -33,6 +33,7 @@ from rnms.config.environment import load_environment
 from rnms.lib.poller import Poller
 from rnms.lib.consolidate import Consolidator
 from rnms.lib.sla_analyzer import SLAanalyzer
+from rnms.lib.att_discover import AttDiscover
 from rnms.lib import zmqmessage 
 
 LOG_FORMAT="%(asctime)s %(levelname)-5.5s [%(name)s] %(message)s"
@@ -45,29 +46,35 @@ class Rnmsd(object):
     enable_poller = True
     enable_consolidator = True
     args = None
+    threads = None
 
     def __init__(self):
         self.zmq_context = zmq.Context()
         self.zmq_poller = zmq.Poller()
         self.control_socket = zmqmessage.control_server(self.zmq_context)
+        self.threads = {}
     
     def run(self):
         """ The entry point for the RNMS daemon """
         self._setup_app()
         self.logger = logging.getLogger('rnms')
 
-        self.poller = Poller(zmq_context=self.zmq_context)
-        poller_thread = threading.Thread(target=self.poller.main_loop)
-        poller_thread.start()
+        self.poller = Poller(zmq_context=self.zmq_context, do_once=False)
+        self.threads['poller'] = threading.Thread(target=self.poller.main_loop)
+        self.threads['poller'].start()
 
         self.consolidator = Consolidator(zmq_context=self.zmq_context, do_once=False)
-        consolidator_thread = threading.Thread(target=self.consolidator.consolidate, name='consolidator')
-        consolidator_thread.start()
+        self.threads['consolidator'] = threading.Thread(target=self.consolidator.consolidate, name='consolidator')
+        self.threads['consolidator'].start()
 
         self.sla_analyzer = SLAanalyzer(zmq_context=self.zmq_context, do_once=False)
-        sla_analyzer_thread = threading.Thread(target=self.sla_analyzer.analyze, name='sla_analyzer')
-        sla_analyzer_thread.start()
+        self.threads['sla_analyzer'] = threading.Thread(target=self.sla_analyzer.analyze, name='sla_analyzer')
+        self.threads['sla_analyzer'].start()
         
+        self.att_discover = AttDiscover(zmq_context=self.zmq_context, do_once=False)
+        #self.threads['att_discover'] = threading.Thread(target=self.att_discover.discover, name='att_discover')
+        #self.threads['att_discover'].start()
+
         # main loop
         while True:
             try:
@@ -75,8 +82,11 @@ class Rnmsd(object):
             except KeyboardInterrupt:
                 self._shutdown()
                 return
-            if not poller_thread.is_alive():
-                self.logger.critical('poller has died')
+            for tname, tobj in self.threads.items():
+                if not tobj.is_alive():
+                    self.logger.critical('Thread %s has died.', tname)
+                    self._shutdown()
+                    return
 
     def _setup_app(self):
         """ Parses command line arguments and does inital setup """

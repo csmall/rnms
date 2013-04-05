@@ -24,7 +24,7 @@ import transaction
 
 from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode, Boolean, PickleType, String, DateTime, Text, SmallInteger
+from sqlalchemy.types import Integer, Unicode, Boolean, PickleType, String, DateTime, Text, SmallInteger, BigInteger
 
 from rnms.model import DeclarativeBase, DBSession
 from rnms.lib import snmp
@@ -45,14 +45,14 @@ class Host(DeclarativeBase):
     community_ro = Column(PickleType)
     community_rw = Column(PickleType)
     zone_id = Column(Integer, ForeignKey('zones.id'))
-    zone = relationship('Zone', backref='hosts')
     tftp_server = Column(String(40))
     autodiscovery_policy_id = Column(Integer, ForeignKey("autodiscovery_policies.id") )
     autodiscovery_policy = relationship('AutodiscoveryPolicy', backref='hosts')
-    config_transfer_id = Column(Integer, ForeignKey('config_transfers.id'), nullable=False)
+    config_transfer_id = Column(Integer, ForeignKey('config_transfers.id'))
     config_transfer = relationship('ConfigTransfer')
     default_user_id = Column(Integer, ForeignKey('tg_user.user_id'))
     default_user = relationship('User')
+    attributes = relationship('Attribute', backref='host', cascade='all,delete,delete-orphan')
     ifaces = relationship('Iface', backref='host', order_by='Iface.id')
     configs = relationship('HostConfig', backref='host', order_by='HostConfig.id', cascade='all, delete, delete-orphan')
     show_host = Column(Boolean, default=True)
@@ -138,7 +138,7 @@ class Iface(DeclarativeBase):
     ifindex = Column(Integer, nullable=False) #ifIndex
     display_name = Column(Unicode(30)) #ifDescr or idXName
     iftype = Column(Integer, nullable=False,default=1) # other
-    speed = Column(Integer)
+    speed = Column(BigInteger)
     physaddr = Column(String(30)) #MAC address usually
     stacklower = Column(Integer, nullable=False,default=0) # ifStackLowerLayer
     ip4addr = Column(String(16))
@@ -157,9 +157,8 @@ class ConfigTransfer(DeclarativeBase):
     __tablename__ = 'config_transfers'
     
     def __init__(self, display_name=False, plugin_name=False):
-        if display_name and plugin_name:
-            self.display_name = display_name
-            self.plugin_name = plugin_name
+        self.display_name = display_name
+        self.plugin_name = plugin_name
     #{ Columns
     id = Column(Integer, primary_key=True)
     display_name = Column(Unicode(40), nullable=False, unique=True)

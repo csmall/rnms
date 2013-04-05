@@ -76,7 +76,7 @@ def fill_fields(string, host=None, attribute=None, event=None, alarm=None):
         if attribute is not None:
             # expensive ones go here
             if field_key == 'client':
-                field_values[field_key] = attribute.user.display_name()
+                field_values[field_key] = attribute.user.display_name
                 continue
             if field_key == 'description':
                 field_values[field_key] = attribute.description()

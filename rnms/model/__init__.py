@@ -73,7 +73,7 @@ from rnms.model.host import *
 from rnms.model.logfile import Logfile, LogmatchSet, LogmatchRow, LogmatchField
 from rnms.model.poller import PollerSet, Poller, PollerRow
 from rnms.model.rrd import AttributeTypeRRD 
-from rnms.model.sla import Sla, SlaCondition, SlaRow
+from rnms.model.sla import Sla, SlaRow
 from rnms.model.zone import Zone
 from rnms.model.trigger import Trigger, TriggerRule, TriggerField
 from rnms.model.snmp_names import SNMPEnterprise, SNMPDevice

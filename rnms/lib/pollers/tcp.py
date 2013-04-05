@@ -65,8 +65,7 @@ def poll_snmp_tcp_established(poller_buffer, parsed_params, **kw):
     port
     """
     oid = (1,3,6,1,2,1,6,13,1,1)
-    kw['pobj'].snmp_engine.get_table(kw['attribute'].host, (oid,), cb_snmp_tcp_established, **kw)
-    return True
+    return kw['pobj'].snmp_engine.get_table(kw['attribute'].host, (oid,), cb_snmp_tcp_established, **kw)
 
 def cb_snmp_tcp_established(values, error, pobj, attribute, poller_row, **kw):
     if values is None:
@@ -113,6 +112,5 @@ def poll_tcp_content(poller_buffer, parsed_params, pobj, attribute, poller_row, 
         pobj.poller_callback(attribute.id, poller_row, [u'valid', unicode(data[:40])])
     else:
         pobj.poller_callback(attribute.id, poller_row, u'invalid')
-
 
     return False

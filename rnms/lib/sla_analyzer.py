@@ -26,38 +26,37 @@ import transaction
 
 from rnms.lib import zmqcore, zmqmessage
 from rnms import model
+from rnms.lib.engine import RnmsEngine
 
-class SLAanalyzer():
+SLA_WINDOW_SECONDS = 10
+SLA_INTERVAL_SECONDS = 180
+
+class SLAanalyzer(RnmsEngine):
     """
     Analyze all of the SLA paramters on the attributes
     """
-    sla_analyzer_interval = 1800 # 30 minute SLA times
     attribute_ids=None
     host_ids=None
-
-    logger = None
-    zmq_context = None
-    end_thread = False
-    do_once = True
+    forced_attributes = False
+    next_find_attribute = datetime.datetime.min
 
     def __init__(self, attribute_ids=None, host_ids=None, zmq_context=None, do_once=True):
+        super(SLAanalyzer, self).__init__('slaa', zmq_context)
+
         self.attribute_ids=attribute_ids
         self.host_ids = host_ids
         self.do_once = do_once
-        self.zmq_core = zmqcore.ZmqCore()
-
-        if zmq_context is not None:
-            self.zmq_context = zmq_context
-            self.control_socket = zmqmessage.control_client(self.zmq_context)
-            self.zmq_core.register_zmq(self.control_socket, self.control_callback)
-        else:
-            self.zmq_context = zmq.Context()
-        self.logger = logging.getLogger('slaa')
 
     def analyze(self):
+
+        if self.do_once:
+            next_sla_time = None
+        else:
+            next_sla_time = datetime.datetime.now()
+
         while True:
-            next_slaa_time = datetime.datetime.now() + datetime.timedelta(seconds=self.sla_analyzer_interval)
-            attributes = model.Attribute.have_sla(self.attribute_ids,self.host_ids)
+            attributes = self.find_new_attributes(next_sla_time)
+            self.update_next_find_attribute()
             for attribute in attributes:
                 if not self.zmq_core.poll(0.0):
                     return
@@ -68,14 +67,38 @@ class SLAanalyzer():
                     self.logger.debug('A%d: is DOWN, skipping',attribute.id)
                     continue
                 self.logger.debug('A%d: START on %s',attribute.id, attribute.sla.display_name)
-                attribute.sla.analyze(attribute)
+                attribute.sla.analyze(attribute, sla_logger=self.logger)
+                attribute.update_sla_time()
 
-            transaction.commit()
             
-            if self.do_once:
+            if self.do_once or self.end_thread == True:
                 break
+            transaction.commit()
 
             # otherwise we wait
+            if self._sleep_until_next() == False:
+                return
+            next_sla_time = datetime.datetime.now() + datetime.timedelta(seconds=SLA_WINDOW_SECONDS)
+
+    def find_new_attributes(self, next_sla_time):    
+        """ Add new attributes that need to have their SLA analyzed """
+        return model.Attribute.have_sla(next_sla_time, self.attribute_ids, self.host_ids)
+    
+    def _sleep_until_next(self):
+        """
+        Stay in this loop until we need to go into the main loop again.
+        Returns False if we have broken out of the poll
+        """
+        next_attribute = model.Attribute.next_sla_analysis()
+        if next_attribute is None:
+            return self.sleep(self.next_find_attribute)
+        else:
+            self.logger.info("Next SLA Analysis #%d at %s", next_attribute.id, next_attribute.next_sla.ctime())
+            if self.next_find_attribute > next_attribute.next_sla:
+                self.next_find_attribute = next_attribute.next_sla
+            return self.sleep(self.next_find_attribute)
+
+
             sleep_time = int((next_slaa_time - datetime.datetime.now()).total_seconds())
             self.logger.debug('Next SLA Analyzer in %d secs', sleep_time)
             while sleep_time > 0:
@@ -84,13 +107,5 @@ class SLAanalyzer():
                 if self.end_thread:
                     return
                 sleep_time = int((next_slaa_time - datetime.datetime.now()).total_seconds())
-    
-    
-    def control_callback(self, socket):
-        """
-        Callback method for the control socket
-        """
-        frames = socket.recv_multipart()
-        if frames[0] == zmqmessage.IPC_END:
-            self.end_thread = True
-
+    def update_next_find_attribute(self):
+        self.next_find_attribute = datetime.datetime.now() + datetime.timedelta(seconds=SLA_INTERVAL_SECONDS)

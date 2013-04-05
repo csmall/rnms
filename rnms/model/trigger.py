@@ -21,8 +21,8 @@
 """ Trigger model """
 import operator
 
-from sqlalchemy import ForeignKey, Column, Table
-from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey, Column, Table, and_
+from sqlalchemy.orm import relationship 
 from sqlalchemy.types import Integer, Unicode, SmallInteger, Boolean
 
 from rnms.model import DeclarativeBase, DBSession, metadata
@@ -89,27 +89,10 @@ class Trigger(DeclarativeBase, GenericSet):
         new_row.trigger = self
         GenericSet.append(self,new_row)
 
-    def process_alarm(self, alarm):
-        """
-        Attempt to raise a trigger based upon this alarm
-        """
-        rule_result = False
-        for rule in self.rules:
-            rule_result = rule.eval(rule_result, alarm)
-            if rule_result == True and rule.stop == True:
-                break
-
-        if rule_result == True:
-            if self.email_owner == True:
-                self.email_action(alarm.attribute.user, alarm=alarm)
-            if self.email_users == True:
-                for trigger_user in self.users:
-                    self.email_action(trigger_user,alarm=alarm)
-
     @classmethod
     def alarm_triggers(cls):
         """
-        Returns a list of Triggers that can match alarms
+        Returns a list of Triggers match alarms
         """
         return DBSession.query(cls).filter(cls.match_type==match_types.index('alarm'))
 
@@ -119,23 +102,6 @@ class Trigger(DeclarativeBase, GenericSet):
         Returns a list of Triggers that can match events
         """
         return DBSession.query(cls).filter(cls.match_type==match_types.index('event'))
-
-    def email_action(self, user, alarm):
-        """
-        Send an email for this alarm to the specified user
-        """
-        logger.info('A%d T%d: email to %s',alarm.attribute.id, self.id, user.email_address)
-        subject = fill_fields(self.subject, alarm=alarm)
-        body = fill_fields(self.body, alarm=alarm)
-        
-        msg = MIMEText(body)
-        msg['Subject'] = subject
-        msg['From'] = config['email_from']
-        msg['To'] = '{} <{}>'.format(user.user_name, user.email_address)
-
-        s = smtplib.SMTP(config['smtp_server'])
-        s.sendmail(config['email_from'], user.email_address, msg.as_string())
-        s.quit()
 
     def match_type_name(self):
         return match_types[self.match_type]

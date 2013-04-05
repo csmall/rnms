@@ -149,7 +149,6 @@ class Backend(DeclarativeBase):
                     attribute=attribute, alarm_state=alarm_state,
                     field_list=event_fields)
             DBSession.add(new_event)
-            new_event.process()
             return "Event added: {0}".format(new_event.id)
         else:
             return "Nothing was done"

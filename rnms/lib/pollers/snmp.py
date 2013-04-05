@@ -43,12 +43,7 @@ def parse_oid(raw_oid):
     str_oid = str(raw_oid)
     if str_oid[0] == '.':
         str_oid = str_oid[1:]
-    try:
-        oid = pyasn_types.ObjectIdentifier().prettyIn(str_oid)
-    except PyAsn1Error as errmsg:
-        logger.warning("OID \"%s\" could not be parsed: %s", str_oid, errmsg)
-        return None
-    return oid
+    return pyasn_types.ObjectIdentifier().prettyIn(str_oid)
 
 def poll_snmp_counter(poller_buffer, parsed_params, **kw):
     """
@@ -58,7 +53,10 @@ def poll_snmp_counter(poller_buffer, parsed_params, **kw):
       snmpv1oid: if this exists and the host is using snmpv1 use this
                  oid instead
     """
-    oid = parse_oid(split_oid(parsed_params, kw['attribute'].host))
+    try:
+        oid = parse_oid(split_oid(parsed_params, kw['attribute'].host))
+    except PyAsn1Error:
+        return False
     if oid is None:
         return False
     kw['pobj'].snmp_engine.get_int(kw['attribute'].host, oid, cb_snmp_counter, **kw)
@@ -72,7 +70,10 @@ def poll_snmp_counter_mul(poller_buffer, parsed_params, **kw):
       <multiplier>: value is multiplied by this
     """
     params = parsed_params.split('|')
-    oid = parse_oid(params[0])
+    try:
+        oid = parse_oid(params[0])
+    except PyAsn1Error:
+        return False
     if oid is None:
         return False
     kw['pobj'].snmp_engine.get_int(kw['attribute'].host, oid, cb_snmp_counter, multiplier=int(params[1]), **kw)
@@ -107,7 +108,11 @@ def poll_snmp_status(poller_buffer, parsed_params, **kw):
         kw['default_value'] = params[2]
     except IndexError:
         kw['default_value'] = None
-    oid = parse_oid(params[0])
+    try:
+        oid = parse_oid(params[0])
+    except PyAsn1Error:
+        return False
+
     if oid is None:
         return False
     return kw['pobj'].snmp_engine.get_str(kw['attribute'].host, oid, cb_snmp_status, **kw)
@@ -147,16 +152,23 @@ def cb_snmp_walk_average(values, error, pobj, attribute, poller_row, **kw):
     """
     Returns: float average of the returned table
     """
-    if values is None or len(values) == 0:
+    if values is None :
         pobj.poller_callback(attribute.id, poller_row, kw['default_value'])
         return
 
     total=0
+    total_values=0
     for value in values.values():
         try:
             total += float(value)
-        except ValueError as errmsg:
-            logger.error('Non-float value %s in snmp_walk_average()', value)
-            pobj.poller_callback(attribute.id, poller_row, kw['default_value'])
-            return
-    pobj.poller_callback(attribute.id, poller_row, total/len(values))
+        except ValueError:
+            pass
+        else:
+            total_values += 1
+
+    print 'def',kw['default_value'], total_values
+    if total_values == 0:
+        average = kw['default_value']
+    else:
+        average = total / total_values
+    pobj.poller_callback(attribute.id, poller_row, average)

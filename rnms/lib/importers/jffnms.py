@@ -102,8 +102,11 @@ class JffnmsImporter(object):
         Start the JFFNMS importing process. Does not require any arguments.
         Returns False on failure.
         """
-        importers = [ 'zones', 'users', 'hosts', 'interfaces', 'attributes',
-                'events' ]
+        if self.delete:
+            self.do_delete()
+
+        importers = ( 'zones', 'users', 'hosts', 'interfaces', 'attributes',
+                'events' )
         for imp in importers:
             func = getattr(self, '_import_'+imp)
             if not callable(func):
@@ -120,6 +123,15 @@ class JffnmsImporter(object):
         self._print_conf_shell(jffnms_rrd_path)
         return True
 
+    def do_delete(self):
+        event_count = self._delete_all(model.Event)
+        field_delete_count = self._delete_all(model.AttributeField)
+        attribute_count = self._delete_all(model.Attribute, 1)
+        iface_count = self._delete_all(model.Iface)
+        host_count = self._delete_all(model.Host, 1)
+        zone_count = self._delete_all(model.Zone, 1)
+        #user_count = self._delete_all(model.User, 2)
+
     def _delete_all(self,del_model, del_id=None):
         """ Delete all items of del_model with an ID higher than del_id 
             Returns number of deleted items
@@ -127,19 +139,16 @@ class JffnmsImporter(object):
         deleted_items=0
         if self.delete != True:
             return 0
-        try:
-            if del_id is None:
-                deleted_items = DBSession.query(del_model).delete()
-            else:
-                deleted_items = DBSession.query(del_model).filter(del_model.id>del_id).delete()
-        except IntegrityError as err:
-            logger.error('Error deleting: %s',err)
+        if del_id is None:
+            deleted_items = DBSession.query(del_model).delete()
+        else:
+            deleted_items = DBSession.query(del_model).filter(del_model.id>del_id).delete()
+        transaction.commit()
         if deleted_items is None:
             return 0
         return deleted_items
 
     def _import_zones(self):
-        delete_count = self._delete_all(model.Zone, 1)
         add_count=0
         try:
             result = self.dbhandle.execute("SELECT id,zone,shortname,image,show_zone FROM zones WHERE id > 1 ORDER BY id")
@@ -157,7 +166,7 @@ class JffnmsImporter(object):
             exit()
             return False
         else:
-            logger.info('Zones: %d deleted, %d added.', delete_count, add_count)
+            logger.info('Zones: %d added.', add_count)
         return True
 
     def zone_id(self,jffnms_id):
@@ -167,12 +176,6 @@ class JffnmsImporter(object):
         """
         Users in JFFNMS become users  in RNMS
         """
-        if self.delete == True:
-            try:
-                delete_count = DBSession.query(model.User).filter(model.User.user_id>2).delete()
-            except IntegrityError as errmsg:
-                logger.error('Error deleting users: %s', errmsg)
-                exit()
         add_count=0
         result = self.dbhandle.execute("SELECT id,username,name FROM clients WHERE id > 1 ORDER BY id")
         for row in result:
@@ -191,7 +194,7 @@ class JffnmsImporter(object):
             else:
                 self.users[row[0]] = user.user_id
                 add_count += 1
-        logger.info('Users: %d deleted, %d added.', delete_count, add_count)
+        logger.info('Users: %d added.', add_count)
         return True
 
     def user_id(self,jffnms_id):
@@ -208,7 +211,6 @@ class JffnmsImporter(object):
             return None
 
     def _import_hosts(self):
-        delete_count = self._delete_all(model.Host, 1)
         add_count=0
         try:
             result = self.dbhandle.execute('SELECT id,ip,name,rocommunity,rwcommunity,zone,tftp,autodiscovery,autodiscovery_default_customer,show_host,poll,creation_date,modification_date,last_poll_date,sysobjectid,config_type FROM hosts WHERE id>1 ORDER by id')
@@ -240,7 +242,7 @@ class JffnmsImporter(object):
             exit()
             return False
         else:
-            logger.info('Hosts: %d deleted, %d added.', delete_count, add_count)
+            logger.info('Hosts: %d added.', add_count)
         return True
 
     def host_id(self,jffnms_id):
@@ -267,7 +269,6 @@ class JffnmsImporter(object):
         return ''
 
     def _import_interfaces(self):
-        delete_count = self._delete_all(model.Iface,0)
         add_count=0
         try:
             result = self.dbhandle.execute('SELECT i.id,i.host,f.field,f.value FROM interfaces AS i, interfaces_values AS f WHERE i.type=4 and i.id=f.interface AND f.field IN (3,4,6)')
@@ -293,13 +294,11 @@ class JffnmsImporter(object):
             exit()
             return False
         else:
-            logger.info('Interfaces: %d deleted, %d added.', delete_count, add_count)
+            logger.info('Interfaces: %d added.', add_count)
         return True
 
 
     def _import_attributes(self):
-        delete_count = self._delete_all(model.Attribute, 1)
-        field_delete_count = self._delete_all(model.AttributeField)
         attribute_count=0
         field_count=0
         try:
@@ -311,7 +310,7 @@ class JffnmsImporter(object):
                 att.index = self.get_interface_index(row[0])
                 att.user_id = self.user_id(row[4])
                 #FIXME poll group
-                att.make_sound = row[7]
+                att.make_sound = bool(row[7])
                 # show_rootmap is visible and admin_state
                 if row[8] == 0:
                     att.visible = False
@@ -348,8 +347,8 @@ class JffnmsImporter(object):
             transaction.abort()
             exit()
         else:
-            logger.info('Attributes: %d deleted, %d added.', delete_count, attribute_count)
-            logger.info('Attribute Fields: %d deleted, %d added.', field_delete_count, field_count)
+            logger.info('Attributes:  %d added.', attribute_count)
+            logger.info('Attribute Fields: %d added.', field_count)
         return True
 
     def sla_id(self,jffnms_id):
@@ -382,22 +381,19 @@ class JffnmsImporter(object):
         return field_count
 
     def _import_events(self):
-        delete_count = self._delete_all(model.Event)
-        self._delete_all(model.EventField)
         add_count=0
         try:
             result = self.dbhandle.execute('SELECT e.id,e.date, e.host, e.interface, e.state, e.username, e.info, e.referer, e.ack, e.analized, et.description FROM events e, types et WHERE e.type = et.id AND date > adddate(now(),-7) ORDER by e.id LIMIT 300')
             for row in result:
-                ev = model.Event()
+                event_type = model.EventType.by_name(unicode(row[10]))
+                if event_type is None:
+                    event_type = model.EventType.by_id(1)
+                    logger.warning('Event Type %s unable to be found by name.', row[10])
+                ev = model.Event(event_type)
                 ev.host_id = self.host_id(row[2])
                 ev.acknowledged = (row[8] == 1)
                 ev.analyzed = (row[9] == 1)
                 ev.created = row[1]
-                ev.event_type = model.EventType.by_name(unicode(row[10]))
-                if ev.event_type is None:
-                    ev.event_type = model.EventType.by_id(1)
-                    logger.warning('Event Type %s unable to be found by name.', row[10])
-                    continue
             
                 # Interface could either be referencing a real attribute or
                 # a field called that
@@ -433,7 +429,7 @@ class JffnmsImporter(object):
             transaction.abort()
             exit()
         else:
-            logger.info('Events: %d deleted, %d added.', delete_count, add_count)
+            logger.info('Events: %d added.', add_count)
         return True
 
     def _print_conf_shell(self, jffnms_rrd_path):

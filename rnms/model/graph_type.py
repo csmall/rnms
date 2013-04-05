@@ -43,8 +43,7 @@ class GraphType(DeclarativeBase):
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(40), nullable=False)
-    attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'), nullable=False )
-    attribute_type = relationship('AttributeType', backref='graph_types')
+    attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'))
     title = Column(String(40), nullable=False, default='')
     left_label = Column(String(40), nullable=False, default='')
     width = Column(Integer, nullable=False, default=0)
@@ -55,10 +54,16 @@ class GraphType(DeclarativeBase):
     lines = relationship('GraphTypeLine', order_by='GraphTypeLine.position', backref='graph_type', cascade='all, delete, delete-orphan')
 
     allowed_options = ('lower-limit', 'upper-limit', 'rigid', 'logarithmic', 'base', 'right-axis', 'right-axis-label')
+
     @classmethod
-    def by_id(cls, attribute_id):
+    def by_id(cls, gt_id):
         """ Return the GraphType with given id"""
-        return DBSession.query(cls).filter( cls.id == attribute_id).first()
+        return DBSession.query(cls).filter( cls.id == gt_id).first()
+
+    @classmethod
+    def by_display_name(cls, display_name):
+        """ Return the GraphType with name"""
+        return DBSession.query(cls).filter( cls.display_name == display_name).first()
 
     def vname_by_name(self, name):
         """
@@ -81,7 +86,6 @@ class GraphType(DeclarativeBase):
         graph_defs = [ d.format(attribute) for d in self.defs ]
         graph_vnames = [ vname.format(attribute) for vname in self.vnames ]
         graph_lines = [ l.format(attribute) for l in self.lines ]
-        print graph_defs
         return graph_defs + graph_vnames + graph_lines
 
     def graph_options(self, attribute, start_time=0, end_time=0):

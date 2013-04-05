@@ -25,7 +25,6 @@
 """
 
 import logging
-logger = logging.getLogger('CiscoPing')
 
 # Define the OIDs
 ciscoPingEntry = (1,3,6,1,4,1,9,9,16,1,1,1)
@@ -53,19 +52,18 @@ def get_ping_status(index, cb_fun, **kw):
 def poll_cisco_snmp_ping_start(poller_buffer, **kwargs):
     """
     """
-    logger.debug('Cisco Ping not implemented')
     kwargs['pobj'].poller_callback(kwargs['attribute'].id, kwargs['poller_row'],None)
     return True
 
 def poll_cisco_snmp_ping_wait(poller_buffer, **kwargs):
-    poll_cisco_snmp_ping_start(poller_buffer, **kwargs)
+    return poll_cisco_snmp_ping_start(poller_buffer, **kwargs)
 
 def poll_cisco_snmp_ping_get_rtt(poller_buffer, **kwargs):
-    poll_cisco_snmp_ping_start(poller_buffer, **kwargs)
+    return poll_cisco_snmp_ping_start(poller_buffer, **kwargs)
 
 def poll_cisco_snmp_ping_get_pl(poller_buffer, **kwargs):
-    poll_cisco_snmp_ping_start(poller_buffer, **kwargs)
+    return poll_cisco_snmp_ping_start(poller_buffer, **kwargs)
 
 def poll_cisco_snmp_ping_end(poller_buffer, **kwargs):
-    poll_cisco_snmp_ping_start(poller_buffer, **kwargs)
+    return poll_cisco_snmp_ping_start(poller_buffer, **kwargs)
 

@@ -20,11 +20,9 @@
 import socket
 import struct
 import datetime
-import logging
 
 from rnms.lib import zmqcore
 
-logger = logging.getLogger('NTPClient')
 
 """ NTP Client """
 
@@ -36,9 +34,11 @@ class NTPClient():
     NTP Client is the Base Class to make NTP control queries.
     Uses two dispatchers, one for each address family
     """
+    logger = None
     address_families = [ socket.AF_INET, socket.AF_INET6 ]
 
-    def __init__(self, zmq_core):
+    def __init__(self, zmq_core, logger):
+        self.logger = logger
         self.dispatchers = { af : NTPDispatcher(zmq_core, af) for af in self.address_families}
 
     def get_peers(self, host, cb_fun, **kwargs):
@@ -65,7 +65,7 @@ class NTPClient():
         try:
             return self.dispatchers[addr_family].send_message(host,request_packet,cb_fun, **kwargs)
         except KeyError:
-            logger.error('Cannot find dispatcher for address family {0}',addr_family)
+            self.logger.error('Cannot find dispatcher for address family {0}',addr_family)
             return False
 
     def poll(self):
@@ -117,7 +117,7 @@ class NTPDispatcher(zmqcore.Dispatcher):
         try:
             self.sendto(new_job['request_packet'].to_data(), new_job['sockaddr'])
         except socket.error as errmsg:
-            logger.error("Socket error for sendto %s", new_job['sockaddr'])
+            #logger.error("Socket error for sendto %s", new_job['sockaddr'])
             raise NTPClientError(errmsg)
 
     def _get_next_sequence(self):
@@ -140,7 +140,7 @@ class NTPDispatcher(zmqcore.Dispatcher):
         try:
             addrinfo = socket.getaddrinfo(host.mgmt_address, 123)[0]
         except socket.gaierror:
-            logging.warning("getaddrinfo error")
+            #logging.warning("getaddrinfo error")
             return False
         sockaddr = addrinfo[4]
         request_packet.sequence = self._get_next_sequence()

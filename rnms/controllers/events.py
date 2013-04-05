@@ -21,7 +21,7 @@
 """ Event controller module"""
 import datetime
 import math
-from sqlalchemy import select,func,or_
+from sqlalchemy import select,func,or_, and_
 from sqlalchemy.orm import subqueryload, subqueryload_all, contains_eager
 from formencode import validators
 
@@ -50,26 +50,17 @@ class EventsController(BaseController):
     #allow_only = authorize.not_anonymous()
     
     @expose('rnms.templates.event_index')
-    @validate(validators={'a':validators.Int()})
-    def _default(self, a=None):
+    @validate(validators={'a':validators.Int(), 'h':validators.Int()})
+    def index(self, a=None, h=None):
         
         w = EventsGrid()
-        if a is not None:
-            w.attribute_id = a
+        w.attribute_id = a
+        w.host_id = h
+
         return dict(w=w)
-
-    @expose('rnms.templates.host')
-    def oldindex(self, *args): 
-        class LayoutWidget(portlets.ColumnLayout):
-            id = 'event-layout'
-            class por1(portlets.Portlet):
-                title = 'Events'
-                widget = EventsWidget
-        return dict(layoutwidget=LayoutWidget)
-
-    @expose('json')
-    def jqgridsqla(self, *args, **kwargs):
-        return EventsWidget.request(request).body
+    
+    @expose('rnms.templates.event_index')
+    @validate(validators={'a':validators.Int()})
 
     @expose('json')
     def jqgrid(self, page=1, rows=30, sidx=1, soid='asc', _search='false',
@@ -107,40 +98,17 @@ class EventsController(BaseController):
                 )
 
 
-    @expose('rnms.templates.widget')
-    def test3(self, *args, **kw):
-        myw = EventsWidget()
-        from webhelpers import paginate
-        conditions = []
-        copy_args=[]
-        if 't' in kw:
-            conditions.append(Event.event_type_id==kw['t'])
-            copy_args.append('t')
-        if 'h' in kw:
-            conditions.append(Event.host_id==kw['h'])
-            copy_args.append('h')
-
-        condition = or_(*conditions)
-        events = DBSession.query(Event).filter(condition).order_by(Event.id.desc())
-        count = events.count()
-        page = int(kw.get('page', '1'))
-        span = int(kw.get('span', '20'))
-        myw.currentPage = paginate.Page(
-                events, page, item_count=count,
-                items_per_page=span,
-                )
-        for arg in copy_args:
-            myw.currentPage.kwargs[arg] = str(kw[arg])
-        
-        myw.events = myw.currentPage.items
-        myw.tgurl = tg.url
-        return dict(widget=myw, page='attribute')
-
     @expose('json')
-    @validate(validators={'page':validators.Int(), 'rows':validators.Int(), 'sidx':validators.String(), 'sord':validators.String(), '_search':validators.String(), 'searchOper':validators.String(), 'searchField':validators.String(), 'searchString':validators.String()})
-    def griddata(self, page, rows, sidx, sord, _search='false', searchOper=u'', searchField=u'', searchString=u'', **kw):
+    @validate(validators={'page':validators.Int(), 'rows':validators.Int(), 'sidx':validators.String(), 'sord':validators.String(), '_search':validators.String(), 'searchOper':validators.String(), 'searchField':validators.String(), 'searchString':validators.String(), 'h':validators.Int(), 'a':validators.Int()})
+    def griddata(self, page, rows, sidx, sord, _search='false', searchOper=u'', searchField=u'', searchString=u'', h=None, a=None, **kw):
 
-        qry = DBSession.query(Event).join(Event.event_type, Event.attribute).join(Event.host)
+        conditions = []
+        if h is not None:
+            conditions.append(Event.host_id == h)
+        if a is not None:
+            conditions.append(Event.attribute_id == a)
+
+        qry = DBSession.query(Event).join(Event.event_type, Event.attribute).join(Event.host).filter(and_(*conditions))
         colnames = (('created', Event.created), ('event_type', EventType.display_name), ('host_display_name', Host.display_name), ('attribute', Attribute.display_name), ('event_description', None))
 
         result_count, qry = json_query(qry, colnames, page, rows, sidx, sord, _search=='true', searchOper, searchField, searchString)
@@ -165,21 +133,6 @@ class EventsController(BaseController):
             else:
                 retvals.append('<div class="severity{}">{}</div>'.format(sev_id, text))
         return retvals
-
-    @expose('json')
-    def blah(self):
-        now = datetime.datetime.now()
-        severities = DBSession.query(select([EventType.display_name, func.count(Event.event_type_id)],Event.event_type_id==EventType.id).group_by(Event.event_type_id))
-        series = []
-        ticks = []
-        for severity,scount in severities:
-            series.append(scount)
-            ticks.append(severity)
-        data= [series]
-        options = { 'title': 'Type of Events',
-                'axes': { 'xaxis' : {
-                    'ticks': ticks }}}
-        return(dict(data=data, options=options))
 
     @expose('rnms.templates.event_detail')
     def _default(self, *args):

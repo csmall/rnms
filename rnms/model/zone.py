@@ -21,6 +21,7 @@
 """ Template of one of the rnms.models"""
 from sqlalchemy import Column
 from sqlalchemy.types import Integer, Unicode, String, Boolean
+from sqlalchemy.orm import relationship
 
 from rnms.model import DeclarativeBase, DBSession
 
@@ -34,6 +35,7 @@ class Zone(DeclarativeBase):
     short_name = Column(Unicode(10), nullable=False, unique=True)
     icon = Column(String(30))
     showable = Column(Boolean,nullable=False, default=True)
+    hosts = relationship('Host', backref='zone', cascade='all,delete,delete-orphan')
     #}
 
     def __init__(self, display_name=False, short_name=False, icon=False):

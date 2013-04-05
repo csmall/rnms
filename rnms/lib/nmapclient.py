@@ -17,13 +17,11 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-import logging
 import subprocess
 import re
 import socket
 import os
 
-logger = logging.getLogger('rnms')
 port_re = re.compile(r'\d+(?:-\d+)?(?:,\d+(?:-\d+)?)*$')
 reply_re = re.compile(r'Host: [0-9a-f:.]+\s+\S+\s+Ports: (.+)\s+Ignored State:')
 
@@ -31,10 +29,12 @@ reply_re = re.compile(r'Host: [0-9a-f:.]+\s+\S+\s+Ports: (.+)\s+Ignored State:')
 
 class NmapClient(object):
     nmap_bin = '/usr/bin/nmap'
+    logger = None
 
-    def __init__(self):
+    def __init__(self, logger):
         self.nmap_ok  = os.access(self.nmap_bin, os.X_OK)
         self.active_scans = {}
+        self.logger = logger
 
 
     def scan_host(self, scanhost, cb_fun, ports, **kw):
@@ -43,10 +43,10 @@ class NmapClient(object):
         """
         ipaddr = scanhost.mgmt_address
         if self.nmap_ok == False:
-            logger.debug('No nmap binary found')
+            self.logger.debug('No nmap binary found')
             return False
         if port_re.match(ports) is None:
-            logger.warning('AD Parameter "%s" not a valid port range', ports)
+            self.logger.warning('AD Parameter "%s" not a valid port range', ports)
             return False
         try: addrinfo = socket.getaddrinfo(scanhost.mgmt_address, 0)[0]
         except socket.gaierror:

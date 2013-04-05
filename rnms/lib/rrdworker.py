@@ -1,17 +1,15 @@
 
 """
 RRD Workers - update the RRD files with these workers
+The workers are dumb, they just do what they're told to do.
 """
-import zmq
 import threading
 import logging
-
-from tg import config
+import zmq
+import rrdtool
 
 from rnms.lib import zmqmessage
 from rnms.lib import zmqcore
-
-WORKER_PATH = 'inproc://rrd-update'
 
 worker_threads = []
 
@@ -26,11 +24,12 @@ class RRDClient(object):
     jobs_list = None
     waiting_jobs = 0
 
-    def __init__(self, context, required_workers=1):
-        self.logger = logging.getLogger('rrdc')
+    def __init__(self, context, zmq_core, required_workers=1):
         self.socket = context.socket(zmq.ROUTER)
-        self.socket.bind(WORKER_PATH)
-        zmqcore.register(self.socket, self.recv)
+        self.socket.bind(zmqmessage.RRD_ROUTER)
+        zmq_core.register_zmq(self.socket, self.recv)
+        self.logger = logging.getLogger('rrdc')
+
         self.jobs_list = []
         self.workers_list = []
 
@@ -42,8 +41,8 @@ class RRDClient(object):
                 worker_threads.append(worker)
 
 
-    def update(self, rrd, value):
-        self.jobs_list.append((rrd,value))
+    def update(self, filename, value):
+        self.jobs_list.append((filename, value))
         self.waiting_jobs += 1
         self.try_send()
 
@@ -57,10 +56,6 @@ class RRDClient(object):
 
         worker_addr = frames[0]
         assert frames[1] == ''
-
-        if frames[2] == zmqmessage.INIT:
-            self.send_config(worker_addr)
-            return
 
         if frames[2] == zmqmessage.READY:
             self.available_workers += 1
@@ -85,17 +80,13 @@ class RRDClient(object):
         self.socket.send(worker_addr, zmq.SNDMORE)
         self.socket.send('', zmq.SNDMORE)
         self.socket.send(zmqmessage.RRD_UPDATE, zmq.SNDMORE)
-        self.socket.send('{}:{}'.format(filename,value))
+        self.socket.send('{}:{}'.format(filename, value))
 
-    def send_config(self,worker_addr):
-        """ 
-        Send the configuration back to the worker
+    def has_jobs(self):
+        """ Return True if the RRD workers are either doing work, 
+        or have work to do
         """
-        self.socket.send(worker_addr, zmq.SNDMORE)
-        self.socket.send('', zmq.SNDMORE)
-        self.socket.send(zmqmessage.CONF, zmq.SNDMORE)
-        self.socket.send(config['rrd_dir'])
-    
+        return ((self.waiting_jobs > 0) or (len(worker_threads) != self.available_workers))
 
 class RRDTask(threading.Thread):
     """
@@ -117,40 +108,28 @@ class RRDTask(threading.Thread):
 
         rrdworker = self.context.socket(zmq.REQ)
         zmqcore.set_id(rrdworker)
-        rrdworker.connect(WORKER_PATH)
+        rrdworker.connect(zmqmessage.RRD_WORKER)
         self.logger.info('RRD worker started PID:%d', os.getpid())
-
-        conf = zmqmessage.init_and_config(rrdworker)
-        if conf is None:
-            self.logger.critical('rrdworker got bad config')
-            return
-        self.rrd_dir = conf
-        if not os.path.isdir(self.rrd_dir):
-            self.logging.error('rrd_dir config setting %s is not a directory.', self.rrd_dir)
-            return
 
         while True:
             rrdworker.send(zmqmessage.READY)
             frames = rrdworker.recv_multipart()
             if frames[0] == zmqmessage.RRD_UPDATE and len(frames) == 2:
-                if self.rrd_dir is None:
-                    self.logger.error('Got update before config')
-                    return
-                else:
-                    try:
-                        filename,value = frames[1].split(':')
-                        float(value)
-                    except ValueError:
-                        self.logger.error('bad rrd_update value %s',frames[1])
-                    else:
-                        pathname = ''.join(self.rrd_dir, os.sep, filename)
-                        myrrd = rrd.RRD(filename=pathname)
-                        myrrd.bufferValue(int(time.time()),value)
-                        try:
-                            myrrd.update()
-                        except 
-
-
-                    print 'update {}/{}={}'.format(self.rrd_dir, filename, value)
+                self._rrd_update(frames[1])
             else:
                 self.logger.error('Got unknown message %s',frames[0])
+
+    def _rrd_update(self, recv_frame):
+        try:
+            filename,value = recv_frame.split(':')
+            float(value)
+        except ValueError:
+            self.logger.error('bad rrd_update value %s',recv_frame)
+            return
+        try:
+            #self.logger.debug('update %s to %s',filename, value)
+            rrdtool.update(filename, "N:{0}".format(value))
+        except rrdtool.error as errmsg:
+            self.logger.error('RRD error - %s', errmsg)
+
+

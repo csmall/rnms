@@ -45,20 +45,20 @@ class Event(DeclarativeBase):
     
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
-    event_type_id = Column(Integer, ForeignKey('event_types.id'), nullable=False)
+    event_type_id = Column(Integer, ForeignKey('event_types.id', ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     event_type = relationship('EventType')
-    host_id = Column(Integer, ForeignKey('hosts.id'))
+    host_id = Column(Integer, ForeignKey('hosts.id', ondelete="CASCADE", onupdate="CASCADE"))
     host = relationship('Host', backref='events', order_by='Host.id')
-    attribute_id = Column(Integer, ForeignKey('attributes.id'))
+    attribute_id = Column(Integer, ForeignKey('attributes.id', ondelete="CASCADE", onupdate="CASCADE"))
     attribute = relationship('Attribute', backref='events')
     alarm_state_id = Column(Integer, ForeignKey('alarm_states.id'))
     alarm_state = relationship('AlarmState')
     acknowledged = Column(Boolean, nullable=False, default=False)
     processed = Column(Boolean, nullable=False, default=False)
     created = Column(DateTime, nullable=False, default=datetime.datetime.now)
-    fields = relationship('EventField', backref='event', order_by='EventField.tag', cascade='all, delete, delete-orphan')
+    fields = relationship('EventField', backref='event', order_by='EventField.tag', cascade='all,delete,delete-orphan')
 
-    def __init__(self, event_type=None, host=None, attribute=None, alarm_state=None, field_list=None):
+    def __init__(self, event_type, host=None, attribute=None, alarm_state=None, field_list=None):
         self.event_type = event_type
         if attribute is not None:
             self.attribute=attribute
@@ -70,6 +70,23 @@ class Event(DeclarativeBase):
                 self.fields.append(EventField(field_tag,field_list[field_tag]))
 
     @classmethod
+    def create_sla(cls, attribute, info, details):
+        """
+        Create and return a new Event that is of a SLA type
+        Parameters:
+          attribute - The attribe the SLA event is for
+          info - sla row event_text
+          details - other details of the event
+        """
+        from rnms.model import alarm
+        event_type = EventType.by_tag('sla')
+        alarm_state = alarm.AlarmState.by_name('alert')
+        if event_type is None or alarm_state is None:
+            return None
+        event_fields={ 'info': info, 'details': details}
+        return Event(event_type=event_type, attribute=attribute, field_list=event_fields, alarm_state=alarm_state)
+
+    @classmethod
     def create_admin(cls, host=None, attribute=None, info=None):
         """
         Create and return a new administrative event.
@@ -78,6 +95,7 @@ class Event(DeclarativeBase):
           attribute: optional attribute object
           info: string of additional information
         """
+        from rnms.model import alarm
 
         if info is None:
             field_list = None
@@ -106,78 +124,8 @@ class Event(DeclarativeBase):
         """
         return fill_fields(self.event_type.text, host=self.host, attribute=self.attribute, event=self) 
 
-    def process(self):
-        """
-        Process this event.  This used to be consolidation but it is
-        now directly triggered when or near when the event is created.
-        """
-        if self.processed == True:
-            return #done it already
-
-        from rnms.model import Alarm
-
-        logger.info('E New %s event: Host %d Attribute %d',self.event_type.display_name, self.host_id or 0, self.attribute_id or 0)
-
-        if self.alarm_state is None:
-            self.processed = True
-            return
-        if self.host is None and self.attribute is None:
-            logger.warn("Event to be processed with no attribute or host.")
-            return
-        if self.event_type is None:
-            logger.warn("Event to be procesed with no event_type.")
-            return
-
-        if self.attribute is not None:
-            if self.alarm_state.is_alert():
-                self._process_event_alert()
-            else:
-                down_alarm = Alarm.find_down(self.attribute,self.event_type)
-                if self.alarm_state.is_downtesting():
-                    self._process_event_downtesting(down_alarm)
-                elif self.alarm_state.is_up():
-                    self._process_event_up(down_alarm)
-        if self.alarm_state.is_up():
-            self.acknowledged = True
+    def set_processed(self):
         self.processed = True
-
-    def _process_event_alert(self):
-        """
-        Process alert events.  These are unusual as they have a 
-        fixed stop time and the stop_event is the start_event.
-        Used mainly for Administration and SLA alarms that are
-        only around for some time.
-        Alert level events must have an attribute to raise an alarm.
-        """
-        from rnms.model.alarm import Alarm
-
-        logger.info("A:%d E:%d - ALERT Event", self.attribute.id, self.id)
-        new_alarm = Alarm(event=self)
-        new_alarm.stop_time = datetime.datetime.now() + datetime.timedelta(minutes=(self.event_type.alarm_duration+30))
-        new_alarm.stop_event = self
-        DBSession.add(new_alarm)
-
-    def _process_event_downtesting(self, other_alarm):
-        """
-        Process down or testing events
-        """
-        from rnms.model import Alarm,AlarmState
-        logger.info("A:%d E:%d - DOWN/TESTING", self.attribute.id, self.id)
-        if other_alarm is not None:
-            other_alarm.set_stop(self, alarm_state=AlarmState.by_name('up'))
-            self.acknowledged=True
-            other_alarm.start_event.acknowledged=True
-
-
-        new_alarm = Alarm(event=self)
-        DBSession.add(new_alarm)
-
-    def _process_event_up(self, other_alarm):
-        self.acknowledged=True
-        if other_alarm is not None:
-            logger.info("A:%d E:%d - UP Event", self.attribute.id, self.id)
-            other_alarm.set_stop(self)
-            other_alarm.start_event.acknowledged=True
 
 
 
@@ -190,7 +138,7 @@ class EventField(DeclarativeBase):
             self.data = new_data
     
     #{ Columns
-    event_id = Column(Integer, ForeignKey('events.id'), nullable=False, primary_key=True)
+    event_id = Column(Integer, ForeignKey('events.id', ondelete="CASCADE", onupdate="CASCADE"), nullable=False, primary_key=True)
     tag = Column(String(20), nullable=False, primary_key=True)
     data = Column(String(150))
     UniqueConstraint('tag', 'event_id')
