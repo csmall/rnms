@@ -109,6 +109,11 @@ class PollerTest(object):
         cb_fun([], None, **self.test_kwargs)
         self.assert_callback(self.test_default_value)
 
+    def assert_callback_empty_dict(self, cb_fun):
+        """ Poller with empty dict returned should callback with default value """
+        cb_fun({}, None, **self.test_kwargs)
+        self.assert_callback(self.test_default_value)
+
     def assert_callback_value(self, cb_fun, cb_value, expected_value):
         cb_fun(cb_value, None, **self.test_kwargs)
         self.assert_callback(expected_value)

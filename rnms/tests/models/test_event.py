@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012,2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,24 +33,21 @@ class TestEvent(ModelTest):
             event_type = test_event_type,
             )
 
-    def setUp(self):
-        super(TestEvent, self).setUp()
-
     def do_get_dependencies(self):
         test_user = model.User()
         test_user.display_name = u'Test User'
-        test_user.user_name = 'testuser'
-        test_user.email_address = 'test@email'
-        test_host = model.Host(display_name=u'Test Host')
+        test_user.user_name = u'testuser'
+        test_user.email_address = u'test@email'
+
+        test_host = model.Host()
+        test_host.display_name = u'Test Host'
         
-        test_attribute = model.Attribute(display_name='Test Attribute')
-        test_attribute.attribute_type = model.AttributeType(display_name='Test Type')
+        test_attribute = model.Attribute()
+        test_attribute.display_name = u'Test Attribute'
+        test_attribute.attribute_type = model.AttributeType(display_name=u'Test Attribute')
 
         test_attribute.user = test_user
         test_attribute.host = test_host
-        #model.DBSession.add(test_attribute)
-        #model.DBSession.add(test_host)
-        #model.DBSession.add(test_user)
         return{'attribute': test_attribute, 'host': test_host}
 
     def test_text_simple(self):

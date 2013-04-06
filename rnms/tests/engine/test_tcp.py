@@ -4,12 +4,12 @@ Functional test suite for the TCP client
 
 """
 import socket
-import asyncore
 import mock
 
 from nose.tools import assert_true, nottest, eq_
 
 from rnms.lib.tcpclient import TCPClient
+from rnms.lib import zmqcore
 
 class DummyHost(object):
     mgmt_address = ''
@@ -29,13 +29,14 @@ class TestTCP(object):
             eq_(self.my_callback.call_args[0][1][0], errcode)
 
     def setUp(self):
-        self.tcp_client = TCPClient()
+        self.zmq_core = zmqcore.ZmqCore()
+        self.tcp_client = TCPClient(self.zmq_core)
         self.results = {}
         self.my_callback = mock.Mock()
 
     def poll(self):
         while self.tcp_client.poll():
-            asyncore.poll(0.2)
+            self.zmq_core.poll(0.2)
 
     def test_noconnect(self):
         """ Connect to no route to host """

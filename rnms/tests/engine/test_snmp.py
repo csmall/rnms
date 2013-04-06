@@ -10,10 +10,11 @@ functional tests exercise the whole application and its WSGI stack.
 Please read http://pythonpaste.org/webtest/ for more information.
 
 """
-import asyncore
 from nose.tools import assert_true, nottest, eq_
 
 from rnms.lib.snmp import SNMPEngine
+from rnms.lib import zmqcore
+
 class DummyHost(object):
     mgmt_address = ''
     community_ro = {}
@@ -35,12 +36,13 @@ class TestSNMP(object):
 
     def setUp(self):
         """ Setup the SNMP engine """
-        self.snmp_engine = SNMPEngine()
+        self.zmq_core = zmqcore.ZmqCore()
+        self.snmp_engine = SNMPEngine(self.zmq_core)
         self.results = []
 
     def poll(self):
         while (self.snmp_engine.poll()> 0):
-            asyncore.poll(0.1)
+            self.zmq_core.poll(0.1)
 
     def test_valid_timeout(self):
         """ Valid timeout value updates default SNMP timeout """

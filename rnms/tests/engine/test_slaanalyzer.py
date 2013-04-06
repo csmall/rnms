@@ -12,6 +12,7 @@ class TestSlaAnalyzer(object):
 
     def setUp(self):
         self.sla_analyzer = SLAanalyzer()
+        self.sla_analyzer.logger = mock.Mock()
         self.test_attribute, self.test_sla = self.make_att_sla(42)
 
 
@@ -30,6 +31,7 @@ class TestSlaAnalyzer(object):
         self.sla_analyzer.analyze()
 
     def test_no_attributes(self):
+        """ Analyzer works with no attributes """
         self.run_analyzer([])
         eq_(self.test_sla.analyze.called, False)
 
@@ -37,7 +39,7 @@ class TestSlaAnalyzer(object):
         """ Single Attribute is analyzed """
         self.test_attribute.is_down = mock.Mock(return_value=False)
         self.run_analyzer([self.test_attribute,])
-        self.test_sla.analyze.assert_called_once_with(self.test_attribute)
+        self.test_sla.analyze.assert_called_once_with(self.test_attribute, sla_logger=self.sla_analyzer.logger)
 
     def test_called_two(self):
         """ Analyzer is called for both attributes """
@@ -45,8 +47,8 @@ class TestSlaAnalyzer(object):
         second_att,second_sla = self.make_att_sla(43)
         second_att.is_down = mock.Mock(return_value=False)
         self.run_analyzer([self.test_attribute, second_att])
-        self.test_sla.analyze.assert_called_once_with(self.test_attribute)
-        second_sla.analyze.assert_called_once_with(second_att)
+        self.test_sla.analyze.assert_called_once_with(self.test_attribute, sla_logger=self.sla_analyzer.logger)
+        second_sla.analyze.assert_called_once_with(second_att, sla_logger=self.sla_analyzer.logger)
 
     def test_skip_down(self):
         """ Analyzer not run over a down attribute """

@@ -118,11 +118,16 @@ class TestSnmpPoller(PollerTest):
     
     def test_walkavg_empty(self):
         """ cb_snmp_walk_average with empty returns default """
-        self.assert_callback_empty(cb_snmp_walk_average)
+        self.assert_callback_empty_dict(cb_snmp_walk_average)
     
-    def test_walkavg_bad(self):
-        """ cb_snmp_walk_average with bad result returns default """
-        cb_snmp_walk_average({'1': '1','2':'foo'}, None, **self.test_kwargs)
+    def test_walkavg_onebad(self):
+        """ cb_snmp_walk_average with one bad result ignores that result """
+        cb_snmp_walk_average({'1': '10','2':'foo', '3': '20'}, None, **self.test_kwargs)
+        self.assert_callback((10+20)/2)
+
+    def test_walkavg_allbad(self):
+        """ cb_snmp_walk_average with all bad results returns default """
+        cb_snmp_walk_average({'1': 'foo','2':'bar', '3': 'bazz'}, None, **self.test_kwargs)
         self.assert_callback_default()
     
     def test_walkavg_good(self):

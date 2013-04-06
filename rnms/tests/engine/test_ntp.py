@@ -4,11 +4,12 @@ Functional test suite for the NTP client
 
 """
 import socket
-import asyncore
+import mock
 
 from nose.tools import assert_true, nottest, eq_
 
 from rnms.lib.ntpclient import NTPClient, NTPControl
+from rnms.lib import zmqcore
 
 class DummyHost(object):
     mgmt_address = ''
@@ -36,12 +37,13 @@ class TestNTP(object):
     """ Base unti for NTP client testing """
 
     def setUp(self):
-        self.ntp_client = NTPClient()
+        self.zmq_core = zmqcore.ZmqCore()
+        self.ntp_client = NTPClient(self.zmq_core, mock.Mock())
         self.results = {}
 
     def poll(self):
         while self.ntp_client.poll():
-            asyncore.poll(3)
+            self.zmq_core.poll(0.2)
 
     def test_timeout(self):
         """ NTP query to non-existent host should timeout and give empty response back """
