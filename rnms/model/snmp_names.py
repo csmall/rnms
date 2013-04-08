@@ -73,9 +73,9 @@ class SNMPEnterprise(DeclarativeBase):
         if oid[:4] == 'ent.':
             idx = 1
             offset = 4
-        elif oid[:10] == '1.3.6.1.4.1.':
+        elif oid[:12] == '1.3.6.1.4.1.':
             idx = 6
-            offset = 10
+            offset = 12
         else:
             return ('unknown','')
         oid_nums = oid.split('.')[idx:]
@@ -83,12 +83,11 @@ class SNMPEnterprise(DeclarativeBase):
         ent = cls.by_id(int(oid_nums[0]))
         if ent is None:
             return ('unknown vendor {}'.format(oid_nums[0]),'')
-        if ent.device_offset + idx > len(oid_nums):
-            print ent.device_offset, len(oid_nums)
+        if ent.device_offset > len(oid_nums):
             return (ent.display_name, '')
+        
         device_id = '.'.join(oid_nums[ent.device_offset:])
-        device = DBSession.query(SNMPDevice).filter(and_(SNMPDevice.enterprise==ent, SNMPDevice.oid==device_id)).first()
-        print device
+        device = SNMPDevice.by_id(ent.id, device_id)
         if device is None:
             return (ent.display_name, 'unknown {}'.format(device_id))
         return (ent.display_name, device.display_name)
@@ -112,4 +111,8 @@ class SNMPDevice(DeclarativeBase):
         self.oid = oid
         self.display_name = display_name
 
+    @classmethod
+    def by_id(cls, ent_id, oid):
+        """ Return SNMP Device for given enterpise and given device id """
+        return DBSession.query(cls).filter(and_(cls.enterprise_id==ent_id, cls.oid==oid)).first()
 

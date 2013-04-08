@@ -30,13 +30,13 @@ from rnms import model
 
 class EventsGrid(jqGridWidget):
     id = 'events-grid-id'
-    attribute_id=None
+    attribute_id = None
+    host_id = None
 
-    def prepare(self):
-        if attribute_id is not None:
-            self.options['url'] = attribute_id
+    pager_options = { "search" : True, "refresh" : True, "add" : False, }
 
-    options = {
+    def __init__(self):
+        self.options = {
             'pager' : 'events-grid-pager',
             'url' : '/events/griddata',
             'colNames':[ 'Date', 'State', 'Type', 'Host', 'Attribute', 'Description'],
@@ -72,6 +72,19 @@ class EventsGrid(jqGridWidget):
             'imgpath': 'scripts/jqGrid/themes/green/images',
             'height': 'auto',
             }
+
+        super(EventsGrid, self).__init__()
+
+    def prepare(self):
+        url_fields = []
+        if self.attribute_id is not None:
+            url_fields.append('a={}'.format(self.attribute_id))
+        if self.host_id is not None:
+            url_fields.append('h={}'.format(self.host_id))
+
+        if url_fields != []:
+            self.options['url'] += '?' + '&'.join(url_fields)
+        super(EventsGrid, self).prepare()
 
 class EventsWidget3(twc.Widget):
     id = 'events-widget'
@@ -110,9 +123,6 @@ class EventsWidget3(twc.Widget):
         super(EventsWidget, self).prepare
 
 class EventsWidget(SQLAjqGridWidget):
-    def prepare(self):
-        self.resources.append(word_wrap_css)
-        super(EventsWidget, self).prepare()
     entity = model.Event
     options = {
             'url': '/events/jqgridsqla',
@@ -122,6 +132,10 @@ class EventsWidget(SQLAjqGridWidget):
             'height': 'auto',
             'pager': 'event-list-pager'
             }
+
+    def prepare(self):
+        self.resources.append(word_wrap_css)
+        super(EventsWidget, self).prepare()
 
 class EventsWidget2(jqGridWidget):
     def prepare(self):

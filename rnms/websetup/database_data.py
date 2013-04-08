@@ -22,49 +22,49 @@
 the database"""
 from rnms.lib.states import *
 
-alarm_states = [
-    [u'down', 10, 'down.wav', 'up.wav', STATE_DOWN],
-    [u'up', 100, '', '', STATE_UP], 
-    [u'alert', 60, 'boing.wav', '', STATE_ALERT], 
-    [u'testing', 40, '', '', STATE_TESTING], 
-    [u'running', 100, '', '', STATE_UP], 
-    [u'not running', 20, '', '', STATE_DOWN], 
-    [u'open', 100, '', '', STATE_UP], 
-    [u'closed', 15, '', '', STATE_DOWN], 
-    [u'error', 90, 'boing.wav', '', STATE_ALERT], 
-    [u'invalid', 30, '', '', STATE_DOWN], 
-    [u'valid', 110, '', '', STATE_UP], 
-    [u'reachable', 100, '', '', STATE_UP], 
-    [u'unreachable', 5, '', '', STATE_DOWN], 
-    [u'lowerlayerdown', 10, 'down.wav', 'up.wav', STATE_DOWN], 
-    [u'synchronized', 100, '', '', STATE_UP], 
-    [u'unsynchronized', 6, '', '', STATE_DOWN], 
-    [u'battery normal', 100, '', '', STATE_UP], 
-    [u'battery low', 4, '', '', STATE_DOWN], 
-    [u'battery unknown', 2, '', '', STATE_DOWN], 
-    [u'on battery', 3, '', '', STATE_DOWN], 
-    [u'on line', 90, '', '', STATE_UP], 
-    [u'ok', 100, '', '', STATE_UP], 
-    [u'out of bounds', 10, '', '', STATE_DOWN], 
-    [u'unavailable', 10, 'down.wav', 'up.wav', STATE_DOWN], 
-    [u'available', 100, '', '', STATE_UP], 
-    [u'battery depleted', 3, '', '', STATE_DOWN], 
-    [u'other', 10, '', '', STATE_DOWN], 
-    [u'unknown', 10, '', '', STATE_DOWN], 
-    [u'noncritical', 90, '', '', STATE_DOWN], 
-    [u'critical', 10, '', '', STATE_DOWN], 
-    [u'nonrecoverabl', 10, '', '', STATE_DOWN], 
-    [u'warning', 80, 'down.wav', 'up.wav', STATE_DOWN]
-    ]
+alarm_states = (
+    (u'down', 10, 'down.wav', 'up.wav', STATE_DOWN),
+    (u'up', 100, '', '', STATE_UP), 
+    (u'alert', 60, 'boing.wav', '', STATE_ALERT), 
+    (u'testing', 40, '', '', STATE_TESTING), 
+    (u'running', 100, '', '', STATE_UP), 
+    (u'not running', 20, '', '', STATE_DOWN), 
+    (u'open', 100, '', '', STATE_UP), 
+    (u'closed', 15, '', '', STATE_DOWN), 
+    (u'error', 90, 'boing.wav', '', STATE_ALERT), 
+    (u'invalid', 30, '', '', STATE_DOWN), 
+    (u'valid', 110, '', '', STATE_UP), 
+    (u'reachable', 100, '', '', STATE_UP), 
+    (u'unreachable', 5, '', '', STATE_DOWN), 
+    (u'lowerlayerdown', 10, 'down.wav', 'up.wav', STATE_DOWN), 
+    (u'synchronized', 100, '', '', STATE_UP), 
+    (u'unsynchronized', 6, '', '', STATE_DOWN), 
+    (u'battery normal', 100, '', '', STATE_UP), 
+    (u'battery low', 4, '', '', STATE_DOWN), 
+    (u'battery unknown', 2, '', '', STATE_DOWN), 
+    (u'on battery', 3, '', '', STATE_DOWN), 
+    (u'on line', 90, '', '', STATE_UP), 
+    (u'ok', 100, '', '', STATE_UP), 
+    (u'out of bounds', 10, '', '', STATE_DOWN), 
+    (u'unavailable', 10, 'down.wav', 'up.wav', STATE_DOWN), 
+    (u'available', 100, '', '', STATE_UP), 
+    (u'battery depleted', 3, '', '', STATE_DOWN), 
+    (u'other', 10, '', '', STATE_DOWN), 
+    (u'unknown', 10, '', '', STATE_DOWN), 
+    (u'noncritical', 90, '', '', STATE_DOWN), 
+    (u'critical', 10, '', '', STATE_DOWN), 
+    (u'nonrecoverabl', 10, '', '', STATE_DOWN), 
+    (u'warning', 80, 'down.wav', 'up.wav', STATE_DOWN)
+    )
 
-autodiscovery_policies = [
-    [u'No Autodiscovery', True,False,False,False,False,False, True, True, True],
-    [u'Standard'        , True, True,False, True,False, True, True, True, True],
-    [u'Automagic'       , True, True, True, True, True,False, True, True, True],
-    [u'Administrative'  ,False, True, True, True,False, True, True, True, True],
-    [u'Just Inform'     ,False,False,False, True,False,False,False, True, True],
-    [u'Standard (for Switches)', True, True,False, True, True,False, True, True,False]
-    ]
+autodiscovery_policies = (
+    (u'No Autodiscovery', True,False,False,False,False,False, True, True, True),
+    (u'Standard'        , True, True,False, True,False, True, True, True, True),
+    (u'Automagic'       , True, True, True, True, True,False, True, True, True),
+    (u'Administrative'  ,False, True, True, True,False, True, True, True, True),
+    (u'Just Inform'     ,False,False,False, True,False,False,False, True, True),
+    (u'Standard (for Switches)', True, True,False, True, True,False, True, True,False)
+    )
 #showable 2=1,0 1=1,1 0=0,0
 #RRD Types = 1:gauge, 2:counter, 3:absolute
 attribute_types = (
@@ -85,7 +85,7 @@ attribute_types = (
             (u'Established Connections', 'tcp_established', 0,0,10000,0),
             (u'Connection Delay', 'conn_delay', 0,0,10000,0),
             ) ),
-        ('Cisco System Info',
+        (u'Cisco System Info',
             'host_information','cisco,9.1,9.5',True, True,
             u'Cisco Router', '', '',
             'AVERAGE',103680,False, False,'ent.9',(
@@ -498,46 +498,51 @@ attribute_types = (
                 'AVERAGE', 103680, False, False, '.',(), () ),
         )
     
-config_transfers = [
-    ]
+config_transfers = (
+        (u'No Configuration Transfer', u''),
+        (u'Cisco IOS, > 12.0 (CONFIG-COPY-MIB)', u'cisco_cc'),
+        (u'Cisco IOS, < 12.0 (SYS-MIB)', u'cisco_sys'),
+        (u'Cisco CatOS (STACK-MIB)', u'cisco_catos'),
+        (u'Alteon WebOS Switches (DANGEROUS)', u'alteon_webos'),
+    )
 
 event_types = (
-        # display_name, severity, tag, text, gen_alm, alm_up, alm_dur, show, sh_host
-    (u'Unknown', u'Warning', 'unknown', u'$attribute $state $info',False, 1, 0, True, True),
-    (u'Administrative', u'Administrative', 'admin', u'$attribute $info',True, 1, 1800, True, True),
-    (u'SLA', u'Information', 'sla', u'$attribute $info (${client} ${description})',True, 1, 1800, True, True),
-    (u'Internal', u'Information', 'internal', u'$user $attribute $state $info',False,1,0,True,False),
+        # display_name, severity, tag, text, gen_alm, alm_up, alm_dur, sh_host
+    (u'Unknown', u'Warning', 'unknown', u'$attribute $state $info',False, 1, 0,  True),
+    (u'Administrative', u'Administrative', 'admin', u'$attribute $info',True, 1, 1800, True),
+    (u'SLA', u'Information', 'sla', u'$attribute $info (${client} ${description})',True, 1, 1800, True),
+    (u'Internal', u'Information', 'internal', u'$user $attribute $state $info',False,1,0, False),
 
-    (u'BGP Status', u'Critical', 'bgp_status', u'BGP Neighbor $attribute $state $info (${client} ${description})',True, 1, 0, True, True),
-    (u'BGP Notification', u'Information', 'bgp_notify', u'Notification $state $attribute $info',False, 1, 0, True, True),
+    (u'BGP Status', u'Critical', 'bgp_status', u'BGP Neighbor $attribute $state $info (${client} ${description})',True, 1, 0, True),
+    (u'BGP Notification', u'Information', 'bgp_notify', u'Notification $state $attribute $info',False, 1, 0, True),
 
-    (u'TCP/UDP Service', u'Service', 'tcpudp_service', u'TCP/UDP Service $attribute $state (${client} ${description}) $info',True, 1, 0, True, True),
-    (u'TCP Content', u'Service', 'tcp_content', u'Content Response on $attribute is $state (${client} ${description}) $info',True, 1, 0, True, True),
+    (u'TCP/UDP Service', u'Service', 'tcpudp_service', u'TCP/UDP Service $attribute $state (${client} ${description}) $info',True, 1, 0, True),
+    (u'TCP Content', u'Service', 'tcp_content', u'Content Response on $attribute is $state (${client} ${description}) $info',True, 1, 0, True),
 
-    (u'Configuration', u'Warning', 'configuration', u'$user changed configuration from $source',False, 1, 0, True, True),
-    (u'Interface Protocol', u'Fault', 'interface_protocol', u'Interface $attribute Protocol $state $info (${client} ${description})',True, 1, 0, True, True),
-    (u'Interface Link', u'Big Fault', 'interface_link', u'Interface $attribute Link $state $info (${client} ${description})',False, 1, 0, True, True),
-    (u'Controller Status', u'Big Fault', 'controller_status', u'Controller  $info $attribute $state',False, 1, 0, True, True),
-    (u'Interface Shutdown', u'Big Fault', 'interface_shutdown', u'Interface $attribute $info $state (${client} ${description})',False, 4, 0, True, True),
-    (u'Clear Counters', u'Information', 'clear_counters', u'<user> Cleared Counters of $attribute  (${client} ${description})',False, 1, 0, True, True),
-    (u'Environmental', u'Critical', 'environment', u'$attribute $state $info',True, 1, 0, True, True),
-    (u'Duplex Mismatch', u'Warning', 'duplex_mismatch', u'Duplex Mismatch, $attribute is not full duplex and <user> $info is full duplex',False, 1, 0, True, True),
-    (u'ACL', u'Information', 'acl', u'ACL $attribute $state $info packets from <user>',False, 1, 0, True, True),
-    (u'Excess Collisions', u'Warning', 'collision', u'Excess Collisions on Interface $attribute',False, 1, 0, True, True),
-    (u'Application', u'Critical', 'application', u'Application $attribute is $state $info (${client} ${description})',True, 1, 0, True, True),
-    (u'Reachability', u'Critical', 'reachability', u'Host is $state with $info',True, 1, 0, True, True),
-    (u'NTP', u'Information', 'ntp', u'$attribute is $state $info',True, 1, 0, True, True),
+    (u'Configuration', u'Warning', 'configuration', u'$user changed configuration from $source',False, 1, 0, True),
+    (u'Interface Protocol', u'Fault', 'interface_protocol', u'Interface $attribute Protocol $state $info (${client} ${description})',True, 1, 0, True),
+    (u'Interface Link', u'Big Fault', 'interface_link', u'Interface $attribute Link $state $info (${client} ${description})',False, 1, 0, True),
+    (u'Controller Status', u'Big Fault', 'controller_status', u'Controller  $info $attribute $state',False, 1, 0, True),
+    (u'Interface Shutdown', u'Big Fault', 'interface_shutdown', u'Interface $attribute $info $state (${client} ${description})',False, 4, 0, True),
+    (u'Clear Counters', u'Information', 'clear_counters', u'<user> Cleared Counters of $attribute  (${client} ${description})',False, 1, 0, True),
+    (u'Environmental', u'Critical', 'environment', u'$attribute $state $info',True, 1, 0, True),
+    (u'Duplex Mismatch', u'Warning', 'duplex_mismatch', u'Duplex Mismatch, $attribute is not full duplex and <user> $info is full duplex',False, 1, 0, True),
+    (u'ACL', u'Information', 'acl', u'ACL $attribute $state $info packets from <user>',False, 1, 0, True),
+    (u'Excess Collisions', u'Warning', 'collision', u'Excess Collisions on Interface $attribute',False, 1, 0, True),
+    (u'Application', u'Critical', 'application', u'Application $attribute is $state $info (${client} ${description})',True, 1, 0, True),
+    (u'Reachability', u'Critical', 'reachability', u'Host is $state with $info',True, 1, 0, True),
+    (u'NTP', u'Information', 'ntp', u'$attribute is $state $info',True, 1, 0, True),
 
-    (u'APC Status', u'Critical', 'apc_status', u'$attribute is $state $info',True, 1, 0, True, True),
+    (u'APC Status', u'Critical', 'apc_status', u'$attribute is $state $info',True, 1, 0, True),
 
-    (u'Alteon RServer', u'Fault', 'alteon_rserver', u'Real Server $attribute is $state',True, 1, 0, True, True),
-    (u'Alteon Service', u'Fault', 'alteon_service', u'Real Service $attribute is $state $info',True, 1, 0, True, True),
-    (u'Alteon VServer', u'Fault', 'alteon_vserver', u'Virtual Server $attribute is $state $info',False, 1, 0, True, True),
+    (u'Alteon RServer', u'Fault', 'alteon_rserver', u'Real Server $attribute is $state',True, 1, 0, True),
+    (u'Alteon Service', u'Fault', 'alteon_service', u'Real Service $attribute is $state $info',True, 1, 0, True),
+    (u'Alteon VServer', u'Fault', 'alteon_vserver', u'Virtual Server $attribute is $state $info',False, 1, 0, True),
 
-    (u'Brocade FC Port', u'Fault', 'brocade_fcport', u'$attribute $state ($info)',True, 1, 0, True, True),
+    (u'Brocade FC Port', u'Fault', 'brocade_fcport', u'$attribute $state ($info)',True, 1, 0, True),
 
-    (u'OS/400 Error', u'Critical', 'os400_error', u'A subsystem is $state on the OS/400',True, 1, 0, True, True),
-    (u'Storage Controller', u'Big Fault', 'storage_controller', u'$info',True, 1, 0, True, True)
+    (u'OS/400 Error', u'Critical', 'os400_error', u'A subsystem is $state on the OS/400',True, 1, 0, True),
+    (u'Storage Controller', u'Big Fault', 'storage_controller', u'$info',True, 1, 0, True)
     )
 
 event_severities = [
@@ -601,105 +606,33 @@ logmatch_default_rows = [
 
     ]
 
+# name, text, thres, atype, rows
+#   expression, oper, limit, show_res, show_info,show_expr
 slas = (
-        (u'Physical Interface', u'Interface', 75, u'Physical Interfaces', [
-            ]),
+        (u'Cisco Router', u'Router:', u'Cisco System Info', (
+            ('$cpu - $cpu_threshold', '>', 0, True, u'Usage > $cpu_threshold', u'$cpu', u'%'),
+            ('$mem_used * 100 / ($mem_used + $mem_free)', '>', 80, True, u'Memory Usage > 80%', u'$mem_used * 100 / ($mem_used + $mem_free)', u'%'),
+            ('OR','=',0, False, u'', u'', u''),
+            )),
+        (u'Linux/Unix CPU', u'', u'Linux/Unix System Info', (
+            ('$load_average_5', '>', 5, True, u'Load Average > 5', u'$load_average_5', u''),
+            ('($cpu_user_ticks + $cpu_nice_ticks + $cpu_system_ticks) * 100 / ($cpu_user_ticks + $cpu_idle_ticks + $cpu_nice_ticks + $cpu_system_ticks) - $cpu_threshold', '>', 0, True, u'Usage > $cpu_threshold%', u'($cpu_user_ticks + $cpu_nice_ticks + $cpu_system_ticks) * 100 / ($cpu_user_ticks + $cpu_idle_ticks + $cpu_nice_ticks + $cpu_system_ticks)', u'%'),
+            ('OR','=',0, False, u'', u'', u''),
+            )),
+        (u'Windows CPU', u'', u'Windows System Info', (
+            ('$cpu', '>', 90, True, u'CPU > 90%', u'$cpu', u'%'),
+            ('$num_procs - $proc_threshold', '>', 0, True, u'Processes > $proc_threshold', u'$num_procs', u'Processes'),
+            ('OR','=',0, False, u'', u'', u''),
+            )),
+        (u'Physical Interface', u'Interface:', u'Physical Interfaces', (
+            ('$in * 100 / $speed', '>', 90, True, u'IN > 90%', u'$in / 1000', u'kbps'),
+            ('$out * 100 / $speed', '>', 90, True, u'IN > 90%', u'$out / 1000', u'kbps'),
+            ('($inerrors * 100) / ($inpackets + 1 )', '>', 10, True, u'IN ERR > 20%', u'($inerrors * 100) / ($inpackets + 1)', u'% = $inerrors Eps'),
+            )),
+        (u'Storage', u'Storage:', u'Storage', (
+            ('($storage_used_blocks * 100) / $storage_block_count - $usage_threshold', '>', 0, True, u'Used > $usage_threshold', u'($storage_used_blocks * 100) / $storage_block_count', u'%'),
+            )),
         )
-old_slas = [
-        [u'Customer Satellite Link',3, u'Customer Sat Link:',12,75,4, [
-            [15,True],
-            [13,False],
-            [4,False],
-            [7,True],
-            [18,True],
-            [16,True],
-            [6,False],
-            [6,False],
-            [5,False],
-            [5,False],
-            [6,0]
-            ]],
-        [u'Main Fiber Link',3, u'Main Link:',12,100,4, [
-            [10,True],
-            [12,True],
-            [2,True],
-            [15,True],
-            [18,True],
-            [6,False],
-            [6,False],
-            [6,False],
-            [6,False],
-            ]],
-        [u'Main Satellite Link',3, u'Main Sat Link:',12,100,4, [
-            [10,True],
-            [12,True],
-            [7,True],
-            [3,True],
-            [15,True],
-            [6,False],
-            [6,False],
-            [6,False],
-            [6,False],
-            ]],
-        [u'Cisco Router',3, u'Router:',12,100,3, [
-            [22,True],
-            [27,True],
-            [6,False],
-            ]],
-        [u'Storage',3, u'Storage',12,100,8, [ [24,True],],],
-        [u'Linux/Unix CPU',3, u'',12,100,11, [
-            [25,True],
-            [26,True],
-            [6,False],
-            ]],
-        [u'Windows CPU',3, u'',12,100,12, [
-            [28,True],
-            [29,True],
-            [6,False],
-            ]],
-        [u'APC UPS',3, u'APC UPS',12,100,31, [
-            [31,True],
-            [30,True],
-            ]]
-        ]
-
-sla_conditions = [
-        [u'None', '1', '=', 2, u'', '', u''],
-        [u'Round Trip Time > 60ms', '$rtt', '>', 60, u'RTT > 60', u'$rtt', u'ms'],
-        [u'Packet Loss > 20%', '$packetloss * 100 / $pings', '>', 20, u'PL > 20%', u'$packetloss * 100 / $pings', u'%'],
-        [u'Input Traffic < 95%', '$in * 100 / $speed', '<', 95, u'IN < 95%', u'$in / 1000', u'kbps'],
-        [u'AND', 'AND','=',0,u'', u'', u''],
-        [u'OR', 'OR','=',0,u'', u'', u''],
-        [u'Round Trip Time > 700ms', '$rtt', '>', 700, u'RTT > 700', u'$rtt', u'ms'],
-        [u'Round Trip Time > 900ms', '$rtt', '>', 900, u'RTT > 900', u'$rtt', u'ms'],
-        [u'Packet Loss > 50%', '$packetloss * 100 / $pings', '>', 50, u'PL > 50%', u'$packetloss * 100 / $pings', u'%'],
-        # id 10 is missing
-        [u'Input Traffic > 90%', '$in * 100 / $speed', '>', 90, u'IN > 90%', u'$in / 1000', u'kbps'],
-        [u'Input Traffic < 1%', '$in * 100 / $speed', '<', 1, u'IN < 1%', u'$in / 1000', u'kbps'],
-        [u'Output Traffic > 90%', '$out * 100 / $speed', '>', 90, u'IN > 90%', u'$out / 1000', u'kbps'],
-        [u'Output Traffic < 95%', '$out * 100 / $speed', '<', 95, u'IN < 95%', u'$out / 1000', u'kbps'],
-        [u'Input Error Rate > 20%', '($inerrors * 100) / ($inpackets + 1 )', '>', 20, u'IN ERR > 20%', u'($inerrors * 100) / ($inpackets + 1)', u'% = $inerrors Eps'],
-        [u'Input Error Rate > 10%', '($inerrors * 100) / ($inpackets + 1 )', '>', 10, u'IN ERR > 10%', u'($inerrors * 100) / ($inpackets + 1)', u'% = $inerrors Eps'],
-        #17 is missing
-        [u'Drops > %1', '($drops * 100) / ($outpackets + 1)', '>', 1, u'Drops > 1%', u'($drops * 100) / ($outpackets + $drops + 1)', u'% = $drops dps'],
-        [u'Drops > %2', '($drops * 100) / ($outpackets + 1)', '>', 2, u'Drops > 2%', u'($drops * 100) / ($outpackets + $drops + 1)', u'% = $drops dps'],
-        [u'Packet Loss > 10%', '$packetloss * 100 / $pings', '>', 10, u'PL > 10%', u'$packetloss * 100 / $pings', u'%'],
-        [u'Drops > %10', '($drops * 100) / ($outpackets + 1)', '>', 10, u'Drops > 10%', u'($drops * 100) / ($outpackets + $drops + 1)', u'% = $drops dps'],
-        [u'Input Traffic < 99%', '$in * 100 / $speed', '<', 99, u'IN < 99%', u'$in / 1000', u'kbps'],
-        [u'Output Traffic < 99%', '$out * 100 / $speed', '<', 99, u'IN < 99%', u'$out / 1000', u'kbps'],
-        [u'High CPU Utilization', '$cpu - $cpu_threshold', '>', 0, u'Usage > $cpu_threshold', u'$cpu', u'%'],
-        [u'Packet Loss > 10% SP', '$packetloss', '>', 10, u'PL > 10%', u'$packetloss', u'%'],
-        [u'Used Storage', '($storage_used_blocks * 100) / $storage_block_count - $usage_threshold', '>', 0, u'Used > $usage_threshold', u'($storage_used_blocks * 100) / $storage_block_count', u'%'],
-        [u'Load Average > 5', '$load_average_5', '>', 5, u'Load Average > 5', u'$load_average_5', u''],
-        [u'High CPU Util (ticks)', '($cpu_user_ticks + $cpu_nice_ticks + $cpu_system_ticks) * 100 / ($cpu_user_ticks + $cpu_idle_ticks + $cpu_nice_ticks + $cpu_system_ticks) - $cpu_threshold', '>', 0, u'Usage > $cpu_threshold%', u'($cpu_user_ticks + $cpu_nice_ticks + $cpu_system_ticks) * 100 / ($cpu_user_ticks + $cpu_idle_ticks + $cpu_nice_ticks + $cpu_system_ticks)', u'%'],
-        [u'Memory Usage > 80%', '$mem_used * 100 / ($mem_used + $mem_free)', '>', 80, 'Memory Usage > 80%', u'$mem_used * 100 / ($mem_used + $mem_free)', u'%'],
-        [u'CPU Utilization > 90%', '$cpu', '>', 90, u'CPU > 90%', u'$cpu', u'%'],
-        [u'Too Many Processes', '$num_procs - $proc_threshold', '>', 0, u'Processes > $proc_threshold', u'$num_procs', u'Processes'],
-        [u'APC temp > 55', '$temperature - 55', '>', 0, u'APC temp > 55', u'$temperature', u'C'],
-        [u'APC time < 50 minutes', '$time_remaining', '<', 30000, u'APC time < 50 minutes', u'$time_remaining / 6000', u'mins'
-        ],
-        ]
-
 pollers = [
         ['no_poller','No Polling','no_poller',''],
 

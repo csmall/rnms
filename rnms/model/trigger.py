@@ -76,7 +76,7 @@ class Trigger(DeclarativeBase, GenericSet):
                 raise ValueError('match_type {} must be Event or Alarm'.format(match_type))
             self.match_type = match_types.index(match_type)
 
-        self.poller_rows = self.rules
+        self.rows = self.rules
 
     def __repr__(self):
         return '<Trigger name=%s rules=%d>' % (self.display_name,len(self.rules))
@@ -207,6 +207,8 @@ class TriggerRule(DeclarativeBase):
         """
         Extracts the field out of the given item (event or alarm)
         """
+        if alarm is None:
+            return None
         try:
             field_name = trigger_fields[self.field]
         except ValueError:

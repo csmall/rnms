@@ -24,15 +24,15 @@ from rnms import model
 from rnms.tests.models import ModelTest
 
 # Needed for a zone
-class TestSlaCondition(ModelTest):
-    klass = model.SlaCondition
-    attrs = dict(
-            display_name = (u'Test Condition'),
-            #position = 1,
-            )
+class TestSlaRow(ModelTest):
+    klass = model.SlaRow
 
-    def test_sla_condition_operators(self):
-        """SLA Condition operators test"""
+    def do_get_dependencies(self):
+        sla = model.Sla(display_name=u'Test SLA')
+        return {'sla': sla}
+
+    def test_sla_row_operators(self):
+        """SLA Row operators test"""
         self.obj.limit=100
 
         operator_tests=(
@@ -48,8 +48,8 @@ class TestSlaCondition(ModelTest):
             op_result = self.obj.operate(output)
             eq_(op_result, result)
 
-    def test_sla_condition_eval(self):
-        """SLA Condition eval test"""
+    def test_sla_row_eval(self):
+        """SLA Row eval test"""
         rrd_values = {'one': 1.0, 'two': 2, 'fifty': 50.0, 'one_hundred': 100.0,
                 'answer': 42, 'other': 58}
         attrib = model.Attribute()

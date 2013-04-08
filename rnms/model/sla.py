@@ -51,7 +51,9 @@ class Sla(DeclarativeBase, GenericSet):
     sla_rows = relationship('SlaRow', backref=backref('sla', lazy='joined'), order_by='SlaRow.position')
     #}
 
-    def __init__(self):
+    def __init__(self, display_name=None):
+        if display_name is not None:
+            self.display_name = display_name
         self.rows = self.sla_rows
 
     @classmethod
@@ -67,73 +69,6 @@ class Sla(DeclarativeBase, GenericSet):
         new_row.sla = self
         GenericSet.append(self,new_row)
 
-    def _update_rrd_values(self, rrd_values, attribute, text, start_time, end_time):
-        """
-        Given a string and existing rrd_values dictionary, add in the
-        missing values
-        """
-        new_fields = set(fields_regexp.findall(text))
-        for new_field in new_fields:
-            if new_field not in rrd_values:
-                rrd_values[new_field] = attribute.get_rrd_value(new_field, start_time, end_time)
-        return rrd_values
-
-    def analyze(self, attribute, sla_logger=None):
-        """
-        Analyze this SLA against the given attribute
-        """
-        if sla_logger is not None:
-            logger = sla_logger
-
-        end_time = str(int(time.time()/SLA_RESOLUTION)*SLA_RESOLUTION)
-        start_time = 'e-{}m'.format(SLA_INTERVAL_MINUTES)
-
-        rrd_values = attribute.get_fields()
-        cond_results=[]
-        event_details=[]
-        cond_rows = DBSession.query(SlaRow).filter(SlaRow.sla_id==self.id)
-        cond_row_count = 0
-        for cond in cond_rows:
-            cond_row_count += 1
-            try:
-                rrd_values = self._update_rrd_values(rrd_values, attribute, cond.expression, start_time, end_time)
-            except KeyError as errmsg:
-                logger.error('A%d %s',attribute.id, errmsg)
-                return
-            if len(rrd_values) == 0:
-                return
-            # AND/OR remove the last two items from stack and replace with reasult
-            if (cond.expression == 'AND'):
-                if len(cond_results) < 2:
-                    logger.error('AND sla condition needs 2 results')
-                    continue
-                result = cond_results[-1] and cond_results[-2]
-                logger.info('A%d Row%d: %s AND %s := %s',attribute.id, cond_row_count, cond_results[-1], cond_results[-2], result)
-                cond_results = cond_results[:-2] + [result]
-            elif (cond.expression == 'OR'):
-                if len(cond_results) < 2:
-                    logger.error('OR sla condition needs 2 results')
-                    continue
-                result = cond_results[-1] or cond_results[-2]
-                logger.info('A%d Row%d: %s OR %s := %s',attribute.id, cond_row_count, cond_results[-1], cond_results[-2], result)
-                cond_results = cond_results[:-2] + [result]
-            else:
-                (result, details) = cond.eval(rrd_values)
-                logger.info('A%d Row%d: %s', attribute.id, cond_row_count, cond.expression)
-                logger.info('A%d Row%d: %s := %s', attribute.id, cond_row_count, details, result)
-                cond_results.append(result)
-                if result != False:
-                    event_details.append(details)
-        logger.info("A%d VALUES %s",attribute.id, ', '.join(['{0}({1})'.format(k,v) for (k,v) in rrd_values.items()]))
-        if (len(cond_results) < 1 or cond_results[-1] == False):
-            logger.debug('A%d: Final Result: False', attribute.id)
-        else:
-            logger.debug('A%d: Final Result: True', attribute.id)
-            new_event = Event.create_sla(attribute, self.event_text, ', '.join(event_details))
-            if new_event is None:
-                logger.error('A%d: Cannot create event', attribute.id)
-            else:
-                DBSession.add(new_event)
 
 class SlaRow(DeclarativeBase):
     """

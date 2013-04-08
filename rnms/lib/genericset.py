@@ -37,13 +37,13 @@ class GenericSet():
         self.rows.insert(new_pos,new_row)
 
     def append(self, new_row):
-        """ Add new PollerRow to PollerSet at the bottom of the Set"""
+        """ Add new Row to GenericSet at the bottom of the Set"""
         new_position=0
         for row in self.rows:
             if new_row is not row:
                 new_position=row.position+1
         new_row.position=new_position
-        self.poller_rows.append(new_row)
+        self.rows.append(new_row)
 
     def row_to(self, position, moving_row):
         """
@@ -59,9 +59,9 @@ class GenericSet():
         """ Swap position of rows that are the specified positions. If the
         positions don't exist then dont do anything
         """
-        for row_a in self.poller_rows:
+        for row_a in self.rows:
             if row_a.position == position_a:
-                for row_b in self.poller_rows:
+                for row_b in self.rows:
                     if row_b.position == position_b:
                         row_a.position = position_b
                         row_b.position = position_a

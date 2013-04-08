@@ -9,13 +9,14 @@ from rnms import model
 from rnms.websetup import database_data
 import transaction
 from sqlalchemy.sql import not_
+from sqlalchemy.exc import IntegrityError
+
+logger  = logging.getLogger('rnms')
 
 def bootstrap(command, conf, vars):
     """Place any commands to setup rnms here"""
-    used_event_types = []
 
     # <websetup.bootstrap.before.auth
-    from sqlalchemy.exc import IntegrityError
     try:
         u = model.User()
         u.user_name = u'manager'
@@ -56,16 +57,104 @@ def bootstrap(command, conf, vars):
         transaction.abort()
         print 'Continuing with bootstrapping...'
 
+    b = BootStrapper()
+    b.create()
+    b.validate()
     try:
+
+        # Triggers
+
+        # SNMP Enterprises
+        for ent in database_data.snmp_enterprises:
+            e = model.SNMPEnterprise(ent[0], ent[1], ent[2])
+            for device in ent[3]:
+                d = model.SNMPDevice(e,device[0],device[1])
+            model.DBSession.add(e)
+            
+
+
+
+
+        model.DBSession.flush()
+        transaction.commit()
+    except IntegrityError:
+        print 'Warning, there was a problem adding your base data'
+        import traceback
+        print traceback.format_exc()
+        transaction.abort()
+
+    # <websetup.bootstrap.after.auth>
+class BootStrapper(object):
+    models = ('defaults', 'autodiscovery', 'alarm_states', 'config_transfers',
+            'severities', 'event_types',
+            'logmatches', 
+            'attribute_types', 'graph_types', 'slas',
+            'pollers', 'backends', 'poller_sets', 'triggers'
+
+            )
+
+    def __init__(self):
+        self.atype_refs = {}
+        self.used_event_types = []
+        self.used_sla_conditions = []
+
+    def _commit(self, msg):
+        try:
+            model.DBSession.flush()
+            transaction.commit()
+        except IntegrityError as errmsg:
+            transaction.abort()
+            logger.error('Problem creating %s: %s', msg, errmsg)
+            #import traceback
+            #print traceback.format_exc()
+            exit()
+
+    def create(self):
+        for m in self.models:
+            func = getattr(self, 'create_{}'.format(m))
+            func()
+            self._commit(m)
+
+        # Some foreign key fixes
+        self.fix_attribute_types()
+
+    def validate(self):
+        print "\n\n------------------------------------------------------------------------\n"
+        print "Validation of data"
+        print "Unused Event Types: {0}".format(', '.join([ et.display_name for et in model.DBSession.query(model.EventType).filter(not_(model.EventType.id.in_(self.used_event_types))).all()]))
+
+    def create_defaults(self):
+        """
+        Any objects that require a specific ID, such as Default Hosts or Admin
+        Event types need to be defined here
+        """
+        zone = model.Zone(u'Default Zone',u'default')
+        model.DBSession.add(zone)
+
+        host = model.Host('0.0.0.0','No Host')
+        host.zone = zone
+        model.DBSession.add(host)
+
+        sla = model.Sla()
+        sla.display_name = u'No SLA'
+        model.DBSession.add(sla)
+
+        gt = model.GraphType()
+        gt.display_name = u'No Graph'
+        model.DBSession.add(gt)
+
+        ct = model.ConfigTransfer(display_name=u'No Transfer')
+        model.DBSession.add(ct)
+
+    def create_alarm_states(self):
         for row in database_data.alarm_states:
             a = model.AlarmState()
             (a.display_name, a.alarm_level, a.sound_in, a.sound_out, a.internal_state) = row
             model.DBSession.add(a)
 
-        atype_psets = []
+    def create_attribute_types(self):
         for row in database_data.attribute_types:
             at = model.AttributeType()
-            #FIXME - The poller set must be a name not number at this point
             try:
                 (at.display_name, at.ad_command,
                     at.ad_parameters, at_ad_validate, at.ad_enabled, 
@@ -77,7 +166,10 @@ def bootstrap(command, conf, vars):
             except ValueError:
                 print "problem with row", row
                 raise
-            atype_psets.append((at.display_name, default_poller_set))
+            self.atype_refs[at.display_name] = (
+                    default_poller_set, default_sla, default_graph)
+            model.DBSession.add(at)
+
             field_position = 0
             for field in fields:
                 f = model.AttributeTypeField()
@@ -92,22 +184,30 @@ def bootstrap(command, conf, vars):
                 r.position = rrd_position
                 rrd_position += 1
                 at.rrds.append(r)
-            model.DBSession.add(at)
-        model.DBSession.flush()
-        transaction.commit()
-    except IntegrityError:
-        print 'Problem adding attribute type data'
-        import traceback
-        print traceback.format_exc()
-        transaction.abort()
-        exit
-    try:
+    
+    def fix_attribute_types(self):
+        default_sla = model.Sla.by_display_name(u'No SLA')
+        default_gt = model.GraphType.by_display_name(u'No Graph')
+        for at_name,at_refs in self.atype_refs.items():
+            ps = model.PollerSet.by_display_name(at_refs[0])
+            if ps is None:
+                raise ValueError("Bad default PollerSet name \"{}\" for AttributeType {}.".format(at_refs[0], at_name))
+            if at_refs[1] == '':
+                sla = default_sla
+            else:
+                sla = model.Sla.by_display_name(at_refs[1])
+            if sla is None:
+                raise ValueError("Bad default SLA name \"{}\" for AttributeType {}.".format(at_refs[1], at_name))
+            if at_refs[2] == '':
+                gt = default_gt
+            else:
+                gt = model.GraphType.by_display_name(at_refs[2])
+            if gt is None:
+                raise ValueError("Bad default GraphType name \"{}\" for AttributeType {}.".format(at_refs[2], at_name))
+            
+            model.DBSession.query(model.AttributeType).filter(model.AttributeType.display_name == at_name).update({'default_poller_set_id': ps.id, 'default_sla_id': sla.id, 'default_graph_type_id': gt.id})
 
-
-        for row in database_data.config_transfers:
-            ct = model.ConfigTransfer(row[0], row[1])
-            model.DBSession.add(ct)
-
+    def create_autodiscovery(self):
         for row in database_data.autodiscovery_policies:
             p = model.AutodiscoveryPolicy()
             (p.display_name,p.set_poller,p.permit_add,p.permit_delete,
@@ -115,82 +215,42 @@ def bootstrap(command, conf, vars):
                     p.skip_loopback,p.check_state,p.check_address)=row
             model.DBSession.add(p)
 
-        for severity in database_data.event_severities:
-            sv = model.EventSeverity(severity[0],severity[1],severity[2],severity[3])
-            model.DBSession.add(sv)
+    def create_backends(self):
+        for row in database_data.backends:
+            be = model.Backend()
+            (be.display_name, be.command, be.parameters) = row
+            if be.command == 'event':
+                parms = be.parameters.split(',')
+                event_type = model.EventType.by_tag(parms[0])
+                if event_type is None:
+                    raise ValueError("EventType {0} not found in backend {1}".format(parms[0], be.display_name))
+                self.used_event_types.append(event_type.id)
+            model.DBSession.add(be)
 
+    def create_config_transfers(self):
+        for row in database_data.config_transfers:
+            ct = model.ConfigTransfer(row[0], row[1])
+            model.DBSession.add(ct)
+
+    def create_event_types(self):
         for row in database_data.event_types:
             et = model.EventType()
             try:
-                (et.display_name, severity, et.tag, et.text, et.generate_alarm, ignore_up_event_id, et.alarm_duration, ignore_showable, et.show_host) = row
+                (et.display_name, severity, et.tag, et.text, et.generate_alarm, ignore_up_event_id, et.alarm_duration, et.show_host) = row
             except ValueError as errmsg:
                 print("Bad event_type \"{0}\".\n{1}".format(row, errmsg))
                 exit()
             et.severity = model.EventSeverity.by_name(severity)
-            #print("eseverity %s is %s" % (severity, et.severity))
             model.DBSession.add(et)
 
-        # Logmatches
-        logmatch_set = model.LogmatchSet(display_name=u'Default')
-        model.DBSession.add(logmatch_set)
-
-        for row in database_data.logfiles:
-            lf = model.Logfile(row[0],row[1])
-            lf.logmatchset = logmatch_set
-            model.DBSession.add(lf)
-
-        for row in database_data.logmatch_default_rows:
-            try:
-                lmr = model.LogmatchRow()
-                (lmr.match_text, lmr.match_start, lmr.host_match, 
-                    lmr.attribute_match, lmr.state_match, event_tag,
-                    fields) = row
-                lmr.event_type = model.EventType.by_tag(event_tag)
-                if lmr.event_type is None:
-                    raise ValueError("Bad EventType tag \"{}\" in LogMatchRow {}".format(event_tag, lmr.match_text))
-                used_event_types.append(lmr.event_type.id)
-                try:
-                  lmr.match_sre = re.compile(row[0])
-                except re.error as errmsg:
-                    print "Cannot compile message \"%s\": %s" % (row[0],errmsg)
-                    exit()
-                lmr.logmatch_set = logmatch_set
-                for field in fields:
-                    lmf = model.LogmatchField()
-                    (lmf.event_field_tag, lmf.field_match)=field
-                    lmr.fields.append(lmf)
-                model.DBSession.add(lmr)
-            except Exception as errmsg:
-                print "Cannot add row \"%s\": %s.\n" % (row[0], errmsg)
-                exit()
-
-        for row in database_data.sla_conditions:
-            sc = model.SlaCondition()
-            (sc.display_name, sc.expression, sc.oper, sc.limit, sc.show_info, sc.show_expression, sc.show_unit) = row
-            model.DBSession.add(sc)
-
-        for row in database_data.slas:
-            s = model.Sla()
-            (s.display_name, s.event_text, s.threshold, attribute_type, sla_rows) = row
-            s.attribute_type = model.AttributeType.by_display_name(attribute_type)
-            if s.attribute_type is None:
-                raise ValueError("Bad AttributeType name \"{}\" in SLA {}".format(attribute_type, s.display_name))
-            model.DBSession.add(s)
-            position=1
-            for sla_row in sla_rows:
-                sr = model.SlaRow(s,show_result=sla_row[1], position=position)
-                sr.sla_condition_id = sla_row[0]
-                position += 1
-                model.DBSession.add(sr)
-
-        # Graph Types
+    def create_graph_types(self):
         for row in database_data.graph_types:
             gt = model.GraphType()
             (gt.display_name, atype_name, gt.title, gt.vertical_label, gt.extra_options, graph_defs, graph_vnames, graph_lines ) = row
             attribute_type = model.AttributeType.by_display_name(atype_name)
             if attribute_type is None:
                 raise ValueError("Attribute Type {} not found in GraphType {}".format(atype_name, gt.display_name))
-            gt.attribute_type = attribute_type
+            gt.attribute_type_id = attribute_type.id
             for graph_def in graph_defs:
                 at_rrd = model.AttributeTypeRRD.by_name(attribute_type, graph_def[1])
                 if at_rrd is None:
@@ -238,35 +298,15 @@ def bootstrap(command, conf, vars):
 
             model.DBSession.add(gt)
 
-
-
-        # Pollers
+    def create_pollers(self):
         for row in database_data.pollers:
             p = model.Poller()
             (p.field, dn, p.command, p.parameters) = row
             p.display_name = unicode(dn)
             model.DBSession.add(p)
 
-        for row in database_data.backends:
-            be = model.Backend()
-            (be.display_name, be.command, be.parameters) = row
-            if be.command == 'event':
-                parms = be.parameters.split(',')
-                event_type = model.EventType.by_tag(parms[0])
-                if event_type is None:
-                    raise ValueError("EventType {0} not found in backend {1}".format(parms[0], be.display_name))
-                    exit()
-                used_event_types.append(event_type.id)
-            model.DBSession.add(be)
-        transaction.commit()
-    except IntegrityError:
-        print 'Problem adding backend type data'
-        import traceback
-        print traceback.format_exc()
-        transaction.abort()
-        exit
-    try:
-
+    def create_poller_sets(self):
+        no_backend = model.Backend.by_display_name(u'No Backend')
         for row in database_data.poller_sets:
             (ps_name, at_name, poller_rows) = row
             atype = model.AttributeType.by_display_name(at_name)
@@ -276,23 +316,74 @@ def bootstrap(command, conf, vars):
             ps.attribute_type = atype
             poller_row_pos = 0
             for poller_row in poller_rows:
-                pr_poller = model.Poller.by_display_name(poller_row[0])
-                if pr_poller is None:
-                    raise ValueError("Bad poller name \"{0}\".".format(poller_row[0]))
-
-                pr_backend = None
-                if poller_row[1] != '':
-                    pr_backend = model.Backend.by_display_name(poller_row[1])
-                    if pr_backend is None:
-                        raise ValueError("Bad backend name \"{0}\".".format(poller_row[1]))
                 pr = model.PollerRow()
-                pr.poller = pr_poller
-                pr.backend = pr_backend
+                pr.poller = model.Poller.by_display_name(poller_row[0])
+                if pr.poller is None:
+                    raise ValueError("Bad poller name \"{0}\".".format(poller_row[0]))
+                if poller_row[1] == u'':
+                    pr.backend = no_backend
+                else:
+                    pr.backend = model.Backend.by_display_name(poller_row[1])
+                    if pr.backend is None:
+                        raise ValueError("Bad backend name \"{0}\".".format(poller_row[1]))
                 pr.position = poller_row_pos
                 poller_row_pos += 1
                 ps.poller_rows.append(pr)
             model.DBSession.add(ps)
-        # Triggers
+
+    def create_severities(self):
+        for severity in database_data.event_severities:
+            sv = model.EventSeverity(severity[0],severity[1],severity[2],severity[3])
+            model.DBSession.add(sv)
+
+    def create_logmatches(self):
+        logmatch_set = model.LogmatchSet(display_name=u'Default')
+        model.DBSession.add(logmatch_set)
+
+        for row in database_data.logfiles:
+            lf = model.Logfile(row[0],row[1])
+            lf.logmatchset = logmatch_set
+            model.DBSession.add(lf)
+
+        for row in database_data.logmatch_default_rows:
+            try:
+                lmr = model.LogmatchRow()
+                (lmr.match_text, lmr.match_start, lmr.host_match, 
+                    lmr.attribute_match, lmr.state_match, event_tag,
+                    fields) = row
+                lmr.event_type = model.EventType.by_tag(event_tag)
+                if lmr.event_type is None:
+                    raise ValueError("Bad EventType tag \"{}\" in LogMatchRow {}".format(event_tag, lmr.match_text))
+                self.used_event_types.append(lmr.event_type.id)
+                try:
+                  lmr.match_sre = re.compile(row[0])
+                except re.error as errmsg:
+                    raise re.error("Cannot compile message \"%s\": %s" % (row[0],errmsg))
+                lmr.logmatch_set = logmatch_set
+                for field in fields:
+                    lmf = model.LogmatchField()
+                    (lmf.event_field_tag, lmf.field_match)=field
+                    lmr.fields.append(lmf)
+                model.DBSession.add(lmr)
+            except Exception as errmsg:
+                raise ValueError("Cannot add row \"%s\": %s.\n" % (row[0], errmsg))
+
+    def create_slas(self):
+        for row in database_data.slas:
+            s = model.Sla()
+            (s.display_name, s.event_text, attribute_type, sla_rows) = row
+            s.attribute_type = model.AttributeType.by_display_name(attribute_type)
+            if s.attribute_type is None:
+                raise ValueError("Bad AttributeType name \"{}\" in SLA {}".format(attribute_type, s.display_name))
+            model.DBSession.add(s)
+            position=1
+            for sla_row in sla_rows:
+                sr = model.SlaRow(s,position=position)
+                (sr.expression, sr.oper, sr.limit, sr.show_result, sr.show_info, sr.show_expression, sr.show_unit) = sla_row
+                position += 1
+                model.DBSession.add(sr)
+
+    def create_triggers(self):
         for trigger in database_data.triggers:
             t = model.Trigger(trigger[0], trigger[1])
             t.email_owner =trigger[2]
@@ -307,41 +398,3 @@ def bootstrap(command, conf, vars):
                 r.set_limit(limits)
                 t.append(r)
             model.DBSession.add(t)
-
-        # SNMP Enterprises
-        for ent in database_data.snmp_enterprises:
-            e = model.SNMPEnterprise(ent[0], ent[1], ent[2])
-            for device in ent[3]:
-                d = model.SNMPDevice(e,device[0],device[1])
-            model.DBSession.add(e)
-            
-
-
-        # Now that the PollerSets are in, we can backfill the default
-        # PollerSet for an AttributeType
-        for at_name,ps_name in atype_psets:
-            ps = model.PollerSet.by_display_name(ps_name)
-            if ps is None:
-                raise ValueError("Bad default PollerSet name \"{}\" for AttributeType {}.".format(ps_name, at_name))
-            model.DBSession.query(model.AttributeType).filter(model.AttributeType.display_name == at_name).update({'default_poller_set_id': ps.id})
-
-        # Default Single Setup
-        zone = model.Zone(u'Default Zone',u'default')
-        model.DBSession.add(zone)
-        host = model.Host('0.0.0.0','No Host')
-        host.zone = zone
-        model.DBSession.add(host)
-
-
-        model.DBSession.flush()
-        transaction.commit()
-    except IntegrityError:
-        print 'Warning, there was a problem adding your base data'
-        import traceback
-        print traceback.format_exc()
-        transaction.abort()
-
-    # <websetup.bootstrap.after.auth>
-    print "\n\n------------------------------------------------------------------------\n"
-    print "Validation of data"
-    print "Unused Event Types: {0}".format(', '.join([ et.display_name for et in model.DBSession.query(model.EventType).filter(not_(model.EventType.id.in_(used_event_types))).all()]))

@@ -21,6 +21,7 @@
 # Import models for rnms
 import logging
 import datetime
+import time
 import zmq
 import transaction
 
@@ -67,7 +68,7 @@ class SLAanalyzer(RnmsEngine):
                     self.logger.debug('A%d: is DOWN, skipping',attribute.id)
                     continue
                 self.logger.debug('A%d: START on %s',attribute.id, attribute.sla.display_name)
-                attribute.sla.analyze(attribute, sla_logger=self.logger)
+                self.analyze_attribute(attribute)
                 attribute.update_sla_time()
 
             
@@ -109,3 +110,70 @@ class SLAanalyzer(RnmsEngine):
                 sleep_time = int((next_slaa_time - datetime.datetime.now()).total_seconds())
     def update_next_find_attribute(self):
         self.next_find_attribute = datetime.datetime.now() + datetime.timedelta(seconds=SLA_INTERVAL_SECONDS)
+
+    def analyze_attribute(self, attribute):
+        """
+        Analyze the SLA against the given attribute
+        """
+        sla = attribute.sla
+        end_time = str(int(time.time()/SLA_INTERVAL_SECONDS)*SLA_INTERVAL_SECONDS)
+        start_time = 'e-{}m'.format(SLA_INTERVAL_SECONDS * 60)
+
+        rrd_values = attribute.get_fields()
+        cond_results=[]
+        event_details=[]
+        cond_rows = DBSession.query(SlaRow).filter(SlaRow.sla_id==sla.id)
+        cond_row_count = 0
+        for cond in cond_rows:
+            cond_row_count += 1
+            try:
+                rrd_values = self.update_rrd_values(rrd_values, attribute, cond.expression, start_time, end_time)
+            except KeyError as errmsg:
+                self.logger.error('A%d %s',attribute.id, errmsg)
+                return
+            if len(rrd_values) == 0:
+                return
+            # AND/OR remove the last two items from stack and replace with reasult
+            if (cond.expression == 'AND'):
+                if len(cond_results) < 2:
+                    self.logger.error('AND sla condition needs 2 results')
+                    continue
+                result = cond_results[-1] and cond_results[-2]
+                self.logger.info('A%d Row%d: %s AND %s := %s',attribute.id, cond_row_count, cond_results[-1], cond_results[-2], result)
+                cond_results = cond_results[:-2] + [result]
+            elif (cond.expression == 'OR'):
+                if len(cond_results) < 2:
+                    self.logger.error('OR sla condition needs 2 results')
+                    continue
+                result = cond_results[-1] or cond_results[-2]
+                self.logger.info('A%d Row%d: %s OR %s := %s',attribute.id, cond_row_count, cond_results[-1], cond_results[-2], result)
+                cond_results = cond_results[:-2] + [result]
+            else:
+                (result, details) = cond.eval(rrd_values)
+                self.logger.info('A%d Row%d: %s', attribute.id, cond_row_count, cond.expression)
+                self.logger.info('A%d Row%d: %s := %s', attribute.id, cond_row_count, details, result)
+                cond_results.append(result)
+                if result != False:
+                    event_details.append(details)
+        self.logger.info("A%d VALUES %s",attribute.id, ', '.join(['{0}({1})'.format(k,v) for (k,v) in rrd_values.items()]))
+        if (len(cond_results) < 1 or cond_results[-1] == False):
+            self.logger.debug('A%d: Final Result: False', attribute.id)
+        else:
+            self.logger.debug('A%d: Final Result: True', attribute.id)
+            new_event = Event.create_sla(attribute, sla.event_text, ', '.join(event_details))
+            if new_event is None:
+                logger.error('A%d: Cannot create event', attribute.id)
+            else:
+                DBSession.add(new_event)
+    
+    def update_rrd_values(self, rrd_values, attribute, text, start_time, end_time):
+        """
+        Given a string and existing rrd_values dictionary, add in the
+        missing values
+        """
+        new_fields = set(fields_regexp.findall(text))
+        for new_field in new_fields:
+            if new_field not in rrd_values:
+                rrd_values[new_field] = attribute.get_rrd_value(new_field, start_time, end_time)
+        return rrd_values
+
