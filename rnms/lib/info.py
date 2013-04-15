@@ -17,20 +17,30 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-import logging
-import datetime
-import time
-import asyncore
-import transaction
-
-from sqlalchemy import and_
+from argparse import ArgumentParser
 
 from rnms import model
+from rnms.lib.cmdline import BaseCmdLine
 
-class RnmsInfo(object):
+class RnmsInfo(BaseCmdLine):
     """
     Provides information about the various objects in rnms
     """
+
+    def run(self):
+        self.setup_app()
+        try:
+            real_info = getattr(self, self.args.qtype+'_info')
+        except AttributeError:
+            print 'Unknown query type {}.'.format(self.args.qtype)
+            exit(1)
+        real_info()
+
+    def setup_app(self):
+        parser = ArgumentParser()
+        parser.add_argument('qtype', type=str, choices=('attribute', 'atype', 'host', 'pollerset','autodiscovery','sla','trigger'), help='Choose attribute, atype, autodiscovery, host or pollerset,sla,trigger', metavar='<query_type>')
+        parser.add_argument('ids', metavar='ID ID...', type=int, nargs='+')
+        self.parse_args(parser)
 
     def _snmp_data(self,community):
         if community is None:
@@ -43,16 +53,15 @@ class RnmsInfo(object):
             return 'SNMPv3 set'
         return 'unknown'
         
-    def host_info(self, ids):
-        hosts = model.DBSession.query(model.Host).filter(model.Host.id.in_(ids))
-        if hosts.count() == 0:
-            print "No hosts found"
+    def host_info(self):
+        hosts = self._get_objects(model.Host, 'Hosts')
+        if hosts is None:
             return
         print
         for host in hosts:
-            print '=' * 60
+            self.line('=')
             print '{:<20} | {}: {}'.format('Host', host.id, host.display_name)
-            print '-' * 60
+            self.line('-')
             print '''{:<20} | {}: {}
 {:<20} | {}
 {:<20} | {}
@@ -73,16 +82,15 @@ class RnmsInfo(object):
         'Attributes', len(host.attributes), ', '.join([str(a.id) for a in host.attributes])
         )
 
-    def attribute_info(self, ids):
-        attributes = model.DBSession.query(model.Attribute).filter(model.Attribute.id.in_(ids))
-        if attributes.count() == 0:
-            print "No attributes found"
+    def attribute_info(self):
+        attributes = self._get_objects(model.Attribute, 'Attributes')
+        if attributes is None:
             return
         print
         for attribute in attributes:
-            print '=' * 60
+            self.line('=')
             print '{:<20}| {}: {} (index: {})'.format('Attribute', attribute.id, attribute.display_name, attribute.index)
-            print '-' * 60
+            self.line('-')
             print """{:<20} | {}: {}
 {:<20} | {}/{}
 {:<20} | {}: {}
@@ -99,27 +107,26 @@ class RnmsInfo(object):
         'Created', attribute.created,
         'Next SLA', attribute.next_sla,
         'Next Poll', attribute.next_poll)
-            print '-' * 60
+            self.line('-')
             print 'Fields'
             for field in attribute.fields:
                 at_field = model.AttributeTypeField.by_id(field.attribute_type_field_id)
                 print '{:<20} | {}'.format(at_field.display_name,field.value)
 
-    def pollerset_info(self, ids):
-        poller_sets = model.DBSession.query(model.PollerSet).filter(model.PollerSet.id.in_(ids))
-        if poller_sets.count() == 0:
-            print "No pollersets found"
+    def pollerset_info(self):
+        poller_sets = self._get_objects(model.PollerSet, 'Poller Sets')
+        if poller_sets is None:
             return
         print
         for poller_set in poller_sets:
-            print '=' * 60
+            self.line('=')
             print 'Poller Set          | {}: {}'.format(poller_set.id, poller_set.display_name)
-            print '-' * 60
+            self.line('-')
             print '''{:<20} | {}:{}
             '''.format(
                     'Attribute Type', poller_set.attribute_type_id, poller_set.attribute_type.display_name,
                     )
-            print '-' * 60
+            self.line('-')
             print 'Poller Rows\nPos| {:<39} | {:<29}'.format('Poller','Backend')
             for row in poller_set.poller_rows:
                 print '{:<3}| {:<3}:{:<35} | {:<3}:{:<25}'.format(
@@ -131,17 +138,16 @@ class RnmsInfo(object):
                         )
         print '=' * 60
 
-    def autodiscovery_info(self, ids):
+    def autodiscovery_info(self):
         """ Information about the autodiscovery policy """
-        policies = model.DBSession.query(model.AutodiscoveryPolicy).filter(model.AutodiscoveryPolicy.id.in_(ids))
-        if policies.count() == 0:
-            print "No Autodiscovery Policies found"
+        policies = self._get_objects(model.AutodiscoveryPolicy, 'Autodiscovery Policies')
+        if policies is None:
             return
         print
         for policy in policies:
-            print '=' * 60
+            self.line('=')
             print '{:<30} | {}: {}'.format('Autodiscovery Policy', policy.id, policy.display_name)
-            print '-' * 60
+            self.line('-')
             print '''Autodiscovery will not examine attribute if it:
 {:<30} | {}
 {:<30} | {}
@@ -173,17 +179,16 @@ Attribute Autodiscovery can do the following:
             return 'All SNMP enabled hosts'
         return 'sysObjectId='+ sysobjid
 
-    def attributetype_info(self, ids):
+    def atype_info(self):
         """ Information about the attribute types """
-        atypes = model.DBSession.query(model.AttributeType).filter(model.AttributeType.id.in_(ids))
-        if atypes.count() == 0:
-            print "No AttributeTypes found"
+        atypes = self._get_objects(model.AttributeType, 'Attribute Types')
+        if atypes is None:
             return
         print
         for atype in atypes:
-            print '=' * 60
+            self.line('=')
             print '{:<30} | {}: {}'.format('Attribute Type', atype.id, atype.display_name)
-            print '-' * 60
+            self.line('-')
             print '''{:<30} | (enabled: {})
 {:<30} | {}
 {:<30} | {}
@@ -200,22 +205,21 @@ Attribute Autodiscovery can do the following:
         'Default SLA', atype.default_sla_id, atype.default_sla.display_name,
         'RRA Info', atype.ds_heartbeat, atype.rra_cf, atype.rra_rows,
         )
-            print '-' * 60
+            self.line('-')
             print 'Fields'
             for field in atype.fields:
                 print '{:<3} {:<26} | tag:{}'.format(field.position, field.display_name, field.tag)
             
-            print '-' * 60
+            self.line('-')
             print 'RRDtool files'
             for rrd in atype.rrds:
                 print '{:<3} {:<26} | {:<5} {}'.format(rrd.position, rrd.display_name, rrd.dst2str(), rrd.name)
 
 
-    def sla_info(self, ids):
+    def sla_info(self):
         """ Information about SLAs """
-        slas = model.DBSession.query(model.Sla).filter(model.Sla.id.in_(ids))
-        if slas.count() == 0:
-            print "No SLAs found"
+        slas = self._get_objects(model.Sla, 'SLAs')
+        if slas is None:
             return
         print
         for sla in slas:
@@ -223,42 +227,56 @@ Attribute Autodiscovery can do the following:
                 at_name = sla.attribute_type.display_name
             except AttributeError:
                 at_name = 'None'
-            print '=' * 60
+            self.line('=')
             print '{:<30} | {}: {}'.format('SLA', sla.id, sla.display_name)
-            print '-' * 60
+            self.line('-')
             print '''{:<30} | {}: {}
 {:<30} | {}% '''.format( 'Attribute Type', sla.attribute_type_id, at_name,
         'Threshold', sla.threshold,
         )
-            print '-' * 60
-            print 'Rules\nPos|  Show | {:<40}'.format('SLA')
+            self.line('-')
+            print 'Rules\nPos| {:>40} | Oper| Limit'.format('Expression')
+            self.line('-')
             for row in sla.sla_rows:
-                print '{:<3}| {:>5} | {:>3}: {:<35}'.format(
+                print '{:<3}| {:>40} | {:>3} | {:<8}'.format(
                         row.position, 
-                        str(row.show_result),
-                        row.sla_condition_id, row.sla_condition.display_name,
+                        row.expression[:40], row.oper, row.limit
                         )
+                expr_len = len(row.expression)
+                for idx in range(40,256,40):
+                    if expr_len > idx:
+                        print '   | {:>40} |     |'.format(row.expression[idx:idx+40])
+
         print '=' * 60
 
-    def trigger_info(self, ids):
+    def trigger_info(self):
         """ Information about the triggers """
-        triggers = model.DBSession.query(model.Trigger).filter(model.Trigger.id.in_(ids))
-        if triggers.count() == 0:
-            print "No Triggers found"
+        triggers = self._get_objects(model.Trigger, 'Triggers')
+        if triggers is None:
             return
         print
         for trigger in triggers:
-            print '=' * 60
+            self.line('=')
             print '''{:<30} | {}: {}
 {:<30} | {}
 {:<30} | {} - {}'''.format('Trigger', trigger.id, trigger.display_name,
         'Match Type', trigger.match_type_name().capitalize(),
         'Email: Owner - Users', trigger.email_owner, trigger.email_users,
         )
-            print '-' * 60
+            self.line('-')
             print 'Rules'
             for rule in trigger.rules:
                 stop = rule.stop and 'STOP' or 'CONTINUE'
                 andor = rule.and_rule and 'AND' or 'OR'
                 print '{}: {} {} {} ({} - {})'.format(
                         rule.position, rule.field_name(), rule.oper, rule.limit,andor, stop)
+
+    def _get_objects(self, db_table, description): 
+        obj = model.DBSession.query(db_table).filter(db_table.id.in_(self.args.ids))
+        if obj.count() == 0:
+            print "No {} found".format(description)
+            return None
+        return obj
+
+    def line(self, char):
+        print char * 60

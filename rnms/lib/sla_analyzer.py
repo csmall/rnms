@@ -18,16 +18,13 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 
-# Import models for rnms
-import logging
 import datetime
 import time
-import zmq
 import transaction
 
-from rnms.lib import zmqcore, zmqmessage
-from rnms import model
 from rnms.lib.engine import RnmsEngine
+from rnms.lib.parsers import fields_regexp
+from rnms.model import DBSession, Attribute, SlaRow, Event
 
 SLA_WINDOW_SECONDS = 10
 SLA_INTERVAL_SECONDS = 180
@@ -83,14 +80,14 @@ class SLAanalyzer(RnmsEngine):
 
     def find_new_attributes(self, next_sla_time):    
         """ Add new attributes that need to have their SLA analyzed """
-        return model.Attribute.have_sla(next_sla_time, self.attribute_ids, self.host_ids)
+        return Attribute.have_sla(next_sla_time, self.attribute_ids, self.host_ids)
     
     def _sleep_until_next(self):
         """
         Stay in this loop until we need to go into the main loop again.
         Returns False if we have broken out of the poll
         """
-        next_attribute = model.Attribute.next_sla_analysis()
+        next_attribute = Attribute.next_sla_analysis()
         if next_attribute is None:
             return self.sleep(self.next_find_attribute)
         else:
@@ -99,15 +96,6 @@ class SLAanalyzer(RnmsEngine):
                 self.next_find_attribute = next_attribute.next_sla
             return self.sleep(self.next_find_attribute)
 
-
-            sleep_time = int((next_slaa_time - datetime.datetime.now()).total_seconds())
-            self.logger.debug('Next SLA Analyzer in %d secs', sleep_time)
-            while sleep_time > 0:
-                if not self.zmq_core.poll(sleep_time):
-                    return
-                if self.end_thread:
-                    return
-                sleep_time = int((next_slaa_time - datetime.datetime.now()).total_seconds())
     def update_next_find_attribute(self):
         self.next_find_attribute = datetime.datetime.now() + datetime.timedelta(seconds=SLA_INTERVAL_SECONDS)
 
@@ -162,7 +150,7 @@ class SLAanalyzer(RnmsEngine):
             self.logger.debug('A%d: Final Result: True', attribute.id)
             new_event = Event.create_sla(attribute, sla.event_text, ', '.join(event_details))
             if new_event is None:
-                logger.error('A%d: Cannot create event', attribute.id)
+                self.logger.error('A%d: Cannot create event', attribute.id)
             else:
                 DBSession.add(new_event)
     

@@ -19,14 +19,11 @@
 #
 import os
 import logging
-import sys
 
 from argparse import ArgumentParser
-import sqlalchemy 
 from paste.deploy import appconfig
 
 from rnms.config.environment import load_environment
-from rnms import model
 from rnms.lib.sla_analyzer import SLAanalyzer
 
 

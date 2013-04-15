@@ -21,24 +21,22 @@
 Module for the master daemon that runs all the sub-processes for 
 Rosenberg
 """
-import os
 import logging
 import threading
 from argparse import ArgumentParser
 
-from paste.deploy import appconfig
 import zmq
 
-from rnms.config.environment import load_environment
+from rnms.lib.cmdline import BaseCmdLine
 from rnms.lib.poller import Poller
 from rnms.lib.consolidate import Consolidator
 from rnms.lib.sla_analyzer import SLAanalyzer
 from rnms.lib.att_discover import AttDiscover
+from rnms.lib.snmptrapd import SNMPtrapd
 from rnms.lib import zmqmessage 
 
-LOG_FORMAT="%(asctime)s %(levelname)-5.5s [%(name)s] %(message)s"
 
-class Rnmsd(object):
+class Rnmsd(BaseCmdLine):
     """
     Master object for the Rosenberg NMS daemon. This daemon is responsible
     for starting other sub-threads either continuously or at particular times.
@@ -76,6 +74,9 @@ class Rnmsd(object):
         #self.threads['att_discover'].start()
 
         # main loop
+        self.snmptrapd = SNMPtrapd(zmq_context=self.zmq_context)
+        self.threads['snmptrapd'] = threading.Thread(target=self.snmptrapd.run)
+        self.threads['snmptrapd'].start()
         while True:
             try:
                 self.zmq_poller.poll(1000)
@@ -91,25 +92,7 @@ class Rnmsd(object):
     def _setup_app(self):
         """ Parses command line arguments and does inital setup """
         parser = ArgumentParser()
-        parser.add_argument("-c", "--conf_file", help="configuration to use", default="development.ini")
-        parser.add_argument("-d", "--debug", action='store_true', help="turn on debugging")
-        parser.add_argument("-q", "--quiet", action='store_true', help="critical messages only")
-        parser.add_argument("-v", "--verbosity", action='store_true', help="verbose messages")
-        self.args = parser.parse_args()
-        self._set_logging()
-        conf = appconfig('config:' + os.path.abspath(self.args.conf_file))
-        load_environment(conf.global_conf, conf.local_conf)
-
-    def _set_logging(self):
-        logging_level = logging.WARNING
-        if self.args.quiet == True:
-            logging_level = logging.CRITICAL
-        elif self.args.debug == True:
-            logging_level = logging.DEBUG
-        elif self.args.verbosity == True:
-            logging_level = logging.INFO
-        
-        logging.basicConfig(level=logging_level, format=LOG_FORMAT)
+        self.parse_args(parser)
 
     def _shutdown(self):
         """ Method that is called to shutdown the daemon """

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # This file is part of the Rosenberg NMS
 #
@@ -17,8 +17,17 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-from rnms.lib.info import RnmsInfo
+import transaction
 
-rnms_info = RnmsInfo()
-rnms_info.run()
+from rnms.model import DBSession, Attribute
 
+def check_attribute_state(attribute_ids, logger):
+    if len(attribute_ids) == 0:
+        return
+    attributes = DBSession.query(Attribute).filter(Attribute.id.in_(list(attribute_ids)))
+    if attributes.count() == 0:
+        return
+    logger.info('%d Attribute States to process', attributes.count())
+    for attribute in attributes:
+        attribute.calculate_oper()
+    transaction.commit()

@@ -18,7 +18,6 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 import datetime
-import time
 import transaction
 
 from sqlalchemy import and_
@@ -211,7 +210,7 @@ class Poller(RnmsEngine):
             return
         # Special speed-up for snmp fetch, get it all in one group
         # This does NOT work for SNMP v1, or this implementaiton anyhow
-        if not patt['attribute'].host.ro_is_snmpv1() and poller_row.poller.command == 'snmp_counter':
+        if poller_row.poller.command == 'snmp_counter' and not patt['attribute'].host.ro_is_snmpv1() :
             patt['skip_rows'] = self._multi_snmp_poll(patt)
             if patt['skip_rows'] != []:
                 return

@@ -18,7 +18,6 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 
-import datetime
 import transaction
 
 from rnms import model
@@ -27,17 +26,22 @@ from rnms import model
 def consolidate_events(logger):
     """
     Scan all events that have not been previously checked and set alerts
-    where required
+    where required.
+    Returns a set of changed attributes
     """
+    changed_attributes = set()
     events = model.DBSession.query(model.Event).filter(model.Event.processed == False)
     logger.info('%d Events to process', events.count())
     for event in events:
-        if event.alarm_state.is_up():
-            event.acknowledged = True
-        
         if event.alarm_state is None or event.attribute is None:
             event.set_processed()
             continue
+
+
+        if event.alarm_state.is_up():
+            event.acknowledged = True
+        
+        changed_attributes.add(event.attribute_id)
 
         if event.alarm_state.is_alert():
             process_event_alert(logger, event)
@@ -50,6 +54,7 @@ def consolidate_events(logger):
         event.set_processed()
     model.DBSession.flush()
     transaction.commit()
+    return changed_attributes
 
 def process_event_alert(logger, event):
     """
@@ -71,17 +76,14 @@ def process_event_downtesting(logger, event, other_alarm):
     logger.info("A:%d E:%d - DOWN/TESTING", event.attribute.id, event.id)
     if other_alarm is not None:
         other_alarm.set_stop(event, alarm_state=model.AlarmState.by_name('up'))
-        #event.acknowledged=True
-        other_alarm.start_event.acknowledged=True
-    else:
-        new_alarm = model.Alarm(event=event)
-        model.DBSession.add(new_alarm)
+    
+    new_alarm = model.Alarm(event=event)
+    model.DBSession.add(new_alarm)
 
 def process_event_up(logger, event, other_alarm):
     event.acknowledged=True
     if other_alarm is not None:
         logger.info("A:%d E:%d - UP Event", event.attribute.id, event.id)
         other_alarm.set_stop(event)
-        other_alarm.start_event.acknowledged=True
 
 

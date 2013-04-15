@@ -20,9 +20,11 @@
 import datetime
 
 # Import models for rnms
-from alarms import consolidate_alarms
+from alarms import check_alarm_stop_time, check_alarm_triggers
+from attributes import check_attribute_state
 from events import consolidate_events
 from logfiles import consolidate_logfiles
+from traps import consolidate_traps
 
 from rnms.lib.engine import RnmsEngine
 class Consolidator(RnmsEngine):
@@ -51,10 +53,17 @@ class Consolidator(RnmsEngine):
             consolidate_logfiles(self.logger)
             if self._poll() == False:
                 return
-            consolidate_events(self.logger)
+            consolidate_traps(self.logger)
             if self._poll() == False:
                 return
-            consolidate_alarms(self.logger)
+            changed_attributes = consolidate_events(self.logger)
+            if self._poll() == False:
+                return
+            check_alarm_triggers(self.logger)
+            changed_attributes.union(check_alarm_stop_time(self.logger))
+            if self._poll() == False:
+                return
+            check_attribute_state(changed_attributes, self.logger)
             if self._poll() == False:
                 return
 

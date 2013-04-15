@@ -18,16 +18,13 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 import os
-import sys
 import logging
 
 from argparse import ArgumentParser
-import sqlalchemy 
 from paste.deploy import appconfig
 
 
 from rnms.config.environment import load_environment
-from rnms import model
 from rnms.lib.consolidate import Consolidator
 
 def load_config(filename):

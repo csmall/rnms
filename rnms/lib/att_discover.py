@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-import logging
 import datetime
 import transaction
 
@@ -76,7 +75,7 @@ class AttDiscover(RnmsEngine):
             self._check_active_hosts()
 
             # Check through all the engines and sockets
-            host_count = len(self._active_hosts)
+            #host_count = len(self._active_hosts)
             self.snmp_engine.poll()
             self.nmap_client.poll()
             self.ntp_client.poll()

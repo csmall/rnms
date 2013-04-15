@@ -19,7 +19,6 @@
 #
 import transaction
 
-from rnms import model
 from rnms.model import DBSession, Event
 from rnms.model.logfile import Logfile, SyslogMessage
 

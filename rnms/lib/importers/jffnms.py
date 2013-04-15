@@ -24,9 +24,11 @@ import logging
 import datetime
 import transaction
 
-from rnms import model
-from rnms.model import DBSession
 from sqlalchemy.exc import IntegrityError
+
+from rnms import model
+from rnms.lib import states
+from rnms.model import DBSession
 
 logger = logging.getLogger('rnms')
 
@@ -315,9 +317,9 @@ class JffnmsImporter(object):
                 if row[8] == 0:
                     att.visible = False
                 elif row[8] == 1:
-                    att.admin_state = 1
+                    att.admin_state = states.STATE_UP
                 elif row[8] == 2:
-                    att.admin_state = 2
+                    att.admin_state = states.STATE_DOWN
                 att.created = datetime.datetime.fromtimestamp(row[10])
                 att.updated = datetime.datetime.fromtimestamp(row[11])
                 att.next_poll = datetime.datetime.fromtimestamp(row[12]) + datetime.timedelta(minutes=5)
@@ -392,7 +394,7 @@ class JffnmsImporter(object):
                 ev = model.Event(event_type)
                 ev.host_id = self.host_id(row[2])
                 ev.acknowledged = (row[8] == 1)
-                ev.analyzed = (row[9] == 1)
+                ev.processed = (row[9] == 1)
                 ev.created = row[1]
             
                 # Interface could either be referencing a real attribute or

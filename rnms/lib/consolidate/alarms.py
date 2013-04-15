@@ -17,16 +17,36 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-
-import datetime
 import transaction
+import datetime
 
-from rnms import model
+from tg import config
+from sqlalchemy import and_
 
-def consolidate_alarms(logger):
+from rnms.lib.parsers import fill_fields
+from rnms.model import DBSession, Alarm, Trigger
 
-    alarms = model.DBSession.query(model.Alarm).filter(model.Alarm.processed == False)
-    triggers = model.Trigger.alarm_triggers()
+def check_alarm_stop_time(logger):
+    """
+    Run through all the alarms that have check_stop_time set to
+    see if we have reached the time to close off the alarm.
+    This generally clears a SLA alarm on an Attribure after it has
+    expired, for example.
+
+    Returns a set of Attribute IDs that have had a status change
+    """
+    now = datetime.datetime.now()
+    changed_attributes = set()
+    alarms = DBSession.query(Alarm).filter(and_(Alarm.check_stop_time == True, Alarm.stop_time < now))
+    for alarm in alarms:
+        alarm.check_stop_time = False
+        changed_attributes.add(alarm.attribute_id)
+    return changed_attributes
+
+
+def check_alarm_triggers(logger):
+    alarms = DBSession.query(Alarm).filter(Alarm.processed == False)
+    triggers = Trigger.alarm_triggers()
     logger.info('%d Alarms to process', alarms.count())
     if alarms.count() == 0:
         return
@@ -47,7 +67,8 @@ def consolidate_alarms(logger):
                 for trigger_user in trigger.users:
                     sent_users.append(alarm.attribute.user.user_name)
                     trigger.email_action(trigger, trigger_user,alarm=alarm)
-                logger.debug('A%d T%d: email to %s',alarm.attribute.id, trigger.id, ','.join(sent_users))
+                if sent_users != [] :
+                    logger.debug('A%d T%d: email to %s',alarm.attribute.id, trigger.id, ','.join(sent_users))
         alarm.processed = True
     transaction.commit()
 
@@ -58,6 +79,7 @@ def email_action(trigger, user, alarm):
     Send an email for this alarm to the specified user
     """
     import smtplib
+    from email.mime.text import MIMEText
 
     subject = fill_fields(trigger.subject, alarm=alarm)
     body = fill_fields(trigger.body, alarm=alarm)
