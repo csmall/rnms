@@ -19,12 +19,9 @@
 #
 """ Event Handling """
 
-import datetime
-import logging
-
 from sqlalchemy.orm import relationship
-from sqlalchemy import ForeignKey, Column, UniqueConstraint, and_
-from sqlalchemy.types import Integer, Unicode, String, Boolean, SmallInteger, DateTime
+from sqlalchemy import ForeignKey, Column, and_
+from sqlalchemy.types import Integer, Unicode, String 
 
 from rnms.model import DeclarativeBase, DBSession
 
@@ -72,10 +69,10 @@ class SNMPEnterprise(DeclarativeBase):
             return ('unknown','')
         if oid[:4] == 'ent.':
             idx = 1
-            offset = 4
+        #    offset = 4
         elif oid[:12] == '1.3.6.1.4.1.':
             idx = 6
-            offset = 12
+        #    offset = 12
         else:
             return ('unknown','')
         oid_nums = oid.split('.')[idx:]

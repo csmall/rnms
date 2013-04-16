@@ -77,3 +77,4 @@ from rnms.model.sla import Sla, SlaRow
 from rnms.model.zone import Zone
 from rnms.model.trigger import Trigger, TriggerRule, TriggerField
 from rnms.model.snmp_names import SNMPEnterprise, SNMPDevice
+from snmptrap import SnmpTrap, SnmpTrapVarbind, TrapMatches

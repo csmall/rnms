@@ -21,7 +21,7 @@
 """ Trigger model """
 import operator
 
-from sqlalchemy import ForeignKey, Column, Table, and_
+from sqlalchemy import ForeignKey, Column, Table
 from sqlalchemy.orm import relationship 
 from sqlalchemy.types import Integer, Unicode, SmallInteger, Boolean
 
@@ -38,7 +38,7 @@ def oper_notin(x,y):
     return not oper_in(x,y)
 
 def oper_contains(x,y):
-    return x.find(unicode(y)) >= 0
+    return y.find(unicode(x)) >= 0
 
 def oper_notcontains(x,y):
     return not oper_contains(x,y)
@@ -196,8 +196,8 @@ class TriggerRule(DeclarativeBase):
             y = self.limit
         try:
             this_oper = self.allowed_opers[self.oper]
-        except IndexError:
-            logger.error('TriggerRule %s:%d has bad oper %s',self.trigger.display_name, self.position, self,oper)
+        except KeyError:
+            #logger.error('TriggerRule %s:%d has bad oper %s',self.trigger.display_name, self.position, self,oper)
             return False
         else:
             return this_oper(x,y)

@@ -33,7 +33,7 @@ from sqlalchemy.types import Integer, Unicode, PickleType, DateTime, Boolean, Sm
 
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, Attribute, AlarmState, Host, EventType
+from rnms.model import DeclarativeBase, Attribute, AlarmState, Host
 from rnms.lib.genericset import GenericSet
 
 logger = logging.getLogger('rnms')

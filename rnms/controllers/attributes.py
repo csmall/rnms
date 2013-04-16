@@ -19,26 +19,20 @@
 #
 #
 """Attribute controller module"""
-import datetime
-from sqlalchemy import select,func
+from sqlalchemy import func
 
 # turbogears imports
-import tg
-from tg import expose, request
-from tg import redirect, validate, flash
+from tg import expose
+from tg import validate, flash
 from sqlalchemy import and_
 
 # third party imports
-import tw2.sqla
-#from tg.i18n import ugettext as _
-#from repoze.what import predicates
 from formencode import validators
-from tw2.jqplugins.ui import set_ui_theme_name
-from sqlalchemy import asc
 
 # project specific imports
+from rnms.lib import states
 from rnms.lib.base import BaseController
-from rnms.widgets.attribute import AttributeSummary, AttributeMap
+from rnms.widgets.attribute import AttributeSummary, AttributeMap, AttributeStatusPie
 from rnms.model import DBSession, Attribute
 
 class AttributesController(BaseController):
@@ -91,6 +85,28 @@ class AttributesController(BaseController):
 #    @expose('json')
     #def jqgrid(self, *args, **kwargs):
     #    return AttributeGrid2.request(request).body
+
+    @expose('rnms.templates.widget')
+    def statuspie(self):
+        att_states = ('up', 'alert', 'down', 'Admin Down', 'testing', 'unknown')
+        att_count = { x:0 for x in att_states}
+        
+        down_attributes = DBSession.query(Attribute).filter(Attribute.admin_state == states.STATE_DOWN)
+        att_count['Admin Down'] = down_attributes.count()
+
+        attributes = DBSession.query(func.count(Attribute.admin_state), Attribute.admin_state).group_by(Attribute.admin_state)
+        for attribute in attributes:
+            try:
+                state_name = states.STATE_NAMES[attribute[1]]
+            except KeyError:
+                pass
+            else:
+                att_count[state_name] = attribute[0]
+        data = [
+                [ [att_name.capitalize(), cnt] for (att_name,cnt) in att_count],
+                ]
+        pie = AttributeStatusPie(data=data)
+        return dict(w=pie)
 
     @expose('rnms.templates.widget')
     def att_summary(self):

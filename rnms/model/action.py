@@ -58,33 +58,6 @@ class Action(DeclarativeBase):
             fields[trigger_field.action_field.tag] = trigger_field.value
         return fields
 
-    def run(self, trigger, user, alarm=None):
-        """
-        Run this action for an alarm trigger
-        """
-        subject = fill_fields(trigger.subject, alarm=alarm)
-
-        if self.is_email():
-            body = fill_fields(trigger.body, alarm=alarm)
-            self.email(user, subject, body)
-        elif self.is_smsclient():
-            logger.error('A%d T%d: SMSCLIENT not implemented',alarm.attribute.id, trigger.id)
-            
-
-        
-
-    def email(self, user, subject, body):
-        """
-        The email action. Sends an email to the specified user.
-        """
-        msg = MIMEText(body)
-        msg['Subject'] = subject
-        msg['From'] = config['email_from']
-        msg['To'] = '{} <{}>'.format(user.user_name, user.email_address)
-
-        s = smtplib.SMTP(config['smtp_server'])
-        s.sendmail(config['email_from'], user.email_address, msg.as_string())
-        s.quit()
 
     def is_email(self):
         return self.action_type == 0

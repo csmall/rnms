@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Main Controller"""
+from sqlalchemy import func
 
 from tg import expose, flash, require, url, lurl, request, redirect, tmpl_context, config
 from tg.i18n import ugettext as _, lazy_ugettext as l_
@@ -11,6 +12,10 @@ from tgext.admin.tgadminconfig import TGAdminConfig
 from tgext.admin.controller import AdminController
 from tw2.jqplugins.ui import set_ui_theme_name
 
+from rnms.widgets.attribute import AttributeStatusPie
+from rnms.model import DBSession, Attribute
+
+from rnms.lib import states
 from rnms.lib.base import BaseController
 from rnms.lib.statistics import get_overall_statistics
 from rnms.controllers.error import ErrorController
@@ -122,3 +127,42 @@ class RootController(BaseController):
         """
         flash(_('We hope to see you soon!'))
         redirect(came_from)
+
+    @expose('rnms.templates.widget')
+    def portal(self):
+        import tw2.jqplugins.portlets as p
+        import tw2.forms as twf
+
+        att_states = ('up', 'alert', 'down', 'Admin Down', 'testing', 'unknown')
+        att_count = { x:0 for x in att_states}
+        
+        down_attributes = DBSession.query(Attribute).filter(Attribute.admin_state == states.STATE_DOWN)
+        att_count['Admin Down'] = down_attributes.count()
+
+        attributes = DBSession.query(func.count(Attribute.admin_state), Attribute.admin_state).group_by(Attribute.admin_state)
+        for attribute in attributes:
+            try:
+                state_name = states.STATE_NAMES[attribute[1]]
+            except KeyError:
+                pass
+            else:
+                att_count[state_name] = attribute[0]
+        data = [
+                [ [att_name.capitalize(), cnt] for (att_name,cnt) in att_count.items()],
+                ]
+        mypie = AttributeStatusPie(data=data)
+        class LayoutWidget(p.ColumnLayout):
+            id='awesome-layout'
+            class col1(p.Column):
+                width = "50%"
+                class por1(p.Portlet):
+                    title = "DB Entries"
+                    widgetry = twf.Label(text='hello')
+
+            class col2(p.Column):
+                width = "50%"
+                class por2(p.Portlet):
+                    title = 'Pie!'
+                    widget = mypie
+        
+        return dict(w=LayoutWidget)

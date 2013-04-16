@@ -21,17 +21,15 @@
 
 import logging
 import operator
-import re
-import time
 from string import Template
 
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode, Boolean, String, SmallInteger
+from sqlalchemy.types import Integer, Unicode, String, SmallInteger
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, DBSession, Event
-from rnms.lib.parsers import NumericStringParser, fields_regexp
+from rnms.model import DeclarativeBase, DBSession
+from rnms.lib.parsers import NumericStringParser
 from rnms.lib.genericset import GenericSet
 
 logger = logging.getLogger('rnms')

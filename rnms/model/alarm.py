@@ -27,7 +27,7 @@ from sqlalchemy.types import Integer, Unicode, DateTime, Boolean, String, SmallI
 #from sqlalchemy.orm import relation, backref
 
 from rnms.model import DeclarativeBase, DBSession
-from rnms.lib.states import *
+from rnms.lib.states import STATE_UP, STATE_DOWN, STATE_ALERT, STATE_TESTING
 
 class Alarm(DeclarativeBase):
     """
@@ -47,6 +47,7 @@ class Alarm(DeclarativeBase):
     start_time = Column(DateTime, nullable=False, default=datetime.datetime.now)
     stop_time = Column(DateTime)
     processed = Column(Boolean, nullable=False, default=False)
+    check_stop_time = Column(Boolean, nullable=False, default=False)
     attribute_id = Column(Integer, ForeignKey('attributes.id'),nullable=False)
     attribute = relationship('Attribute', backref='alarms')
     alarm_state_id = Column(Integer, ForeignKey('alarm_states.id'),nullable=False)
@@ -71,6 +72,7 @@ class Alarm(DeclarativeBase):
             if event.event_type.alarm_duration > 0:
                 self.stop_time = datetime.datetime.now() + datetime.timedelta(minutes=event.event_type.alarm_duration)
                 self.stop_event = event
+                self.check_stop_time = True
 
     def __repr__(self):
         return '<Alarm {0} A:{1} T:{2}>'.format(self.id, self.attribute_id, self.start_time)
@@ -105,7 +107,10 @@ class Alarm(DeclarativeBase):
             self.alarm_state = alarm_state
         self.stop_time = stop_event.created
         self.stop_event = stop_event
+        self.check_stop_time = False
         self.processed = False
+        if self.start_event:
+            self.start_event.acknowledged=True
 
     @classmethod
     def find_down(cls,attribute,event_type):
@@ -121,24 +126,6 @@ class Alarm(DeclarativeBase):
             cls.alarm_state_id == AlarmState.id,
             AlarmState.internal_state.in_([STATE_DOWN, STATE_TESTING]),
             )).first()
-
-    def process(self):
-        """
-        Run though all the triggers there are and attempt to fire
-        any for this alarm.
-        """
-
-        if self.processed == True:
-            return
-        from rnms.model import Trigger
-        
-        triggers = Trigger.alarm_triggers()
-        for trigger in triggers:
-            trigger_result = trigger.process_alarm(self)
-        self.attribute.calculate_oper()
-        self.processed = True
-
- 
 
 class AlarmState(DeclarativeBase):
     """

@@ -21,13 +21,13 @@
 
 import datetime
 import transaction
+import random
 
 from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey, Column
 from sqlalchemy.types import Integer, Unicode, Boolean, PickleType, String, DateTime, Text, SmallInteger, BigInteger
 
 from rnms.model import DeclarativeBase, DBSession
-from rnms.lib import snmp
 
 __all__ = ['Host', 'Iface', 'ConfigTransfer', 'HostConfig']
 
@@ -55,6 +55,7 @@ class Host(DeclarativeBase):
     attributes = relationship('Attribute', backref='host', cascade='all,delete,delete-orphan')
     ifaces = relationship('Iface', backref='host', order_by='Iface.id')
     configs = relationship('HostConfig', backref='host', order_by='HostConfig.id', cascade='all, delete, delete-orphan')
+    traps = relationship('SnmpTrap', backref='host')
     show_host = Column(Boolean, default=True)
     pollable = Column(Boolean, default=True)
     created = Column(DateTime, nullable=False, default=datetime.datetime.now)
@@ -78,9 +79,12 @@ class Host(DeclarativeBase):
     def by_id(cls, hostid):
         """ Return the host whose id is hostid """
         return DBSession.query(cls).filter(cls.id==hostid).first()
+
     @classmethod
     def by_address(cls, address):
         """ Return the host whose management addres is ``address''."""
+        if address[:7] == '::ffff:':
+            return DBSession.query(cls).filter(cls.mgmt_address==address[7:]).first()
         return DBSession.query(cls).filter(cls.mgmt_address==address).first()
 
     def attrib_by_index(self, index):
@@ -117,7 +121,7 @@ class Host(DeclarativeBase):
 
     def ro_is_snmpv1(self):
         """ Returns True if Read Only Community is SNMP v1 """
-        return self.community_ro[0] == '1'
+        return self.community_ro is not None and self.community_ro[0] == '1'
         
 
     def update_discover_time(self):

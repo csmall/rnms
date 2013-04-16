@@ -19,13 +19,10 @@
 #
 """ Physical and Logical Interface model """
 
-from sqlalchemy import *
-from sqlalchemy.orm import mapper, relation
-from sqlalchemy import Table, ForeignKey, Column
-from sqlalchemy.types import Integer, String
-#from sqlalchemy.orm import relation, backref
+from sqlalchemy import ForeignKey, Column
+from sqlalchemy.types import Integer, String, Unicode
 
-from rnms.model import DeclarativeBase, metadata, DBSession
+from rnms.model import DeclarativeBase
 
 
 class Iface(DeclarativeBase):
@@ -33,7 +30,7 @@ class Iface(DeclarativeBase):
     
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
-    host_id = Column(Integer, nullable=False, ForeignKey("hosts.id"))
+    host_id = Column(Integer, ForeignKey('hosts.id', ondelete="CASCADE", onupdate="CASCADE"))
     ifindex = Column(Integer, nullable=False) #ifIndex
     display_name = Column(Unicode(30)) #ifDescr or idXName
     iftype = Column(Integer, nullable=False,default=1) # other

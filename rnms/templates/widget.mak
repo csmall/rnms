@@ -4,6 +4,6 @@
 	</%def>
 <div class="row">
 <div class="span12">
-${widget.display()|n}
+${w.display()|n}
 </div>
 </div>

@@ -21,7 +21,6 @@
 import re
 import logging
 
-from tg import config
 from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey, Column
 from sqlalchemy.types import Integer, Unicode, SmallInteger, String
@@ -373,7 +372,7 @@ class GraphTypeLine(DeclarativeBase):
             if value is None:
                 raise GraphTypeLineError('Either vname or value must be defined')
             try:
-                fvalue = float(value)
+                float(value)
             except ValueError:
                 raise GraphTypeLineError('Vrule time must be a float or integer')
             self.value = value
@@ -403,7 +402,7 @@ class GraphTypeLine(DeclarativeBase):
         Output is LINEwidth:vname.name[#color][:[legend][:STACK]]
         """
         try:
-            dummy = float(width)
+            float(width)
         except ValueError:
             raise GraphTypeLineError('Line width must be a float')
 

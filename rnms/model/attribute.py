@@ -28,8 +28,8 @@ from sqlalchemy.types import Integer, Unicode, String, Boolean, SmallInteger, Da
 #from sqlalchemy.orm import relation, backref
 
 from rnms.model import DeclarativeBase, DBSession, Alarm, AlarmState
-from rnms.model.host import Host
 from rnms.lib import states
+from rnms.lib.parsers import fill_fields
 
 __all__ = ['Attribute', 'AttributeField', 'AttributeType', 'AttributeTypeField', 'DiscoveredAttribute']
 logger = logging.getLogger('rnms')
@@ -180,7 +180,6 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         if host_ids is not None:
             conditions.append(cls.host_id.in_(host_ids))
         return DBSession.query(cls).options(subqueryload('sla')).filter(and_(*conditions))
-        #return DBSession.query(cls).join(Host).filter(and_( (cls.poller_set_id > 1),(Host.pollable==True), (cls.id == attribute_id)))
 
     def set_field(self, tag, value):
         """ Add a new field that has ''tag'' with the value ''value''"""
@@ -308,7 +307,7 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         Parse a string by replacing all the <key> with values from this
         attribute
         """
-        return parsers.rnms_fill_fields(raw_string, self)
+        return fill_fields(raw_string, attribute=self)
 
     def highest_alarm(self):
         """

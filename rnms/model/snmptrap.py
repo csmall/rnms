@@ -19,71 +19,66 @@
 #
 #
 """ SNMP Traps model """
+import re
 
-from sqlalchemy import ForeignKey, Column, String, Boolean, relationship
-from sqlalchemy.types import Integer, Unicode, PickleType, SmallInteger
-#from sqlalchemy.orm import relation, backref
+from sqlalchemy import ForeignKey, Column, String, Boolean
+from sqlalchemy.types import Integer, Unicode, SmallInteger
+from sqlalchemy.orm import relationship
 
-from rnms.model import DeclarativeBase, DBSession, Host
+from rnms.model import DeclarativeBase, DBSession, Host, Attribute
 
+OID_RE = re.compile('^(?:\d+\.)\d+$')
 
 class SnmpTrap(DeclarativeBase):
     """
     A raw SNMP trap that has been created by snmptrapd along
-    with the varbinds
+    with the varbinds. The trapd checks the incoming packet is
+    from a known host and converts v1 packets to v2c format
     """
     __tablename__ = 'snmp_traps'
     
     #{ Columns
     id = Column(Integer, primary_key=True)
-    source_address = Column(String(40), nullable=False)
-    enterprise = Column(String(250), nullable=False)
-    agent_address = Column(String(40), nullable=False)
+    host_id = Column(Integer, ForeignKey('hosts.id', ondelete="CASCADE", onupdate="CASCADE"))
+    varbinds = relationship('SnmpTrapVarbind', backref='trap')
     trap_oid = Column(String(250), nullable=False)
     processed = Column(Boolean, nullable=False, default=False)
     #}
 
-    def __init__(self, ip, trap_oid):
-        self.source_address = ip
-        self.agent_address = ip
-        self.trap_oid = trap_oid
+    def __init__(self, host_id=None, trap_oid=None):
+        if host_id is not None:
+            self.host_id = host_id
+        if trap_oid is not None:
+            self.trap_oid = trap_oid
 
-    def process(self):
-        """
-        Process this trap, this is done by the consolidator and will create
-        a new event, if required
-        """
-        host = Host.by_address(self.ip)
-        if host is None:
-            self.processed=1
-            return
+    def __repr__(self):
+        if self.host:
+            host_id = self.host.id
+        else:
+            host_id = 'none'
+        return '<SNMP Trap host={} varbinds={}>'.format(host_id, len(self.varbinds))
+    def set_varbind(self, name, value):
+        """ Add a varbind to this trap """
+        new_varbind = SnmpTrapVarbind(self, name,value)
+        self.varbinds.append(new_varbind)
 
-        trap_matches = DBSession.query(TrapMatches)
-        for trap_match in trap_matches:
-            match = trap_match.match_oid_sre.match(self.trap_oid)
-            if match is not None:
-                (matched, receiver_result) = trap_match.run(self, host)
-                if matched == True:
-                    backend_result = trap_match.backend(attribute, receiver_result)
-                    logging.info("T {0} := {1}({3}): -> {4}(): {5}".format(
-                        self.id, trap_match.display_name,
-                        self.trap_oid, trap_match.backend.display_name,
-                        backend_result))
-                if trap_match.stop_if_match == True:
-                    break
-        self.processed=True
-
-
-
-class SnmpTrapVarbinds(DeclarativeBase):
+class SnmpTrapVarbind(DeclarativeBase):
     __tablename__ = 'snmp_trap_varbinds'
     
     #{ Columns
-    trap_id = Column(Integer, ForeignKey('snmp_traps.id'), nullable=False)
-    trap = relationship('SnmpTrap', backref='varbinds')
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    trap_id = Column(Integer, ForeignKey('snmp_traps.id', ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     oid = Column(String(250), nullable=False)
     value = Column(String(250), nullable=False)
     #}
+
+    def __init__(self, trap=None, oid=None, value=None):
+        if trap is not None:
+            self.trap = trap
+        if oid is not None:
+            self.oid = oid
+        if value is not None:
+            self.value = value
 
 class TrapMatches(DeclarativeBase):
     __tablename__ = 'trap_matches'
@@ -92,20 +87,131 @@ class TrapMatches(DeclarativeBase):
     id = Column(Integer, autoincrement=True, primary_key=True)
     position = Column(SmallInteger, nullable=False, default=1)
     display_name = Column(Unicode(40), nullable=False, unique=True)
-    match_oid_text = Column(Unicode(250), nullable=False, unique=True)
-    match_oid_sre = Column(PickleType)
-    command = Column(Unicode(40), nullable=False)
+    trap_oid = Column(Unicode(250), nullable=False, unique=True)
+    attribute_command = Column(Unicode(40), nullable=False)
+    attribute_parameters = Column(Unicode(250))
+    value_command = Column(Unicode(40), nullable=False)
+    value_parameters = Column(Unicode(250))
     stop_if_match = Column(Boolean, nullable=False, default=True)
-    parameters = Column(Unicode(250))
     backend_id = Column(Integer, ForeignKey('backends.id'))
     backend = relationship('Backend')
 
     attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'))
+    attributetype = relationship('AttributeType')
 
-
-    def run(self, host):
+    @classmethod
+    def by_oid(cls, trap_oid):
+        """ Return all the TrapMatches that are for the given trap OID
         """
-        Run the trap matching. The purpose of this method is to 
-        further check that the trap matches and to return an attribute.
-        """
+        return DBSession.query(cls).filter(cls.trap_oid == trap_oid).order_by(cls.position)
 
+    def run(self, host, trap):
+        """
+        Further matching of the trap.  At this point the consolidator
+        has found a host that matches the agent's address and a trap_oid
+        for this match.
+
+        This method looks at the trap varbinds and attempts to locate
+        an attribute of the host plus some optional results.
+        The attribute and results will be fed into a backend.
+        Returns:
+          (attribute, result, error)
+            attribute is a matched attribute for this trap. If returns
+            None it means there is no match
+            result is similiar to a poller result
+        """
+        if self.attribute_command is None or self.attribute_command=='none' or self.attribute_command=='':
+            return (None, None, None)
+        if self.value_command is None or self.value_command=='none' or self.value_command=='':
+            return (None, None, None)
+        
+        try:
+            real_attribute_command = getattr(self, "_run_attribute_"+self.attribute_command)
+        except AttributeError:
+            return (None, None, 'attribute command _run_attribute_{} doesnt exist'.format(self.attribute_command))
+        
+        try:
+            real_value_command = getattr(self, "_run_value_"+self.value_command)
+        except AttributeError:
+            return (None, None, 'attribute command _run_value_{} doesnt exist'.format(self.value_command))
+
+        attribute, error = real_attribute_command(host, trap)
+        if error is not None:
+            return (None, None, error)
+        elif attribute is None:
+            return (None, None, None)
+
+        value,error = real_value_command(host, trap)
+        if error is not None:
+            return (None, None, error)
+        return (attribute, value, None)
+
+
+    ### Real run commands go here
+    def _run_attribute_match_index(self, host, trap):
+        """
+        Match the ID of one of the VarBinds to an Attribute's index field
+        and pass back the state. The only Attributes searched in the host
+        must have the same AttributeID as the Trap.
+
+        Parameters: <index_oid>
+          index_oid = The OID of the VarBind that holds the index
+        """
+        for varbind in trap.varbinds:
+            if varbind.oid == self.attribute_parameters:
+                return (DBSession.query(Attribute).filter(and_(
+                    Attribute.host_id == host.id,
+                    Attribute.attribute_type_id == self.attribute_type_id,
+                    Attribute.index == varbind.value
+                    )).first(), None)
+        return (None,None)
+
+    def _run_attribute_first(self, host, trap):
+        """
+        Return the first Attribute for given host that has the
+        required AttributeType. Used for where the Attribute doesn't
+        matter OR there is only one of this AttributeType per host.
+        Parameters: ignored
+        """
+        return (DBSession.query(Attribute).filter(and_(
+            Attribute.host_id == host.id,
+            Attribute.attribute_type_id == self.attribute_type_id,
+            )).first(), None)
+        return (None,None)
+
+    def _run_value_oid(self, host, trap):
+        """
+        Parameters: <oid>|<val1>=<ret1>,...|<default ret>
+          oid   = The OID of varbind holding the state
+          <val> = Mapping of OID result. If <state> is <val1> then return
+                  <ret1> - optional
+          <default ret> If state is OID no match of previous field - otional
+        """
+        params = self.parmeters('|')
+
+        state = None
+        state_oid = params[0]
+
+        for varbind in trap.varbinds:
+            if varbind.oid == state_oid:
+                if len(params) == 1:
+                    return (varbind.value, None)
+                
+                for item in params[1].split(','):
+                    try:
+                        (match,ret) = item.split('=')
+                    except ValueError:
+                        pass
+                    else:
+                        if varbind.value == match:
+                            return (ret, None)
+                else:
+                    try:
+                        return (params[2], None)
+                    except IndexError:
+                        pass
+        return (None, None)
+
+    def _run_value_fixed(self, host, trap):
+        """ The value is fixed in the parameters """
+        return (self.value_parameters, None)

@@ -1,5 +1,6 @@
 ## Template for details about a specific host
 <%inherit file="local:templates.master"/>
+<link rel="stylesheet" type="text/css" media="screen" href="${tg.url('/events/severitycss')}" />
 
 <%def name="title()">
 % if host is UNDEFINED:
@@ -33,6 +34,7 @@ Rosenberg NMS: Host ${host.display_name}
 	<div class="row">
 	  <div class="span12">
 	    Events for the host
+	    ${events_grid.display() | n}
 	  </div>
 	</div>
 
