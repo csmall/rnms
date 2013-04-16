@@ -21,6 +21,17 @@
 """ Hosts Widgets """
 from tw2.jqplugins.jqgrid import jqGridWidget
 from tw2.jqplugins.jqgrid.base import word_wrap_css
+from tw2.jqplugins.jqplot import JQPlotWidget
+from tw2.jqplugins.jqplot.base import categoryAxisRenderer_js, barRenderer_js, dateAxisRenderer_js
+from tw2 import core as twc
+
+import random
+
+from random import randint, random
+from math import sin, cos
+
+from time import time
+
 
 class HostsGrid(jqGridWidget):
     id = 'hosts-grid-id'
@@ -47,4 +58,44 @@ class HostsGrid(jqGridWidget):
     def prepare(self):
         self.resources.append(word_wrap_css)
         super(HostsGrid, self).prepare()
+
+#########################
+def make_data():
+    """ Sin of the times! """
+    now = int(time())
+    n = 20.0
+    tsteps = 100
+    tspan = range(now - tsteps, now)
+    series1 = [[i * 1000, sin(i / n)] for i in tspan]
+    series2 = [[i * 1000, abs(sin(i / n)) ** ((i % (2 * n)) / n)]
+               for i in tspan]
+    series3 = [[i * 1000, cos(i / (n + 1)) * 1.5] for i in tspan]
+    series4 = [[series2[i][0], series2[i][1] * series3[i][1]]
+               for i in range(len(series3))]
+    data = [series1, series2, series3, series4]
+    return data
+
+data = make_data()
+
+class LogPlot(JQPlotWidget):
+    id = 'pie-test'
+    resources = JQPlotWidget.resources + [
+            categoryAxisRenderer_js,
+            barRenderer_js
+            ]
+    data = data
+
+    options = {
+            'seriesDefaults' : {
+                'renderer': twc.js_symbol('$.jqplot.BarRenderer'),
+                'rendererOptions': { 'barPadding': 4, 'barMargin': 10 }
+                },
+            'axes' : {
+                'xaxis': {
+                    'renderer': twc.js_symbol(src="$.jqplot.CategoryAxisRenderer"),
+                    },
+                'yaxis': {'min': 0, },
+                }
+            }
+
 

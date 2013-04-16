@@ -22,6 +22,8 @@ from tg import url, flash
 from sqlalchemy import and_, asc, func
 
 from tw2.jqplugins import jqgrid
+from tw2.jqplugins.jqplot import JQPlotWidget
+from tw2.jqplugins.jqplot.base import pieRenderer_js
 import tw2.core as twc
 
 from rnms.model import Attribute, DBSession
@@ -149,3 +151,23 @@ class AttributeGrid(jqgrid.jqGridWidget):
         super(AttributeGrid, self).prepare()
 
 
+class AttributeStatusPie(JQPlotWidget):
+    """
+    Pie Chart of the Attributes' Status """
+    id = 'attribute-status-pie'
+    resources = JQPlotWidget.resources + [
+            pieRenderer_js,
+            ]
+
+    options = {
+            'seriesColors': [ "#468847", "#F89406", "#B94A48", "#999999", "#3887AD", "#222222"], 
+            'seriesDefaults' : {
+                'renderer': twc.js_symbol('$.jqplot.PieRenderer'),
+                },
+            'legend': {
+                'show': True,
+                'location': 'e',
+                },
+            }
+
+                
