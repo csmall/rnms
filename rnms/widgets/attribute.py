@@ -29,11 +29,13 @@ import tw2.core as twc
 from rnms.model import Attribute, DBSession
 from rnms.lib import states
 
+
 class AttributeMap(twc.Widget):
     id = 'attribute-map'
     template = 'rnms.templates.widgets.map'
     host_id = None
 
+    state_data = twc.Param()
     def __init__(self):
         self.url = url
         super(AttributeMap, self).__init__()
@@ -155,34 +157,44 @@ class AttributeStatusPie(JQPlotWidget):
     """
     Pie Chart of the Attributes' Status """
     id = 'attribute-status-pie'
+    width = "100%"
+
     resources = JQPlotWidget.resources + [
             pieRenderer_js,
             ]
 
     options = {
-            'seriesColors': [ "#468847", "#F89406", "#B94A48", "#999999", "#3887AD", "#222222"], 
+            'seriesColors': [ "#468847", "#F89406", "#B94A48", "#999999", "#3887AD", "#222222"],
             'seriesDefaults' : {
                 'renderer': twc.js_symbol('$.jqplot.PieRenderer'),
+                'rendererOptions': {
+                    'showDataLabels': True,
+                    'dataLabels': 'value',
+                    },
                 },
             'legend': {
                 'show': True,
                 'location': 'e',
                 },
+            'grid': {
+                'background': '#ffffff',
+                'borderColor': '#ffffff',
+                'shadow': False,
+                },
             }
 
-    def __init__(self, state_data=None, **kwargs):
+    def __init__(self, **kwargs):
         super(AttributeStatusPie, self).__init__(**kwargs)
-        self.state_list = (states.STATE_UP, states.STATE_ALERT, states.STATE_ADMIN_DOWN, states.STATE_TESTING, states.STATE_UNKNOWN)
-        self.state_data = state_data
+        self.state_list = (states.STATE_UP, states.STATE_ALERT, states.STATE_DOWN, states.STATE_ADMIN_DOWN, states.STATE_TESTING, states.STATE_UNKNOWN)
                 
     def prepare(self):
         series = []
         if self.state_data is not None:
             for state in self.state_list:
                 try:
-                    series.append((states.STATE_NAME[state].capitalize(), self.state_data[state]))
+                    series.append((states.STATE_NAMES[state].capitalize(), self.state_data[state]))
                 except KeyError:
-                    series.append((states.STATE_NAME[state].capitalize(),0))
+                    series.append((states.STATE_NAMES[state].capitalize(),0))
         self.data = [ series ]
         super(AttributeStatusPie, self).prepare()
 

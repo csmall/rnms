@@ -133,37 +133,27 @@ class RootController(BaseController):
         import tw2.jqplugins.portlets as p
         import tw2.forms as twf
 
-        att_states = ('up', 'alert', 'down', 'Admin Down', 'testing', 'unknown')
-        att_count = { x:0 for x in att_states}
-        
+        state_data = {}
+
         down_attributes = DBSession.query(Attribute).filter(Attribute.admin_state == states.STATE_DOWN)
-        att_count['Admin Down'] = down_attributes.count()
+        state_data[states.STATE_ADMIN_DOWN] = down_attributes.count()
 
         attributes = DBSession.query(func.count(Attribute.admin_state), Attribute.admin_state).group_by(Attribute.admin_state)
         for attribute in attributes:
-            try:
-                state_name = states.STATE_NAMES[attribute[1]]
-            except KeyError:
-                pass
-            else:
-                att_count[state_name] = attribute[0]
-        data = [
-                [ [att_name.capitalize(), cnt] for (att_name,cnt) in att_count.items()],
-                ]
-        #mypie = AttributeStatusPie(data=data)
-        mypie = AttributeStatusPie(state_data={0:0})
+            state_data[attribute[1]] = attribute[0]
+        mypie = AttributeStatusPie()
+        mypie.state_data = state_data
         class LayoutWidget(p.ColumnLayout):
             id='awesome-layout'
             class col1(p.Column):
                 width = "50%"
                 class por1(p.Portlet):
                     title = "DB Entries"
-                    widgetry = twf.Label(text='hello')
+                    widgetry = twf.Label(text=get_overall_statistics())
 
             class col2(p.Column):
                 width = "50%"
                 class por2(p.Portlet):
-                    title = 'Pie!'
+                    title = 'Attribute Status'
                     widget = mypie
-        
         return dict(w=LayoutWidget)
