@@ -23,7 +23,6 @@
   RFC: 2837
 """
 
-from rnms.lib import snmp
 from rnms import model
 
 def discover_fc_ports(host, **kw):

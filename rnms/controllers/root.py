@@ -150,7 +150,8 @@ class RootController(BaseController):
         data = [
                 [ [att_name.capitalize(), cnt] for (att_name,cnt) in att_count.items()],
                 ]
-        mypie = AttributeStatusPie(data=data)
+        #mypie = AttributeStatusPie(data=data)
+        mypie = AttributeStatusPie(state_data={0:0})
         class LayoutWidget(p.ColumnLayout):
             id='awesome-layout'
             class col1(p.Column):

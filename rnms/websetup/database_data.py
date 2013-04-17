@@ -1750,3 +1750,8 @@ snmp_enterprises = (
 
         )
 
+
+trap_matches = (
+        (0, 'ifTable Link Down', '1.3.6.1.6.3.1.1.5.3', 'match_index_state', False, '1.3.6.1.2.1.2.2.1.1.5|down', u'Alarm Verify Operational'),
+        (0, 'ifTable Link Up', '1.3.6.1.6.3.1.1.5.4', 'match_index_state', False, '1.3.6.1.2.1.2.2.1.1.5|down', u'Alarm Verify Operational'),
+        )

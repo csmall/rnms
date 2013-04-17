@@ -5,11 +5,15 @@ STATE_TESTING = 3
 STATE_UNKNOWN = 4
 STATE_ALERT = 5
 
+# This is strictly not a state but often used
+STATE_ADMIN_DOWN = 99
+
 STATE_NAMES = {
         STATE_UP:       'up',
         STATE_DOWN:     'down',
         STATE_TESTING:  'testing',
         STATE_UNKNOWN:  'unknown',
         STATE_ALERT:    'alert',
+        STATE_ADMIN_DOWN: 'admin down',
         }
 

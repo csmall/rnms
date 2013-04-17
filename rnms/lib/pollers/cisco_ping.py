@@ -24,7 +24,7 @@
   Permits devices with snmp read/write community to ping remote devices
 """
 
-import logging
+from rnms.lib.snmp import SNMPRequest
 
 # Define the OIDs
 ciscoPingEntry = (1,3,6,1,4,1,9,9,16,1,1,1)
@@ -35,7 +35,7 @@ def set_ping_status(index, status, cb_fun, **kw):
     Set the status of the ping entry
     """
     oid = ciscoPingEntryStatus + (int(index),)
-    req = snmp.Request(kw['attribute'].host)
+    req = SNMPRequest(kw['attribute'].host)
     req.add_oid(oid, cb_fun, data=kw, value=int(status))
     kw['pobj'].snmp_engine.set(req)
 

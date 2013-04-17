@@ -72,8 +72,8 @@ class Poller(RnmsEngine):
     def main_loop(self):
         """
         The main loop for the poller to do everything it needs to do.
-        This will only exit if we have forced attributes and they are all
-        polled.
+        This will only exit if we have forced attributes and they are
+        all polled.
         """
         while True:
             now = datetime.datetime.now()

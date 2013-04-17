@@ -23,7 +23,7 @@ def poll_simple(poller_buffer, **kwargs):
     Good for showing an example
     Returns True on success, False on error
     """
-    poll_simple_cb(kwargs['poller_row'].poller.parameter, None, kwargs)
+    cb_simple(kwargs['poller_row'].poller.parameter, None, kwargs)
     return True
 
 def cb_simple(value, error, kwargs):

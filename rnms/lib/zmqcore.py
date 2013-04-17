@@ -24,12 +24,14 @@ Basic infrastrcuture to make asynchronous sockets using the ZeroMQ polling
 instead of the core one.
 """
 import socket
+import os
 import zmq
+import asyncore
+
 from random import randint
 
 from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, EINVAL, \
-     ENOTCONN, ESHUTDOWN, EINTR, EISCONN, EBADF, ECONNABORTED, EPIPE, EAGAIN, \
-     errorcode
+     ENOTCONN, ESHUTDOWN, EISCONN, EBADF, ECONNABORTED, EPIPE
 
 _DISCONNECTED = frozenset((ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE,
                            EBADF))
@@ -113,154 +115,120 @@ class ZmqCore(object):
                     obj.handle_write_event()
         return True
                 
-class ZmqDispatcher(object):
-    socket = None
-    socket_obj = None
-
-    def __init__(self, sock=None):
-        self._map = zmq_map
-
-        if sock is not None:
-            self.set_socket(sock)
-
-    def set_socket(self, sock):
-        self.socket = sock
-        register(sock, self)
-        #self._map[sock] = self
-
-    def readable(self):
-        return True
-
-    def writable(self):
-        return True
-    
-    def close(self):
-        try:
-            zmq_poller.unregister(self.socket)
-        except KeyError:
-            pass
-        try:
-            del self._map[socket]
-        except KeyError:
-            pass
-        self.socket = None
-    
-    def handle_read(self):
-        raise NotImplementedError('unhandled read event')
-    
-    def handle_write(self):
-        raise NotImplementedError('unhandled write event')
-
-    def handle_close(self):
-        self.close()
-
-class Dispatcher(object):
-    connected = False
-    connecting = False
+class Dispatcher(asyncore.dispatcher,object):
 
     def __init__(self, zmq_core):
         self.zmq_core = zmq_core
-        self._fileno = None
-        self.socket = None
-    
-    def create_socket(self, family, type):
-        self.family_and_type = family, type
-        self.socket = socket.socket(family, type)
-        self.socket.setblocking(0)
-        self._fileno = self.socket.fileno()
-        self.zmq_core.register_sock(self._fileno, self)
+        asyncore.dispatcher.__init__(self,map=zmq_core.socket_map)
+        #super(Dispatcher, self).__init__(map=zmq_core.socket_map)
 
-    def readable(self):
-        return True
-
-    def writable(self):
-        return True
-
-    def connect(self, address):
-        self.connected = False
-        self.connecting = True
-        try:
-            self.socket.connect(address)
-        except socket.error, why:
-            if why.args[0] in (EINPROGRESS, EALREADY, EWOULDBLOCK) \
-                or why.args[0] == EINVAL and os.name in ('nt', 'ce'):
-                    self.addr = address
-                    return
-            if why.args[0] != EISCONN:
-                raise
-        self.addr = address
-        self.handle_connect_event()
-
-    def send(self, data):
-        """ Try to send the data out the socket """
-        try:
-            return self.socket.send(data)
-        except socket.error, why:
-            if why.args[0] == EWOULDBLOCK:
-                return 0
-            elif why.args[0] in _DISCONNECTED:
-                self.handle_close()
-                return 0
-            else:
-                raise
-    def sendto(self, data, address):
-        return self.socket.sendto(data, address)
-
-    def recv(self, buffer_size):
-        try:
-            data = self.socket.recv(buffer_size)
-            if not data:
-                self.handle_close()
-                return ''
-            else:
-                return data
-        except socket.error, why:
-            if why.args[0] in _DISCONNECTED:
-                self.handle_close()
-                return ''
-            else:
-                raise
-    
-    def recvfrom(self, buffer_size=None):
-        return self.socket.recvfrom(buffer_size)
-
-    def close(self):
-        self.connected = False
-        self.connecting = False
-        self.zmq_core.unregister_sock(self._fileno)
-
-        try:
-            self.socket.close()
-        except socket.error, why:
-            if why.args[0] not in (ENOTCONN, EBADF):
-                raise
-        self._fileno = None
-        
-    def handle_read_event(self):
-        if not self.connected and self.connecting:
-            self.handle_connect_event()
-        self.handle_read()
-
-    def handle_connect_event(self):
-        err = self.socket.getsockopt(socket.SOLsocket, socket.SO_ERROR)
-        if err != 0:
-            raise socket.error(err, _strerror(err))
-        self.handle_connect()
-        self.connected = True
-        self.connecting = False
-
-    def handle_write_event(self):
-        if not self.connected and self.connecting:
-            self.handle_connect_event()
-        self.handle_write()
-    
-        
-    def handle_read(self):
-        raise NotImplementedError('unhandled read event')
-    
-    def handle_write(self):
-        raise NotImplementedError('unhandled write event')
-
-    def handle_close(self):
-        self.close()
-
+#class iDispatcher(object):
+#    connected = False
+#    connecting = False
+#
+#    def __init__(self, zmq_core):
+#        self.zmq_core = zmq_core
+#        self._fileno = None
+#        self.socket = None
+#    
+#    def create_socket(self, family, type):
+#        self.family_and_type = family, type
+#        self.socket = socket.socket(family, type)
+#        self.socket.setblocking(0)
+#        self._fileno = self.socket.fileno()
+#        self.zmq_core.register_sock(self._fileno, self)
+#
+#    def readable(self):
+#        return True
+#
+#    def writable(self):
+#        return True
+#
+#    def connect(self, address):
+#        self.connected = False
+#        self.connecting = True
+#        try:
+#            self.socket.connect(address)
+#        except socket.error, why:
+#            if why.args[0] in (EINPROGRESS, EALREADY, EWOULDBLOCK) \
+#                or why.args[0] == EINVAL and os.name in ('nt', 'ce'):
+#                    self.addr = address
+#                    return
+#            if why.args[0] != EISCONN:
+#                raise
+#        self.addr = address
+#        self.handle_connect_event()
+#
+#    def send(self, data):
+#        """ Try to send the data out the socket """
+#        try:
+#            return self.socket.send(data)
+#        except socket.error, why:
+#            if why.args[0] == EWOULDBLOCK:
+#                return 0
+#            elif why.args[0] in _DISCONNECTED:
+#                self.handle_close()
+#                return 0
+#            else:
+#                raise
+#    def sendto(self, data, address):
+#        return self.socket.sendto(data, address)
+#
+#    def recv(self, buffer_size):
+#        try:
+#            data = self.socket.recv(buffer_size)
+#            if not data:
+#                self.handle_close()
+#                return ''
+#            else:
+#                return data
+#        except socket.error, why:
+#            if why.args[0] in _DISCONNECTED:
+#                self.handle_close()
+#                return ''
+#            else:
+#                raise
+#    
+#    def recvfrom(self, buffer_size=None):
+#        return self.socket.recvfrom(buffer_size)
+#
+#    def close(self):
+#        self.connected = False
+#        self.connecting = False
+#        self.zmq_core.unregister_sock(self._fileno)
+#
+#        try:
+#            self.socket.close()
+#        except socket.error, why:
+#            if why.args[0] not in (ENOTCONN, EBADF):
+#                raise
+#        self._fileno = None
+#        
+#    def handle_read_event(self):
+#        if not self.connected and self.connecting:
+#            self.handle_connect_event()
+#        self.handle_read()
+#
+#    def handle_connect_event(self):
+#        err = self.socket.getsockopt(socket.SOLsocket, socket.SO_ERROR)
+#        if err != 0:
+#            raise socket.error(err, os.strerror(err))
+#        self.handle_connect()
+#        self.connected = True
+#        self.connecting = False
+#
+#    def handle_write_event(self):
+#        if not self.connected and self.connecting:
+#            self.handle_connect_event()
+#        self.handle_write()
+#    
+#        
+#    def handle_read(self):
+#        raise NotImplementedError('unhandled read event')
+#    
+#    def handle_write(self):
+#        raise NotImplementedError('unhandled write event')
+#
+#    def handle_close(self):
+#        self.close()
+#

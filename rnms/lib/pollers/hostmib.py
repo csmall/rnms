@@ -20,7 +20,6 @@
 # This poller based upon hostmib poller in JFFNMS by Javier Szyszlican
 # and Anders Karlsson <anders.x.karlsson@songnetworks.se>
 
-import logging
 
 from rnms.lib import snmp
 

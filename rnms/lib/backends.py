@@ -30,6 +30,7 @@ Poller and SNMP trap backends
  Backends should return a string that describes the status. This
  string appears in the logs.
 """
+import datetime
 
 
 from rnms import model
@@ -55,7 +56,7 @@ def alarm(host, attribute, parameters, poller_result):
         return "EventType ID \"{0}\" is not an integer.".format(params[0])
     event_type = model.EventType.by_id(event_type_id)
     if event_type is None:
-        return "ID \"{0}\" is not found in EventType table.".format(even_type_id)
+        return "ID \"{0}\" is not found in EventType table.".format(event_type_id)
     if len(params) > 1:
         default_input = params[1]
     else:
@@ -80,7 +81,7 @@ def alarm(host, attribute, parameters, poller_result):
     if alarm_state is None:
         return "Description \"{0}\" is not found in AlarmState table.".format(alarm_description)
 
-    if backend_raise_event(attribute, event_type, alarm_state, wait_time):
+    if backend_raise_event(attribute, event_type, alarm_state, damp_time):
         if event_info is not None:
             event_fields = {'info': event_info}
         else:
@@ -88,7 +89,7 @@ def alarm(host, attribute, parameters, poller_result):
         new_event = model.Event(event_type=event_type, host=attribute.host,
                 attribute=attribute, alarm_state=alarm_state,
                 field_list=event_fields)
-        DBSession.add(new_event)
+        model.DBSession.add(new_event)
         new_event.process()
         return "Event added: {0}".format(new_event.id)
     else:
@@ -117,13 +118,13 @@ def event(host, attribute, parameters, poller_result):
         alarm_description = poller_result['state']
         alarm_state = model.AlarmState.by_name(alarm_description)
     else:
-        alarm=state = None
+        alarm_state = None
     if 'info' in poller_result:
         event_fields = {'info' : poller_result['info']}
     else:
         event_fields = None
     new_event = model.Event(event_type=event_type, host=host, attribute=attribute, alarm_state=alarm_state, fields=event_fields)
-    DBSession.add(new_event)
+    model.DBSession.add(new_event)
     new_event.process()
     return "Inserted event ID {0}".format(new_event.id)
 
@@ -138,11 +139,11 @@ def admin_status(host, attribute, parameters, poller_result):
     try:
         new_state = int(poller_result)
     except ValueError:
-        return "Admin status received by poller is not a integer"
-    if attribute.admin_state == poller_result:
+        return "Admin status \"{}\" received by poller is not a integer".format(poller_result)
+    if attribute.admin_state == new_state:
         return "Admin status not changed."
-    attribute.admin_state = poller_result
-    return "Admin status set to "+str(poller_result)
+    attribute.admin_state = new_state
+    return "Admin status set to {}".format(new_state)
 
 def oper_status(host, attribute, parameters, poller_result):
     """
@@ -155,11 +156,11 @@ def oper_status(host, attribute, parameters, poller_result):
     try:
         new_state = int(poller_result)
     except ValueError:
-        return "Oper status received by poller is not a integer"
-    if attribute.oper_state == poller_result:
+        return "Oper status \"{}\" received by poller is not a integer".format(poller_result)
+    if attribute.oper_state == new_state:
         return "Oper status not changed."
-    attribute.oper_state = poller_result
-    return "Oper status set to "+str(poller_result)
+    attribute.oper_state = new_state
+    return "Oper status set to {}".format(new_state)
 
 ###################################################
 #
@@ -175,7 +176,7 @@ def backend_raise_event(attribute, event_type, alarm_state,wait_time):
 
     # Raise an up event if the down event was more that wait_time minutes ago
     if alarm_state.is_up() and down_alarm is not None:
-        if datetime.datetime.now() > down.alarm.start_time + datetime.timedelta(minutes=wait_time):
+        if datetime.datetime.now() > down_alarm.start_time + datetime.timedelta(minutes=wait_time):
             return True
 
     if alarm_state.is_downtesting():
@@ -185,10 +186,4 @@ def backend_raise_event(attribute, event_type, alarm_state,wait_time):
             if down_alarm.alarm_state != alarm_state:
                 return True
     return False 
-
-
-    event_type_id = int(parameters)
-    new_event = model.Event()
-    new_event.event_type = event_type_id
-    new_event.host = host
 

@@ -21,11 +21,12 @@
 """ SNMP Traps model """
 import re
 
-from sqlalchemy import ForeignKey, Column, String, Boolean
+from sqlalchemy import ForeignKey, Column, String, Boolean, and_
 from sqlalchemy.types import Integer, Unicode, SmallInteger
 from sqlalchemy.orm import relationship
 
-from rnms.model import DeclarativeBase, DBSession, Host, Attribute
+from rnms.model import DeclarativeBase, DBSession, Attribute
+
 
 OID_RE = re.compile('^(?:\d+\.)\d+$')
 
@@ -36,7 +37,7 @@ class SnmpTrap(DeclarativeBase):
     from a known host and converts v1 packets to v2c format
     """
     __tablename__ = 'snmp_traps'
-    
+
     #{ Columns
     id = Column(Integer, primary_key=True)
     host_id = Column(Integer, ForeignKey('hosts.id', ondelete="CASCADE", onupdate="CASCADE"))
@@ -64,7 +65,7 @@ class SnmpTrap(DeclarativeBase):
 
 class SnmpTrapVarbind(DeclarativeBase):
     __tablename__ = 'snmp_trap_varbinds'
-    
+
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     trap_id = Column(Integer, ForeignKey('snmp_traps.id', ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
@@ -189,7 +190,6 @@ class TrapMatches(DeclarativeBase):
         """
         params = self.parmeters('|')
 
-        state = None
         state_oid = params[0]
 
         for varbind in trap.varbinds:

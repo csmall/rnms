@@ -41,7 +41,6 @@ class NmapClient(object):
         """
         Start scanning the TCP ports with the popen object
         """
-        ipaddr = scanhost.mgmt_address
         if self.nmap_ok == False:
             self.logger.debug('No nmap binary found')
             return False

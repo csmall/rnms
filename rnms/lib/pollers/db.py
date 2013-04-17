@@ -21,10 +21,10 @@ def poll_db(poller_buffer, **kwargs):
     """
     Retrive an item for this attribute
     """
-    poll_simple_cb(kwargs['poller_row'].poller.parameter, None, kwargs)
+    cb_db(kwargs['poller_row'].poller.parameter, None, kwargs)
     return True
 
-def cb_simple(value, error, kwargs):
+def cb_db(value, error, kwargs):
     """
     CallBack function for a simple poller. This should kick off
     the return functions in the PollerRow

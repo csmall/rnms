@@ -17,13 +17,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-import logging
 
-from rnms.lib import snmp
 from pyasn1.type import univ as pyasn_types
 from pyasn1.error import PyAsn1Error
 
-logger = logging.getLogger('pSNMP')
 
 def split_oid(params, host):
     """ Some devices have a second parameter which is the OID to use for

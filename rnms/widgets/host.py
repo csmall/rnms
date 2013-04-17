@@ -22,12 +22,9 @@
 from tw2.jqplugins.jqgrid import jqGridWidget
 from tw2.jqplugins.jqgrid.base import word_wrap_css
 from tw2.jqplugins.jqplot import JQPlotWidget
-from tw2.jqplugins.jqplot.base import categoryAxisRenderer_js, barRenderer_js, dateAxisRenderer_js
+from tw2.jqplugins.jqplot.base import categoryAxisRenderer_js, barRenderer_js
 from tw2 import core as twc
 
-import random
-
-from random import randint, random
 from math import sin, cos
 
 from time import time

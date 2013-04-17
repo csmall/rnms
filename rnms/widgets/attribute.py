@@ -170,4 +170,21 @@ class AttributeStatusPie(JQPlotWidget):
                 },
             }
 
+    def __init__(self, state_data=None, **kwargs):
+        super(AttributeStatusPie, self).__init__(**kwargs)
+        self.state_list = (states.STATE_UP, states.STATE_ALERT, states.STATE_ADMIN_DOWN, states.STATE_TESTING, states.STATE_UNKNOWN)
+        self.state_data = state_data
                 
+    def prepare(self):
+        series = []
+        if self.state_data is not None:
+            for state in self.state_list:
+                try:
+                    series.append((states.STATE_NAME[state].capitalize(), self.state_data[state]))
+                except KeyError:
+                    series.append((states.STATE_NAME[state].capitalize(),0))
+        self.data = [ series ]
+        super(AttributeStatusPie, self).prepare()
+
+
+

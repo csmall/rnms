@@ -6,7 +6,6 @@ The workers are dumb, they just do what they're told to do.
 import threading
 import logging
 import zmq
-import rrdtool
 
 from rnms.lib import zmqmessage
 from rnms.lib import zmqcore
@@ -104,7 +103,6 @@ class RRDTask(threading.Thread):
     def run(self):
         """ The main loop of the RRD update thread """
         import os
-        import rrdtool
 
         rrdworker = self.context.socket(zmq.REQ)
         zmqcore.set_id(rrdworker)
@@ -120,6 +118,7 @@ class RRDTask(threading.Thread):
                 self.logger.error('Got unknown message %s',frames[0])
 
     def _rrd_update(self, recv_frame):
+        import rrdtool
         try:
             filename,value = recv_frame.split(':')
             float(value)

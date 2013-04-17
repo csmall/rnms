@@ -23,7 +23,6 @@
 # For details on setting ip accounting up see
 # http://www.cisco.com/en/US/tech/tk648/tk362/technologies_configuration_example09186a0080094aa2.shtml
 
-import logging
 
 from rnms.lib import snmp
 
