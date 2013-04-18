@@ -19,7 +19,6 @@
 #
 """ Discover lm-sensors attributes """
 
-from rnms.lib import snmp
 from rnms import model
 
 # reply_row, snmp_table, unit

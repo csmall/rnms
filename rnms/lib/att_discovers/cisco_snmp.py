@@ -22,7 +22,6 @@
 #
 #
 """ Cisco-specific attribute types using SNMP """
-from rnms.lib import snmp
 from rnms import model
 
 def discover_cisco_envmib(host, **kw):

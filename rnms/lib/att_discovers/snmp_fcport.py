@@ -23,7 +23,8 @@
   RFC: 2837
 """
 
-from rnms import model
+from rnms.lib import states
+from rnms.model import DiscoveredAttribute
 
 def discover_fc_ports(host, **kw):
     """
@@ -42,8 +43,8 @@ def cb_fc_ports(values, error, host, dobj, att_type, **kw):
     if values is None:
         dobj.discover_callback(host.id, fc_ports)
     for idx in values[0].values():
-        new_port = model.DiscoveredAttribute(host.id, att_type)
-        new.port.display_name = 'FC Port '+idx
+        new_port = DiscoveredAttribute(host.id, att_type)
+        new_port.display_name = 'FC Port '+idx
         new_port.index = idx
         try:
             new_port.admin_state = fc_state(values[2][idx])

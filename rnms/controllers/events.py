@@ -19,46 +19,39 @@
 #
 #
 """ Event controller module"""
-import datetime
 import math
-from sqlalchemy import select,func,or_, and_
+from sqlalchemy import and_
 from sqlalchemy.orm import subqueryload, subqueryload_all, contains_eager
 from formencode import validators
 
 # turbogears imports
-from tg import expose, tmpl_context, request, url
-import tg
-from tg import redirect, validate, flash
+from tg import expose, url
+from tg import validate
 
 # third party imports
 #from tg.i18n import ugettext as _
 #from repoze.what import predicates
-from tw2.jqplugins import portlets
-import tw2.core as twc
-import tw2.forms as twf
-#import tw2.jqplugins.jqgrid
-
 
 # project specific imports
 from rnms.lib.base import BaseController
-from rnms.model import DBSession, metadata, Event, EventSeverity,EventType, Host,Attribute
+from rnms.model import DBSession, Event, EventSeverity,EventType, Host,Attribute
 from rnms.widgets.event import EventsGrid
 from rnms.lib.jsonquery import json_query
 
 class EventsController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = authorize.not_anonymous()
-    
+
     @expose('rnms.templates.event_index')
     @validate(validators={'a':validators.Int(), 'h':validators.Int()})
     def index(self, a=None, h=None):
-        
+
         w = EventsGrid()
         w.attribute_id = a
         w.host_id = h
 
         return dict(w=w)
-    
+
     @expose('rnms.templates.event_index')
     @validate(validators={'a':validators.Int()})
 
@@ -89,7 +82,7 @@ class EventsController(BaseController):
         return dict(
                 severities=severities,
                 )
-    
+
     @expose('rnms.templates.mapseveritycss', content_type='text/css')
     def mapseveritycss(self):
         severities = DBSession.query(EventSeverity)
@@ -146,10 +139,4 @@ class EventsController(BaseController):
         return dict(item_id=event.id,
                 item_type='Event',
                 attribs=attribs)
-
-    @expose('rnms.templates.events_get_one')
-    def get_one(self):
-        tmpl_context.widget = event_table
-        value = event_filler.get_value(dict(limit=10))
-        return dict(value=value)
 

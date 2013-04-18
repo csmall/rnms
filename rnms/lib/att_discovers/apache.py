@@ -18,7 +18,6 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 """ Apache status autodiscovery """
-import re
 from rnms.model.attribute import DiscoveredAttribute
 
 
@@ -45,4 +44,3 @@ def cb_apache(values, error, host, dobj, att_type, **kw):
         dobj.discover_callback(host.id, {apache_att.index: apache_att})
     else:
         dobj.discover_callback(host.id, {})
-    

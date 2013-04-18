@@ -23,22 +23,18 @@
 # turbogears imports
 from tg import expose, config, validate, flash,url
 #from tg import redirect, validate, flash
-from random import random
 
 # third party imports
 #from tg.i18n import ugettext as _
 #from repoze.what import predicates
-from tw2.jqplugins import portlets
-import tw2.core as twc
 import tw2.forms as twf
 from tw2.jqplugins.ui import set_ui_theme_name
-from tw2.jqplugins.jqplot import JQPlotWidget
 from formencode import validators
 
 # project specific imports
 from rnms.lib.base import BaseController
-from rnms.widgets import AttributeGrid,EventsWidget,AttributeSummary,HostsGrid
-from rnms.model import DBSession, metadata, Host, SNMPEnterprise, SNMPEnterprise, Zone
+from rnms.widgets import AttributeSummary, HostsGrid
+from rnms.model import DBSession, Host, SNMPEnterprise, Zone
 from rnms.lib.jsonquery import json_query
 from rnms.widgets.event import EventsGrid
 
@@ -96,7 +92,10 @@ class HostsController(BaseController):
         attw.host_id = h
         events_grid = EventsGrid()
         events_grid.host_id = h
-        return dict(host=host, vendor=vendor, devmodel=devmodel, zone=host.zone.display_name, attw=attw, events_grid=events_grid)
+        return dict(host=host, vendor=vendor, devmodel=devmodel,
+                    zone=host.zone.display_name,
+                    attw=attw,
+                    events_grid=events_grid)
 
     @expose('rnms.templates.widget')
     def test2(self):

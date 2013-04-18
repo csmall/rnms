@@ -53,7 +53,7 @@ class AttributeMap(twc.Widget):
                 return ('ok', 'Up')
             else:
                 return (str(alarm.event_type.severity_id), alarm.event_type.severity.display_name)
-    
+
     def prepare(self):
         conditions = []
         if self.host_id is not None:
@@ -66,7 +66,7 @@ class AttributeMap(twc.Widget):
         else:
             for attribute in attributes:
                 astate,state_desc = self.attribute_state(attribute)
-                
+
                 try:
                     atype = attribute.attribute_type.display_name
                 except AttributeError:
@@ -91,7 +91,7 @@ class AttributeSummary(twc.Widget):
         hostid_filter=[]
         if self.host_id is not None:
             hostid_filter = [Attribute.host_id == self.host_id]
-        
+
         admin_down = DBSession.query(func.count(Attribute.id)).filter(and_(*(hostid_filter + [Attribute.admin_state == states.STATE_DOWN]))).first()
         self.att_total = int(admin_down[0])
         db_states = DBSession.query(Attribute.oper_state,func.count(Attribute.id)).filter(and_(*(hostid_filter + [Attribute.admin_state != states.STATE_DOWN]))).group_by(Attribute.oper_state)
@@ -99,7 +99,7 @@ class AttributeSummary(twc.Widget):
         for att in db_states:
             tmp_states[att[0]] = att[1]
             self.att_total += att[1]
-        
+
         self.att_states = []
         for state_val,label in states.STATE_NAMES.items():
             if state_val is None:
@@ -144,7 +144,7 @@ class AttributeGrid(jqgrid.jqGridWidget):
 
     pager_options = { "search" : True, "refresh" : True, "add" : False,
             "edit": False }
-     
+
     def prepare(self, **kw):
         if self.host_id is not None:
             self.options['postData'] = {'hostid': self.host_id}

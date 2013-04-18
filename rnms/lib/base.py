@@ -3,10 +3,7 @@
 """The base Controller API."""
 
 from tg import TGController, tmpl_context
-from tg.render import render
 from tg import request
-from tg.i18n import ugettext as _, ungettext
-import rnms.model as model
 
 __all__ = ['BaseController']
 

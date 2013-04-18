@@ -2,12 +2,11 @@
 """Main Controller"""
 from sqlalchemy import func
 
-from tg import expose, flash, require, url, lurl, request, redirect, tmpl_context, config
+from tg import expose, flash, require, lurl, request, redirect, tmpl_context, config
 from tg.i18n import ugettext as _, lazy_ugettext as l_
 from tg import predicates
 from rnms import model
 from rnms.controllers.secure import SecureController
-from rnms.model import DBSession, metadata
 from tgext.admin.tgadminconfig import TGAdminConfig
 from tgext.admin.controller import AdminController
 from tw2.jqplugins.ui import set_ui_theme_name
@@ -28,6 +27,19 @@ from rnms.controllers.layouts import LayoutsController
 set_ui_theme_name(config['ui_theme'])
 __all__ = ['RootController']
 
+def get_attribute_pie():
+
+    state_data = {}
+
+    down_attributes = DBSession.query(Attribute).filter(Attribute.admin_state == states.STATE_DOWN)
+    state_data[states.STATE_ADMIN_DOWN] = down_attributes.count()
+
+    attributes = DBSession.query(func.count(Attribute.admin_state), Attribute.admin_state).group_by(Attribute.admin_state)
+    for attribute in attributes:
+        state_data[attribute[1]] = attribute[0]
+    mypie = AttributeStatusPie()
+    mypie.state_data = state_data
+    return mypie
 
 class RootController(BaseController):
     """
@@ -64,7 +76,8 @@ class RootController(BaseController):
     def index(self):
         """Handle the front-page."""
         statrows = get_overall_statistics()
-        return dict(page='index',statrows=statrows)
+        attpie = get_attribute_pie()
+        return dict(page='index',attpie=attpie, statrows=statrows)
 
     @expose('rnms.templates.about')
     def about(self):

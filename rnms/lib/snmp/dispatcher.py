@@ -18,15 +18,10 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 import logging
-import time
 import socket
-import datetime
 
 #from pysnmp.entity.rfc3413.oneliner import cmdgen
-from pysnmp.entity.rfc3413.oneliner import cmdgen
-from pyasn1.type import univ as pyasn_types
-from pyasn1.type import tag
-from pyasn1.codec.ber import encoder, decoder
+from pyasn1.codec.ber import encoder
 
 from rnms.lib import zmqcore
 logger = logging.getLogger('snmp')
@@ -61,9 +56,11 @@ class SNMPDispatcher(zmqcore.Dispatcher):
             return
         #new_request['timeout'] = time.time() + self.timeout
         try:
-            self.sendto(encoder.encode(new_request.msg), new_request.sockaddr)
+            self.sendto(encoder.encode(new_request.msg),
+                        new_request.sockaddr)
         except socket.error as errmsg:
-            logger.error("Socket error for sendto %s", new_request.sockaddr)
+            logger.error("Socket error for sendto %s: %s",
+                         new_request.sockaddr, errmsg)
         self.sent_requests[new_request.id] = new_request
 
     def send_message(self, request):

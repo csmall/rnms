@@ -23,15 +23,12 @@
 Basic infrastrcuture to make asynchronous sockets using the ZeroMQ polling
 instead of the core one.
 """
-import socket
-import os
 import zmq
 import asyncore
 
 from random import randint
 
-from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, EINVAL, \
-     ENOTCONN, ESHUTDOWN, EISCONN, EBADF, ECONNABORTED, EPIPE
+from errno import ECONNRESET, ENOTCONN, ESHUTDOWN, EBADF, ECONNABORTED, EPIPE
 
 _DISCONNECTED = frozenset((ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE,
                            EBADF))

@@ -18,7 +18,6 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 """ Discover storage items via SNMP """
-from rnms.lib import snmp
 from rnms import model
 
 # Device names we ignore

@@ -79,7 +79,7 @@ class Rnmsd(BaseCmdLine):
         self.threads['snmptrapd'].start()
         while True:
             try:
-                self.zmq_poller.poll(1000)
+                self.zmq_poller.poll(10000)
             except KeyboardInterrupt:
                 self._shutdown()
                 return

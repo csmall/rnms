@@ -19,7 +19,6 @@
 #
 """ Discover BGP peers using RFC 1269 MIB information """
 
-from rnms.lib import snmp
 from rnms import model
 
 def discover_bgp_peers(host, **kw):

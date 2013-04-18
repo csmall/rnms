@@ -37,7 +37,7 @@ discover_variance = 10.0 # +- 5 minutes next discovery
 
 class Host(DeclarativeBase):
     __tablename__ = 'hosts'
-    
+
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     mgmt_address = Column(String(40))

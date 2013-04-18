@@ -19,7 +19,6 @@
 #
 """ Discover Alteon Real Servers, Virtal Servers and Real Services """
 
-from rnms.lib import snmp
 from rnms import model
 
 def discover_alteon_realservers(host, **kw):

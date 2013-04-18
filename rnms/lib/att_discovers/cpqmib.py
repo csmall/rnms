@@ -18,8 +18,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 """ Discover items from Compaq cpqmib """
-from rnms.lib import snmp
-from rnms import model
+from rnms.model import DiscoveredAttribute
 
 def discover_cpqmib(host, **kw):
     """
@@ -44,7 +43,7 @@ def cb_cpqmib_phydrv(values, error, host, dobj, att_type, **kw):
             except (KeyError, IndexError):
                 pass
             else:
-                new_att = mode.DiscoveredAttribute(host.id, att_type)
+                new_att = DiscoveredAttribute(host.id, att_type)
                 new_att.display_name = 'Disk{}/{}'.format(controller, drive_index)
                 new_att.index = '{}.{}'.format(controller, drive_index)
                 new_att.set_field('controller', controller)
@@ -65,11 +64,11 @@ def cb_cpqmib_fans(values, error, host, dobj, att_type, **kw):
                 index = values[1][key]
                 loc_code = values[2][key]
                 present = values[3][key]
-                condition = values[4][key]
+                status = values[4][key]
             except (KeyError, IndexError):
                 pass
             else:
-                new_att = mode.DiscoveredAttribute(host.id, att_type)
+                new_att = DiscoveredAttribute(host.id, att_type)
                 new_att.display_name = 'Fan{}/{}'.format(chassis, index)
                 new_att.index = '{}.{}'.format(chassis, index)
                 new_att.set_field('chassis', chassis)
@@ -91,11 +90,11 @@ def cb_cpqmib_ps(values, error, host, dobj, att_type, **kw):
             try:
                 index = values[1][key]
                 present = values[3][key]
-                condition = values[4][key]
+                status = values[4][key]
             except (KeyError, IndexError):
                 pass
             else:
-                new_att = mode.DiscoveredAttribute(host.id, att_type)
+                new_att = DiscoveredAttribute(host.id, att_type)
                 new_att.display_name = 'Power{}/{}'.format(chassis, index)
                 new_att.index = '{}.{}'.format(chassis, index)
                 new_att.set_field('chassis', chassis)
@@ -116,16 +115,16 @@ def cb_cpqmib_temp(values, error, host, dobj, att_type, **kw):
             try:
                 index = values[1][key]
                 loc_code = values[2][key]
-                condition = values[4][key]
+                status = values[4][key]
             except (KeyError, IndexError):
                 pass
             else:
-                new_att = mode.DiscoveredAttribute(host.id, att_type)
+                new_att = DiscoveredAttribute(host.id, att_type)
                 new_att.display_name = 'Temperature{}/{}'.format(chassis, index)
                 new_att.index = '{}.{}'.format(chassis, index)
                 new_att.set_field('chassis', chassis)
                 new_att.set_field('tempindex', index)
-                new_att.set_field('location', cqpmib_locations.get(loc_code, u'Unknown'))
+                new_att.set_field('location', cpqmib_locations.get(loc_code, u'Unknown'))
                 if status != 2:
                     new_att.oper_state = 2
                 discovered_attributes[new_att.index] = new_att
