@@ -28,8 +28,9 @@ from tg import tmpl_context, flash, url
 
 from tw2 import forms as twf
 import tw2.core as twc
+from sqlalchemy import distinct
 
-from rnms import model
+from rnms.model import DBSession, GraphType, Attribute
 from rnms.lib.parsers import fill_fields
 
 logger = logging.getLogger('rnms')
@@ -43,7 +44,7 @@ class GraphDatePicker(twf.CalendarDatePicker):
         if time_string is None or time_string == '':
             return int(time.time())
         return int(time.mktime(time.strptime(time_string, self.date_format)))
-        
+
 
 class GraphDatePresetWidget(twf.SingleSelectField):
     """
@@ -86,18 +87,23 @@ class GraphTypeSelector(twf.MultipleSelectField):
     graph_type_id=None
 
     def prepare(self):
-        try:
-            attribute_id = tmpl_context.form_values['a']
-        except KeyError:
-            attribute = None
-        else:
-            attribute = model.Attribute.by_id(attribute_id)
+        self.options = ()
 
-        if attribute is None:
-            flash('No attribute given')
-            self.options = ()
+        try:
+            att_ids = [ int(x) for x in
+                       tmpl_context.form_values['a'].split(',')]
+        except (KeyError, ValueError):
+            pass
         else:
-            self.options = tuple((gt.id,gt.display_name) for gt in model.DBSession.query(model.GraphType).filter(model.GraphType.attribute_type == attribute.attribute_type))
+            graph_types = DBSession.query(
+                distinct(GraphType.id), GraphType.display_name).\
+                    filter(GraphType.attribute_type_id.in_(
+                           DBSession.query(
+                               distinct(Attribute.attribute_type_id)).filter(
+                                   Attribute.id.in_(att_ids))
+                          ))
+            print graph_types[0]
+            self.options = tuple(gt for gt in graph_types)
             try:
                 self.value = tmpl_context.form_values['gt']
             except KeyError:

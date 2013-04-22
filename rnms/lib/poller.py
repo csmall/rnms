@@ -98,14 +98,8 @@ class Poller(RnmsEngine):
             if ping_jobs > 0:
                 att_count -= ping_jobs
 
-            if self.zmq_core.poll(0.1) == False:
+            if self.zmq_core.poll(0.0) == False:
                 return
-            #if ping_jobs > 0:
-            #    poll_timeout=0.1
-            #    if zmqcore.poll(0.1) == False:
-            #        return
-            #else:
-            #    zmqcore.poll(3.0)
             if not polls_running and (self.polling_attributes == {}):
                 # If there are no pollers, we can sleep until we need to
                 # look for more attributes to poll

@@ -22,7 +22,7 @@
 import tg
 import tw2.core as twc
 from rnms.model import DBSession, Event
-from sqlalchemy import select,func,or_
+from sqlalchemy import or_
 from tw2.jqplugins.jqgrid import jqGridWidget, SQLAjqGridWidget
 from tw2.jqplugins.jqgrid.base import word_wrap_css
 
@@ -38,6 +38,7 @@ class EventsGrid(jqGridWidget):
     def __init__(self):
         self.options = {
             'pager' : 'events-grid-pager',
+            'loadonce': False,
             'url' : '/events/griddata',
             'colNames':[ 'Date', 'State', 'Type', 'Host', 'Attribute', 'Description'],
             'datatype' : 'json',

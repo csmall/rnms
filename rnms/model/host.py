@@ -29,7 +29,7 @@ from sqlalchemy.types import Integer, Unicode, Boolean, PickleType, String, Date
 
 from rnms.model import DeclarativeBase, DBSession
 
-__all__ = ['Host', 'Iface', 'ConfigTransfer', 'HostConfig']
+__all__ = ['Host', 'Iface', 'ConfigTransfer', 'HostConfig', 'SnmpCommunity']
 
 MINDATE=datetime.date(1900,1,1)
 discover_interval = 30.0 # 30 min
@@ -42,10 +42,10 @@ class Host(DeclarativeBase):
     id = Column(Integer, autoincrement=True, primary_key=True)
     mgmt_address = Column(String(40))
     display_name = Column(String(255), nullable=False)
-    community_ro = Column(PickleType)
-    community_rw = Column(PickleType)
     zone_id = Column(Integer, ForeignKey('zones.id'))
     tftp_server = Column(String(40))
+    snmp_community_id = Column(Integer, ForeignKey("snmp_communities.id"))
+    snmp_community = relationship('SnmpCommunity')
     autodiscovery_policy_id = Column(Integer, ForeignKey("autodiscovery_policies.id") )
     autodiscovery_policy = relationship('AutodiscoveryPolicy', backref='hosts')
     config_transfer_id = Column(Integer, ForeignKey('config_transfers.id'))
@@ -121,8 +121,7 @@ class Host(DeclarativeBase):
 
     def ro_is_snmpv1(self):
         """ Returns True if Read Only Community is SNMP v1 """
-        return self.community_ro is not None and self.community_ro[0] == '1'
-        
+        return self.snmp_community.ro_is_snmpv1()
 
     def update_discover_time(self):
         """
@@ -181,3 +180,25 @@ class HostConfig(DeclarativeBase):
     def __init__(self,host=None, config=None):
         self.host = host
         self.config = config
+
+class SnmpCommunity(DeclarativeBase):
+    __tablename__ = 'snmp_communities'
+    #{ Columns
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    display_name = Column(Unicode(40), nullable=False, unique=True)
+    readonly = Column(PickleType, default='')
+    readwrite = Column(PickleType, default='')
+    trap = Column(PickleType, default='')
+
+    @classmethod
+    def by_name(cls, name):
+        """ Return community with given display_name """
+        return DBSession.query(cls).filter(cls.display_name == name).first()
+
+    def ro_is_snmpv1(self):
+        """ Returns True if Read Only Community is SNMP v1 """
+        return self.readonly != '' and self.readonly[0] == '1'
+
+    def ro_is_snmpv2(self):
+        """ Returns True if Read Only Community is SNMP v2 """
+        return self.readonly != '' and self.readonly[0] == '2'

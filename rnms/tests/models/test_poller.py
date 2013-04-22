@@ -56,14 +56,6 @@ class TestBackend(ModelTest):
             command = ('test_backend')
             )
 
-    def test_backend_init_name(self):
-        """Backend init sets display name correctly"""
-        eq_(self.obj.display_name,u'Test Backend') 
-
-    def test_backend_init_plugin(self):
-        """Backend init sets plugin name correctly"""
-        eq_(self.obj.command,'test_backend') 
-
 class TestPollerSet(ModelTest):
     klass = model.PollerSet
     attrs = dict(

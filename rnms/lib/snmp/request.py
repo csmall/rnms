@@ -78,7 +78,7 @@ class SNMPRequest(object):
             self.req_type = req_type
             if req_type == REQUEST_SINGLE:
                 self.snmp_type = REQUEST_GET
-            elif str(host.community_ro[0]) == '2':
+            elif host.snmp_community.ro_is_snmpv2():
                 self.snmp_type = REQUEST_GETBULK
             else:
                 self.snmp_type = REQUEST_GETNEXT

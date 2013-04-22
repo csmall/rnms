@@ -100,6 +100,7 @@ class SNMPtrapd(RnmsEngine):
         self.logger.info('SNMP trap daemon started PID:%s',os.getpid())
         cache_clean_time = time.time() + CACHE_SECONDS
         while True:
+            self.logger.debug('run')
             now = time.time()
             if now > cache_clean_time:
                 self.clean_host_cache()
@@ -125,7 +126,7 @@ class SNMPtrapd(RnmsEngine):
 
             req_msg, recv_msg = decoder.decode(
                     recv_msg, asn1Spec=pmod.Message(),)
-            
+
 
             req_pdu = pmod.apiMessage.getPDU(req_msg)
             if req_pdu.isSameTypeWith(pmod.TrapPDU()):
@@ -141,7 +142,7 @@ class SNMPtrapd(RnmsEngine):
                 else:
                     new_trap = SnmpTrap(host_id,None)
                     var_binds = pmod.apiPDU.getVarBindList(req_pdu)
-                
+
                 for var_bind in var_binds:
                     oid,val =  pmod.apiVarBind.getOIDVal(var_bind)
                     if oid == SNMP_TRAP_OID:
@@ -157,8 +158,8 @@ class SNMPtrapd(RnmsEngine):
                         self.logger.debug('H:%d New Trap OID:%s',host_id, new_trap.trap_oid)
                         DBSession.add(new_trap)
                         transaction.commit()
+
     def clean_host_cache(self):
-        
         clean_time = time.time() - CACHE_SECONDS
         for key,cache in self.host_cache.items():
             if cache[1] < clean_time:

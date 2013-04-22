@@ -1,7 +1,6 @@
-<div class="attribute_summary">
-  <div class="attsum_title">Attributes</div>
-  %for i in range(len(w.att_states)):
-	<div class="attsum_${i%2 and 'even' or 'odd'}">${w.att_states[i][0]} is ${w.att_states[i][1]}</div>
+<dl class="dl-horizontal">
+  %for att_state in w.att_states:
+  <dt class="status-${att_state[0]}">${att_state[0].capitalize()}</dt><dd>${att_state[1]}</dd>
   %endfor
-    <div class="attsum_total">Total ${w.att_total}</div>
-</div>
+  <dt><a href="${w.url('/attributes/', {'h':w.host_id,})}">Total</a></dt><dd>${w.att_total}</dd>
+</dl>

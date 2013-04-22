@@ -6,5 +6,7 @@ devdata.db
 .build
 build
 dist
+apache/
 cover/
 data/
+docs/_build

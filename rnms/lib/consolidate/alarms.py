@@ -57,7 +57,7 @@ def check_alarm_triggers(logger):
                 rule_result = rule.eval(rule_result, alarm)
                 if rule_result == True and rule.stop == True:
                     break
-        
+
             if rule_result == True:
                 if trigger.email_owner == True:
                     logger.debug('A%d T%d: email to %s',alarm.attribute.id, trigger.id, alarm.attribute.user.user_name)
@@ -72,7 +72,7 @@ def check_alarm_triggers(logger):
         alarm.processed = True
     transaction.commit()
 
-        
+
 
 def email_action(trigger, user, alarm):
     """
@@ -83,7 +83,7 @@ def email_action(trigger, user, alarm):
 
     subject = fill_fields(trigger.subject, alarm=alarm)
     body = fill_fields(trigger.body, alarm=alarm)
-    
+
     msg = MIMEText(body)
     msg['Subject'] = subject
     msg['From'] = config['email_from']

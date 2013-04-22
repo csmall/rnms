@@ -3,11 +3,16 @@
 div.rrdgraph {
 	font-family: Helvetica;
 	font-size: 10pt;
+    margin-bottom: 10px;
 }
 
 div.graph_title {
 	font-weight: bold;
 	font-size: 12pt;
+}
+
+div.graph_legend {
+    margin-left: 10px;
 }
 
 div.graph_row_l {
@@ -17,4 +22,8 @@ div.graph_row_l {
 
 div.graph_row_r {
 	float: right;
+}
+
+div.rrdgraph_clear {
+    clear: both;
 }

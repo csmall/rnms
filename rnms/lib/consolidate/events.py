@@ -40,7 +40,7 @@ def consolidate_events(logger):
 
         if event.alarm_state.is_up():
             event.acknowledged = True
-        
+
         changed_attributes.add(event.attribute_id)
 
         if event.alarm_state.is_alert():
@@ -76,7 +76,7 @@ def process_event_downtesting(logger, event, other_alarm):
     logger.info("A:%d E:%d - DOWN/TESTING", event.attribute.id, event.id)
     if other_alarm is not None:
         other_alarm.set_stop(event, alarm_state=model.AlarmState.by_name('up'))
-    
+
     new_alarm = model.Alarm(event=event)
     model.DBSession.add(new_alarm)
 

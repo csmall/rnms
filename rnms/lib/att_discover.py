@@ -307,7 +307,7 @@ class AttDiscover(RnmsEngine):
         """
         if host['host'].sysobjid is not None and host['host'].sysobjid != '':
             return
-        if  host['host'].community_ro is None:
+        if  host['host'].snmp_community.readonly is None:
             return
 
         host['in_discovery'] = True

@@ -4,6 +4,7 @@
 
 from tg import TGController, tmpl_context
 from tg import request
+from tw2.jqplugins.ui import set_ui_theme_name
 
 __all__ = ['BaseController']
 
@@ -22,6 +23,7 @@ class BaseController(TGController):
         # TGController.__call__ dispatches to the Controller method
         # the request is routed to. This routing information is
         # available in environ['pylons.routes_dict']
+        set_ui_theme_name('start')
 
         request.identity = request.environ.get('repoze.who.identity')
         tmpl_context.identity = request.identity

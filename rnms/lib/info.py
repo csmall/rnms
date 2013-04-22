@@ -66,7 +66,6 @@ class RnmsInfo(BaseCmdLine):
 {:<20} | {}
 {:<20} | {}
 {:<20} | {}
-{:<20} | {}
 {:<20} | {} : {}
 {:<20} | {}
 {:<20} | {}
@@ -74,8 +73,7 @@ class RnmsInfo(BaseCmdLine):
         'Zone', host.zone.id, host.zone.display_name,
         'Management IP', host.mgmt_address,
         'System ObjID', host.sysobjid,
-        'SNMP RO', self._snmp_data(host.community_ro),
-        'SNMP RW', self._snmp_data(host.community_rw),
+        'SNMP Community', host.snmp_community.display_name,
         'Autodiscovery', host.autodiscovery_policy.id, host.autodiscovery_policy.display_name,
         'Created', host.created,
         'Next Discovery', host.next_discover,

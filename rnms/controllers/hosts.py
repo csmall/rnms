@@ -21,26 +21,22 @@
 """ Hosts controller """
 
 # turbogears imports
-from tg import expose, config, validate, flash,url
-#from tg import redirect, validate, flash
+from tg import expose, validate, flash,url
 
 # third party imports
 #from tg.i18n import ugettext as _
 #from repoze.what import predicates
 import tw2.forms as twf
-from tw2.jqplugins.ui import set_ui_theme_name
 from formencode import validators
 
 # project specific imports
 from rnms.lib.base import BaseController
-from rnms.widgets import AttributeSummary, HostsGrid
+from rnms.widgets import AttributeSummary, HostsGrid, InfoBox
 from rnms.model import DBSession, Host, SNMPEnterprise, Zone
 from rnms.lib.jsonquery import json_query
 from rnms.widgets.event import EventsGrid
 
-from rnms.widgets.host import LogPlot
 
-set_ui_theme_name(config['ui_theme'])
 class HostDetails(twf.TableLayout):
     """
     Returns a TableLayout Widget showing host details
@@ -62,7 +58,7 @@ class HostDetails(twf.TableLayout):
 class HostsController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = authorize.not_anonymous()
-    
+
     @expose('rnms.templates.host_index')
     def index(self):
         w = HostsGrid()
@@ -82,23 +78,30 @@ class HostsController(BaseController):
 
     @expose('rnms.templates.host')
     @validate(validators={'h':validators.Int()})
-    def _default(self, h, *args, **kwargs):
-        host = Host.by_id(h)
+    def _default(self, h):
+        try:
+            host_id = int(h)
+        except ValueError:
+            flash('Bad Host ID#{}'.format(h), 'error')
+            return {}
+        host = Host.by_id(host_id)
         if host is None:
-            flash('Host ID#{} not found'.format(h), 'error')
+            flash('Host ID#{} not found'.format(host_id), 'error')
             return {}
         vendor,devmodel = SNMPEnterprise.oid2name(host.sysobjid)
-        attw = AttributeSummary()
-        attw.host_id = h
-        events_grid = EventsGrid()
-        events_grid.host_id = h
-        return dict(host=host, vendor=vendor, devmodel=devmodel,
-                    zone=host.zone.display_name,
-                    attw=attw,
-                    events_grid=events_grid)
 
-    @expose('rnms.templates.widget')
-    def test2(self):
-        w = LogPlot()
-        return dict(page='hello', w=w)
-    
+        detailsbox = InfoBox()
+        detailsbox.title = 'Host Details'
+        attributesbox = InfoBox()
+        attributesbox.title = 'Attribute Status'
+        attributesbox.child_widget = AttributeSummary()
+        attributesbox.child_widget.host_id = host_id
+        eventsbox = InfoBox()
+        eventsbox.title = 'Events'
+        eventsbox.child_widget = EventsGrid()
+        eventsbox.child_widget.host_id = host_id
+        return dict(host=host, vendor=vendor, devmodel=devmodel,
+                    attributesbox=attributesbox,
+                    detailsbox=detailsbox,
+                    eventsbox=eventsbox)
+

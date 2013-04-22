@@ -21,7 +21,7 @@ from tg import url, flash
 
 from sqlalchemy import and_, asc, func
 
-from tw2.jqplugins import jqgrid
+from tw2.jqplugins.jqgrid import jqGridWidget
 from tw2.jqplugins.jqplot import JQPlotWidget
 from tw2.jqplugins.jqplot.base import pieRenderer_js
 import tw2.core as twc
@@ -52,7 +52,7 @@ class AttributeMap(twc.Widget):
             if alarm is None:
                 return ('ok', 'Up')
             else:
-                return (str(alarm.event_type.severity_id), alarm.event_type.severity.display_name)
+                return (alarm.event_type.severity_id, alarm.alarm_state.display_name.capitalize())
 
     def prepare(self):
         conditions = []
@@ -88,6 +88,7 @@ class AttributeSummary(twc.Widget):
     host_id = twc.Param('Limit Attributes by this host id')
 
     def prepare(self):
+        self.url = url
         hostid_filter=[]
         if self.host_id is not None:
             hostid_filter = [Attribute.host_id == self.host_id]
@@ -111,19 +112,24 @@ class AttributeSummary(twc.Widget):
                     self.att_states.append((label, 0 ))
         super(AttributeSummary, self).prepare()
 
-class AttributeGrid(jqgrid.jqGridWidget):
+class AttributesGrid(jqGridWidget):
     id ='attribute-grid-id'
+    host_id = None
+    pager_options = { "search" : True, "refresh" : True, "add" : False,
+                     "edit": False, "del": False }
     options = {
             'pager' : 'attribute-grid-pager',
-            'url' : '/attributes/jqsumdata',
             'datatype': 'json',
-            'colNames' : ['Type', 'Name', 'Description', 'Oper', 'Admin'],
+            'colNames' : ['Host', 'Name', 'Type', 'Description', 'Oper', 'Admin'],
             'colModel' : [
                 {
-                    'name' : 'attribute_type',
+                    'name' : 'host',
+                    'width': 100,
+                }, {
+                    'name' : 'display_name',
                     'width': 100,
                 } , {
-                    'name' : 'display_name',
+                    'name' : 'attribute_type',
                     'width': 100,
                 } , {
                     'description' : 'description',
@@ -140,17 +146,21 @@ class AttributeGrid(jqgrid.jqGridWidget):
             'viewrecords': True,
             'imgpath': 'scripts/jqGrid/themes/green/images',
             'height': 'auto',
-            }   
+            }
 
-    pager_options = { "search" : True, "refresh" : True, "add" : False,
-            "edit": False }
+    def __init__(self):
+        # required to reset it
+        self.options['url'] = '/attributes/griddata'
+        super(AttributesGrid, self).__init__()
 
     def prepare(self, **kw):
+        url_fields = []
         if self.host_id is not None:
-            self.options['postData'] = {'hostid': self.host_id}
-            pass#self.options['url'] = self.options['url'] + '/' + str(self.host_id)
+            url_fields.append('h={}'.format(self.host_id))
 
-        super(AttributeGrid, self).prepare()
+        if url_fields != []:
+            self.options['url'] += '?' + '&'.join(url_fields)
+        super(AttributesGrid, self).prepare()
 
 
 class AttributeStatusPie(JQPlotWidget):

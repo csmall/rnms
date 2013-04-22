@@ -355,7 +355,7 @@ class AttributeField(DeclarativeBase):
 
 class AttributeType(DeclarativeBase):
     __tablename__ = 'attribute_types'
-    
+
     #{ Columns
     id = Column(Integer, autoincrement=True,primary_key=True)
     display_name = Column(Unicode(50),unique=True,nullable=False)
@@ -465,7 +465,7 @@ class AttributeType(DeclarativeBase):
 
 class AttributeTypeField(DeclarativeBase):
     __tablename__ = 'attribute_type_fields'
-    
+
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     attribute_type_id = Column(Integer, ForeignKey("attribute_types.id"),nullable=False)
@@ -481,7 +481,7 @@ class AttributeTypeField(DeclarativeBase):
     parameters = Column(String(250))
     backend = Column(String(40))
     #}
-    
+
     @classmethod
     def by_tag(cls, attribute_type, tag):
         """ Return the field for attribute type with id that has tag ''tag''."""

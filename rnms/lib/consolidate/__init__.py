@@ -21,7 +21,7 @@ import datetime
 
 # Import models for rnms
 from alarms import check_alarm_stop_time, check_alarm_triggers
-from attributes import check_attribute_state
+from attributes import check_attribute_state, check_all_attributes_state
 from events import consolidate_events
 from logfiles import consolidate_logfiles
 from traps import consolidate_traps
@@ -45,8 +45,10 @@ class Consolidator(RnmsEngine):
         if self.zmq_core.poll(0.0) == False:
             return False
         return self.end_thread == False
-            
+
     def consolidate(self):
+        if not self.do_once:
+            check_all_attributes_state(self.logger)
 
         while True:
             next_cons_time = datetime.datetime.now() + datetime.timedelta(seconds=self.consolidate_interval)

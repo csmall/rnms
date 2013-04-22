@@ -31,7 +31,7 @@ testpkgs=['WebTest >= 1.2.3',
                'mock',
                ]
 install_requires=[
-    "TurboGears2 >= 2.2.0rc2",
+    "TurboGears2 >= 2.2.2",
     "Genshi",
     "Mako",
     "zope.sqlalchemy >= 0.4",
@@ -44,20 +44,19 @@ install_requires=[
     "repoze.who.plugins.sa",
     "tw2.forms",
     # Rosenberg NMS specific stuff follows
-    "tw2.rrd",
     "tw2.jqplugins.jqgrid",
     "tw2.jqplugins.jqplot",
     "tw2.jqplugins.portlets",
     "pysnmp",
     "python-rrdtool",
     "mysql-python",
-    "pyparsing",
+    "pyparsing < 2.0.0",
     "pyzmq"
     ]
 
 setup(
     name='Rosenberg-NMS',
-    version='0.1',
+    version='0.0.0',
     description='',
     author='',
     author_email='',
@@ -85,7 +84,7 @@ setup(
     main = pylons.util:PylonsInstaller
     """,
     dependency_links=[
-        "http://tg.gy/220rc2"
+        "http://tg.gy/222"
         ],
     zip_safe=False
 )

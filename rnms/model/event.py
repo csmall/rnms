@@ -185,7 +185,7 @@ class EventType(DeclarativeBase):
 
 class EventSeverity(DeclarativeBase):
     __tablename__ = 'event_severities'
-    
+
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(40), nullable=False, unique=True)

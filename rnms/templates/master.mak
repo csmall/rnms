@@ -9,6 +9,7 @@
     <link rel="stylesheet" type="text/css" media="screen" href="${tg.url('/css/rnms.css')}" />
 </head>
 <body class="${self.body_class()}">
+<script src="${tg.url('/javascript/bootstrap.min.js')}"></script>
   <div class="container">
     ${self.main_menu()}
     ${self.content_wrapper()}
@@ -38,8 +39,6 @@
 
 <%def name="footer()">
   <footer class="footer hidden-tablet hidden-phone">
-    <a class="pull-right" href="http://www.turbogears.org/2.2/"><img style="vertical-align:middle;" src="${tg.url('/images/under_the_hood_blue.png')}" alt="TurboGears 2" /></a>
-    <p>Copyright &copy; ${getattr(tmpl_context, 'project_name', 'TurboGears2')} ${h.current_year()}</p>
   </footer>
 </%def>
 
@@ -47,12 +46,25 @@
   <div class="navbar">
     <div class="navbar-inner">
       <div class="container">
-        <a class="brand" href="#"><img src="${tg.url('/images/turbogears_logo.png')}" alt="TurboGears 2"/> ${getattr(tmpl_context, 'project_name', 'turbogears2')}</a>
+        <div class="brand">Rosenberg NMS</div>
         <ul class="nav nav-pills">
-          <li class="${('', 'active')[page=='index']}"><a href="${tg.url('/')}">Welcome</a></li>
+          <li class="${('', 'active')[page=='index']}"><a href="${tg.url('/')}">Overview</a></li>
+          <li class="${('', 'active ')[page=='hosts']}dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#" >Hosts<b class="caret"></b></a>
+	  <ul class="dropdown-menu">
+	  <li><a href="${tg.url('/hosts')}">List</a></li>
+	  <li><a href="${tg.url('/hosts/map')}">Map</a></li>
+	  <li><a href="${tg.url('/hosts/mapevent')}">Map & Events</a></li>
+	  </ul>
+	  </li>
+          <li class="${('', 'active ')[page=='attribute']}dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Attributes<b class="caret"></b></a>
+	  <ul class="dropdown-menu">
+	  <li><a href="${tg.url('/attributes')}">List</a></li>
+	  <li><a href="${tg.url('/attributes/map')}">Map</a></li>
+	  <li><a href="${tg.url('/attributes/mapevent')}">Map & Events</a></li>
+	  </ul>
+	  </li>
+          <li class="${('', 'active')[page=='events']}"><a href="${tg.url('/events')}">Events</a></li>
           <li class="${('', 'active')[page=='about']}"><a href="${tg.url('/about')}">About</a></li>
-          <li class="${('', 'active')[page=='data']}"><a href="${tg.url('/data')}">Serving Data</a></li>
-          <li class="${('', 'active')[page=='environ']}"><a href="${tg.url('/environ')}">WSGI Environment</a></li>
         </ul>
 
         % if tg.auth_stack_enabled:

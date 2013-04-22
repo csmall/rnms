@@ -64,6 +64,9 @@ class GraphType(DeclarativeBase):
         """ Return the GraphType with name"""
         return DBSession.query(cls).filter( cls.display_name == display_name).first()
 
+    def __repr__(self):
+        return '<GraphType {}>'.format(self.display_name)
+
     def vname_by_name(self, name):
         """
         Return the vname from this GraphType that matches the name
@@ -101,6 +104,8 @@ class GraphType(DeclarativeBase):
                 '-c', 'BACK#ffff8800',
                 '-c', 'SHADEA#ffffff00',
                 '-c', 'SHADEB#ffffff00',
+                '--width', '570',
+                '--full-size-mode',
                 #'-t', str(attribute.host.display_name + ' - ' + attribute.display_name),
                 ]
         for extra_option in self.extra_options.split('|'):

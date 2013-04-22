@@ -10,7 +10,7 @@ Rosenberg NMS: Host ${host.display_name}
 % endif
 </%def>
 
-% if host is not DEFINED:
+% if host is not UNDEFINED:
 <div class="row">
   <div class="span12">
     <div class="page-header">
@@ -19,26 +19,25 @@ Rosenberg NMS: Host ${host.display_name}
   </div>
 </div>
 <div class="row">
-  <div class="pblock span6">
-    <h2>Host Details</h2>
-    <dl class="dl-horizontal">
-      <dt>Zone</dt><dd>${zone}</dd>
-      <dt>Address</dt><dd>${host.mgmt_address | n}</dd>
-      <dt>Host Type</dt><dd>${vendor} - ${devmodel}</dd>
-    </dl>
+  <div class="span6">
+    ${detailsbox.display(text=capture(self.host_details)) | n }
   </div>
-  <div class="pblock span4">
-    <h2>Attribute Status</h2>
-    <div>${attw.display() | n}</div>
+  <div class="span4">
+    ${attributesbox.display() | n}
   </div>
 </div>
-
 
 <div class="row">
-  <div class="pblock span12">
-  <h2>Events for the host</h2>
-  ${events_grid.display() | n}
+  <div class="span12">
+  ${eventsbox.display() | n}
   </div>
 </div>
 
+<%def name="host_details()">
+    <dl class="dl-horizontal">
+      <dt>Zone</dt><dd>${host.zone.display_name}</dd>
+      <dt>Address</dt><dd>${host.mgmt_address}</dd>
+      <dt>Host Type</dt><dd>${vendor} - ${devmodel}</dd>
+    </dl>
+</%def>
 %endif

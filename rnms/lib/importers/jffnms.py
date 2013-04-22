@@ -203,14 +203,30 @@ class JffnmsImporter(object):
         return self.users.get(jffnms_id,1)
 
     @classmethod
-    def import_snmp(self,old_comm):
-        if old_comm is None:
-            return None
+    def import_snmp(self,old_ro, old_rw):
+        if old_ro is None:
+            comm = model.SnmpCommunity.by_name(u'None')
+            if comm is not None:
+                return comm.id
         try:
-            (ver,comm) = old_comm.split(':')
-            return [ver[1:], comm]
+            (ver,ro_comm) = old_ro.split(':')
+            comm = DBSession.query(model.SnmpCommunity).filter(
+                model.SnmpCommunity.readonly == [ver[1:],ro_comm]).first()
+            if comm is not None:
+                return comm.id
+            comm = model.SnmpCommunity()
+            comm.display_name = old_ro
+            comm.readonly = [ver[1:],ro_comm]
+            comm.trap = [ver[1:], ro_comm]
+            DBSession.add(comm)
+            DBSession.flush()
+            return comm.id
+
         except:
-            return None
+            comm =  model.SnmpCommunity.by_name(u'None')
+            if comm is not None:
+                return comm.id
+        return 1
 
     def _import_hosts(self):
         add_count=0
@@ -218,8 +234,7 @@ class JffnmsImporter(object):
             result = self.dbhandle.execute('SELECT id,ip,name,rocommunity,rwcommunity,zone,tftp,autodiscovery,autodiscovery_default_customer,show_host,poll,creation_date,modification_date,last_poll_date,sysobjectid,config_type FROM hosts WHERE id>1 ORDER by id')
             for row in result:
                 host = model.Host(mgmt_address=row[1],display_name=row[2])
-                host.community_ro = self.import_snmp(row[3])
-                host.community_rw = self.import_snmp(row[4])
+                host.snmp_community_id = self.import_snmp(row[3],row[4])
                 host.zone_id = self.zone_id(row[5])
                 host.tftp_server = row[6]
                 host.autodiscovery_policy_id = row[7]

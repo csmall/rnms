@@ -51,7 +51,7 @@ class Rnmsd(BaseCmdLine):
         self.zmq_poller = zmq.Poller()
         self.control_socket = zmqmessage.control_server(self.zmq_context)
         self.threads = {}
-    
+
     def run(self):
         """ The entry point for the RNMS daemon """
         self._setup_app()
@@ -66,9 +66,9 @@ class Rnmsd(BaseCmdLine):
         self.threads['consolidator'].start()
 
         self.sla_analyzer = SLAanalyzer(zmq_context=self.zmq_context, do_once=False)
-        self.threads['sla_analyzer'] = threading.Thread(target=self.sla_analyzer.analyze, name='sla_analyzer')
-        self.threads['sla_analyzer'].start()
-        
+#        self.threads['sla_analyzer'] = threading.Thread(target=self.sla_analyzer.analyze, name='sla_analyzer')
+#        self.threads['sla_analyzer'].start()
+
         self.att_discover = AttDiscover(zmq_context=self.zmq_context, do_once=False)
         #self.threads['att_discover'] = threading.Thread(target=self.att_discover.discover, name='att_discover')
         #self.threads['att_discover'].start()

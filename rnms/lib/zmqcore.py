@@ -91,33 +91,27 @@ class ZmqCore(object):
         except KeyboardInterrupt:
             return False
 
-        for sock,cb_func in self.zmq_map.items():
-            try:
-                event = events[sock]
-            except KeyError:
-                pass
-            else:
-                if event == zmq.POLLIN:
-                    cb_func(sock)
-
-        for fd,obj in self.socket_map.items():
-            try:
-                event = events[fd]
-            except KeyError:
-                pass
-            else:
+        for sock,event in events.items():
+            if type(sock) == int:
+                obj =  self.socket_map[sock]
                 if event & zmq.POLLIN:
                     obj.handle_read_event()
                 if event & zmq.POLLOUT:
                     obj.handle_write_event()
+            else:
+                cb_func = self.zmq_map[sock]
+                if event == zmq.POLLIN:
+                    cb_func(sock)
         return True
-                
+
 class Dispatcher(asyncore.dispatcher,object):
 
     def __init__(self, zmq_core):
         self.zmq_core = zmq_core
         asyncore.dispatcher.__init__(self,map=zmq_core.socket_map)
-        #super(Dispatcher, self).__init__(map=zmq_core.socket_map)
+
+    def close(self):
+        self.zmq_core.unregister_sock(self.socket)
 
 #class iDispatcher(object):
 #    connected = False

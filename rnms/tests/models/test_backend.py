@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012,2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,19 +23,25 @@ import mock
 
 from rnms import model
 from rnms.tests.models import ModelTest
+from rnms.lib import states
 
-test_poller_row = mock.Mock(spec_set=model.PollerRow)
+test_poller_row = mock.MagicMock(spec_set=model.PollerRow)
+test_attribute = model.Attribute(display_name = u'Test Attribute')
 
 class TestBackend(ModelTest):
     klass = model.Backend
     attrs = dict(
             display_name = (u'Test Backend'),
-            command = 'test',
-            #position = 1,
+            command = 'test_command',
             )
 
-    def setUp(self):
-        super(TestBackend, self).setUp()
+    def test_backend_str(self):
+        """Backend  shows corect string """
+        eq_(str(self.obj), '<Backend name=Test Backend command=test_command>')
+
+    def test_backend_init_plugin(self):
+        """Backend init sets plugin name correctly"""
+        eq_(self.obj.command,'test_command')
 
     def test_run_none(self):
         """Backend none reutrns blank """
@@ -51,25 +57,38 @@ class TestBackend(ModelTest):
         """ admin_status backend sets status correctly """
         self.obj.command = 'admin_status'
         self.obj.parameters = None
-        att = model.Attribute(display_name=u'Test Attribute')
-        att.set_admin_down()
+        test_attribute.admin_state = states.STATE_UNKNOWN
         for newstate in ['up','down', 'testing']:
-            eq_('Admin status set to {0}'.format(newstate), self.obj.run(test_poller_row, att, newstate))
+            eq_('Admin status set to {0}'.format(newstate),
+                self.obj.run(test_poller_row, test_attribute, newstate))
 
 
     def test_admin_badvalue(self):
         """ admin_status backend detects bad values """
         self.obj.command = 'admin_status'
         self.obj.parameters = None
-        att = model.Attribute(display_name=u'Test Attribute')
-        att.admin_state = 0
-        eq_("Bad Admin status \"foo\"",self.obj.run(test_poller_row, att, 'foo'))
-        eq_(att.admin_state, 0)
+        test_attribute.admin_state = states.STATE_UP
+        eq_("Bad Admin status \"foo\"",self.obj.run(test_poller_row,
+                                                    test_attribute, 'foo'))
+        eq_(test_attribute.admin_state, states.STATE_UP)
+
+    def test_run_event_always(self):
+        """ Backend event_always works correctly """
+        self.obj.command = 'event_always'
+        self.obj._run_event = mock.Mock(return_value="Hello, World!")
+        self.obj._run_event.assert_run_once_with('hh')
+        eq_(self.obj.run(test_poller_row, test_attribute, 'up'), "Hello, World!")
 
     def test_admin_nochange(self):
         """ admin_status backend doesnt change if same """
         self.obj.command = 'admin_status'
         self.obj.parameters = None
-        att = model.Attribute(display_name=u'Test Attribute')
-        att.admin_state = 1
-        eq_("Admin status not changed",self.obj.run(test_poller_row, att, 'up'))
+        test_attribute.admin_state = states.STATE_UP
+        eq_("Admin status not changed",self.obj.run(test_poller_row,
+                                                    test_attribute, 'up'))
+
+    def test_default_backend(self):
+        """ Return default backend """
+        default_backend = self.obj.default()
+        eq_(default_backend, self.obj)
+        eq_(default_backend.id, 1)

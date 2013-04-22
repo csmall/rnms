@@ -32,59 +32,78 @@ from formencode import validators
 # project specific imports
 from rnms.lib import states
 from rnms.lib.base import BaseController
-from rnms.widgets.attribute import AttributeSummary, AttributeMap, AttributeStatusPie
-from rnms.model import DBSession, Attribute
+from rnms.lib.jsonquery import json_query
+from rnms.model import DBSession, Attribute, AttributeType, Host
+from rnms.widgets import AttributeSummary, AttributeMap,\
+        AttributeStatusPie, AttributesGrid, EventsGrid, InfoBox
 
 class AttributesController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = authorize.not_anonymous()
-    
-    #@expose('rnms.templates.widget')
-    #def index(self, *args, **kw):
-    #    return dict(widget=AttributeGrid2, page='attribute')
-    @expose('rnms.templates.attribute')
+
+    @expose('rnms.templates.widget')
+    @validate(validators={'h':validators.Int()})
+    def index(self, h=None, *args, **kw):
+        agrid = AttributesGrid()
+        agrid.host_id = h
+        return dict(w=agrid, page='attribute')
+
+    @expose('rnms.templates.attribute_detail')
     @validate(validators={'a':validators.Int()})
     def _default(self, a):
         attribute = Attribute.by_id(a)
         if attribute is None:
             flash('Attribute ID#{} not found'.format(a), 'error')
             return {}
-        return dict(attribute=attribute)
+        detailsbox = InfoBox()
+        detailsbox.title = 'Attribute Details'
+        eventsbox = InfoBox()
+        eventsbox.title = 'Events for Attribute'
+        eventsbox.child_widget = EventsGrid()
+        eventsbox.child_widget.attribute_id = a
+        return dict(page='attribute', attribute=attribute,
+                    detailsbox=detailsbox, eventsbox=eventsbox)
 
-    @expose('rnms.templates.widget')
+    @expose('rnms.templates.attribute_map')
     @validate(validators={'h':validators.Int()})
-    def map(self, h=None):
-        w = AttributeMap()
-        w.host_id = h
-        return dict(widget=w)
+    def map(self, h=None, alert=None):
+        amap = AttributeMap()
+        amap.host_id = h
+        return dict(attribute_map=amap)
 
     @expose('json')
-    @validate(validators={'hostid':validators.Int()})
-    def jqsumdata(self, hostid=0, page=1, rows=1, *args, **kw):
-        rows = int(rows)
-        page = int(page)
-        start_row = page * rows
-        end_row = (page+1) * rows
-
+    @validate(validators={'h': validators.Int(), 'page':validators.Int(), 'rows':validators.Int(), 'sidx':validators.String(), 'sord':validators.String(), '_search':validators.String(), 'searchOper':validators.String(), 'searchField':validators.String(), 'searchString':validators.String()})
+    def griddata(self, page, rows, sidx, sord, _search='false',
+                 searchOper='', searchField='', searchString='', h=None,
+                 **kw):
         conditions = []
-        if hostid > 0:
-            conditions.append(Attribute.host_id == hostid)
-        attributes =DBSession.query(Attribute).filter(and_(*conditions))
-        row_count = attributes.count()
-        data=[]
-        for attribute in attributes[start_row:end_row]:
-            data.append({
-                'cell' : [ attribute.attribute_type.display_name,
-                    attribute.display_name,
-                attribute.description(),
-                attribute.oper_state_name(),
-                attribute.admin_state_name(),
-                ],
-                'id': attribute.id})
-        return dict(page=page,records=row_count,total=row_count/rows, rows=data)
-#    @expose('json')
-    #def jqgrid(self, *args, **kwargs):
-    #    return AttributeGrid2.request(request).body
+        if h is not None:
+            conditions.append(Attribute.host_id == int(h))
+        qry = DBSession.query(Attribute).\
+                join(Attribute.attribute_type,
+                     Attribute.host).filter(and_(*conditions))
+        colnames = (
+            ('host', Host.display_name),
+            ('display_name', Attribute.display_name),
+            ('attribute_type', AttributeType.display_name),
+            ('description', None),
+            ('oper_state', None),
+            ('admin_state', None),
+        )
+        result_count, qry = json_query(qry, colnames, page, rows, sidx,
+                                       sord, _search=='true', searchOper,
+                                       searchField, searchString)
+        records = [{'id': rw.id,
+                    'cell': (rw.host.display_name,
+                             rw.display_name,
+                             rw.attribute_type.display_name,
+                             rw.description(),
+                             rw.oper_state_name(),
+                             rw.admin_state_name()
+                            )} for rw in qry]
+        return dict(page='attributes', total=result_count,
+                    records=result_count, rows=records)
+
 
     @expose('rnms.templates.widget')
     def statuspie(self):

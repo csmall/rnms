@@ -372,11 +372,11 @@ class SNMPEngine():
         Proccess the given SNMPRequest to send out queries to a host. The
         structure may have one of more OIDs
         """
-        if request.host.community_ro is None:
+        if request.host.snmp_community.readonly == '':
             request.callback_default()
-            return False
+            return True
         request.msg, pmod = self._build_get_message(
-            request.host.community_ro,
+            request.host.snmp_community.readonly,
             request)
         if request.msg is None:
             request.callback_default()
@@ -391,11 +391,11 @@ class SNMPEngine():
         Proccess the given SNMPRequest to send out queries to a host. The
         structure may have one of more OIDs used for setting values
         """
-        if request.host.community_rw is None:
+        if request.host.snmp_community.readwrite is None:
             request.calback_default()
             return False
         request.msg, pmod = self._build_set_message(
-            request.host.community_rw, request)
+            request.host.snmp_community.readwrite, request)
         if request.msg is None:
             request.callback_default()
             return False
@@ -414,15 +414,15 @@ class SNMPEngine():
         if type(oids) == str or type(oids) == unicode:
             oids = (oids,)
 
-        if snmphost.community_ro is None:
+        if snmphost.snmp_community.readonly == '':
             cb_function(default, snmphost, **kwargs)
-            return False
+            return True
         is_getbulk = False
-        if str(snmphost.community_ro[0]) == '2':
+        if snmphost.snmp_community.ro_is_snmpv2():
             is_getbulk = True
         request = SNMPRequest(snmphost, req_type=REQUEST_TABLE)
         request.msg, pmod = self._build_getnext_message(
-            snmphost.community_ro, oids, is_getbulk)
+            snmphost.snmp_community.readonly, oids, is_getbulk)
         if request.msg is None:
             cb_function(default, snmphost, **kwargs)
             return False

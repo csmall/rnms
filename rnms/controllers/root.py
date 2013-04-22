@@ -12,6 +12,7 @@ from tgext.admin.controller import AdminController
 from tw2.jqplugins.ui import set_ui_theme_name
 
 from rnms.widgets.attribute import AttributeStatusPie
+from rnms.widgets.base import InfoBox
 from rnms.model import DBSession, Attribute
 
 from rnms.lib import states
@@ -37,9 +38,11 @@ def get_attribute_pie():
     attributes = DBSession.query(func.count(Attribute.admin_state), Attribute.admin_state).group_by(Attribute.admin_state)
     for attribute in attributes:
         state_data[attribute[1]] = attribute[0]
-    mypie = AttributeStatusPie()
-    mypie.state_data = state_data
-    return mypie
+    piebox = InfoBox()
+    piebox.title = 'Attribute Status'
+    piebox.child_widget = AttributeStatusPie()
+    piebox.child_widget.state_data = state_data
+    return piebox
 
 class RootController(BaseController):
     """
@@ -76,8 +79,11 @@ class RootController(BaseController):
     def index(self):
         """Handle the front-page."""
         statrows = get_overall_statistics()
-        attpie = get_attribute_pie()
-        return dict(page='index',attpie=attpie, statrows=statrows)
+        piebox = get_attribute_pie()
+        statsbox = InfoBox()
+        statsbox.title = 'Statistics'
+        return dict(page='index', piebox=piebox, statsbox=statsbox,
+                    statrows=statrows)
 
     @expose('rnms.templates.about')
     def about(self):

@@ -40,9 +40,9 @@ class BaseCmdLine(object):
         parser.add_argument("-d", "--debug", action='store_true', help="turn on debugging")
         parser.add_argument("-q", "--quiet", action='store_true', help="critical messages only")
         parser.add_argument("-v", "--verbosity", action='store_true', help="verbose messages")
-        
+
         self.args = parser.parse_args()
-        
+
         self._set_logging()
         conf = appconfig('config:' + os.path.abspath(self.args.conf_file))
         load_environment(conf.global_conf, conf.local_conf)
@@ -55,6 +55,6 @@ class BaseCmdLine(object):
             logging_level = logging.DEBUG
         elif self.args.verbosity == True:
             logging_level = logging.INFO
-        
+
         logging.basicConfig(level=logging_level, format=LOG_FORMAT)
 

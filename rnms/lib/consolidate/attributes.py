@@ -21,7 +21,20 @@ import transaction
 
 from rnms.model import DBSession, Attribute
 
+def check_all_attributes_state(logger):
+    """ Recalculate all Attributes Oper state
+    This is done when the consolidator is first started
+    """
+    logger.debug('Recalculating all Attributes Oper state')
+    attributes = DBSession.query(Attribute)
+    if attributes is None:
+        return
+    for attribute in attributes:
+        attribute.calculate_oper()
+    transaction.commit()
+
 def check_attribute_state(attribute_ids, logger):
+    """ Recalculate the given Attributes Oper state """
     if len(attribute_ids) == 0:
         return
     attributes = DBSession.query(Attribute).filter(Attribute.id.in_(list(attribute_ids)))

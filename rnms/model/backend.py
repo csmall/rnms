@@ -23,7 +23,6 @@ Model for Backend processes
 
 """
 import datetime
-import logging
 
 from sqlalchemy import Column
 from sqlalchemy.types import Integer, Unicode, String
@@ -46,8 +45,7 @@ class Backend(DeclarativeBase):
     string appears in the logs.
     """
     __tablename__ = 'backends'
-    available_backends = [ 'event', 'event_always', 'admin_status', 'oper_status', 'verify_index']
-    
+
     #{ Columns
     id = Column(Integer, primary_key=True, nullable=False)
     display_name = Column(Unicode(40), nullable=False, unique=True)
@@ -61,9 +59,6 @@ class Backend(DeclarativeBase):
 
     def __repr__(self):
         return '<Backend name=%s command=%s>' % (self.display_name, self.command)
-    def __unicode__(self):
-        return self.display_name
-
     @classmethod
     def by_display_name(cls, display_name):
         """ Return Backend with given class name"""
@@ -80,14 +75,10 @@ class Backend(DeclarativeBase):
         """
         if self.command is None or self.command=='none' or self.command=='':
             return ''
-        if self.command not in self.available_backends:
-            return 'invalid backend {0}'.format(self.command)
-
         try:
             real_backend = getattr(self, "_run_"+self.command)
         except AttributeError:
-            logging.error("Backend {0} does not exist.".format(self.command))
-            return None
+            return 'invalid backend {0}'.format(self.command)
         else:
             return real_backend(poller_row, attribute, poller_result)
 
@@ -102,7 +93,7 @@ class Backend(DeclarativeBase):
         poller_result: dictionary or (state,info) tuple
            state - optional display_name to match AlarmState model
            other items are copied into event fields
-           
+
         """
 
         params = self.parameters.split(',')
@@ -163,7 +154,7 @@ class Backend(DeclarativeBase):
             state - optional event AlarmState description
             other fields copied to event
         """
-        self._run_event(attribute, poller_result, True)
+        return self._run_event(attribute, poller_result, True)
 
     def _run_admin_status(self, poller_row, attribute, poller_result):
         """
@@ -179,23 +170,6 @@ class Backend(DeclarativeBase):
             else:
                 return "Admin status set to {0}".format(poller_result)
         return "Bad Admin status \"{0}\"".format(poller_result)
-
-    def _run_oper_status(self, poller_row, attribute, poller_result):
-        """
-        Backend: oper_status
-        Set the oper_status of the attribute based upon the integer
-        the backend receives from poller.
-        poller parameters: None
-        poller_result: integer
-        """
-        try:
-            new_state = int(poller_result)
-        except ValueError:
-            return "Oper status received by poller is not a integer"
-        if attribute.oper_state == new_state:
-            return "Oper status not changed."
-        attribute.oper_state = new_state
-        return "Oper status set to "+str(new_state)
 
     def _run_verify_index(self, poller_row, attribute, poller_result):
         """
@@ -235,6 +209,6 @@ class Backend(DeclarativeBase):
             else:
                 if down_alarm.alarm_state != alarm_state:
                     return True
-        return False 
+        return False
 
 

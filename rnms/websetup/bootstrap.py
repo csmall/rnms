@@ -4,7 +4,6 @@
 
 import logging
 import re
-from tg import config
 from rnms import model
 from rnms.websetup import database_data
 import transaction
@@ -23,30 +22,30 @@ def bootstrap(command, conf, vars):
         u.display_name = u'Example manager'
         u.email_address = u'manager@somedomain.com'
         u.password = u'managepass'
-    
+
         model.DBSession.add(u)
-    
+
         g = model.Group()
         g.group_name = u'managers'
         g.display_name = u'Managers Group'
-    
+
         g.users.append(u)
     
         model.DBSession.add(g)
-    
+
         p = model.Permission()
         p.permission_name = u'manage'
         p.description = u'This permission give an administrative right to the bearer'
         p.groups.append(g)
-    
+
         model.DBSession.add(p)
-    
+
         u1 = model.User()
         u1.user_name = u'customer'
         u1.display_name = u'Default Customer'
         u1.email_address = u'customer@somedomain.com'
         u1.password = u'customer'
-    
+
         model.DBSession.add(u1)
         model.DBSession.flush()
         transaction.commit()
@@ -62,19 +61,13 @@ def bootstrap(command, conf, vars):
     b.validate()
     try:
 
-        # Triggers
-
         # SNMP Enterprises
         for ent in database_data.snmp_enterprises:
             e = model.SNMPEnterprise(ent[0], ent[1], ent[2])
             for device in ent[3]:
                 d = model.SNMPDevice(e,device[0],device[1])
+                model.DBSession.add(d)
             model.DBSession.add(e)
-            
-
-
-
-
         model.DBSession.flush()
         transaction.commit()
     except IntegrityError:
@@ -87,7 +80,7 @@ def bootstrap(command, conf, vars):
 class BootStrapper(object):
     models = ('defaults', 'autodiscovery', 'alarm_states', 'config_transfers',
             'severities', 'event_types',
-            'logmatches', 
+            'logmatches', 'snmp_communities',
             'attribute_types', 'graph_types', 'slas',
             'pollers', 'backends', 'poller_sets', 'triggers'
 
@@ -246,7 +239,10 @@ class BootStrapper(object):
     def create_graph_types(self):
         for row in database_data.graph_types:
             gt = model.GraphType()
-            (gt.display_name, atype_name, gt.title, gt.vertical_label, gt.extra_options, graph_defs, graph_vnames, graph_lines ) = row
+            try:
+                (gt.display_name, atype_name, gt.title, gt.vertical_label, gt.extra_options, graph_defs, graph_vnames, graph_lines ) = row
+            except ValueError as errmsg:
+                raise ValueError('{}\nRow:{}'.format(errmsg, row))
             attribute_type = model.AttributeType.by_display_name(atype_name)
             if attribute_type is None:
                 raise ValueError("Attribute Type {} not found in GraphType {}".format(atype_name, gt.display_name))
@@ -382,6 +378,12 @@ class BootStrapper(object):
                 (sr.expression, sr.oper, sr.limit, sr.show_result, sr.show_info, sr.show_expression, sr.show_unit) = sla_row
                 position += 1
                 model.DBSession.add(sr)
+
+    def create_snmp_communities(self):
+        for row in database_data.snmp_communities:
+            c = model.SnmpCommunity()
+            (c.display_name, c.readonly, c.readwrite, c.trap) = row
+            model.DBSession.add(c)
 
     def create_triggers(self):
         for trigger in database_data.triggers:

@@ -20,41 +20,41 @@
 #
 """This file contains the database entries that are used for intially filling
 the database"""
-from rnms.lib.states import *
+from rnms.lib import states
 
 alarm_states = (
-    (u'down', 10, 'down.wav', 'up.wav', STATE_DOWN),
-    (u'up', 100, '', '', STATE_UP), 
-    (u'alert', 60, 'boing.wav', '', STATE_ALERT), 
-    (u'testing', 40, '', '', STATE_TESTING), 
-    (u'running', 100, '', '', STATE_UP), 
-    (u'not running', 20, '', '', STATE_DOWN), 
-    (u'open', 100, '', '', STATE_UP), 
-    (u'closed', 15, '', '', STATE_DOWN), 
-    (u'error', 90, 'boing.wav', '', STATE_ALERT), 
-    (u'invalid', 30, '', '', STATE_DOWN), 
-    (u'valid', 110, '', '', STATE_UP), 
-    (u'reachable', 100, '', '', STATE_UP), 
-    (u'unreachable', 5, '', '', STATE_DOWN), 
-    (u'lowerlayerdown', 10, 'down.wav', 'up.wav', STATE_DOWN), 
-    (u'synchronized', 100, '', '', STATE_UP), 
-    (u'unsynchronized', 6, '', '', STATE_DOWN), 
-    (u'battery normal', 100, '', '', STATE_UP), 
-    (u'battery low', 4, '', '', STATE_DOWN), 
-    (u'battery unknown', 2, '', '', STATE_DOWN), 
-    (u'on battery', 3, '', '', STATE_DOWN), 
-    (u'on line', 90, '', '', STATE_UP), 
-    (u'ok', 100, '', '', STATE_UP), 
-    (u'out of bounds', 10, '', '', STATE_DOWN), 
-    (u'unavailable', 10, 'down.wav', 'up.wav', STATE_DOWN), 
-    (u'available', 100, '', '', STATE_UP), 
-    (u'battery depleted', 3, '', '', STATE_DOWN), 
-    (u'other', 10, '', '', STATE_DOWN), 
-    (u'unknown', 10, '', '', STATE_DOWN), 
-    (u'noncritical', 90, '', '', STATE_DOWN), 
-    (u'critical', 10, '', '', STATE_DOWN), 
-    (u'nonrecoverabl', 10, '', '', STATE_DOWN), 
-    (u'warning', 80, 'down.wav', 'up.wav', STATE_DOWN)
+    (u'down', 10, 'down.wav', 'up.wav', states.STATE_DOWN),
+    (u'up', 100, '', '', states.STATE_UP), 
+    (u'alert', 60, 'boing.wav', '', states.STATE_ALERT), 
+    (u'testing', 40, '', '', states.STATE_TESTING), 
+    (u'running', 100, '', '', states.STATE_UP), 
+    (u'not running', 20, '', '', states.STATE_DOWN), 
+    (u'open', 100, '', '', states.STATE_UP), 
+    (u'closed', 15, '', '', states.STATE_DOWN), 
+    (u'error', 90, 'boing.wav', '', states.STATE_ALERT), 
+    (u'invalid', 30, '', '', states.STATE_DOWN), 
+    (u'valid', 110, '', '', states.STATE_UP), 
+    (u'reachable', 100, '', '', states.STATE_UP), 
+    (u'unreachable', 5, '', '', states.STATE_DOWN), 
+    (u'lowerlayerdown', 10, 'down.wav', 'up.wav', states.STATE_DOWN), 
+    (u'synchronized', 100, '', '', states.STATE_UP), 
+    (u'unsynchronized', 6, '', '', states.STATE_DOWN), 
+    (u'battery normal', 100, '', '', states.STATE_UP), 
+    (u'battery low', 4, '', '', states.STATE_DOWN), 
+    (u'battery unknown', 2, '', '', states.STATE_DOWN), 
+    (u'on battery', 3, '', '', states.STATE_DOWN), 
+    (u'on line', 90, '', '', states.STATE_UP), 
+    (u'ok', 100, '', '', states.STATE_UP), 
+    (u'out of bounds', 10, '', '', states.STATE_DOWN), 
+    (u'unavailable', 10, 'down.wav', 'up.wav', states.STATE_DOWN), 
+    (u'available', 100, '', '', states.STATE_UP), 
+    (u'battery depleted', 3, '', '', states.STATE_DOWN), 
+    (u'other', 10, '', '', states.STATE_DOWN), 
+    (u'unknown', 10, '', '', states.STATE_DOWN), 
+    (u'noncritical', 90, '', '', states.STATE_DOWN), 
+    (u'critical', 10, '', '', states.STATE_DOWN), 
+    (u'nonrecoverabl', 10, '', '', states.STATE_DOWN), 
+    (u'warning', 80, 'down.wav', 'up.wav', states.STATE_DOWN)
     )
 
 autodiscovery_policies = (
@@ -150,9 +150,9 @@ attribute_types = (
             ('Size (bytes)','size', True, True, True, True, False, False,'',''),
             ('Usage Threshold','usage_threshold',False, True, False, True, False,80,'',''),
             ), (
-            (u'Storage Block Size', 'storage_block_size', 0,0,0,'size'),
-            (u'Storage Block Count', 'storage_block_count', 0,0,0,'size'),
-            (u'Storage Used Blocks', 'storage_used_blocks', 0,0,0,'size'),
+            (u'Storage Block Size', 'block_size', 0,0,0,'size'),
+            (u'Storage Block Count', 'total_blocks', 0,0,0,'size'),
+            (u'Storage Used Blocks', 'used_blocks', 0,0,0,'size'),
                 ) ),
         (u'Solaris System Info',
                 'host_information','solaris,sparc,sun,11.2.3.10,8072.3.2.3', True, True,
@@ -546,14 +546,14 @@ event_types = (
     )
 
 event_severities = [
-    [u'Unknown', 127, '000000', 'ffffff'],
-    [u'Warning', 30, '00aa00', 'ffffff'],
-    [u'Fault', 40, 'f51d30', 'eeeeee'],
-    [u'Big Fault', 50, 'da4725','ffffff'],
-    [u'Critical',60, 'ff0000', 'ffffff'],
-    [u'Administrative',10, '8d00ba', 'ffffff'],
-    [u'Information',20, 'f9fd5f', '000000'],
-    [u'Service',35, '0090f0', 'ffffff']
+    [u'Unknown',       127, '000000', 'ffffff'],
+    [u'Critical',       60, 'ff0000', 'ffffff'],
+    [u'Big Fault',      50, 'da4725','ffffff'],
+    [u'Fault',          40, 'f51d30', 'eeeeee'],
+    [u'Service',        35, '0090f0', 'ffffff'],
+    [u'Warning',        30, '00aa00', 'ffffff'],
+    [u'Information',    20, 'f9fd5f', '000000'],
+    [u'Administrative', 10, '8d00ba', 'ffffff'],
     ]
 
 logfiles = [
@@ -630,7 +630,8 @@ slas = (
             ('($inerrors * 100) / ($inpackets + 1 )', '>', 10, True, u'IN ERR > 20%', u'($inerrors * 100) / ($inpackets + 1)', u'% = $inerrors Eps'),
             )),
         (u'Storage', u'Storage:', u'Storage', (
-            ('($storage_used_blocks * 100) / $storage_block_count - $usage_threshold', '>', 0, True, u'Used > $usage_threshold', u'($storage_used_blocks * 100) / $storage_block_count', u'%'),
+            ('($used_blocks * 100) / $total_blocks - $usage_threshold', '>', 0,
+             True, u'Used > $usage_threshold', u'($used_blocks * 100) / $total_blocks', u'%'),
             )),
         )
 pollers = [
@@ -659,9 +660,9 @@ pollers = [
         ['bgpin','BGP Inbound Updates','snmp_counter','1.3.6.1.2.1.15.3.1.10.${remote}'],
         ['bgpout','BGP Outbound Updates','snmp_counter','1.3.6.1.2.1.15.3.1.11.${remote}'],
         ['bgpuptime','BGP Uptime','snmp_counter','1.3.6.1.2.1.15.3.1.16.${remote}'],
-        ['storage_used_blocks','Storage Device Used Blocks','snmp_counter','1.3.6.1.2.1.25.2.3.1.6.${index}'],
-        ['storage_block_count','Storage Device Total Blocks','snmp_counter','1.3.6.1.2.1.25.2.3.1.5.${index}'],
-        ['storage_block_size','Storage Device Block Size','snmp_counter','1.3.6.1.2.1.25.2.3.1.4.${index}'],
+        ['used_blocks','Storage Device Used Blocks','snmp_counter','1.3.6.1.2.1.25.2.3.1.6.${index}'],
+        ['total_blocks','Storage Device Total Blocks','snmp_counter','1.3.6.1.2.1.25.2.3.1.5.${index}'],
+        ['block_size','Storage Device Block Size','snmp_counter','1.3.6.1.2.1.25.2.3.1.4.${index}'],
         ['bgp_peer_status','BGP Peer Status','snmp_status','1.3.6.1.2.1.15.3.1.2.${remote}|6=up|down'],
         ['cpu_kernel_ticks','CPU Kernel Time','snmp_counter','1.3.6.1.4.1.2021.11.55.0'],
         ['cpu_idle_ticks','CPU Idle Time','snmp_counter','1.3.6.1.4.1.2021.11.53.0'],
@@ -1096,281 +1097,418 @@ poller_sets = [
             ]],
         ]
 
-graph_types = [
-        [u'Traffic', 'Physical Interfaces', '', u'bps', '',
-            [ #DEF
-                ['input', 'input'],
-                ['output', 'output'],
-            ],[ #vnames
-                ['CDEF', 'inputbits', 'input,UN,input,input,IF,8,*'],
-                ['CDEF', 'outputbits', 'output,UN,output,output,IF,8,*'],
-                ['VDEF', 'inputmax', 'inputbits,MAXIMUM'],
-                ['VDEF', 'inputavg', 'inputbits,AVERAGE'],
-                ['VDEF', 'inputlast', 'inputbits,LAST'],
-                ['VDEF', 'outputmax', 'outputbits,MAXIMUM'],
-                ['VDEF', 'outputavg', 'outputbits,AVERAGE'],
-                ['VDEF', 'outputlast', 'outputbits,LAST'],
-            ],[ #lines
-                ['HRULE', 'speed', 'CC0000', 'Bandwidth ${speed_units}bps\l'],
-                ['AREA', 'inputbits', '00CC00', ' Inbound\\n', False],
-                ['PRINT', 'inputmax', 'Max: %6.2lf%S'],
-                ['PRINT', 'inputavg', 'Avg: %6.2lf%S'],
-                ['PRINT', 'inputlast', r'Cur: %6.2lf%S\l'],
-                ['LINE', 'outputbits', '0000CC', 2, 'Outbound (bps)'],
-                ['PRINT', 'outputmax', 'Max: %6.2lf%S'],
-                ['PRINT', 'outputavg', 'Avg: %6.2lf%S'],
-                ['PRINT', 'outputlast', 'Cur: %6.2lf%S\l'],
-            ] ],
-        [u'Utilization', 'Physical Interfaces', 'Utilization', u'%', '',
-            [ #DEF
-                ['input', 'input'],
-                ['output', 'output'],
-            ],[ #vnames
-                ['CDEF', 'input_pct', 'input,UN,0,input,IF,800,*,$speed,/'],
-                ['CDEF', 'output_pct', 'output,UN,0,output,IF,800,*,$speed,/'],
-                ['VDEF', 'inputmax', 'input_pct,MAXIMUM'],
-                ['VDEF', 'inputavg', 'input_pct,AVERAGE'],
-                ['VDEF', 'inputlast', 'input_pct,LAST'],
-                ['VDEF', 'outputmax', 'output_pct,MAXIMUM'],
-                ['VDEF', 'outputavg', 'output_pct,AVERAGE'],
-                ['VDEF', 'outputlast', 'output_pct,LAST'],
-            ],[ #lines
-                ['HRULE', '100', 'CC0000', None],
-                ['AREA', 'input_pct', '00CC00', ' Input\\n', False],
-                ['PRINT', 'inputmax', 'Max: %5.1lf%%'],
-                ['PRINT', 'inputavg', 'Avg: %5.1lf%%'],
-                ['PRINT', 'inputlast', r'Cur: %5.1lf%%\l'],
-                ['LINE', 'output_pct', '0000CC', 2, 'Output'],
-                ['PRINT', 'outputmax', 'Max: %5.1lf%%'],
-                ['PRINT', 'outputavg', 'Avg: %5.1lf%%'],
-                ['PRINT', 'outputlast', 'Cur: %5.1lf%%\l'],
-            ] ],
-        [u'Packets', 'Physical Interfaces', '', u'Pps', '',
-            [ #DEF
-                ['input', 'inpackets'],
-                ['output', 'outpackets'],
-            ],[ #vnames
-                ['VDEF', 'inputmax', 'input,MAXIMUM'],
-                ['VDEF', 'inputavg', 'input,AVERAGE'],
-                ['VDEF', 'inputlast', 'input,LAST'],
-                ['VDEF', 'outputmax', 'output,MAXIMUM'],
-                ['VDEF', 'outputavg', 'output,AVERAGE'],
-                ['VDEF', 'outputlast', 'output,LAST'],
-            ],[ #lines
-                ['AREA', 'input', '00CC00', ' Input Packets\n', False],
-                ['PRINT', 'inputmax', 'Max: %6.2lf%S'],
-                ['PRINT', 'inputavg', 'Avg: %6.2lf%S'],
-                ['PRINT', 'inputlast', r'Cur: %6.2lf%S\l'],
-                ['LINE', 'output', '0000CC', 2, 'Output Packets'],
-                ['PRINT', 'outputmax', 'Max: %6.2lf%S'],
-                ['PRINT', 'outputavg', 'Avg: %6.2lf%S'],
-                ['PRINT', 'outputlast', 'Cur: %6.2lf%S\l'],
-            ] ],
-        [u'Packets New', 'Physical Interfaces', '', u'Pps', '',
-            [ #DEF
-                ['inpackets', 'inpackets'],
-                ['outpackets', 'outpackets'],
-                ['inputerrors', 'inputerrors'],
-                ['outputerrors', 'outputerrors'],
-            ],[ #vnames
-                ['CDEF', 'input', 'inpackets,UN,0,inpackets,IF'],
-                ['CDEF', 'output', 'outpackets,UN,0,outpackets,IF'],
-                ['CDEF', 'inputerr', 'inputerrors,UN,0,inputerrors,IF'],
-                ['CDEF', 'outputerr', 'outputerrors,UN,0,outputerrors,IF'],
-                ['CDEF', 'outputrev', 'output,-1,*'],
-                ['CDEF', 'totin', 'input,inputerr,+'],
-                ['CDEF', 'totout', 'output,outputerr,+'],
+# Display Name, Atrribute Type, Title, v Label, extra options
+graph_types = (
+        (u'Traffic', 'Physical Interfaces', '', u'bps', '',
+            ( #DEF
+                ('input', 'input'),
+                ('output', 'output'),
+            ),( #vnames
+                ('CDEF', 'inputbits', 'input,UN,input,input,IF,8,*'),
+                ('CDEF', 'outputbits', 'output,UN,output,output,IF,8,*'),
+                ('VDEF', 'inputmax', 'inputbits,MAXIMUM'),
+                ('VDEF', 'inputavg', 'inputbits,AVERAGE'),
+                ('VDEF', 'inputlast', 'inputbits,LAST'),
+                ('VDEF', 'outputmax', 'outputbits,MAXIMUM'),
+                ('VDEF', 'outputavg', 'outputbits,AVERAGE'),
+                ('VDEF', 'outputlast', 'outputbits,LAST'),
+            ),( #lines
+                ('HRULE', 'speed', 'CC0000', 'Bandwidth ${speed_units}bps\l'),
+                ('AREA', 'inputbits', '00CC00', ' Inbound\\n', False),
+                ('PRINT', 'inputmax', 'Max: %6.2lf%S'),
+                ('PRINT', 'inputavg', 'Avg: %6.2lf%S'),
+                ('PRINT', 'inputlast', r'Cur: %6.2lf%S\l'),
+                ('LINE', 'outputbits', '0000CC', 2, 'Outbound (bps)'),
+                ('PRINT', 'outputmax', 'Max: %6.2lf%S'),
+                ('PRINT', 'outputavg', 'Avg: %6.2lf%S'),
+                ('PRINT', 'outputlast', 'Cur: %6.2lf%S\l'),
+            ) ),
+        (u'Utilization', 'Physical Interfaces', 'Utilization', u'%', '',
+            ( #DEF
+                ('input', 'input'),
+                ('output', 'output'),
+            ),( #vnames
+                ('CDEF', 'input_pct', 'input,UN,0,input,IF,800,*,$speed,/'),
+                ('CDEF', 'output_pct', 'output,UN,0,output,IF,800,*,$speed,/'),
+                ('VDEF', 'inputmax', 'input_pct,MAXIMUM'),
+                ('VDEF', 'inputavg', 'input_pct,AVERAGE'),
+                ('VDEF', 'inputlast', 'input_pct,LAST'),
+                ('VDEF', 'outputmax', 'output_pct,MAXIMUM'),
+                ('VDEF', 'outputavg', 'output_pct,AVERAGE'),
+                ('VDEF', 'outputlast', 'output_pct,LAST'),
+            ),( #lines
+                ('HRULE', '100', 'CC0000', None),
+                ('AREA', 'input_pct', '00CC00', ' Input\\n', False),
+                ('PRINT', 'inputmax', 'Max: %5.1lf%%'),
+                ('PRINT', 'inputavg', 'Avg: %5.1lf%%'),
+                ('PRINT', 'inputlast', r'Cur: %5.1lf%%\l'),
+                ('LINE', 'output_pct', '0000CC', 2, 'Output'),
+                ('PRINT', 'outputmax', 'Max: %5.1lf%%'),
+                ('PRINT', 'outputavg', 'Avg: %5.1lf%%'),
+                ('PRINT', 'outputlast', 'Cur: %5.1lf%%\l'),
+            ) ),
+        (u'Packets', 'Physical Interfaces', '', u'Pps', '',
+            ( #DEF
+                ('input', 'inpackets'),
+                ('output', 'outpackets'),
+            ),( #vnames
+                ('VDEF', 'inputmax', 'input,MAXIMUM'),
+                ('VDEF', 'inputavg', 'input,AVERAGE'),
+                ('VDEF', 'inputlast', 'input,LAST'),
+                ('VDEF', 'outputmax', 'output,MAXIMUM'),
+                ('VDEF', 'outputavg', 'output,AVERAGE'),
+                ('VDEF', 'outputlast', 'output,LAST'),
+            ),( #lines
+                ('AREA', 'input', '00CC00', ' Input Packets\n', False),
+                ('PRINT', 'inputmax', 'Max: %6.2lf%S'),
+                ('PRINT', 'inputavg', 'Avg: %6.2lf%S'),
+                ('PRINT', 'inputlast', r'Cur: %6.2lf%S\l'),
+                ('LINE', 'output', '0000CC', 2, 'Output Packets'),
+                ('PRINT', 'outputmax', 'Max: %6.2lf%S'),
+                ('PRINT', 'outputavg', 'Avg: %6.2lf%S'),
+                ('PRINT', 'outputlast', 'Cur: %6.2lf%S\l'),
+            ) ),
+        (u'Packets New', 'Physical Interfaces', '', u'Pps', '',
+            ( #DEF
+                ('inpackets', 'inpackets'),
+                ('outpackets', 'outpackets'),
+                ('inputerrors', 'inputerrors'),
+                ('outputerrors', 'outputerrors'),
+            ),( #vnames
+                ('CDEF', 'input', 'inpackets,UN,0,inpackets,IF'),
+                ('CDEF', 'output', 'outpackets,UN,0,outpackets,IF'),
+                ('CDEF', 'inputerr', 'inputerrors,UN,0,inputerrors,IF'),
+                ('CDEF', 'outputerr', 'outputerrors,UN,0,outputerrors,IF'),
+                ('CDEF', 'outputrev', 'output,-1,*'),
+                ('CDEF', 'totin', 'input,inputerr,+'),
+                ('CDEF', 'totout', 'output,outputerr,+'),
 
-                ['CDEF', 'inpct1', 'input,100,*,totin,/'],
-                ['CDEF', 'outpct1', 'output,100,*,totout,/'],
+                ('CDEF', 'inpct1', 'input,100,*,totin,/'),
+                ('CDEF', 'outpct1', 'output,100,*,totout,/'),
 
-                ['CDEF', 'inpct', 'inpct1,UN,100,inpct1,IF'],
-                ['CDEF', 'outpct', 'outpct1,UN,100,outpct1,IF'],
+                ('CDEF', 'inpct', 'inpct1,UN,100,inpct1,IF'),
+                ('CDEF', 'outpct', 'outpct1,UN,100,outpct1,IF'),
 
-                ['CDEF', 'ierrpct1', 'inputerr,100,*,totin,/,0.01,100,LIMIT'],
-                ['CDEF', 'oerrpct1', 'outputerr,100,*,totout,/,0.01,100,LIMIT'],
+                ('CDEF', 'ierrpct1', 'inputerr,100,*,totin,/,0.01,100,LIMIT'),
+                ('CDEF', 'oerrpct1', 'outputerr,100,*,totout,/,0.01,100,LIMIT'),
 
-                ['CDEF', 'ierrpct', 'ierrpct1,UN,0,ierrpct1,IF'],
-                ['CDEF', 'oerrpct', 'oerrpct1,UN,0,oerrpct1,IF'],
+                ('CDEF', 'ierrpct', 'ierrpct1,UN,0,ierrpct1,IF'),
+                ('CDEF', 'oerrpct', 'oerrpct1,UN,0,oerrpct1,IF'),
 
-                ['VDEF', 'inputmax', 'input,MAXIMUM'],
-                ['VDEF', 'inputavg', 'input,AVERAGE'],
-                ['VDEF', 'inputlast', 'input,LAST'],
-                ['VDEF', 'inpctmax', 'inpct,MAXIMUM'],
-                ['VDEF', 'inpctavg', 'inpct,AVERAGE'],
-                ['VDEF', 'inpctlast', 'inpct,LAST'],
+                ('VDEF', 'inputmax', 'input,MAXIMUM'),
+                ('VDEF', 'inputavg', 'input,AVERAGE'),
+                ('VDEF', 'inputlast', 'input,LAST'),
+                ('VDEF', 'inpctmax', 'inpct,MAXIMUM'),
+                ('VDEF', 'inpctavg', 'inpct,AVERAGE'),
+                ('VDEF', 'inpctlast', 'inpct,LAST'),
 
-                ['VDEF', 'inerrmax', 'inputerr,MAXIMUM'],
-                ['VDEF', 'inerravg', 'inputerr,AVERAGE'],
-                ['VDEF', 'inerrlast', 'inputerr,LAST'],
-                ['VDEF', 'inerrpctmax', 'ierrpct,MAXIMUM'],
-                ['VDEF', 'inerrpctavg', 'ierrpct,AVERAGE'],
-                ['VDEF', 'inerrpctlast', 'ierrpct,LAST'],
+                ('VDEF', 'inerrmax', 'inputerr,MAXIMUM'),
+                ('VDEF', 'inerravg', 'inputerr,AVERAGE'),
+                ('VDEF', 'inerrlast', 'inputerr,LAST'),
+                ('VDEF', 'inerrpctmax', 'ierrpct,MAXIMUM'),
+                ('VDEF', 'inerrpctavg', 'ierrpct,AVERAGE'),
+                ('VDEF', 'inerrpctlast', 'ierrpct,LAST'),
 
-                ['VDEF', 'outputmax', 'output,MAXIMUM'],
-                ['VDEF', 'outputavg', 'output,AVERAGE'],
-                ['VDEF', 'outputlast', 'output,LAST'],
-                ['VDEF', 'outpctmax', 'outpct,MAXIMUM'],
-                ['VDEF', 'outpctavg', 'outpct,AVERAGE'],
-                ['VDEF', 'outpctlast', 'outpct,LAST'],
+                ('VDEF', 'outputmax', 'output,MAXIMUM'),
+                ('VDEF', 'outputavg', 'output,AVERAGE'),
+                ('VDEF', 'outputlast', 'output,LAST'),
+                ('VDEF', 'outpctmax', 'outpct,MAXIMUM'),
+                ('VDEF', 'outpctavg', 'outpct,AVERAGE'),
+                ('VDEF', 'outpctlast', 'outpct,LAST'),
 
-                ['VDEF', 'outerrmax', 'outputerr,MAXIMUM'],
-                ['VDEF', 'outerravg', 'outputerr,AVERAGE'],
-                ['VDEF', 'outerrlast', 'outputerr,LAST'],
-                ['VDEF', 'outerrpctmax', 'oerrpct,MAXIMUM'],
-                ['VDEF', 'outerrpctavg', 'oerrpct,AVERAGE'],
-                ['VDEF', 'outerrpctlast', 'oerrpct,LAST'],
-            ],[ #lines
-                ['AREA', 'input', '00CC00', 'Input  Packets\n', False],
-                ['PRINT', 'inputmax', r'%6.2lf%S\g'],
-                ['PRINT', 'inpctmax', '(%5.1lf%%)\g'],
-                ['PRINT', 'inputavg', r'%6.2lf%S\g'],
-                ['PRINT', 'inpctavg', '(%5.1lf%%)\g'],
-                ['PRINT', 'inputlast', r'%6.2lf%S\g'],
-                ['PRINT', 'inpctlast', '(%5.1lf%%)\j'],
-                ['AREA', 'ierrpct', 'FF0000', r'Input  Errors \g', True],
-                ['PRINT', 'inerrmax', r'%6.2lf%S\g'],
-                ['PRINT', 'inerrpctmax', '(%5.1lf%%)\g'],
-                ['PRINT', 'inerravg', r'%6.2lf%S\g'],
-                ['PRINT', 'inerrpctavg', '(%5.1lf%%)\g'],
-                ['PRINT', 'inerrlast', r'%6.2lf%S\g'],
-                ['PRINT', 'inerrpctlast', '(%5.1lf%%)\j'],
+                ('VDEF', 'outerrmax', 'outputerr,MAXIMUM'),
+                ('VDEF', 'outerravg', 'outputerr,AVERAGE'),
+                ('VDEF', 'outerrlast', 'outputerr,LAST'),
+                ('VDEF', 'outerrpctmax', 'oerrpct,MAXIMUM'),
+                ('VDEF', 'outerrpctavg', 'oerrpct,AVERAGE'),
+                ('VDEF', 'outerrpctlast', 'oerrpct,LAST'),
+            ),( #lines
+                ('AREA', 'input', '00CC00', 'Input  Packets\n', False),
+                ('PRINT', 'inputmax', r'%6.2lf%S\g'),
+                ('PRINT', 'inpctmax', '(%5.1lf%%)\g'),
+                ('PRINT', 'inputavg', r'%6.2lf%S\g'),
+                ('PRINT', 'inpctavg', '(%5.1lf%%)\g'),
+                ('PRINT', 'inputlast', r'%6.2lf%S\g'),
+                ('PRINT', 'inpctlast', '(%5.1lf%%)\j'),
+                ('AREA', 'ierrpct', 'FF0000', r'Input  Errors \g', True),
+                ('PRINT', 'inerrmax', r'%6.2lf%S\g'),
+                ('PRINT', 'inerrpctmax', '(%5.1lf%%)\g'),
+                ('PRINT', 'inerravg', r'%6.2lf%S\g'),
+                ('PRINT', 'inerrpctavg', '(%5.1lf%%)\g'),
+                ('PRINT', 'inerrlast', r'%6.2lf%S\g'),
+                ('PRINT', 'inerrpctlast', '(%5.1lf%%)\j'),
 
-                ['AREA', 'outputrev', '0000FF', 'Output Packets\n', False],
-                ['PRINT', 'outputmax', '%6.2lf%S\g'],
-                ['PRINT', 'outpctmax', '(%5.1lf%%)\g'],
-                ['PRINT', 'outputavg', '%6.2lf%S\g'],
-                ['PRINT', 'outpctavg', '(%5.1lf%%)\g'],
-                ['PRINT', 'outputlast', '%6.2lf%S\g'],
-                ['PRINT', 'outpctlast', '(%5.1lf%%)\j'],
-                ['AREA', 'oerrpct', 'AA0000', 'Output Errors \g', True],
-                ['PRINT', 'outerrmax', '%6.2lf%S\g'],
-                ['PRINT', 'outerrpctmax', '(%5.1lf%%)\g'],
-                ['PRINT', 'outerravg', '%6.2lf%S\g'],
-                ['PRINT', 'outerrpctavg', '(%5.1lf%%)\g'],
-                ['PRINT', 'outerrlast', '%6.2lf%S\g'],
-                ['PRINT', 'outerrpctlast', '(%5.1lf%%)\j'],
+                ('AREA', 'outputrev', '0000FF', 'Output Packets\n', False),
+                ('PRINT', 'outputmax', '%6.2lf%S\g'),
+                ('PRINT', 'outpctmax', '(%5.1lf%%)\g'),
+                ('PRINT', 'outputavg', '%6.2lf%S\g'),
+                ('PRINT', 'outpctavg', '(%5.1lf%%)\g'),
+                ('PRINT', 'outputlast', '%6.2lf%S\g'),
+                ('PRINT', 'outpctlast', '(%5.1lf%%)\j'),
+                ('AREA', 'oerrpct', 'AA0000', 'Output Errors \g', True),
+                ('PRINT', 'outerrmax', '%6.2lf%S\g'),
+                ('PRINT', 'outerrpctmax', '(%5.1lf%%)\g'),
+                ('PRINT', 'outerravg', '%6.2lf%S\g'),
+                ('PRINT', 'outerrpctavg', '(%5.1lf%%)\g'),
+                ('PRINT', 'outerrlast', '%6.2lf%S\g'),
+                ('PRINT', 'outerrpctlast', '(%5.1lf%%)\j'),
 
-            ] ],
-        [u'Errors', 'Physical Interfaces', '', u'Errors/sec', '',
-            [ #DEF
-                ['input', 'inputerrors'],
-                ['output', 'outputerrors'],
-            ],[ #vnames
-                ['VDEF', 'inputavg', 'input,AVERAGE'],
-                ['VDEF', 'inputlast', 'input,LAST'],
-                ['VDEF', 'outputavg', 'output,AVERAGE'],
-                ['VDEF', 'outputlast', 'output,LAST'],
-            ],[ #lines
-                ['AREA', 'input', '00CC00', ' Input Errors\\n', False],
-                ['PRINT', 'inputavg', 'Input Errors :- Average: %4.0lf %sEps'],
-                ['PRINT', 'inputlast', r'Current: %4.0lf %sEps\l'],
-                ['LINE', 'output', '0000CC', 2, 'Output Errors'],
-                ['PRINT', 'outputavg', 'Output Errors :- Average: %4.0lf %sEps'],
-                ['PRINT', 'outputlast', 'Current: %4.0lf %sEps\l'],
-            ] ],
-        
-            
-        [u'Hits', 'Apache', '', u'Hits', '',
-            [ #DEF
-                ['tac', 'tac'],
-            ],[ #vnames
-                ['VDEF', 'tacmax', 'tac,MAXIMUM'],
-                ['VDEF', 'tacavg', 'tac,AVERAGE'],
-                ['VDEF', 'taclast', 'tac,LAST'],
-            ],[ #lines
-                ['LINE', 'tac', '0000CC', 2, 'Hits per Second'],
-                ['PRINT', 'tacmax', 'Maximum: %8.0lf %sHits/s'],
-                ['PRINT', 'tacavg', 'Average: %8.0lf %sHits/s'],
-                ['PRINT', 'taclast', 'Current: %8.0lf %sHits/s\l'],
-            ]
-        ],
-        [u'Throughput', 'Apache', '', u'Bytes/Sec', '',
-            [ #DEF
-                ['tkb', 'tkb'],
-            ],[ #vnames
-                ['CDEF', 'bytes', 'tkb,1000,*'],
-                ['VDEF', 'bytesmax', 'bytes,MAXIMUM'],
-                ['VDEF', 'bytesavg', 'bytes,AVERAGE'],
-                ['VDEF', 'byteslast', 'bytes,LAST'],
-            ],[ #lines
-                ['LINE', 'bytes', '0000CC', 2, ''],
-                ['PRINT', 'bytesmax', 'Maximum: %8.0lf %sBps'],
-                ['PRINT', 'bytesavg', 'Average: %8.0lf %sBps'],
-                ['PRINT', 'byteslast', 'Current: %8.0lf %sBps\l'],
-            ]
-        ],
-        [u'CPU Load', 'Apache', '', u'Bytes/Sec', '',
-            [ #DEF
-                ['up', 'up'],
-                ['load', 'cplo'],
-            ],[ #vnames
-                ['VDEF', 'loadmax', 'load,MAXIMUM'],
-                ['VDEF', 'loadavg', 'load,AVERAGE'],
-                ['VDEF', 'loadlast', 'load,LAST'],
-                ['VDEF', 'uplast', 'up,LAST'],
-            ],[ #lines
-                ['LINE', 'load', '0000CC', 2, ''],
-                ['PRINT', 'uplast', 'Uptime  -  %.0lf %s seconds\l'],
-                ['PRINT', 'loadmax', 'CPU Load - Maximum: %.3lf'],
-                ['PRINT', 'loadavg', 'Average: %.3lf'],
-                ['PRINT', 'loadlast', 'Current: %.3lf\l'],
-            ]
-        ],
-        [u'Bytes/Req', 'Apache', '', u'Bytes/Req', '',
-            [ #DEF
-                ['bpr', 'bpr'],
-            ],[ #vnames
-                ['VDEF', 'bprmax', 'bpr,MAXIMUM'],
-                ['VDEF', 'bpravg', 'bpr,AVERAGE'],
-                ['VDEF', 'bprlast', 'bpr,LAST'],
-            ],[ #lines
-                ['LINE', 'bpr', '0000CC', 2, 'Bytes/Request'],
-                ['PRINT', 'bprmax', 'Maximum: %.0lf %s'],
-                ['PRINT', 'bpravg', 'Average: %.0lf %s'],
-                ['PRINT', 'bprlast', 'Current: %.0lf %s\l'],
-            ]
-        ],
-        [u'Workers', 'Apache', '', u'Workers', 'lower-limit=0',
-            [ #DEF
-                ['bw', 'bw'],
-                ['iw', 'iw'],
-            ],[ #vnames
-                ['VDEF', 'bwmax', 'bw,MAXIMUM'],
-                ['VDEF', 'bwavg', 'bw,AVERAGE'],
-                ['VDEF', 'bwlast', 'bw,LAST'],
-                ['VDEF', 'iwmax', 'iw,MAXIMUM'],
-                ['VDEF', 'iwavg', 'iw,AVERAGE'],
-                ['VDEF', 'iwlast', 'iw,LAST'],
-            ],[ #lines
-                ['HRULE', '0', '000000', ''],
-                ['AREA', 'bw', 'DD2200', r'Busy Workers\l'],
-                ['AREA', 'iw', '00CC00', 'Idle Workers\l', True],
-                ['PRINT', 'bwmax', r'Workers (busy:idle) - Maximum: %.0lf:\g'],
-                ['PRINT', 'iwmax', r'%.0lf'],
-                ['PRINT', 'bwavg', r'Average: %.0lf:\g'],
-                ['PRINT', 'iwavg', r'%.0lf'],
-                ['PRINT', 'bwlast', r'Current: %.0lf:\g'],
-                ['PRINT', 'iwlast', r'%.0lf'],
-            ]
-        ],
-        
-        [u'Sensor Value', 'Sensors', '$measure', u'$unit', '',
-            [ #DEF
-                ['value', 'value'],
-            ],[ #vnames
-                ['CDEF', 'valk', 'value,${multiplier},*',],
-                ['VDEF', 'vmax', 'valk,MAXIMUM'],
-                ['VDEF', 'vavg', 'valk,AVERAGE'],
-                ['VDEF', 'vlast', 'valk,LAST'],
-            ],[ #lines
-                ['LINE', 'valk', '0000ff', 2, r'${measure}\l'],
-                ['PRINT', 'vmax', r'$measure - Maximum: %.2lf %S${units}'],
-                ['PRINT', 'vavg', r'Average: %.2lf %S${units}'],
-                ['PRINT', 'vlast', r'Current: %.2lf %S${units}\l'],
-            ]
-        ],
-    ] # end of graph types
+            ) ),
+        (u'Errors', 'Physical Interfaces', '', u'Errors/sec', '',
+            ( #DEF
+                ('input', 'inputerrors'),
+                ('output', 'outputerrors'),
+            ),( #vnames
+                ('VDEF', 'inputavg', 'input,AVERAGE'),
+                ('VDEF', 'inputlast', 'input,LAST'),
+                ('VDEF', 'outputavg', 'output,AVERAGE'),
+                ('VDEF', 'outputlast', 'output,LAST'),
+            ),( #lines
+                ('AREA', 'input', '00CC00', ' Input Errors\\n', False),
+                ('PRINT', 'inputavg', 'Input Errors :- Average: %4.0lf %sEps'),
+                ('PRINT', 'inputlast', r'Current: %4.0lf %sEps\l'),
+                ('LINE', 'output', '0000CC', 2, 'Output Errors'),
+                ('PRINT', 'outputavg', 'Output Errors :- Average: %4.0lf %sEps'),
+                ('PRINT', 'outputlast', 'Current: %4.0lf %sEps\l'),
+            ) ),
+
+        (u'Hits', 'Apache', '', u'Hits', '',
+            ( #DEF
+                ('tac', 'tac'),
+            ),( #vnames
+                ('VDEF', 'tacmax', 'tac,MAXIMUM'),
+                ('VDEF', 'tacavg', 'tac,AVERAGE'),
+                ('VDEF', 'taclast', 'tac,LAST'),
+            ),( #lines
+                ('LINE', 'tac', '0000CC', 2, 'Hits per Second'),
+                ('PRINT', 'tacmax', 'Maximum: %8.0lf %sHits/s'),
+                ('PRINT', 'tacavg', 'Average: %8.0lf %sHits/s'),
+                ('PRINT', 'taclast', 'Current: %8.0lf %sHits/s\l'),
+            )
+        ),
+        (u'Throughput', 'Apache', '', u'Bytes/Sec', '',
+            ( #DEF
+                ('tkb', 'tkb'),
+            ),( #vnames
+                ('CDEF', 'bytes', 'tkb,1000,*'),
+                ('VDEF', 'bytesmax', 'bytes,MAXIMUM'),
+                ('VDEF', 'bytesavg', 'bytes,AVERAGE'),
+                ('VDEF', 'byteslast', 'bytes,LAST'),
+            ),( #lines
+                ('LINE', 'bytes', '0000CC', 2, ''),
+                ('PRINT', 'bytesmax', 'Maximum: %8.0lf %sBps'),
+                ('PRINT', 'bytesavg', 'Average: %8.0lf %sBps'),
+                ('PRINT', 'byteslast', 'Current: %8.0lf %sBps\l'),
+            )
+        ),
+        (u'CPU Load', 'Apache', '', u'Bytes/Sec', '',
+            ( #DEF
+                ('up', 'up'),
+                ('load', 'cplo'),
+            ),( #vnames
+                ('VDEF', 'loadmax', 'load,MAXIMUM'),
+                ('VDEF', 'loadavg', 'load,AVERAGE'),
+                ('VDEF', 'loadlast', 'load,LAST'),
+                ('VDEF', 'uplast', 'up,LAST'),
+            ),( #lines
+                ('LINE', 'load', '0000CC', 2, ''),
+                ('PRINT', 'uplast', 'Uptime  -  %.0lf %s seconds\l'),
+                ('PRINT', 'loadmax', 'CPU Load - Maximum: %.3lf'),
+                ('PRINT', 'loadavg', 'Average: %.3lf'),
+                ('PRINT', 'loadlast', 'Current: %.3lf\l'),
+            )
+        ),
+        (u'Bytes/Req', 'Apache', '', u'Bytes/Req', '',
+            ( #DEF
+                ('bpr', 'bpr'),
+            ),( #vnames
+                ('VDEF', 'bprmax', 'bpr,MAXIMUM'),
+                ('VDEF', 'bpravg', 'bpr,AVERAGE'),
+                ('VDEF', 'bprlast', 'bpr,LAST'),
+            ),( #lines
+                ('LINE', 'bpr', '0000CC', 2, 'Bytes/Request'),
+                ('PRINT', 'bprmax', 'Maximum: %.0lf %s'),
+                ('PRINT', 'bpravg', 'Average: %.0lf %s'),
+                ('PRINT', 'bprlast', 'Current: %.0lf %s\l'),
+            )
+        ),
+        (u'Workers', 'Apache', '', u'Workers', 'lower-limit=0',
+            ( #DEF
+                ('bw', 'bw'),
+                ('iw', 'iw'),
+            ),( #vnames
+                ('VDEF', 'bwmax', 'bw,MAXIMUM'),
+                ('VDEF', 'bwavg', 'bw,AVERAGE'),
+                ('VDEF', 'bwlast', 'bw,LAST'),
+                ('VDEF', 'iwmax', 'iw,MAXIMUM'),
+                ('VDEF', 'iwavg', 'iw,AVERAGE'),
+                ('VDEF', 'iwlast', 'iw,LAST'),
+            ),( #lines
+                ('HRULE', '0', '000000', ''),
+                ('AREA', 'bw', 'DD2200', r'Busy Workers\l'),
+                ('AREA', 'iw', '00CC00', 'Idle Workers\l', True),
+                ('PRINT', 'bwmax', r'Workers (busy:idle) - Maximum: %.0lf:\g'),
+                ('PRINT', 'iwmax', r'%.0lf'),
+                ('PRINT', 'bwavg', r'Average: %.0lf:\g'),
+                ('PRINT', 'iwavg', r'%.0lf'),
+                ('PRINT', 'bwlast', r'Current: %.0lf:\g'),
+                ('PRINT', 'iwlast', r'%.0lf'),
+            )
+        ),
+
+        (u'Sensor Value', 'Sensors', '$measure', u'$unit', '',
+            ( #DEF
+                ('value', 'value'),
+            ),( #vnames
+                ('CDEF', 'valk', 'value,${multiplier},*',),
+                ('VDEF', 'vmax', 'valk,MAXIMUM'),
+                ('VDEF', 'vavg', 'valk,AVERAGE'),
+                ('VDEF', 'vlast', 'valk,LAST'),
+            ),( #lines
+                ('LINE', 'valk', '0000ff', 2, r'${measure}\l'),
+                ('PRINT', 'vmax', r'$measure - Maximum: %.2lf %S${units}'),
+                ('PRINT', 'vavg', r'Average: %.2lf %S${units}'),
+                ('PRINT', 'vlast', r'Current: %.2lf %S${units}\l'),
+            )
+        ),
+        # UPS Attribute Types
+        (u'Battery Temperature', 'UPS', '', 'Temperature', '',
+         ( #DEF
+          ('temperature', 'temperature'),
+         ),( #vnames
+            ('VDEF', 'tmax', 'temperature,MAXIMUM'),
+            ('VDEF', 'tavg', 'temperature,AVERAGE'),
+            ('VDEF', 'tlast', 'temperature,LAST'),
+         ),( #lines
+            ('AREA', 'temperature', 'ff0000', r'Degrees\l'),
+            ('PRINT', 'tmax', r'Maximum: %.2lf'),
+            ('PRINT', 'tavg', r'Average: %.2lf'),
+            ('PRINT', 'tlast', r'Current: %.2lf\l'),
+           )),
+        (u'Time Remaining', 'UPS', '', 'Time Remaining', '',
+         ( #DEF
+          ('minutes_remaining', 'minutes_remaining'),
+         ),( #vnames
+            ('VDEF', 'mmax', 'minutes_remaining,MAXIMUM'),
+            ('VDEF', 'mavg', 'minutes_remaining,AVERAGE'),
+            ('VDEF', 'mlast', 'minutes_remaining,LAST'),
+            ('VDEF', 'hlast', 'hlast,60,/'),
+         ),( #lines
+            ('AREA', 'minutes_remaining', '00DD00', r'Time Remaining\l'),
+            ('PRINT', 'mmax', r'Maximum: %3.0lf'),
+            ('PRINT', 'mavg', r'Average: %3.0lf'),
+            ('PRINT', 'mlast', r'Current: %3.0lf'),
+            ('PRINT', 'hlast', r'(%3.2lf Hours)\l'),
+           )),
+        (u'Charge Remaining', 'UPS', '', 'Charge Remaining', '',
+         ( #DEF
+          ('charge_remaining', 'charge_remaining'),
+         ),( #vnames
+            ('VDEF', 'cmax', 'charge_remaining,MAXIMUM'),
+            ('VDEF', 'cavg', 'charge_remaining,AVERAGE'),
+            ('VDEF', 'clast', 'charge_remaining,LAST'),
+         ),( #lines
+            ('AREA', 'charge_remaining', '00DD00', r'Charge Remaining\l'),
+            ('PRINT', 'cmax', r'Maximum: %3.0lf %%'),
+            ('PRINT', 'cavg', r'Average: %3.0lf %%'),
+            ('PRINT', 'clast', r'Current: %3.0lf %%\l'),
+           )),
+
+        # Storage Attribute Type
+        (u'Storage Blocks', 'Storage', '', 'Blocks', '',
+         ( #DEF
+          ('total_blocks', 'total_blocks'),
+          ('block_size', 'block_size'),
+          ('used_blocks', 'used_blocks'),
+         ),( #vnames
+            ('CDEF', 'free_blocks', 'total_blocks,used_blocks,-'),
+            ('CDEF', 'used_pct', 'used_blocks,100,*,total_blocks,/'),
+            ('CDEF', 'free_pct', 'total_blocks,used_blocks,-,100,*,total_blocks,/'),
+
+            ('VDEF', 'total_max', 'total_blocks,MAXIMUM'),
+
+            ('VDEF', 'used_max', 'used_blocks,MAXIMUM'),
+            ('VDEF', 'used_avg', 'used_blocks,AVERAGE'),
+            ('VDEF', 'used_last', 'used_blocks,LAST'),
+
+            ('VDEF', 'used_max_p', 'used_pct,MAXIMUM'),
+            ('VDEF', 'used_avg_p', 'used_pct,AVERAGE'),
+            ('VDEF', 'used_last_p', 'used_pct,LAST'),
+
+            ('VDEF', 'free_max', 'free_blocks,MAXIMUM'),
+            ('VDEF', 'free_avg', 'free_blocks,AVERAGE'),
+            ('VDEF', 'free_last', 'free_blocks,LAST'),
+
+            ('VDEF', 'free_max_p', 'free_pct,MAXIMUM'),
+            ('VDEF', 'free_avg_p', 'free_pct,AVERAGE'),
+            ('VDEF', 'free_last_p', 'free_pct,LAST'),
+         ),( #lines
+            ('AREA', 'used_blocks', 'FF0000', r'Used Blocks\l'),
+            ('PRINT', 'used_max', r'Maximum: %.0lf'),
+            ('PRINT', 'used_max_p', r'(%3.0lf %%)'),
+            ('PRINT', 'used_avg', r'Average: %.0lf'),
+            ('PRINT', 'used_avg_p', r'(%3.0lf %%)'),
+            ('PRINT', 'used_last', r'Current: %.0lf'),
+            ('PRINT', 'used_last_p', r'(%3.0lf %%)\l'),
+
+            ('AREA', 'free_blocks', '00FF00', r'Free Blocks\l', True),
+            ('PRINT', 'free_max', r'Maximum: %.0lf'),
+            ('PRINT', 'free_max_p', r'(%3.0lf %%)'),
+            ('PRINT', 'free_avg', r'Average: %.0lf'),
+            ('PRINT', 'free_avg_p', r'(%3.0lf %%)'),
+            ('PRINT', 'free_last', r'Current: %.0lf'),
+            ('PRINT', 'free_last_p', r'(%3.0lf %%)\l'),
+           )),
+
+        (u'Storage Bytes', 'Storage', '', 'Bytes', '',
+         ( #DEF
+          ('total_blocks', 'total_blocks'),
+          ('block_size', 'block_size'),
+          ('used_blocks', 'used_blocks'),
+         ),( #vnames
+            ('CDEF', 'total_bytes', 'total_blocks,block_size,*'),
+            ('CDEF', 'used_bytes', 'used_blocks,block_size,*'),
+            ('CDEF', 'free_bytes', 'total_blocks,used_blocks,-,block_size,*'),
+            ('CDEF', 'used_pct', 'used_blocks,100,*,total_blocks,/'),
+            ('CDEF', 'free_pct', 'total_blocks,used_blocks,-,100,*,total_blocks,/'),
+
+            ('VDEF', 'total_max', 'total_bytes,MAXIMUM'),
+
+            ('VDEF', 'used_max', 'used_bytes,MAXIMUM'),
+            ('VDEF', 'used_avg', 'used_bytes,AVERAGE'),
+            ('VDEF', 'used_last', 'used_bytes,LAST'),
+
+            ('VDEF', 'used_max_p', 'used_pct,MAXIMUM'),
+            ('VDEF', 'used_avg_p', 'used_pct,AVERAGE'),
+            ('VDEF', 'used_last_p', 'used_pct,LAST'),
+
+            ('VDEF', 'free_max', 'free_blocks,MAXIMUM'),
+            ('VDEF', 'free_avg', 'free_blocks,AVERAGE'),
+            ('VDEF', 'free_last', 'free_blocks,LAST'),
+
+            ('VDEF', 'free_max_p', 'free_pct,MAXIMUM'),
+            ('VDEF', 'free_avg_p', 'free_pct,AVERAGE'),
+            ('VDEF', 'free_last_p', 'free_pct,LAST'),
+         ),( #lines
+            ('AREA', 'used_bytes', 'FF0000', r'Used Bytes\l'),
+            ('PRINT', 'used_max', r'Maximum: %6.2lf %sB'),
+            ('PRINT', 'used_max_p', r'(%3.0lf %%)'),
+            ('PRINT', 'used_avg', r'Average: %6.2lf %sB'),
+            ('PRINT', 'used_avg_p', r'(%3.0lf %%)'),
+            ('PRINT', 'used_last', r'Current: %6.2lf %sB'),
+            ('PRINT', 'used_last_p', r'(%3.0lf %%)\l'),
+
+            ('AREA', 'free_bytes', '00FF00', r'Free Bytes\l', True),
+            ('PRINT', 'free_max', r'Maximum: %6.2lf %sB'),
+            ('PRINT', 'free_max_p', r'(%3.0lf %%)'),
+            ('PRINT', 'free_avg', r'Average: %6.2lf %sB'),
+            ('PRINT', 'free_avg_p', r'(%3.0lf %%)'),
+            ('PRINT', 'free_last', r'Current: %6.2lf %sB'),
+            ('PRINT', 'free_last_p', r'(%3.0lf %%)\l'),
+           )),
+
+
+    ) # end of graph types
 
 triggers = (
         (
@@ -1750,7 +1888,11 @@ snmp_enterprises = (
 
         )
 
-
+snmp_communities = (
+    (u'None', '', '', ''),
+    (u'v1 Default', ['1', 'public'], '', ['1', 'public']),
+    (u'v2c Default', ['2', 'public'], '', ['2', 'public']),
+)
 trap_matches = (
         (0, 'ifTable Link Down', '1.3.6.1.6.3.1.1.5.3', 'match_index_state', False, '1.3.6.1.2.1.2.2.1.1.5|down', u'Alarm Verify Operational'),
         (0, 'ifTable Link Up', '1.3.6.1.6.3.1.1.5.4', 'match_index_state', False, '1.3.6.1.2.1.2.2.1.1.5|down', u'Alarm Verify Operational'),

@@ -55,9 +55,6 @@ def json_query(qry, colnames, page, rows, sidx, sord, _search, searchOper, searc
     result_count = qry.count()
     offset = (page-1) * rows
     qry = qry.offset(offset).limit(rows)
-    if sidx is not None:
-        pass
-    print 'sort',sidx,sord
     return result_count, qry
 
 
