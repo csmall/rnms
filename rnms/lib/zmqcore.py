@@ -93,11 +93,15 @@ class ZmqCore(object):
 
         for sock,event in events.items():
             if type(sock) == int:
-                obj =  self.socket_map[sock]
-                if event & zmq.POLLIN:
-                    obj.handle_read_event()
-                if event & zmq.POLLOUT:
-                    obj.handle_write_event()
+                try:
+                    obj =  self.socket_map[sock]
+                except KeyError:
+                    pass
+                else:
+                    if event & zmq.POLLIN:
+                        obj.handle_read_event()
+                    if event & zmq.POLLOUT:
+                        obj.handle_write_event()
             else:
                 cb_func = self.zmq_map[sock]
                 if event == zmq.POLLIN:
@@ -111,6 +115,7 @@ class Dispatcher(asyncore.dispatcher,object):
         asyncore.dispatcher.__init__(self,map=zmq_core.socket_map)
 
     def close(self):
+        asyncore.dispatcher.close(self)
         self.zmq_core.unregister_sock(self.socket)
 
 #class iDispatcher(object):
