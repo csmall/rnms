@@ -12,10 +12,7 @@
   <div class="span6">
 ${gw.display() | n}
   </div>
-%if loop.odd:
+%if loop.odd or loop.last and loop.even:
 </div>
-%endif
-%if loop.last:
-${loop.cycle('</div>', '')}
 %endif
 %endfor

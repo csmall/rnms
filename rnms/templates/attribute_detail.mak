@@ -21,6 +21,11 @@ Rosenberg NMS: Attribute ${attribute.display_name}
   <div class="span6">
     ${detailsbox.display(text=capture(self.attribute_details)) | n }
   </div>
+%if graphbox is not None:
+	<div class="span6"><a href="${tg.url('/graphs/',{'a':attribute.id})}">
+    ${graphbox.display() | n }
+  </a></div>
+%endif
 </div>
 <div class="row">
   <div class="span12">

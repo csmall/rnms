@@ -33,7 +33,7 @@ class LoggingClient(object):
 
     def __init__(self, context):
         self.socket = context.socket(zmq.PUSH)
-        self.socket.connect(zmqmessage.LOGGER_CLIENT)
+        self.socket.connect(zmqmessage.LOGGER_SOCKET)
 
     def critical(self,*args):
         self.send(logging.CRITICAL, *args)
@@ -66,7 +66,7 @@ class LoggingTask(threading.Thread):
         logger = logging.getLogger('rnms')
         context = zmq.Context()
         socket = context.socket(zmq.PULL)
-        socket.bind(zmqmessage.LOGGER_SERVER)
+        socket.bind(zmqmessage.LOGGER_SOCKET)
         poller = zmq.Poller()
         poller.register(socket, zmq.POLLIN)
         logger.info('Logging Worker Started log level {}'.format(logging.getLevelName(logger.getEffectiveLevel())))

@@ -108,7 +108,7 @@ class GraphType(DeclarativeBase):
                 '--full-size-mode',
                 #'-t', str(attribute.host.display_name + ' - ' + attribute.display_name),
                 ]
-        for extra_option in self.extra_options.split('|'):
+        for extra_option in self.extra_options.split(' '):
             if extra_option == 'rigid':
                 graph_options.append('--rigid')
             else:
@@ -136,7 +136,14 @@ class GraphType(DeclarativeBase):
             graph_options.extend(('-v', str(fill_fields(self.vertical_label,attribute=attribute))))
 
         return graph_options
-                
+
+    def title(self, attribute):
+        """ Textual title for this graph and attribute """
+        return '{} {} - {}'.format(
+            attribute.host.display_name,
+            attribute.display_name,
+            self.display_name)
+
 
 
 class GraphTypeDef(DeclarativeBase):

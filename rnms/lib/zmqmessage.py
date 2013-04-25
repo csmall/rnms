@@ -28,6 +28,11 @@ RRD_WORKER = 'tcp://localhost:5001'
 CONTROL_SERVER = 'tcp://*:5002'
 CONTROL_CLIENT = 'tcp://localhost:5002'
 
+# The inter-process sockets
+CONTROL_SOCKET = 'inproc://control'
+LOGGER_SOCKET = 'inproc://logger'
+RRDWORKER_SOCKET = 'inproc://rrdworker'
+
 IPC_END     = "\x01" # Sent from main process, the sub-process will die
 INIT        = "\x02" # Child init sent to parent
 CONF        = "\x03" # Parent sending config to child
@@ -55,12 +60,12 @@ def control_server(context):
     control others 
     """
     socket = context.socket(zmq.PUB)
-    socket.bind(CONTROL_SERVER)
+    socket.bind(CONTROL_SOCKET)
     return socket
 
 def control_client(context):
     """ Control socket for clients to listen on and be controlled """
     socket = context.socket(zmq.SUB)
-    socket.connect(CONTROL_CLIENT)
+    socket.connect(CONTROL_SOCKET)
     socket.setsockopt(zmq.SUBSCRIBE, '')
     return socket

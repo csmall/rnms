@@ -81,16 +81,12 @@ class GraphController(BaseController):
             flash('Bad Attribute IDs', 'error')
             return
 
-        try:
-            preset_time = int(kw['graph-layout:col1:graph-form:preset_time'])
-        except KeyError:
-            preset_time = 0
-
         graph_widgets=[]
         if att_ids != [] and gt_ids != []:
             if preset_time is not None and preset_time > 0:
                 end_timestamp = int(time.time())
                 start_timestamp = end_timestamp - preset_time
+                print 'preset'
             else:
                 end_timestamp = GraphDatePicker.time2epoch(end_time)
                 start_timestamp = GraphDatePicker.time2epoch(start_time)
@@ -109,10 +105,7 @@ class GraphController(BaseController):
                 gw.start_time = start_timestamp
                 gw.end_time = end_timestamp
                 gwbox = InfoBox()
-                gwbox.title = '{} {} - {}'.format(
-                    attribute.host.display_name,
-                    attribute.display_name,
-                    graph_type.display_name)
+                gwbox.title = graph_type.title(attribute)
                 gwbox.child_widget = gw
                 graph_widgets.append(gwbox)
 

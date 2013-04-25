@@ -25,7 +25,7 @@ class RRDClient(object):
 
     def __init__(self, context, zmq_core, required_workers=1):
         self.socket = context.socket(zmq.ROUTER)
-        self.socket.bind(zmqmessage.RRD_ROUTER)
+        self.socket.bind(zmqmessage.RRDWORKER_SOCKET)
         zmq_core.register_zmq(self.socket, self.recv)
         self.logger = logging.getLogger('rrdc')
 
@@ -106,7 +106,7 @@ class RRDTask(threading.Thread):
 
         rrdworker = self.context.socket(zmq.REQ)
         zmqcore.set_id(rrdworker)
-        rrdworker.connect(zmqmessage.RRD_WORKER)
+        rrdworker.connect(zmqmessage.RRDWORKER_SOCKET)
         self.logger.info('RRD worker started PID:%d', os.getpid())
 
         while True:

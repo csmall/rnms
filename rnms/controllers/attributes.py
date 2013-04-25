@@ -22,7 +22,7 @@
 from sqlalchemy import func
 
 # turbogears imports
-from tg import expose
+from tg import expose, url
 from tg import validate, flash
 from sqlalchemy import and_
 
@@ -36,6 +36,7 @@ from rnms.lib.jsonquery import json_query
 from rnms.model import DBSession, Attribute, AttributeType, Host
 from rnms.widgets import AttributeSummary, AttributeMap,\
         AttributeStatusPie, AttributesGrid, EventsGrid, InfoBox
+from rnms.widgets.graph import GraphWidget
 
 class AttributesController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
@@ -61,8 +62,22 @@ class AttributesController(BaseController):
         eventsbox.title = 'Events for Attribute'
         eventsbox.child_widget = EventsGrid()
         eventsbox.child_widget.attribute_id = a
+
+        graph_type = attribute.attribute_type.get_graph_type()
+        if graph_type is None:
+            print 'no graph'
+            graphbox = None
+        else:
+            gw = GraphWidget()
+            gw.attribute = attribute
+            gw.graph_type = graph_type
+            graphbox = InfoBox()
+            graphbox.title = graph_type.title(attribute)
+            graphbox.child_widget = gw
+
         return dict(page='attribute', attribute=attribute,
-                    detailsbox=detailsbox, eventsbox=eventsbox)
+                    detailsbox=detailsbox, eventsbox=eventsbox,
+                    graphbox=graphbox)
 
     @expose('rnms.templates.attribute_map')
     @validate(validators={'h':validators.Int()})
@@ -94,13 +109,18 @@ class AttributesController(BaseController):
                                        sord, _search=='true', searchOper,
                                        searchField, searchString)
         records = [{'id': rw.id,
-                    'cell': (rw.host.display_name,
-                             rw.display_name,
-                             rw.attribute_type.display_name,
-                             rw.description(),
-                             rw.oper_state_name(),
-                             rw.admin_state_name()
-                            )} for rw in qry]
+                    'cell': (
+                        '<a href="{}">{}</a>'.format(
+                            url('/hosts/'+str(rw.host.id)),
+                            rw.host.display_name),
+                        '<a href="{}">{}</a>'.format(
+                            url('/attributes/'+str(rw.id)),
+                            rw.display_name),
+                        rw.attribute_type.display_name,
+                        rw.description(),
+                        rw.oper_state_name(),
+                        rw.admin_state_name()
+                    )} for rw in qry]
         return dict(page='attributes', total=result_count,
                     records=result_count, rows=records)
 

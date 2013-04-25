@@ -172,7 +172,9 @@ class GraphWidget(twc.Widget):
         try:
             graphv = rrdtool.graphv('-', graph_options + graph_definition)
         except TypeError as errmsg:
-            flash('RRDTool error: {}'.format(errmsg))
+            flash('RRDTool error: {}'.format(errmsg),'error')
+        except rrdtool.error as errmsg:
+            flash('RRDTool error: {}'.format(errmsg), 'error')
         else:
             self.create_legend(graphv)
             self.img_data = b64encode(graphv['image'])
@@ -180,11 +182,7 @@ class GraphWidget(twc.Widget):
             self.img_height = graphv['image_height']
 
     def prepare(self):
+        print self.start_time,'st'
         self.get_graphv()
-        if self.graph_type.title != '':
-            self.title = ' '.join((self.attribute.host.display_name, self.attribute.display_name, fill_fields(self.graph_type.title, attribute=self.attribute)))
-        else:
-            self.title = ' '.join((self.attribute.host.display_name, self.attribute.display_name, self.graph_type.display_name))
         self.tg_url = url
-
         super(GraphWidget, self).prepare
