@@ -102,6 +102,8 @@ class ZmqCore(object):
                         obj.handle_read_event()
                     if event & zmq.POLLOUT:
                         obj.handle_write_event()
+                    if event & zmq.POLLERR:
+                        obj.handle_close()
             else:
                 cb_func = self.zmq_map[sock]
                 if event == zmq.POLLIN:

@@ -22,6 +22,7 @@ import datetime
 import logging
 import os
 import string
+from errno import errorcode
 
 from rnms.lib import zmqcore
 
@@ -73,6 +74,22 @@ class TCPDispatcher(zmqcore.Dispatcher):
     connect_time = None
     responded = False
 
+    def _set_error(self, err, errmsg=''):
+        """ Set the error for this object, if errmsg is not set try to
+        find it if it a usual one
+        """
+        if errmsg == '':
+            try:
+                errmsg = os.strerror(err)
+            except (ValueError, OverflowError, NameError):
+                try:
+                    errmsg = errorcode[err]
+                except NameError:
+                    errmsg = 'Unknown Error {}'.format(err)
+        self.error = (err, errmsg)
+
+
+
 
     def send_message(self, host, port, send_msg, max_bytes, cb_fun, **kwargs):
         try:
@@ -97,7 +114,7 @@ class TCPDispatcher(zmqcore.Dispatcher):
         self.connect_time = datetime.datetime.now() - self.start_connect
         err = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
         if err != 0:
-            self.error = (err, os.strerror(err))
+            self._set_error(err)
             self._parse_response()
         elif self.max_bytes is None:
             self._parse_response()
@@ -112,8 +129,8 @@ class TCPDispatcher(zmqcore.Dispatcher):
     def handle_read(self):
         try:
             self.inbuf += self.recv(8192)
-        except socket.error as errmsg:
-            self.error = errmsg
+        except socket.error as err:
+            self._set_error(err.errno, err.strerror)
             self._parse_response()
         else:
             if self.max_bytes is not None and self.max_bytes != 0 and len(self.inbuf) > self.max_bytes:
@@ -140,12 +157,12 @@ class TCPDispatcher(zmqcore.Dispatcher):
         now = datetime.datetime.now()
         if self.connecting:
             if (now - self.start_connect).total_seconds() > self.connect_timeout:
-                self.error = (-1, 'timed out connecting to host')
+                self._set_error(-1, 'timed out connecting to host')
                 self._parse_response()
                 return False
         else:
             if (now - self.start_connect).total_seconds() > self.total_timeout:
-                self.error = (-1, 'timed out getting data from host')
+                self._set_error(-1, 'timed out getting data from host')
                 self._parse_response()
                 return False
         return True

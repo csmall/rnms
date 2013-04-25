@@ -10,18 +10,13 @@ functional tests exercise the whole application and its WSGI stack.
 Please read http://pythonpaste.org/webtest/ for more information.
 
 """
-from nose.tools import assert_true, nottest, eq_
+from nose.tools import eq_
+import mock
 
 from rnms.lib.snmp import SNMPEngine
 from rnms.lib import zmqcore
+from rnms.model import Host, SnmpCommunity
 
-class DummyHost(object):
-    mgmt_address = ''
-    community_ro = {}
-    def __init__(self, ip, snmpver, snmpcomm):
-        self.mgmt_address = ip
-        self.community_ro[0] = snmpver
-        self.community_ro[1] = snmpcomm
 
 def my_callback1(value, error, **kwargs):
     if 'obj' not in kwargs:
@@ -39,6 +34,16 @@ class TestSNMP(object):
         self.zmq_core = zmqcore.ZmqCore()
         self.snmp_engine = SNMPEngine(self.zmq_core)
         self.results = []
+        self.test_host = mock.MagicMock(spec_set=Host)
+        self.test_host.snmp_community = mock.MagicMock(spec_set=SnmpCommunity)
+        self.test_host.mgmt_address = '127.0.0.1'
+
+    def set_host(self,snmpver, snmpcomm):
+        self.test_host.snmp_community.readonly = (snmpver, snmpcomm)
+        self.test_host.snmp_community.ro_is_snmpv1 = mock.Mock(
+            return_value=(snmpver == '1'))
+        self.test_host.snmp_community.ro_is_snmpv2 = mock.Mock(
+            return_value=(snmpver == '2'))
 
     def poll(self):
         while (self.snmp_engine.poll()> 0):
@@ -57,61 +62,74 @@ class TestSNMP(object):
 
     def test_v1get(self):
         """ Simple SNMP v1 fetch of SysObjectID """
-        host = DummyHost("127.0.0.1", 1, "public")
-        assert(self.snmp_engine.get_str(host, self.sysobjid_oid, my_callback1, obj=self ))
+        self.set_host('1', 'public')
+        assert(self.snmp_engine.get_str(
+            self.test_host, self.sysobjid_oid, my_callback1, obj=self ))
         self.poll()
         eq_(self.results, [self.expected_sysobjid,])
 
     def test_v2get(self):
         """ Simple SNMP v2 fetch of SysObjectID """
-        host = DummyHost("127.0.0.1", 2, "public")
-        self.snmp_engine.get_str(host, self.sysobjid_oid, my_callback1, obj=self )
+        self.set_host('2', 'public')
+        self.snmp_engine.get_str(
+            self.test_host, self.sysobjid_oid, my_callback1, obj=self )
         self.poll()
         eq_(self.results, [self.expected_sysobjid,])
 
     def test_v1_default_bad_comm(self):
         """ Simple SNMP v1 fetch returns default with bad community"""
-        host = DummyHost("127.0.0.1", 1, "badcomm")
+        self.set_host('1', 'badcomm')
         self.snmp_engine.set_default_timeout(1)
-        self.snmp_engine.get_str(host, self.sysobjid_oid, my_callback1, default="42", obj=self )
+        self.snmp_engine.get_str(
+            self.test_host, self.sysobjid_oid, my_callback1,
+            default="42", obj=self )
         self.poll()
         eq_(self.results, ["42"])
 
     def test_v2_default_bad_comm(self):
         """ Simple SNMP v2c fetch returns default with bad community"""
-        host = DummyHost("127.0.0.1", 2, "badcomm")
+        self.set_host('2', 'badcomm')
         self.snmp_engine.set_default_timeout(1)
-        self.snmp_engine.get_str(host, self.sysobjid_oid, my_callback1, default="42", obj=self )
+        self.snmp_engine.get_str(
+            self.test_host, self.sysobjid_oid, my_callback1,
+            default="42", obj=self )
         self.poll()
         eq_(self.results, ["42"])
 
     def test_v1_default_bad_oid(self):
         """ Simple SNMP v1 fetch returns default with bad OID"""
-        host = DummyHost("127.0.0.1", 1, "public")
+        self.set_host('1', 'public')
         self.snmp_engine.set_default_timeout(1)
-        self.snmp_engine.get_str(host, '1.3.6.42.41.40', my_callback1, default="42", obj=self )
+        self.snmp_engine.get_str(
+            self.test_host, '1.3.6.42.41.40', my_callback1,
+            default="42", obj=self )
         self.poll()
         eq_(self.results, ["42"])
 
     def test_v2_default_bad_oid(self):
         """ Simple SNMP v2c fetch returns default with bad OID"""
-        host = DummyHost("127.0.0.1", 2, "public")
+        self.set_host('2', 'public')
         self.snmp_engine.set_default_timeout(1)
-        self.snmp_engine.get_str(host, '1.3.6.42.41.40', my_callback1, default="42", obj=self )
+        self.snmp_engine.get_str(
+            self.test_host, '1.3.6.42.41.40', my_callback1,
+            default="42", obj=self )
         self.poll()
         eq_(self.results, ["42"])
 
     def test_v1_table(self):
         """ SNMP v1 table fetch - uses ifTable.ifIndex """
-        host = DummyHost("127.0.0.1", 1, "public")
+        self.set_host('1', 'public')
         self.snmp_engine.set_default_timeout(1)
         # Get size of iftable
-        self.snmp_engine.get_int(host, '1.3.6.1.2.1.2.1.0', my_callback1, obj=self)
+        self.snmp_engine.get_int(
+            self.test_host, '1.3.6.1.2.1.2.1.0', my_callback1, obj=self)
         self.poll()
         eq_(len(self.results),1)
         table_length = self.results[0]
 
-        self.snmp_engine.get_table(host, ('1.3.6.1.2.1.2.2.1.1',), my_callback1, table_trim=1, obj=self )
+        self.snmp_engine.get_table(
+            self.test_host, ('1.3.6.1.2.1.2.2.1.1',), my_callback1,
+            table_trim=1, obj=self )
         self.poll()
         eq_(len(self.results),2)
         eq_(len(self.results[1][0]),table_length)
@@ -120,15 +138,16 @@ class TestSNMP(object):
 
     def test_v2_table(self):
         """ SNMP v2 table fetch - uses ifTable.ifIndex """
-        host = DummyHost("127.0.0.1", 2, "public")
-        #self.snmp_engine.set_default_timeout(1)
+        self.set_host('2', 'public')
         # Get size of iftable
-        self.snmp_engine.get_int(host, '1.3.6.1.2.1.2.1.0', my_callback1, obj=self)
+        self.snmp_engine.get_int(
+            self.test_host, '1.3.6.1.2.1.2.1.0', my_callback1, obj=self)
         self.poll()
         eq_(len(self.results),1)
         table_length = self.results[0]
 
-        self.snmp_engine.get_table(host, '1.3.6.1.2.1.2.2.1.1', my_callback1, table_trim=1, obj=self )
+        self.snmp_engine.get_table(
+            self.test_host, '1.3.6.1.2.1.2.2.1.1', my_callback1, table_trim=1, obj=self )
         self.poll()
         eq_(len(self.results),2)
         eq_(len(self.results[1][0]),table_length)

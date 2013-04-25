@@ -190,6 +190,9 @@ class SnmpCommunity(DeclarativeBase):
     readwrite = Column(PickleType, default='')
     trap = Column(PickleType, default='')
 
+    def __init__(self, display_name=None):
+        self.display_name = display_name
+
     @classmethod
     def by_name(cls, name):
         """ Return community with given display_name """

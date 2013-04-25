@@ -3,10 +3,10 @@
 Functional test suite for the TCP client
 
 """
-import socket
 import mock
+import errno
 
-from nose.tools import assert_true, nottest, eq_
+from nose.tools import eq_
 
 from rnms.lib.tcpclient import TCPClient
 from rnms.lib import zmqcore
@@ -43,14 +43,14 @@ class TestTCP(object):
         host = DummyHost('172.16.242.250')
         assert(self.tcp_client.get_tcp(host, 1234, '', 0, self.my_callback, obj=self))
         self.poll()
-        self.assert_cb_error_code(113)
+        self.assert_cb_error_code(errno.EHOSTUNREACH)
 
     def test_connrefused(self):
         """ Connection refused to bad ports """
         host = DummyHost('127.0.0.1')
         assert(self.tcp_client.get_tcp(host, 9999, 'HELO foo', 0, self.my_callback, obj=self))
         self.poll()
-        self.assert_cb_error_code(111)
+        self.assert_cb_error_code(errno.ECONNREFUSED)
 
     def test_okipv4(self):
         """ An open port gets data """
