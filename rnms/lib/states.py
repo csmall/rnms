@@ -17,3 +17,10 @@ STATE_NAMES = {
         STATE_ADMIN_DOWN: 'admin down',
         }
 
+def state_name(val):
+    """ Return the state name for the given value, if known """
+    try:
+        return STATE_NAMES[val]
+    except KeyError:
+        pass
+    return 'Unknown state {}'.format(val)

@@ -7,10 +7,11 @@ from tg.i18n import ugettext as _, lazy_ugettext as l_
 from tg import predicates
 from rnms import model
 from rnms.controllers.secure import SecureController
-from tgext.admin.tgadminconfig import TGAdminConfig
+#from tgext.admin.tgadminconfig import TGAdminConfig
 from tgext.admin.controller import AdminController
 from tw2.jqplugins.ui import set_ui_theme_name
 
+from rnms.controllers.admin import MyAdminConfig
 from rnms.widgets.attribute import AttributeStatusPie
 from rnms.widgets.base import InfoBox
 from rnms.model import DBSession, Attribute
@@ -59,7 +60,7 @@ class RootController(BaseController):
 
     """
     secc = SecureController()
-    admin = AdminController(model, DBSession, config_type=TGAdminConfig)
+    admin = AdminController(model, DBSession, config_type=MyAdminConfig)
 
     error = ErrorController()
 
