@@ -4,11 +4,13 @@
 
 import logging
 import re
-from rnms import model
-from rnms.websetup import database_data
 import transaction
 from sqlalchemy.sql import not_
 from sqlalchemy.exc import IntegrityError
+
+from rnms import model
+from rnms.websetup import database_data
+from rnms.model.graph_type import GraphTypeLineError
 
 logger  = logging.getLogger('rnms')
 
@@ -275,20 +277,26 @@ class BootStrapper(object):
                     vname = gt.vname_by_name(graph_line[1])
                     if vname is None:
                         raise ValueError('Vname {} not found in GraphType {}'.format(graph_line[1], gt.display_name))
-                    if graph_line[0] == 'PRINT':
-                        gl.set_print(vname, graph_line[2])
-                    elif graph_line[0] == 'GPRINT':
-                        gl.set_gprint(vname, graph_line[2])
-                    elif graph_line[0] == 'VRULE':
-                        gl.set_vrule(vname, *graph_line[2:])
-                    elif graph_line[0] == 'LINE':
-                        gl.set_line(vname, *graph_line[2:])
-                    elif graph_line[0] == 'AREA':
-                        gl.set_area(vname, *graph_line[2:])
-                    elif graph_line[0] == 'TICK':
-                        gl.set_tick(vname, *graph_line[3:])
-                    else:
-                        raise ValueError('Bad GraphTypeLine type {} in GraphType {}'.format(graph_line[0], gt.display_name))
+                    try:
+                        if graph_line[0] == 'PRINT':
+                            gl.set_print(vname, graph_line[2])
+                        elif graph_line[0] == 'GPRINT':
+                            gl.set_gprint(vname, graph_line[2])
+                        elif graph_line[0] == 'VRULE':
+                            gl.set_vrule(vname, *graph_line[2:])
+                        elif graph_line[0] == 'LINE':
+                            gl.set_line(vname, *graph_line[2:])
+                        elif graph_line[0] == 'AREA':
+                            gl.set_area(vname, *graph_line[2:])
+                        elif graph_line[0] == 'TICK':
+                            gl.set_tick(vname, *graph_line[3:])
+                        else:
+                            raise ValueError('Bad GraphTypeLine type {} in GraphType {}'.format(graph_line[0], gt.display_name))
+                    except GraphTypeLineError as err:
+                        raise GraphTypeLineError(
+                            'Error in GraphTypeLine {} in GraphType {} - {}'.format(
+                                graph_line, gt.display_name, err))
+
                 position += 1
                 gt.lines.append(gl)
 
@@ -342,11 +350,14 @@ class BootStrapper(object):
             model.DBSession.add(lf)
 
         for row in database_data.logmatch_default_rows:
+            lmr = model.LogmatchRow()
             try:
-                lmr = model.LogmatchRow()
                 (lmr.match_text, lmr.match_start, lmr.host_match, 
                     lmr.attribute_match, lmr.state_match, event_tag,
                     fields) = row
+            except Exception as errmsg:
+                raise ValueError("Cannot add row \"%s\": %s.\n" % (row[0], errmsg))
+            else:
                 lmr.event_type = model.EventType.by_tag(event_tag)
                 if lmr.event_type is None:
                     raise ValueError("Bad EventType tag \"{}\" in LogMatchRow {}".format(event_tag, lmr.match_text))
@@ -356,13 +367,17 @@ class BootStrapper(object):
                 except re.error as errmsg:
                     raise re.error("Cannot compile message \"%s\": %s" % (row[0],errmsg))
                 lmr.logmatch_set = logmatch_set
-                for field in fields:
-                    lmf = model.LogmatchField()
-                    (lmf.event_field_tag, lmf.field_match)=field
-                    lmr.fields.append(lmf)
+                if fields is not None:
+                    for field in fields:
+                        lmf = model.LogmatchField()
+                        try:
+                            (lmf.event_field_tag, lmf.field_match)=field
+                        except ValueError:
+                            raise ValueError(
+                                "Bad Field \"{}\" in LogMatchRow {}".format(
+                                    field, lmr.match_text))
+                        lmr.fields.append(lmf)
                 model.DBSession.add(lmr)
-            except Exception as errmsg:
-                raise ValueError("Cannot add row \"%s\": %s.\n" % (row[0], errmsg))
 
     def create_slas(self):
         for row in database_data.slas:
@@ -392,7 +407,6 @@ class BootStrapper(object):
             t.email_users =trigger[3]
             t.subject = trigger[4]
             t.body = trigger[5]
-            pos=0
             for rule in trigger[6]:
                 r = model.TriggerRule()
                 (field, r.oper, limits, r.stop, r.and_rule) = rule
