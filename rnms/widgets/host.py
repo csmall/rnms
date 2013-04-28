@@ -19,10 +19,13 @@
 #
 #
 """ Hosts Widgets """
+from tg import flash, url
+from sqlalchemy import and_, asc
 from tw2.jqplugins.jqgrid import jqGridWidget
 from tw2.jqplugins.jqgrid.base import word_wrap_css
-from tw2 import core as twc
 
+from base import MapWidget
+from rnms.model import DBSession, Host, Zone
 
 class HostsGrid(jqGridWidget):
     id = 'hosts-grid-id'
@@ -50,4 +53,53 @@ class HostsGrid(jqGridWidget):
         self.resources.append(word_wrap_css)
         super(HostsGrid, self).prepare()
 
+
+class HostMap(MapWidget):
+    id = 'host-map'
+    zone_id = None
+    alarmed_only = False
+
+    def __init__(self):
+        self.url = url
+        super(HostMap, self).__init__()
+
+    def host_state(self, host):
+        """ Returns the host state which is used for severity class and
+        description box. Returns (class,text)
+        """
+        alarm = host.highest_alarm()
+        if alarm is None:
+            return ('ok', 'Up')
+        else:
+            return (alarm.event_type.severity_id, alarm.alarm_state.display_name.capitalize())
+
+    def prepare(self):
+        conditions = []
+        conditions.append(Host.show_host == True)
+        if self.zone_id is not None:
+            conditions.append(Host.zone_id == self.zone_id)
+        hosts = DBSession.query(Host).join(Zone).filter(and_(*conditions)).\
+                order_by(asc(Zone.display_name), asc(Host.display_name))
+        if hosts.count() == 0:
+            flash('No Hosts Found',  'alert')
+            self.map_groups = None
+        else:
+            for host in hosts:
+                vendor,device = host.snmp_type()
+                hstate,state_desc = self.host_state(host)
+                if self.alarmed_only == True and hstate == 'ok':
+                    continue
+                host_fields = [ ('Zone', host.zone.display_name),
+                              ('Status', state_desc),
+                              ('Vendor', vendor),
+                              ('Device', device),
+                              ('Address', host.mgmt_address),]
+                self.add_item(host.zone_id, host.zone.display_name,
+                              [],
+                              {'name': host.display_name,
+                               'state': hstate,
+                               'url': url('/attributes/map/',{'h': host.id}),
+                               'fields': host_fields,
+                              })
+        super(HostMap, self).prepare()
 

@@ -26,19 +26,17 @@ from tw2.jqplugins.jqplot import JQPlotWidget
 from tw2.jqplugins.jqplot.base import pieRenderer_js
 import tw2.core as twc
 
-from rnms.model import Attribute, DBSession
+from rnms.model import Attribute, DBSession, Host
 from rnms.lib import states
 
+from rnms.widgets.base import MapWidget
 
-class AttributeMap(twc.Widget):
+class AttributeMap(MapWidget):
     id = 'attribute-map'
-    template = 'rnms.templates.widgets.map'
     host_id = None
+    alarmed_only = False
 
     state_data = twc.Param()
-    def __init__(self):
-        self.url = url
-        super(AttributeMap, self).__init__()
 
     def attribute_state(self, attribute):
         """ Returns the attribute state which is used for seveity class
@@ -58,8 +56,11 @@ class AttributeMap(twc.Widget):
         conditions = []
         if self.host_id is not None:
             conditions.append(Attribute.host_id == self.host_id)
-        attributes = DBSession.query(Attribute).filter(and_(*conditions)).order_by(asc(Attribute.host_id))
-        host_groups = {}
+        if self.alarmed_only == True:
+            conditions.append(Attribute.oper_state != states.STATE_UP)
+        attributes = DBSession.query(Attribute).join(Host).\
+                filter(and_(*conditions)).\
+                order_by(asc(Host.display_name), asc(Attribute.display_name))
         if attributes.count() == 0:
             flash('No Attributes Found','alert')
             self.map_groups = None
@@ -71,12 +72,19 @@ class AttributeMap(twc.Widget):
                     atype = attribute.attribute_type.display_name
                 except AttributeError:
                     atype = 'Unknown'
-                new_att = (attribute.display_name, astate, attribute.host.display_name, atype, state_desc, ''.join(['<b>{}: </b>{}<br>'.format(k,v) for k,v in attribute.description_dict().items() if v != '']), url('/attributes',{'a':str(attribute.id)}))
-                try:
-                    host_groups[attribute.host_id][1].append(new_att)
-                except KeyError:
-                    host_groups[attribute.host_id]=(attribute.host, [new_att,])
-            self.map_groups = [hg for hg in host_groups.values()]
+                att_fields = [ ('Host', attribute.host.display_name),
+                               ('Type', atype),
+                               ('Status', state_desc),]
+                for k,v in attribute.description_dict().items():
+                    if v!= '':
+                        att_fields.append((k,v))
+                self.add_item(attribute.host_id, attribute.host.display_name,
+                              [('Address', attribute.host.mgmt_address)],
+                              {'name': attribute.display_name,
+                               'state': astate,
+                               'url': url('/attributes/'+str(attribute.id)),
+                               'fields': att_fields,
+                              })
         super(AttributeMap,self).prepare()
 
 

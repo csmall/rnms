@@ -5,16 +5,17 @@
 %else:
 <div class="amap1">
   <div class="amap2">
-%for map_group in w.map_groups:
+%for map_group in w.map_groups.values():
 	<div class="mapheader">
 	  <ul class="maplist">
-	    <li rel="mappop" data-original-title="title" data-content="content">${map_group[0]}</li>
+	    <li rel="mappop" data-original-title="${map_group['group']}" data-content="${item_data(map_group['group_fields'])}">${map_group['group']}</li>
 	  </ul>
 	</div>
 	<div class="mapmain">
 	  <ul class="maplist">
-%for map_item in map_group[1]:
-	<a href="${map_item[6]}"><li rel="mappop" class="mapseverity${map_item[1]}" data-original-title="${map_item[0]}" data-content="<b>Host:</b> ${map_item[2]}<br><b>Type:</b> ${map_item[3]}<br><b>Status:</b> ${map_item[4]}<br>${map_item[5]}">${map_item[0]}</li></a>
+%for map_item in map_group['items']:
+	<a href="${map_item['url']}"><li rel="mappop" class="mapseverity${map_item['state']}" data-original-title="${map_item['name']}" data-content="${item_data(map_item['fields'])}">${map_item['name']}</li></a>
+
 %endfor	
 	  </ul>
 	</div>
@@ -22,9 +23,11 @@
   </div>
 </div>
 %endif
-<script src="${w.url('/javascript/jquery.js')}"></script>
-<script src="${w.url('/javascript/bootstrap.min.js')}"></script>
-<script>
-$('.popover-test').popover()
-$('[rel=mappop]').popover()
+<script type="text/javascript">
+window.onload=function(){$('[rel=mappop]').popover();}
 </script>
+<%def name="item_data(data)">
+%for title,value in data:
+	<b>${title}:</b> ${value}</br>
+%endfor
+</%def>

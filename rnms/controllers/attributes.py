@@ -80,11 +80,20 @@ class AttributesController(BaseController):
                     graphbox=graphbox)
 
     @expose('rnms.templates.attribute_map')
-    @validate(validators={'h':validators.Int()})
-    def map(self, h=None, alert=None):
+    @validate(validators={'h':validators.Int(), 'events':validators.Bool(),
+                          'alarmed':validators.Bool()})
+    def map(self, h=None, events=False, alarmed=False):
         amap = AttributeMap()
         amap.host_id = h
-        return dict(attribute_map=amap)
+        amap.alarmed_only = alarmed
+        if events == True:
+            eventsbox = InfoBox()
+            eventsbox.title = 'Attribute Events'
+            eventsbox.child_widget = EventsGrid()
+            eventsbox.child_widget.host_id = h
+        else:
+            eventsbox = None
+        return dict(page='attributes', attribute_map=amap, eventsbox=eventsbox)
 
     @expose('json')
     @validate(validators={'h': validators.Int(), 'page':validators.Int(), 'rows':validators.Int(), 'sidx':validators.String(), 'sord':validators.String(), '_search':validators.String(), 'searchOper':validators.String(), 'searchField':validators.String(), 'searchString':validators.String()})

@@ -36,6 +36,7 @@ Rosenberg NMS: Host ${host.display_name}
 <%def name="host_details()">
     <dl class="dl-horizontal">
       <dt>Zone</dt><dd>${host.zone.display_name}</dd>
+      <dt>State</dt><dd>${host_state}</dd>
       <dt>Address</dt><dd>${host.mgmt_address}</dd>
       <dt>Host Type</dt><dd>${vendor} - ${devmodel}</dd>
     </dl>

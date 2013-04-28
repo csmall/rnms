@@ -9,7 +9,6 @@
     <link rel="stylesheet" type="text/css" media="screen" href="${tg.url('/css/rnms.css')}" />
 </head>
 <body class="${self.body_class()}">
-<script src="${tg.url('/javascript/bootstrap.min.js')}"></script>
   <div class="container">
     ${self.main_menu()}
     ${self.content_wrapper()}
@@ -53,14 +52,18 @@
 	  <ul class="dropdown-menu">
 	  <li><a href="${tg.url('/hosts')}">List</a></li>
 	  <li><a href="${tg.url('/hosts/map')}">Map</a></li>
-	  <li><a href="${tg.url('/hosts/mapevent')}">Map & Events</a></li>
+	  <li><a href="${tg.url('/hosts/map', {'events':1})}">Map &amp; Events</a></li>
+	  <li><a href="${tg.url('/hosts/map',{'alarmed':1})}">Map (Alarmed)</a></li>
+	  <li><a href="${tg.url('/hosts/map',{'alarmed':1,'events':1})}">Map &amp; Events (Alarmed)</a></li>
 	  </ul>
 	  </li>
           <li class="${('', 'active ')[page=='attribute']}dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Attributes<b class="caret"></b></a>
 	  <ul class="dropdown-menu">
 	  <li><a href="${tg.url('/attributes')}">List</a></li>
 	  <li><a href="${tg.url('/attributes/map')}">Map</a></li>
-	  <li><a href="${tg.url('/attributes/mapevent')}">Map & Events</a></li>
+	  <li><a href="${tg.url('/attributes/map', {'events':1})}">Map &amp; Events</a></li>
+	  <li><a href="${tg.url('/attributes/map',{'alarmed':1})}">Map (Alarmed)</a></li>
+	  <li><a href="${tg.url('/attributes/map',{'alarmed':1,'events':1})}">Map &amp; Events (Alarmed)</a></li>
 	  </ul>
 	  </li>
           <li class="${('', 'active')[page=='events']}"><a href="${tg.url('/events')}">Events</a></li>
@@ -82,4 +85,5 @@
   </div>
 </%def>
 
+<script src="${tg.url('/javascript/bootstrap.min.js')}" type="text/javascript"></script>
 </html>

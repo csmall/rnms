@@ -32,6 +32,7 @@ class EventsGrid(jqGridWidget):
     id = 'events-grid-id'
     attribute_id = None
     host_id = None
+    zone_id = None
 
     pager_options = { "search" : True, "refresh" : True, "add" : False, }
 
@@ -82,6 +83,8 @@ class EventsGrid(jqGridWidget):
             url_fields.append('a={}'.format(self.attribute_id))
         if self.host_id is not None:
             url_fields.append('h={}'.format(self.host_id))
+        if self.zone_id is not None:
+            url_fields.append('z={}'.format(self.zone_id))
 
         if url_fields != []:
             self.options['url'] += '?' + '&'.join(url_fields)

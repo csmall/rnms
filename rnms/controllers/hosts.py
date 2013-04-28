@@ -31,8 +31,9 @@ from formencode import validators
 
 # project specific imports
 from rnms.lib.base import BaseController
-from rnms.widgets import AttributeSummary, HostsGrid, InfoBox
-from rnms.model import DBSession, Host, SNMPEnterprise, Zone
+from rnms.widgets import AttributeSummary, InfoBox
+from rnms.widgets.host import HostsGrid, HostMap
+from rnms.model import DBSession, Host, Zone
 from rnms.lib.jsonquery import json_query
 from rnms.widgets.event import EventsGrid
 
@@ -88,7 +89,12 @@ class HostsController(BaseController):
         if host is None:
             flash('Host ID#{} not found'.format(host_id), 'error')
             return {}
-        vendor,devmodel = SNMPEnterprise.oid2name(host.sysobjid)
+        vendor,devmodel = host.snmp_type()
+        highest_alarm = host.highest_alarm()
+        if highest_alarm is  None:
+            host_state = 'Up'
+        else:
+            host_state = highest_alarm.alarm_state.display_name.capitalize()
 
         detailsbox = InfoBox()
         detailsbox.title = 'Host Details'
@@ -101,7 +107,26 @@ class HostsController(BaseController):
         eventsbox.child_widget = EventsGrid()
         eventsbox.child_widget.host_id = host_id
         return dict(host=host, vendor=vendor, devmodel=devmodel,
+                    host_state=host_state,
                     attributesbox=attributesbox,
                     detailsbox=detailsbox,
                     eventsbox=eventsbox)
 
+    @expose('rnms.templates.host_map')
+    @validate(validators={'z':validators.Int(),'events':validators.Bool(),
+                          'alarmed': validators.Bool()})
+    def map(self, z=None, events=False, alarmed=False):
+        """ Display a map of the Hosts, optionally filtered by Zone id
+        and optionally showing events for those hosts
+        """
+        hmap = HostMap()
+        hmap.zone_id = z
+        hmap.alarmed_only = alarmed
+        if events == True:
+            eventsbox = InfoBox()
+            eventsbox.title = 'Host Events'
+            eventsbox.child_widget = EventsGrid()
+            eventsbox.child_widget.zone_id = z
+        else:
+            eventsbox = None
+        return dict(page='hosts', host_map=hmap, eventsbox=eventsbox)

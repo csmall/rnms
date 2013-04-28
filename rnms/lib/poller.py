@@ -21,7 +21,6 @@ import datetime
 import transaction
 
 from sqlalchemy import and_
-from sqlalchemy.exc import DBAPIError
 
 from rnms import model
 from rnms.lib.engine import RnmsEngine
@@ -95,11 +94,12 @@ class Poller(RnmsEngine):
             att_count -= tcp_jobs
 
             # Ping jobs is the only one that doesn't use zmqcore, bah (yet)
-            ping_jobs =  self.ping_client.poll() 
+            ping_jobs =  self.ping_client.poll()
             if ping_jobs > 0:
                 att_count -= ping_jobs
 
             if self.zmq_core.poll(0.0) == False:
+                transaction.commit()
                 return
             if not polls_running and (self.polling_attributes == {}):
                 # If there are no pollers, we can sleep until we need to
@@ -229,12 +229,6 @@ class Poller(RnmsEngine):
         del (self.poller_buffer[patt['attribute'].id])
         del (self.polling_attributes[patt['attribute'].id])
         patt['attribute'].update_poll_time()
-        try:
-            model.DBSession.flush()
-        except DBAPIError as err:
-            self.logger.warning(
-                'A:%d - Database Error %s'.format(
-                    err, patt['attribute'].id))
 
     def _add_forced_attributes(self, attribute_ids=None, host_ids=None):
         """

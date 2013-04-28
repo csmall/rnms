@@ -92,16 +92,28 @@ class EventsController(BaseController):
 
 
     @expose('json')
-    @validate(validators={'page':validators.Int(), 'rows':validators.Int(), 'sidx':validators.String(), 'sord':validators.String(), '_search':validators.String(), 'searchOper':validators.String(), 'searchField':validators.String(), 'searchString':validators.String(), 'h':validators.Int(), 'a':validators.Int()})
-    def griddata(self, page, rows, sidx, sord, _search='false', searchOper=u'', searchField=u'', searchString=u'', h=None, a=None, **kw):
+    @validate(validators={'page':validators.Int(), 'rows':validators.Int(),
+                          'sidx':validators.String(),
+                          'sord':validators.String(),
+                          '_search':validators.String(),
+                          'searchOper':validators.String(),
+                          'searchField':validators.String(),
+                          'searchString':validators.String(),
+                          'h':validators.Int(), 'a':validators.Int(),
+                          'z':validators.Int()})
+    def griddata(self, page, rows, sidx, sord, _search='false', searchOper=u'',
+                 searchField=u'', searchString=u'', h=None, a=None, z=None, **kw):
 
         conditions = []
         if h is not None:
             conditions.append(Event.host_id == h)
         if a is not None:
             conditions.append(Event.attribute_id == a)
+        if z is not None:
+            conditions.append(Host.zone_id == z)
 
-        qry = DBSession.query(Event).join(Event.event_type, Event.attribute).join(Event.host).filter(and_(*conditions))
+        qry = DBSession.query(Event).join(Event.event_type,
+                                          Event.attribute).join(Host).filter(and_(*conditions))
         colnames = (('created', Event.created), ('event_type', EventType.display_name), ('host_display_name', Host.display_name), ('attribute', Attribute.display_name), ('event_description', None))
 
         result_count, qry = json_query(qry, colnames, page, rows, sidx, sord, _search=='true', searchOper, searchField, searchString)

@@ -17,8 +17,30 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
+from tg import url
+
 import tw2.core as twc
 from tw2.jqplugins.ui import jquery_ui_css
+from tw2.jquery import jquery_js
+
+class MapWidget(twc.Widget):
+    template = 'rnms.templates.widgets.map'
+
+    def __init__(self):
+        self.url = url
+        self.map_groups = {}
+        super(MapWidget, self).__init__()
+
+    def add_item(self, group_id, group_name, group_data, new_item):
+        """ Add the given item to the relevant map_group """
+        try:
+            self.map_groups[group_id]['items'].append(new_item)
+        except KeyError:
+            self.map_groups[group_id] = {'group': group_name,
+                                         'group_fields': group_data, 'items': [new_item]}
+    def prepare(self):
+        self.resources.append(jquery_js)
+        super(MapWidget, self).prepare()
 
 class InfoBox(twc.Widget):
     id = 'infobox'

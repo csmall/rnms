@@ -66,7 +66,7 @@ class Attribute(DeclarativeBase, AttributeBaseState):
     __tablename__ = 'attributes'
     default_poll_interval = 5
     display_name_len = 40
-    
+
     #{ Columns
     id = Column(Integer, autoincrement=True,primary_key=True)
     display_name = Column(Unicode(display_name_len))

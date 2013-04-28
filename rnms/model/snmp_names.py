@@ -82,7 +82,7 @@ class SNMPEnterprise(DeclarativeBase):
             return ('unknown vendor {}'.format(oid_nums[0]),'')
         if ent.device_offset > len(oid_nums):
             return (ent.display_name, '')
-        
+
         device_id = '.'.join(oid_nums[ent.device_offset:])
         device = SNMPDevice.by_id(ent.id, device_id)
         if device is None:
