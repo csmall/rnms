@@ -13,6 +13,8 @@ Contents:
   
    intro
    events
+   traps
+   cmdline
 
 Indices and tables
 ==================
