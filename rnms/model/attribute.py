@@ -23,11 +23,11 @@ import logging
 import random
 
 from sqlalchemy.orm import relationship, subqueryload
-from sqlalchemy import ForeignKey, Column, and_, desc, asc
+from sqlalchemy import ForeignKey, Column, and_, asc
 from sqlalchemy.types import Integer, Unicode, String, Boolean, SmallInteger, DateTime
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, DBSession, Alarm, AlarmState
+from rnms.model import DeclarativeBase, DBSession
 from rnms.lib import states
 from rnms.lib.parsers import fill_fields
 
@@ -41,28 +41,7 @@ POLL_VARIANCE_MINUTES = 1 # +- 30 seconds for next poll
 SLA_INTERVAL_MINUTES = 30
 SLA_VARIANCE_MINUTES = 2
 
-class AttributeBaseState(object):
-    """
-    Base Class that sets the admin and oper states
-    """
-    def set_admin_up(self):
-        self.admin_state = states.STATE_UP
-    def set_admin_down(self):
-        self.admin_state = states.STATE_DOWN
-    def set_admin_testing(self):
-        self.admin_state = states.STATE_TESTING
-    def set_admin_unknown(self):
-        self.admin_state = states.STATE_UNKNOWN
-    def set_oper_up(self):
-        self.oper_state = states.STATE_UP
-    def set_oper_down(self):
-        self.oper_state = states.STATE_DOWN
-    def set_oper_testing(self):
-        self.oper_state = states.STATE_TESTING
-    def set_oper_unknown(self):
-        self.oper_state = states.STATE_UNKNOWN
-
-class Attribute(DeclarativeBase, AttributeBaseState):
+class Attribute(DeclarativeBase):
     __tablename__ = 'attributes'
     default_poll_interval = 5
     display_name_len = 40
@@ -70,8 +49,9 @@ class Attribute(DeclarativeBase, AttributeBaseState):
     #{ Columns
     id = Column(Integer, autoincrement=True,primary_key=True)
     display_name = Column(Unicode(display_name_len))
-    oper_state = Column(SmallInteger, nullable=False) #IF-MIB
     admin_state = Column(SmallInteger, nullable=False) #IF-MIB
+    state_id = Column(Integer, ForeignKey('event_states.id'))
+    state = relationship('EventState')
     attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'))
     attribute_type=relationship('AttributeType',backref='attributes')
     host_id = Column(Integer, ForeignKey('hosts.id', ondelete="CASCADE", onupdate="CASCADE"))
@@ -100,7 +80,6 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         self.attribute_type=attribute_type
         self.display_name=display_name
         self.index = index
-        self.oper_state = states.STATE_UNKNOWN
         self.admin_state = states.STATE_UNKNOWN
         self.use_iface = False
         self.user_id = 1
@@ -150,17 +129,17 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         Create a real Attribute object based upon data that is found in the
         fake DiscoveredAttribute object
         """
+        from rnms.model import EventState
         a = cls()
         a.host_id = discovered_attribute.host_id
         a.attribute_type = discovered_attribute.attribute_type
-        #a.attribute_id = discovered_attribute.attribute_id
         a.display_name = discovered_attribute.display_name
         a.index = discovered_attribute.index
         #a.use_iface = discovered_attribute.use_iface
         a.admin_state = discovered_attribute.admin_state
-        a.oper_state = discovered_attribute.oper_state
         a.user_id = host.default_user_id
         # SLA default needed
+        a.state = EventState.get_up()
 
         for tag,value in discovered_attribute.fields.items():
             a.set_field(tag,value)
@@ -240,13 +219,13 @@ class Attribute(DeclarativeBase, AttributeBaseState):
             return ''
         descriptions = [ self.get_field(id=at_field.id) for at_field in self.attribute_type.fields if at_field.description]
         return " ".join(descriptions)
-        
+
     def oper_state_name(self):
         """ Return string representation of operational state"""
-        try:
-            return states.STATE_NAMES[self.oper_state]
-        except KeyError:
-            return u"Unknown {0}".format(self.oper_state)
+        if self.state is None:
+            return 'Unknown'
+        else:
+            return self.state.display_name
 
     def admin_state_name(self):
         """ Return string representation of admin state"""
@@ -254,14 +233,6 @@ class Attribute(DeclarativeBase, AttributeBaseState):
             return states.STATE_NAMES[self.admin_state]
         except KeyError:
             return u"Unknown {0}".format(self.admin_state)
-
-    def set_oper_state(self, state_name):
-        """ Set the oper_state based upon a state_name """
-        for state,name in states.STATE_NAMES.items():
-            if state_name == name:
-                self.oper_state = state
-                return True
-        return False
 
     def set_admin_state(self, state_name):
         """ Set the admin_state based upon a state_name """
@@ -273,7 +244,7 @@ class Attribute(DeclarativeBase, AttributeBaseState):
 
     def is_down(self):
         """ Return true if this attribute is down. """
-        return self.oper_state == states.STATE_DOWN
+        return self.state is None or self.state.internal_state == states.STATE_DOWN
 
     def update_poll_time(self):
         """
@@ -309,28 +280,23 @@ class Attribute(DeclarativeBase, AttributeBaseState):
         """
         return fill_fields(raw_string, attribute=self)
 
-    def highest_alarm(self):
-        """
-        Return the highest (based on alarm level) alarm for this attribute
-        """
-        return DBSession.query(Alarm).join(AlarmState).filter(Alarm.attribute_id == self.id).order_by(desc(AlarmState.alarm_level)).first()
-
     def calculate_oper(self):
         """
         Work out what the current Oper state is for this attribute by
         looking at all the current events for this Attribute
         The calculated result is placed into the oper field
         """
-        alarm = self.highest_alarm()
-        if alarm is None:
-            self.set_oper_up()
+        from rnms.model.event import EventState, Event
+        att_event = Event.attribute_alarm(self.id)
+        if att_event is None:
+            self.state = EventState.by_name(u'up')
         else:
-            self.oper_state = alarm.alarm_state.internal_state
+            self.state = att_event.event_state
 
 
 class AttributeField(DeclarativeBase):
     __tablename__ = 'attribute_fields'
-    
+
     #{ Columns
     id = Column(Integer, autoincrement=True,primary_key=True)
     attribute_id = Column(Integer, ForeignKey('attributes.id'),nullable=False)
@@ -342,6 +308,24 @@ class AttributeField(DeclarativeBase):
         self.attribute = attribute
         self.attribute_type_field = attribute_type_field
         self.value=''
+
+    @classmethod
+    def field_value(cls, attribute_id, field_tag):
+        """ Return the value of the field for the given attribute that
+        matches the tag
+        """
+        ftag = DBSession.query(AttributeTypeField).\
+                join(AttributeType,Attribute).filter(
+            Attribute.id == attribute_id,
+            AttributeTypeField.tag == field_tag).first()
+        if ftag is None:
+            return None
+        fval = DBSession.query(cls.value).filter(
+            cls.attribute_id == attribute_id,
+            cls.attribute_type_field_id == ftag.id).first()
+        if fval is not None:
+            return fval
+        return ftag.default_value
 
     def overwritable(self):
         if self.attribute_type_field is None:
@@ -494,25 +478,35 @@ class AttributeTypeField(DeclarativeBase):
         """ Return the field with given id"""
         return DBSession.query(cls).filter(cls.id==id).first()
 
-        
-        
-
-
 # Discovered Attributes do not have and database backend
-class DiscoveredAttribute(AttributeBaseState):
+class DiscoveredAttribute(object):
     """
     Attributes that are disocvered through the autodisovery process
-    do not have any database backend but just lists
+    do not have any database backend but just lists.
+    oper_state is just used as a indicator on the GUI, its not
+    transferred to the real Attribute.
     """
 
     def __init__(self, host_id=1, attribute_type=None):
         self.host_id=host_id
         self.display_name = ''
-        self.oper_state = states.STATE_UP
         self.admin_state = states.STATE_UP
+        self.oper_state = states.STATE_UP
         self.attribute_type=attribute_type
         self.index = ''
         self.fields = {}
+
+    def set_oper_up(self):
+        """ Set the state of this to unknown """
+        self.oper_state = states.STATE_UP
+
+    def set_oper_unknown(self):
+        """ Set the state of this to unknown """
+        self.oper_state = states.STATE_UNKNOWN
+
+    def set_oper_down(self):
+        """ Set the state of this to down """
+        self.oper_state = states.STATE_DOWN
 
     def set_field(self, key, value):
         self.fields[key] = value

@@ -28,8 +28,8 @@ from sqlalchemy.types import Integer, Unicode, SmallInteger, Boolean
 from rnms.model import DeclarativeBase, DBSession, metadata
 from rnms.lib.genericset import GenericSet
 
-match_types=('alarm', 'event')
-trigger_fields=('attribute_type', 'attribute_name', 'hour', 'event_type', 'duration', 'host', 'map', 'client', 'alarm_state')
+trigger_fields=('attribute_type', 'attribute_name', 'hour', 'event_type',
+                'duration', 'host', 'map', 'client', 'event_state')
 
 def oper_in(x,y):
     return unicode(x) in y.split(',')
@@ -52,15 +52,14 @@ trigger_user_table = Table('trigger_users', metadata,
 class Trigger(DeclarativeBase, GenericSet):
     """
     Triggers are a list of checks or TriggerRules that evaluate against
-    an Alarm or Event.  If they match they pass the Atrribute along with
-    the Alarm or Event to an Action.
+    an Event.  If they match they pass the Atrribute along with
+    the Event to an Action.
     """
     __tablename__ = 'triggers'
     
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(40), nullable=False, unique=True)
-    match_type = Column(SmallInteger)
     email_owner = Column(Boolean, nullable=False, default=False)
     email_users = Column(Boolean, nullable=False, default=True)
     subject = Column(Unicode(100), nullable=False, default=u'')
@@ -69,13 +68,8 @@ class Trigger(DeclarativeBase, GenericSet):
     users = relationship('User', secondary=trigger_user_table, backref='triggers')
     #}
 
-    def __init__(self, display_name=None, match_type=None):
+    def __init__(self, display_name=None):
         self.display_name = display_name
-        if match_type is not None:
-            if match_type not in match_types:
-                raise ValueError('match_type {} must be Event or Alarm'.format(match_type))
-            self.match_type = match_types.index(match_type)
-
         self.rows = self.rules
 
     def __repr__(self):
@@ -89,22 +83,6 @@ class Trigger(DeclarativeBase, GenericSet):
         new_row.trigger = self
         GenericSet.append(self,new_row)
 
-    @classmethod
-    def alarm_triggers(cls):
-        """
-        Returns a list of Triggers match alarms
-        """
-        return DBSession.query(cls).filter(cls.match_type==match_types.index('alarm'))
-
-    @classmethod
-    def event_triggers(cls):
-        """
-        Returns a list of Triggers that can match events
-        """
-        return DBSession.query(cls).filter(cls.match_type==match_types.index('event'))
-
-    def match_type_name(self):
-        return match_types[self.match_type]
 
 class TriggerRule(DeclarativeBase):
     """
@@ -166,16 +144,16 @@ class TriggerRule(DeclarativeBase):
             return
         raise ValueError('Dont have limits for {}'.format(fname))
 
-    def eval(self, previous_result, alarm):
+    def eval(self, previous_result, event):
         """
-        Process this trigger rule against the alarm
+        Process this trigger rule against the event
         Returns
           rule_result = whether or not the rule matches
         """
         if previous_result == True and self.and_rule == False:
             return True # True OR whatever is True
 
-        test_value = self._get_alarm_field(alarm)
+        test_value = self._get_event_field(event)
         if test_value is None:
             return False
         this_result = self.operate(test_value)
@@ -186,7 +164,7 @@ class TriggerRule(DeclarativeBase):
 
     def operate(self, test_value):
         """
-        Given the alarm or event field, run the operator against our limit
+        Given the event field, run the operator against our limit
         """
         try:
             x = float(test_value)
@@ -203,30 +181,30 @@ class TriggerRule(DeclarativeBase):
             return this_oper(x,y)
 
 
-    def _get_alarm_field(self,alarm):
+    def _get_event_field(self, event):
         """
-        Extracts the field out of the given item (event or alarm)
+        Extracts the field out of the given event
         """
-        if alarm is None:
+        if event is None:
             return None
         try:
             field_name = trigger_fields[self.field]
         except ValueError:
             return None
         if field_name == 'hour':
-            return alarm.start_time.hour
+            return event.created.hour
         if field_name == 'attribute':
-            return alarm.attribute_id
+            return event.attribute_id
         if field_name == 'attribute_name':
-            return alarm.attribute.display_name
+            return event.attribute.display_name
         if field_name == 'attribute_type':
-            return alarm.attribute.attribute_type_id
+            return event.attribute.attribute_type_id
         if field_name == 'host':
-            return alarm.attribute.host_id
+            return event.attribute.host_id
         if field_name == 'event_type':
-            return alarm.event_type_id
-        if field_name == 'alarm_state':
-            return alarm.alarm_state_id
+            return event.event_type_id
+        if field_name == 'event_state':
+            return event.event_state_id
     
 
 class TriggerField(DeclarativeBase):

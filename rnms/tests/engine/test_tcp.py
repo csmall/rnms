@@ -35,7 +35,7 @@ class TestTCP(object):
         self.my_callback = mock.Mock()
 
     def poll(self):
-        while self.tcp_client.poll():
+        while self.tcp_client.poll() > 0:
             self.zmq_core.poll(0.2)
 
     def test_noconnect(self):
@@ -68,10 +68,9 @@ class TestTCP(object):
 
     def test_far_host(self):
         """ Far host has connect time """
-        host = DummyHost('gmail-smtp-in.l.google.com')
-        assert(self.tcp_client.get_tcp(host, 25, '', 1, self.my_callback, obj=self))
+        host = DummyHost('127.0.0.1')
+        assert(self.tcp_client.get_tcp(host, 22, '', 1, self.my_callback, obj=self))
         self.poll()
         self.assert_cb_error_code(None)
-        #assert(self.results['connect_time'].total_seconds > 0.0)
         assert(self.my_callback.call_args[0][0][1].total_seconds() > 0.0)
 

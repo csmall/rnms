@@ -62,12 +62,13 @@ def init_model(engine):
 from rnms.model.auth import User, Group, Permission
 
 from rnms.model.action import Action, ActionField
-from rnms.model.alarm import Alarm, AlarmState
 from rnms.model.attribute import Attribute, AttributeType, AttributeTypeField, DiscoveredAttribute, AttributeField
 from rnms.model.autodiscovery_policy import AutodiscoveryPolicy
-from rnms.model.event import Event, EventType, EventField, EventSeverity
+from rnms.model.event import Event, EventType, EventField, EventState,\
+        Severity
 from rnms.model.backend import Backend
-from rnms.model.graph_type import GraphType, GraphTypeDef, GraphTypeLine, GraphTypeVname, GraphTypeError, GraphTypeLineError
+from rnms.model.graph_type import GraphType, GraphTypeDef, GraphTypeLine,\
+        GraphTypeVname, GraphTypeError, GraphTypeLineError, GraphTypeRRDLine
 #from rnms.model.host import Host, Iface, ConfigTransfer
 from rnms.model.host import *
 from rnms.model.logfile import Logfile, LogmatchSet, LogmatchRow, LogmatchField

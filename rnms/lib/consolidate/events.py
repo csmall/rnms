@@ -20,70 +20,76 @@
 
 import transaction
 
-from rnms import model
+from rnms.model import DBSession, Event
 
 
-def consolidate_events(logger):
+def process_events(logger):
     """
     Scan all events that have not been previously checked and set alerts
     where required.
     Returns a set of changed attributes
     """
     changed_attributes = set()
-    events = model.DBSession.query(model.Event).filter(model.Event.processed == False)
+    events = DBSession.query(Event).filter(Event.processed == False)
     logger.info('%d Events to process', events.count())
     for event in events:
-        if event.alarm_state is None or event.attribute is None:
+        if event.event_state is None or event.attribute is None:
             event.set_processed()
             continue
 
 
-        if event.alarm_state.is_up():
+        if event.event_state.is_up():
             event.acknowledged = True
 
         changed_attributes.add(event.attribute_id)
 
-        if event.alarm_state.is_alert():
-            process_event_alert(logger, event)
-        else:
-            down_alarm = model.Alarm.find_down(event.attribute, event.event_type)
-            if event.alarm_state.is_downtesting():
-                process_event_downtesting(logger, event, down_alarm)
-            elif event.alarm_state.is_up():
-                process_event_up(logger, event, down_alarm)
+        if event.event_state.is_alert() == False:
+            down_event = Event.find_down(event.attribute_id,
+                                         event.event_type_id)
+            if event.event_state.is_downtesting():
+                process_event_downtesting(logger, event, down_event)
+            elif event.event_state.is_up():
+                process_event_up(logger, event, down_event)
         event.set_processed()
-    model.DBSession.flush()
     transaction.commit()
     return changed_attributes
 
-def process_event_alert(logger, event):
+def process_event_downtesting(logger, event, other_event):
     """
-    Process alert events.  These are unusual as they have a 
-    fixed stop time and the stop_event is the start_event.
-    Used mainly for Administration and SLA alarms that are
-    only around for some time.
-    Alert level events must have an attribute to raise an alarm.
+    Process down or testing events.  If there has been an alarmed event
+    for this, then we don't do anything with this one.
     """
-    logger.info("E:%d - ALERT Event - A:%d ET:%s", event.id, event.attribute.id, event.event_type.display_name)
-    new_alarm = model.Alarm(event=event)
-    model.DBSession.add(new_alarm)
+    if other_event is not None:
+        logger.info("A:%d E:%d - DOWN/TESTING", event.attribute_id, event.id)
+        event.triggered = True
+        event.alarmed = False
+        if event.check_stop_time:
+            # Extend the stop time
+            other_event.stop_time = event.stop_time
+            other_event.check_stop_time = True
+            event.check_stop_time = False
 
-def process_event_downtesting(logger, event, other_alarm):
-    """
-    Process down or testing events
-    If there has been another alarm close it off and start a new one
-    """
-    logger.info("A:%d E:%d - DOWN/TESTING", event.attribute.id, event.id)
-    if other_alarm is not None:
-        other_alarm.set_stop(event, alarm_state=model.AlarmState.by_name('up'))
-
-    new_alarm = model.Alarm(event=event)
-    model.DBSession.add(new_alarm)
-
-def process_event_up(logger, event, other_alarm):
+def process_event_up(logger, event, other_event):
     event.acknowledged=True
-    if other_alarm is not None:
-        logger.info("A:%d E:%d - UP Event", event.attribute.id, event.id)
-        other_alarm.set_stop(event)
+    if other_event is not None:
+        logger.info("A:%d E:%d - UP Event", event.attribute_id, event.id)
+        other_event.set_stop(event)
 
+
+def check_event_stop_time(logger):
+    """
+    Run through all the events that have check_stop_time set to
+    see if we have reached the time to close off the event.
+    This generally clears a SLA alarm on an Attribure after it has
+    expired, for example.
+
+    Returns a set of Attribute IDs that have had a status change
+    """
+    changed_attributes = set()
+    events = Event.check_time_events()
+    if events is not None:
+        for event in events:
+            event.check_stop_time = False
+            changed_attributes.add(event.attribute_id)
+    return changed_attributes
 

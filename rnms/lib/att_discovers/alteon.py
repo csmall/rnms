@@ -19,6 +19,7 @@
 #
 """ Discover Alteon Real Servers, Virtal Servers and Real Services """
 
+from rnms.lib import states
 from rnms import model
 
 def discover_alteon_realservers(host, **kw):
@@ -47,9 +48,9 @@ def cb_alteon_realservers(values, error, host, dobj, **kw):
             new_att.set_field('hostname', values[4][idx])
             try:
                 if values[3][idx] != '2':
-                    new_att.set_admin_down()
+                    new_att.admin_state = states.STATE_DOWN
             except (KeyError, IndexError):
-                new_att.set_admin_unknown()
+                new_att.admin_state = states.STATE_UNKNOWN
             try:
                 if values[5][idx] != '2':
                     new_att.set_oper_down()
@@ -98,9 +99,9 @@ def cb_alteon_realservices(values, error, host, dobj, **kw):
                 new_att.set_oper_unknown()
             try:
                 if values[6][key] != '2':
-                    new_att.set_admin_down()
+                    new_att.admin_state = states.STATE_DOWN
             except (KeyError, IndexError):
-                new_att.set_admin_unknown()
+                new_att.admin_state = states.STATE_UNKNOWN
             rservices[new_att.index] = new_att
     dobj.discover_callback(host.id, rservices)
 

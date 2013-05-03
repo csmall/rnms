@@ -33,7 +33,7 @@ from sqlalchemy.types import Integer, Unicode, PickleType, DateTime, Boolean, Sm
 
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, Attribute, AlarmState, Host
+from rnms.model import DeclarativeBase, Attribute, EventState, Host
 from rnms.lib.genericset import GenericSet
 
 logger = logging.getLogger('rnms')
@@ -229,7 +229,7 @@ class LogmatchRow(DeclarativeBase):
             display_name = match.group(groupid)
         except IndexError:
             return None
-        return AlarmState.by_name(display_name)
+        return EventState.by_name(display_name)
 
     def matched_fields(self,match):
         """

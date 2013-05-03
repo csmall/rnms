@@ -27,6 +27,15 @@ import re
 
 fields_regexp = re.compile(r'\${?([a-z0-9_-]+)',re.I)
 
+def find_field_keys(string):
+    """ Return the list of keys we need to find for this string """
+    return fields_regexp.findall(string)
+
+def safe_substitute(string, field_values):
+    text_template = Template(string)
+    return text_template.safe_substitute(field_values)
+
+
 def fill_fields(string, host=None, attribute=None, event=None, alarm=None):
     """
     Parse the raw string and fill any fields with values obtained from the
@@ -47,7 +56,7 @@ def fill_fields(string, host=None, attribute=None, event=None, alarm=None):
 
       plus any fields from the event or attribute in that order
     """
-    field_keys = fields_regexp.findall(string)
+    field_keys = find_field_keys(string)
     if field_keys == []:
         return string
     field_values = {}
@@ -108,9 +117,7 @@ def fill_fields(string, host=None, attribute=None, event=None, alarm=None):
             att_field = attribute.get_field(field_key)
             if att_field is not None:
                 field_values[field_key] = att_field
-    
-    text_template = Template(string)
-    return text_template.safe_substitute(field_values)
+    return safe_substitute(string, field_values) 
 
 
 

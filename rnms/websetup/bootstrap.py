@@ -80,10 +80,10 @@ def bootstrap(command, conf, vars):
 
     # <websetup.bootstrap.after.auth>
 class BootStrapper(object):
-    models = ('defaults', 'autodiscovery', 'alarm_states', 'config_transfers',
-            'severities', 'event_types',
+    models = ('defaults', 'autodiscovery', 'severities', 'event_states', 'config_transfers',
+            'event_types',
             'logmatches', 'snmp_communities',
-            'attribute_types', 'graph_types', 'slas',
+            'attribute_types', 'simple_graph_types', 'graph_types', 'slas',
             'pollers', 'backends', 'poller_sets', 'triggers'
 
             )
@@ -141,10 +141,15 @@ class BootStrapper(object):
         ct = model.ConfigTransfer(display_name=u'No Transfer')
         model.DBSession.add(ct)
 
-    def create_alarm_states(self):
-        for row in database_data.alarm_states:
-            a = model.AlarmState()
-            (a.display_name, a.alarm_level, a.sound_in, a.sound_out, a.internal_state) = row
+    def create_event_states(self):
+        for row in database_data.event_states:
+            a = model.EventState()
+            (a.display_name, a.priority, a.sound_in, a.sound_out,
+             a.internal_state, severity_name) = row
+            a.severity = model.Severity.by_name(severity_name)
+            if a.severity is None:
+                raise ValueError('Bad Severity {} in EventState {}'.format(
+                    severity_name, a.display_name))
             model.DBSession.add(a)
 
     def create_attribute_types(self):
@@ -231,12 +236,45 @@ class BootStrapper(object):
         for row in database_data.event_types:
             et = model.EventType()
             try:
-                (et.display_name, severity, et.tag, et.text, et.generate_alarm, ignore_up_event_id, et.alarm_duration, et.show_host) = row
+                (et.display_name, et.tag, et.text, et.generate_alarm, et.alarm_duration, et.show_host) = row
             except ValueError as errmsg:
                 print("Bad event_type \"{0}\".\n{1}".format(row, errmsg))
                 exit()
-            et.severity = model.EventSeverity.by_name(severity)
             model.DBSession.add(et)
+
+    def create_simple_graph_types(self):
+        for atype_name,graphs in database_data.simple_graph_types:
+            attribute_type = model.AttributeType.by_display_name(atype_name)
+            if attribute_type is None:
+                raise ValueError(
+                    "Attribute Type {} not found in simple GraphType".\
+                    format(atype_name))
+            for graph in graphs:
+                gt = model.GraphType()
+                try:
+                    (gt.display_name, gt.vertical_label, gt.template,
+                     gt.extra_options, graph_lines) = graph
+                except ValueError as errmsg:
+                    raise ValueError('{}\nRow:{}'.format(errmsg, graph))
+                gt.attribute_type_id = attribute_type.id
+                position=0
+                for graph_line in graph_lines:
+                    gl = model.GraphTypeRRDLine()
+                    try:
+                        (rrd_name, gl.multiplier, gl.legend, gl.legend_unit) = graph_line
+                    except ValueError as errmsg:
+                        raise ValueError(
+                            '{}: Bad Graphline in simple graph type {}'.\
+                            format(errmsg, graph_line))
+                    gl.attribute_type_rrd = model.AttributeTypeRRD.by_name(
+                        attribute_type.id, rrd_name)
+                    if gl.attribute_type_rrd is None:
+                        raise ValueError('Bad RRD name {} in line {}'.format(
+                            rrd_name, graph_line))
+                    gl.position = position
+                    gt.rrd_lines.append(gl)
+                    position += 1
+                model.DBSession.add(gt)
 
     def create_graph_types(self):
         for row in database_data.graph_types:
@@ -250,7 +288,7 @@ class BootStrapper(object):
                 raise ValueError("Attribute Type {} not found in GraphType {}".format(atype_name, gt.display_name))
             gt.attribute_type_id = attribute_type.id
             for graph_def in graph_defs:
-                at_rrd = model.AttributeTypeRRD.by_name(attribute_type, graph_def[1])
+                at_rrd = model.AttributeTypeRRD.by_name(attribute_type.id, graph_def[1])
                 if at_rrd is None:
                     raise ValueError("AttributeTypeRRD {} not found in GraphType {}".format(graph_def[1], gt.display_name))
                 gt_def = model.GraphTypeDef(gt, graph_def[0], at_rrd)
@@ -336,8 +374,8 @@ class BootStrapper(object):
             model.DBSession.add(ps)
 
     def create_severities(self):
-        for severity in database_data.event_severities:
-            sv = model.EventSeverity(severity[0],severity[1],severity[2],severity[3])
+        for severity in database_data.severities:
+            sv = model.Severity(severity[0],severity[1],severity[2])
             model.DBSession.add(sv)
 
     def create_logmatches(self):
@@ -402,12 +440,10 @@ class BootStrapper(object):
 
     def create_triggers(self):
         for trigger in database_data.triggers:
-            t = model.Trigger(trigger[0], trigger[1])
-            t.email_owner =trigger[2]
-            t.email_users =trigger[3]
-            t.subject = trigger[4]
-            t.body = trigger[5]
-            for rule in trigger[6]:
+            t = model.Trigger()
+            (t.display_name, t.email_owner, t.email_users, t.subject, t.body,
+             rules) = trigger
+            for rule in rules:
                 r = model.TriggerRule()
                 (field, r.oper, limits, r.stop, r.and_rule) = rule
                 r.set_field(field)

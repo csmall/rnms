@@ -35,14 +35,14 @@ class PingClient():
     def __init__(self):
         self.active_pings = {}
 
-    def get_fping(self, host):
+    def get_fping(self, ipaddr):
         """
         Work out which fping binary to use, depending on the address
         family of the management IP address, returns None if we
         dont have a valid binary
         """
         try:
-            addrinfo = socket.getaddrinfo(host.mgmt_address, 0)[0]
+            addrinfo = socket.getaddrinfo(ipaddr, 0)[0]
         except socket.gaierror:
             return None
         addr_family = addrinfo[0]
@@ -57,12 +57,11 @@ class PingClient():
         return None
 
 
-    def ping_host(self, host, cb_fun, num_pings, interval, **kw):
+    def ping_host(self, ipaddr, cb_fun, num_pings, interval, **kw):
         """
         Start the ping, return the popen object on success or None on error
         """
-        ipaddr = host.mgmt_address
-        fping_bin = self.get_fping(host)
+        fping_bin = self.get_fping(ipaddr)
         if fping_bin is None:
             return False
 

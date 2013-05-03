@@ -23,26 +23,32 @@ import datetime
 import logging
 
 from sqlalchemy.orm import relationship
-from sqlalchemy import ForeignKey, Column, UniqueConstraint
+from sqlalchemy import ForeignKey, Column, UniqueConstraint, and_, desc
 from sqlalchemy.types import Integer, Unicode, String, Boolean, SmallInteger, DateTime
 
-from rnms.model import DeclarativeBase, DBSession
+from rnms.model import DeclarativeBase, DBSession, Attribute
 from rnms.lib.parsers import fill_fields
+from rnms.lib import states
 
 logger = logging.getLogger('Event')
 
 class Event(DeclarativeBase):
     """
     An Event is something that has either happened to a host or to an Attribute.
-    It may (and probably should) have an AlarmState which is the severity level
+    It may (and probably should) have an EventState which is the severity level
     of the event.  Events should only have host or attribute set, never both.
     If both are set, the host will return attribute.host not what you set.
-    New Events that are created should have all their values set then use
-    the process() method.
+
+    Alarmed Events
+    If the EventType.generate_alarm is set for this Event then on creation
+    the alarmed flag is set. 
+    Another Event may clear this one if it has an internal state of UP
+    and is of same Atribute and Type, this will set stop_time
+    A live Alarmed Event is one with alarmed set and stop_time clear.
     """
 
     __tablename__ = 'events'
-    
+
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     event_type_id = Column(Integer, ForeignKey('event_types.id', ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
@@ -51,20 +57,28 @@ class Event(DeclarativeBase):
     host = relationship('Host', backref='events', order_by='Host.id')
     attribute_id = Column(Integer, ForeignKey('attributes.id', ondelete="CASCADE", onupdate="CASCADE"))
     attribute = relationship('Attribute', backref='events')
-    alarm_state_id = Column(Integer, ForeignKey('alarm_states.id'))
-    alarm_state = relationship('AlarmState')
+    event_state_id = Column(Integer, ForeignKey('event_states.id'))
+    event_state = relationship('EventState')
+    created = Column(DateTime, nullable=False, default=datetime.datetime.now)
+    stop_time = Column(DateTime)
+    alarmed = Column(Boolean, nullable=False, default=False)
     acknowledged = Column(Boolean, nullable=False, default=False)
     processed = Column(Boolean, nullable=False, default=False)
-    created = Column(DateTime, nullable=False, default=datetime.datetime.now)
+    triggered = Column(Boolean, nullable=False, default=False)
+    check_stop_time = Column(Boolean, nullable=False, default=False)
     fields = relationship('EventField', backref='event', order_by='EventField.tag', cascade='all,delete,delete-orphan')
 
-    def __init__(self, event_type, host=None, attribute=None, alarm_state=None, field_list=None):
+    def __init__(self, event_type, host=None, attribute=None, event_state=None, field_list=None):
         self.event_type = event_type
         if attribute is not None:
             self.attribute=attribute
+            if event_type.generate_alarm == True:
+                self.alarmed = True
+                if event_type.alarm_duration > 0:
+                    self.check_stop_time = True
         elif host is not None:
             self.host = host
-        self.alarm_state=alarm_state
+        self.event_state=event_state
         if field_list is not None:
             for field_tag in field_list.keys():
                 self.fields.append(EventField(field_tag,field_list[field_tag]))
@@ -78,13 +92,12 @@ class Event(DeclarativeBase):
           info - sla row event_text
           details - other details of the event
         """
-        from rnms.model import alarm
         event_type = EventType.by_tag('sla')
-        alarm_state = alarm.AlarmState.by_name('alert')
-        if event_type is None or alarm_state is None:
+        event_state = EventState.by_name('alert')
+        if event_type is None or event_state is None:
             return None
         event_fields={ 'info': info, 'details': details}
-        return Event(event_type=event_type, attribute=attribute, field_list=event_fields, alarm_state=alarm_state)
+        return Event(event_type=event_type, attribute=attribute, field_list=event_fields, event_state=event_state)
 
     @classmethod
     def create_admin(cls, host=None, attribute=None, info=None):
@@ -95,7 +108,6 @@ class Event(DeclarativeBase):
           attribute: optional attribute object
           info: string of additional information
         """
-        from rnms.model import alarm
 
         if info is None:
             field_list = None
@@ -103,8 +115,64 @@ class Event(DeclarativeBase):
             field_list = {'info': info}
         event_type = EventType.by_tag('admin')
         if event_type is not None:
-            return Event(event_type=event_type, host=host, attribute=attribute, field_list=field_list, alarm_state=alarm.AlarmState.by_name('alert'))
+            return Event(event_type=event_type, host=host, attribute=attribute, field_list=field_list, event_state=EventState.by_name('alert'))
         return None
+
+    @classmethod
+    def alarmed_events(cls, conditions):
+        """
+        Find all alarmed Events with extra conditions
+        """
+        conditions.extend([
+            cls.alarmed == True,
+            cls.stop_time == None,])
+        return DBSession.query(cls).join(EventState).filter(and_(*conditions))
+
+    @classmethod
+    def check_time_events(cls):
+        """
+        Return a list of all alarmed Events that need the stop_time checked
+        """
+        return cls.alarmed_events(
+            [cls.check_stop_time == True,
+             cls.stop_time < datetime.datetime.now()])
+
+    @classmethod
+    def find_down(cls, attribute_id, event_type_id):
+        """
+        Find the first down or testing alarmed Event of the given
+        EventType and Attribute
+        """
+        return DBSession.query(cls).join(EventState).filter(and_(
+            cls.alarmed == True,
+            cls.stop_time == None,
+            cls.attribute_id == attribute_id,
+            cls.event_type_id == event_type_id,
+            EventState.internal_state.in_(
+                [states.STATE_DOWN, states.STATE_TESTING]))).\
+                order_by(desc(cls.id)).first()
+
+    @classmethod
+    def attribute_alarm(cls, attribute_id):
+        """
+        Return the highest priority alarmed Event for the given Attribute id
+        """
+        return cls.alarmed_events(
+            [cls.attribute_id == attribute_id]).order_by(
+            desc(EventState.priority)).first()
+
+    @classmethod
+    def host_alarm(cls, host_id):
+        """
+        Return the highest priority alarmed Event for the given Host id
+    """
+        return cls.alarmed_events(
+            [cls.attribute_id.in_(
+                DBSession.query(Attribute.id).\
+                filter(Attribute.host_id == host_id))]).order_by(
+                desc(EventState.priority)).first()
+
+
 
     def text(self):
         """
@@ -115,8 +183,8 @@ class Event(DeclarativeBase):
           attribute-description   Attribute.description
           client     User.display_name
           host       Host.display_name OR Attribute.host.display_name
-          state      AlarmState.display_name
-          
+          state      EventState.display_name
+
           info       event field (from JFFNMS)
           user       event field (from JFFNMS)
 
@@ -127,16 +195,23 @@ class Event(DeclarativeBase):
     def set_processed(self):
         self.processed = True
 
+    def set_stop(self, stop_event):
+        """
+        Stop this alarmed Event
+        """
+        self.stop_time = stop_event.created
+        self.check_stop_time = False
+        self.acknowledged = True
 
 
 class EventField(DeclarativeBase):
     __tablename__ = 'event_fields'
-    
+
     def __init__(self, new_tag=None, new_data=None):
         if new_tag is not None and new_data is not None:
             self.tag = new_tag
             self.data = new_data
-    
+
     #{ Columns
     event_id = Column(Integer, ForeignKey('events.id', ondelete="CASCADE", onupdate="CASCADE"), nullable=False, primary_key=True)
     tag = Column(String(20), nullable=False, primary_key=True)
@@ -146,19 +221,15 @@ class EventField(DeclarativeBase):
 
 class EventType(DeclarativeBase):
     __tablename__ = 'event_types'
-    
-    #{ Columns
+
     id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(60), nullable=False, unique=True)
     tag = Column(String(40), unique=True)
     text = Column(Unicode(250))
     showable = Column(SmallInteger,nullable=False,default=1)
     generate_alarm = Column(Boolean,nullable=False,default=False)
-    up_event_id = Column(Integer, ForeignKey('event_types.id'))
     alarm_duration = Column(Integer,nullable=False,default=0)
     show_host = Column(Boolean,nullable=False,default=True)
-    severity_id = Column(Integer, ForeignKey('event_severities.id'))
-    severity = relationship('EventSeverity', order_by='EventSeverity.id', backref='event_types')
     #}
 
     def __init__(self, display_name=None):
@@ -183,25 +254,90 @@ class EventType(DeclarativeBase):
         """ Return the Event Type whose id is ``event_id``."""
         return DBSession.query(cls).filter(cls.id==event_id).first()
 
-class EventSeverity(DeclarativeBase):
-    __tablename__ = 'event_severities'
+class Severity(DeclarativeBase):
+    __tablename__ = 'severities'
 
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(40), nullable=False, unique=True)
-    level = Column(SmallInteger,nullable=False,default=0)
     bgcolor = Column(String(6), nullable=False)
     fgcolor = Column(String(6), nullable=False)
     #}
 
-    def __init__(self, display_name=None, level=0, bgcolor='ffffff', fgcolor='000000'):
+    def __init__(self, display_name=None, bgcolor='ffffff', fgcolor='000000'):
         self.display_name = display_name
-        self.level = level
         self.bgcolor = bgcolor
         self.fgcolor = fgcolor
 
     @classmethod
     def by_name(cls, name):
-        """ Return the Event Severity whose display_name is ``name``."""
+        """ Return the Severity whose display_name is ``name``."""
         return DBSession.query(cls).filter(cls.display_name==name).first()
 
+class EventState(DeclarativeBase):
+    """
+    All Events and Alarms have an EventState which is the severity 
+    of the object. 
+    The priority is a number between 0-100 where the lowest number is
+    the more important Event or Alarm
+    Internal state should be one of the values from rnms.lib.states
+    """
+
+    __tablename__ = 'event_states'
+
+    #{ Columns
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    display_name = Column(Unicode(40),nullable=False, unique=True)
+    priority = Column(SmallInteger,nullable=False,default=100)
+    sound_in = Column(String(40))
+    sound_out = Column(String(40))
+    internal_state = Column(SmallInteger,nullable=False)
+    severity_id = Column(Integer, ForeignKey('severities.id'), nullable=False )
+    severity = relationship('Severity')
+
+    #}
+
+    def __repr__(self):
+        return '<EventState: %s (%s)>' % (self.display_name, self.internal_state)
+
+    @classmethod
+    def by_name(cls, display_name):
+        """ Return the event_state with display_name given. """
+        return DBSession.query(cls).filter(
+                cls.display_name == display_name).first()
+
+    @classmethod
+    def get_up(self):
+        """ Reutrn the event_state that is for Up """
+        return self.by_name(u'up')
+
+    def is_up(self):
+        """
+        Returns true if this alarm has internal state of up.
+        """
+        return (self.internal_state==states.STATE_UP)
+
+    def is_down(self):
+        """
+        Returns true if this alarm has internal state of down.
+        """
+        return (self.internal_state== states.STATE_DOWN)
+
+    def is_alert(self):
+        """
+        Returns true if this alarm has internal state of alert.
+        """
+        return (self.internal_state== states.STATE_ALERT)
+
+    def is_testing(self):
+        """
+        Returns true if this alarm has internal state of testing.
+        """
+        return (self.internal_state== states.STATE_TESTING)
+
+    def is_downtesting(self):
+        """
+        Returns true if this alarm has internal state of testing or down.
+        """
+        return (self.internal_state== states.STATE_DOWN or
+                self.internal_state== states.STATE_TESTING)

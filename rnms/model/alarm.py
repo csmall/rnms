@@ -21,18 +21,18 @@
 """ Alarm information """
 import datetime
 
-from sqlalchemy import ForeignKey, Column, and_
+from sqlalchemy import ForeignKey, Column, and_, desc
 from sqlalchemy.orm import relationship
-from sqlalchemy.types import Integer, Unicode, DateTime, Boolean, String, SmallInteger
+from sqlalchemy.types import Integer, DateTime, Boolean
 #from sqlalchemy.orm import relation, backref
 
 from rnms.model import DeclarativeBase, DBSession
-from rnms.lib.states import STATE_UP, STATE_DOWN, STATE_ALERT, STATE_TESTING
+from rnms.lib import states
 
 class Alarm(DeclarativeBase):
     """
     An alarm is some sort of alert on an attribute. They are created by
-    an Event and share its Severity and EventType.
+    an Event and share its EventState and EventType.
     If the EventType has a duration then the stop event is the same as the
     start Event and the stop time is after the duration expires.
 
@@ -44,38 +44,29 @@ class Alarm(DeclarativeBase):
 
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
-    start_time = Column(DateTime, nullable=False, default=datetime.datetime.now)
+    event_id = Column(Integer, ForeignKey('events.id'), nullable=False)
+    event = relationship("Event",
+            primaryjoin="Event.id==Alarm.start_event_id")
+    stop_event_id = Column(Integer, ForeignKey('events.id'))
+    stop_event = relationship("Event",
+            primaryjoin="Event.id==Alarm.stop_event_id")
     stop_time = Column(DateTime)
     processed = Column(Boolean, nullable=False, default=False)
     check_stop_time = Column(Boolean, nullable=False, default=False)
-    attribute_id = Column(Integer, ForeignKey('attributes.id'),nullable=False)
-    attribute = relationship('Attribute', backref='alarms')
-    alarm_state_id = Column(Integer, ForeignKey('alarm_states.id'),nullable=False)
-    alarm_state = relationship('AlarmState')
-    event_type_id = Column(Integer, ForeignKey('event_types.id'),nullable=False)
-    event_type = relationship('EventType')
-    start_event_id = Column(Integer, ForeignKey('events.id'))
-    stop_event_id = Column(Integer, ForeignKey('events.id'))
-    start_event = relationship("Event",
-            primaryjoin="Event.id==Alarm.start_event_id")
-    stop_event = relationship("Event",
-            primaryjoin="Event.id==Alarm.stop_event_id")
     #}
 
     def __init__(self,event=None):
         if event is not None:
-            self.start_event = event
-            self.start_time = event.created
-            self.attribute = event.attribute
-            self.event_type = event.event_type
-            self.alarm_state = event.alarm_state
+            self.event = event
             if event.event_type.alarm_duration > 0:
                 self.stop_time = datetime.datetime.now() + datetime.timedelta(minutes=event.event_type.alarm_duration)
                 self.stop_event = event
                 self.check_stop_time = True
 
     def __repr__(self):
-        return '<Alarm {0} A:{1} T:{2}>'.format(self.id, self.attribute_id, self.start_time)
+        return '<Alarm {0} A:{1} T:{2}>'.format(
+            self.id, self.event.attribute_id,
+            self.event.created)
 
     def substitutes(self):
         """
@@ -93,24 +84,23 @@ class Alarm(DeclarativeBase):
         return subs
 
 
-    def set_stop(self, stop_event, alarm_state=None):
+    def set_stop(self, stop_event, event_state=None):
         """
         Set the stop attributes for this alarm.  
         Requires the event that stopped the alarm and an optional
-        new alarm_state to set the alarm to.
+        new event_state to set the alarm to.
         Processed flag is cleared for the consolidator to trigger on
         an up alarm
         """
-        if alarm_state is None:
-            self.alarm_state = stop_event.alarm_state
+        if event_state is None:
+            self.event_state = stop_event.event_state
         else:
-            self.alarm_state = alarm_state
+            self.event_state = event_state
         self.stop_time = stop_event.created
         self.stop_event = stop_event
         self.check_stop_time = False
         self.processed = False
-        if self.start_event:
-            self.start_event.acknowledged=True
+        self.event.acknowledged=True
 
     @classmethod
     def find_down(cls,attribute,event_type):
@@ -118,70 +108,12 @@ class Alarm(DeclarativeBase):
         Find the first down or testing alarm of the given event_type
         for this attribute.
         """
+        from rnms.model.event import EventState, Event
         if attribute is None or event_type is None:
             return None
-        return DBSession.query(cls).filter(and_(
-            cls.attribute_id==attribute.id,
-            cls.event_type_id==event_type.id,
-            cls.alarm_state_id == AlarmState.id,
-            AlarmState.internal_state.in_([STATE_DOWN, STATE_TESTING]),
-            )).first()
+        return DBSession.query(cls).join(Event, EventState).filter(and_(
+            cls.event.attribute_id==attribute.id,
+            cls.event.event_type_id==event_type.id,
+            EventState.internal_state.in_([states.STATE_DOWN, states.STATE_TESTING]),
+            )).order_by(desc(cls.id)).first()
 
-class AlarmState(DeclarativeBase):
-    """
-    All Alarms have an AlarmState which is the severity of an Alarm.
-    The alarm_level is a priority about which Alarms override others,
-    smaller the level, the more important it is.
-    Internal state should be one of the values from rnms.lib.states
-    """
-
-    __tablename__ = 'alarm_states'
-    
-    #{ Columns
-    id = Column(Integer, autoincrement=True, primary_key=True)
-    display_name = Column(Unicode(40),nullable=False, unique=True)
-    alarm_level = Column(SmallInteger,nullable=False,default=100)
-    sound_in = Column(String(40))
-    sound_out = Column(String(40))
-    internal_state = Column(SmallInteger,nullable=False)
-    
-    #}
-
-    def __repr__(self):
-        return '<AlarmState: %s (%s)>' % (self.display_name, self.internal_state)
-    @classmethod
-    def by_name(cls, display_name):
-        """ Return the alarm_state with display_name given. """
-        return DBSession.query(cls).filter(
-                cls.display_name == display_name).first()
-
-    def is_up(self):
-        """
-        Returns true if this alarm has internal state of up.
-        """
-        return (self.internal_state==STATE_UP)
-
-    def is_down(self):
-        """
-        Returns true if this alarm has internal state of down.
-        """
-        return (self.internal_state==STATE_DOWN)
-
-    def is_alert(self):
-        """
-        Returns true if this alarm has internal state of alert.
-        """
-        return (self.internal_state==STATE_ALERT)
-
-    def is_testing(self):
-        """
-        Returns true if this alarm has internal state of testing.
-        """
-        return (self.internal_state==STATE_TESTING)
-
-    def is_downtesting(self):
-        """
-        Returns true if this alarm has internal state of testing or down.
-        """
-        return (self.internal_state==STATE_DOWN or
-                self.internal_state==STATE_TESTING)

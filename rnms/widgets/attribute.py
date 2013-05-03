@@ -26,7 +26,7 @@ from tw2.jqplugins.jqplot import JQPlotWidget
 from tw2.jqplugins.jqplot.base import pieRenderer_js
 import tw2.core as twc
 
-from rnms.model import Attribute, DBSession, Host
+from rnms.model import Attribute, DBSession, Host, EventState
 from rnms.lib import states
 
 from rnms.widgets.base import MapWidget
@@ -57,8 +57,8 @@ class AttributeMap(MapWidget):
         if self.host_id is not None:
             conditions.append(Attribute.host_id == self.host_id)
         if self.alarmed_only == True:
-            conditions.append(Attribute.oper_state != states.STATE_UP)
-        attributes = DBSession.query(Attribute).join(Host).\
+            conditions.append(Attribute.state.internal_state != states.STATE_UP)
+        attributes = DBSession.query(Attribute).join(Host,EventState).\
                 filter(and_(*conditions)).\
                 order_by(asc(Host.display_name), asc(Attribute.display_name))
         if attributes.count() == 0:
@@ -103,7 +103,11 @@ class AttributeSummary(twc.Widget):
 
         admin_down = DBSession.query(func.count(Attribute.id)).filter(and_(*(hostid_filter + [Attribute.admin_state == states.STATE_DOWN]))).first()
         self.att_total = int(admin_down[0])
-        db_states = DBSession.query(Attribute.oper_state,func.count(Attribute.id)).filter(and_(*(hostid_filter + [Attribute.admin_state != states.STATE_DOWN]))).group_by(Attribute.oper_state)
+        db_states = DBSession.query(
+            EventState.internal_state, func.count(Attribute.id)).\
+                join(Attribute).filter(and_(
+                    *(hostid_filter + [Attribute.admin_state != states.STATE_DOWN]))).\
+                group_by(EventState.internal_state)
         tmp_states = {}
         for att in db_states:
             tmp_states[att[0]] = att[1]

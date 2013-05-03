@@ -22,39 +22,40 @@
 the database"""
 from rnms.lib import states
 
-alarm_states = (
-    (u'down', 10, 'down.wav', 'up.wav', states.STATE_DOWN),
-    (u'up', 100, '', '', states.STATE_UP),
-    (u'alert', 60, 'boing.wav', '', states.STATE_ALERT),
-    (u'testing', 40, '', '', states.STATE_TESTING),
-    (u'running', 100, '', '', states.STATE_UP),
-    (u'not running', 20, '', '', states.STATE_DOWN),
-    (u'open', 100, '', '', states.STATE_UP),
-    (u'closed', 15, '', '', states.STATE_DOWN),
-    (u'error', 90, 'boing.wav', '', states.STATE_ALERT),
-    (u'invalid', 30, '', '', states.STATE_DOWN),
-    (u'valid', 110, '', '', states.STATE_UP),
-    (u'reachable', 100, '', '', states.STATE_UP),
-    (u'unreachable', 5, '', '', states.STATE_DOWN),
-    (u'lowerlayerdown', 10, 'down.wav', 'up.wav', states.STATE_DOWN),
-    (u'synchronized', 100, '', '', states.STATE_UP),
-    (u'unsynchronized', 6, '', '', states.STATE_DOWN),
-    (u'battery normal', 100, '', '', states.STATE_UP),
-    (u'battery low', 4, '', '', states.STATE_DOWN),
-    (u'battery unknown', 2, '', '', states.STATE_DOWN),
-    (u'on battery', 3, '', '', states.STATE_DOWN),
-    (u'on line', 90, '', '', states.STATE_UP),
-    (u'ok', 100, '', '', states.STATE_UP),
-    (u'out of bounds', 10, '', '', states.STATE_DOWN),
-    (u'unavailable', 10, 'down.wav', 'up.wav', states.STATE_DOWN),
-    (u'available', 100, '', '', states.STATE_UP),
-    (u'battery depleted', 3, '', '', states.STATE_DOWN),
-    (u'other', 10, '', '', states.STATE_DOWN),
-    (u'unknown', 10, '', '', states.STATE_DOWN),
-    (u'noncritical', 90, '', '', states.STATE_DOWN),
-    (u'critical', 10, '', '', states.STATE_DOWN),
-    (u'nonrecoverabl', 10, '', '', states.STATE_DOWN),
-    (u'warning', 80, 'down.wav', 'up.wav', states.STATE_DOWN)
+#Name, priority, down snd, up snd, int state, color
+event_states = (
+    (u'down', 10, 'down.wav', 'up.wav', states.STATE_DOWN, u'Down'),
+    (u'up', 100, '', '', states.STATE_UP, u'Up'),
+    (u'alert', 60, 'boing.wav', '', states.STATE_ALERT, u'Alert'),
+    (u'testing', 40, '', '', states.STATE_TESTING, u'Testing'),
+    (u'running', 100, '', '', states.STATE_UP, u'Up'),
+    (u'not running', 20, '', '', states.STATE_DOWN, u'Down'),
+    (u'open', 100, '', '', states.STATE_UP, u'Up'),
+    (u'closed', 15, '', '', states.STATE_DOWN, u'Service'),
+    (u'error', 90, 'boing.wav', '', states.STATE_ALERT, u'Alert'),
+    (u'invalid', 30, '', '', states.STATE_DOWN, u'Service'),
+    (u'valid', 110, '', '', states.STATE_UP, u'Service'),
+    (u'reachable', 100, '', '', states.STATE_UP, u'Up' ),
+    (u'unreachable', 5, '', '', states.STATE_DOWN, u'Down'),
+    (u'lowerlayerdown', 10, 'down.wav', 'up.wav', states.STATE_DOWN, u'Down'),
+    (u'synchronized', 100, '', '', states.STATE_UP, u'Information'),
+    (u'unsynchronized', 6, '', '', states.STATE_DOWN, u'Information'),
+    (u'battery normal', 100, '', '', states.STATE_UP, u'Up'),
+    (u'battery low', 4, '', '', states.STATE_DOWN, u'Alert'),
+    (u'battery unknown', 2, '', '', states.STATE_UNKNOWN, u'Unknown'),
+    (u'on battery', 3, '', '', states.STATE_DOWN, u'Alert'),
+    (u'on line', 90, '', '', states.STATE_UP, u'Up'),
+    (u'ok', 100, '', '', states.STATE_UP, u'Up'),
+    (u'out of bounds', 10, '', '', states.STATE_DOWN, u'Down'),
+    (u'unavailable', 10, 'down.wav', 'up.wav', states.STATE_DOWN, u'Down'),
+    (u'available', 100, '', '', states.STATE_UP, u'Down'),
+    (u'battery depleted', 3, '', '', states.STATE_DOWN, u'Fault'),
+    (u'other', 10, '', '', states.STATE_DOWN, u'Fault'),
+    (u'unknown', 10, '', '', states.STATE_UNKNOWN, u'Unknown'),
+    (u'noncritical', 90, '', '', states.STATE_ALERT, u'Alert'),
+    (u'critical', 10, '', '', states.STATE_DOWN, u'Down'),
+    (u'nonrecoverabl', 10, '', '', states.STATE_DOWN, u'Fault'),
+    (u'warning', 80, 'down.wav', 'up.wav', states.STATE_ALERT, u'Alert')
     )
 
 autodiscovery_policies = (
@@ -507,53 +508,55 @@ config_transfers = (
     )
 
 event_types = (
-        # display_name, severity, tag, text, gen_alm, alm_up, alm_dur, sh_host
-    (u'Unknown', u'Warning', 'unknown', u'$attribute $state $info',False, 1, 0,  True),
-    (u'Administrative', u'Administrative', 'admin', u'$attribute $info',True, 1, 1800, True),
-    (u'SLA', u'Information', 'sla', u'$attribute $info (${client} ${description})',True, 1, 1800, True),
-    (u'Internal', u'Information', 'internal', u'$user $attribute $state $info',False,1,0, False),
+        # display_name, tag, text, gen_alm, alm_dur, sh_host
+    (u'Unknown', 'unknown', u'$attribute $state $info',False, 0,  True),
+    (u'Administrative', 'admin', u'$attribute $info',True, 1800, True),
+    (u'SLA', 'sla', u'$attribute $info (${client} ${description})',True, 1800, True),
+    (u'Internal', 'internal', u'$user $attribute $state $info',False,0, False),
 
-    (u'BGP Status', u'Critical', 'bgp_status', u'BGP Neighbor $attribute $state $info (${client} ${description})',True, 1, 0, True),
-    (u'BGP Notification', u'Information', 'bgp_notify', u'Notification $state $attribute $info',False, 1, 0, True),
+    (u'BGP Status', 'bgp_status', u'BGP Neighbor $attribute $state $info (${client} ${description})',True, 0, True),
+    (u'BGP Notification', 'bgp_notify', u'Notification $state $attribute $info',False, 0, True),
 
-    (u'TCP/UDP Service', u'Service', 'tcpudp_service', u'TCP/UDP Service $attribute $state (${client} ${description}) $info',True, 1, 0, True),
-    (u'TCP Content', u'Service', 'tcp_content', u'Content Response on $attribute is $state (${client} ${description}) $info',True, 1, 0, True),
+    (u'TCP/UDP Service', 'tcpudp_service', u'TCP/UDP Service $attribute $state (${client} ${description}) $info',True, 0, True),
+    (u'TCP Content', 'tcp_content', u'Content Response on $attribute is $state (${client} ${description}) $info',True, 0, True),
 
-    (u'Configuration', u'Warning', 'configuration', u'$user changed configuration from $source',False, 1, 0, True),
-    (u'Interface Protocol', u'Fault', 'interface_protocol', u'Interface $attribute Protocol $state $info (${client} ${description})',True, 1, 0, True),
-    (u'Interface Link', u'Big Fault', 'interface_link', u'Interface $attribute Link $state $info (${client} ${description})',False, 1, 0, True),
-    (u'Controller Status', u'Big Fault', 'controller_status', u'Controller  $info $attribute $state',False, 1, 0, True),
-    (u'Interface Shutdown', u'Big Fault', 'interface_shutdown', u'Interface $attribute $info $state (${client} ${description})',False, 4, 0, True),
-    (u'Clear Counters', u'Information', 'clear_counters', u'<user> Cleared Counters of $attribute  (${client} ${description})',False, 1, 0, True),
-    (u'Environmental', u'Critical', 'environment', u'$attribute $state $info',True, 1, 0, True),
-    (u'Duplex Mismatch', u'Warning', 'duplex_mismatch', u'Duplex Mismatch, $attribute is not full duplex and <user> $info is full duplex',False, 1, 0, True),
-    (u'ACL', u'Information', 'acl', u'ACL $attribute $state $info packets from <user>',False, 1, 0, True),
-    (u'Excess Collisions', u'Warning', 'collision', u'Excess Collisions on Interface $attribute',False, 1, 0, True),
-    (u'Application', u'Critical', 'application', u'Application $attribute is $state $info (${client} ${description})',True, 1, 0, True),
-    (u'Reachability', u'Critical', 'reachability', u'Host is $state with $info',True, 1, 0, True),
-    (u'NTP', u'Information', 'ntp', u'$attribute is $state $info',True, 1, 0, True),
+    (u'Configuration', 'configuration', u'$user changed configuration from $source',False, 0, True),
+    (u'Interface Protocol', 'interface_protocol', u'Interface $attribute Protocol $state $info (${client} ${description})',True, 0, True),
+    (u'Interface Link', 'interface_link', u'Interface $attribute Link $state $info (${client} ${description})',False, 0, True),
+    (u'Controller Status', 'controller_status', u'Controller  $info $attribute $state',False, 0, True),
+    (u'Interface Shutdown', 'interface_shutdown', u'Interface $attribute $info $state (${client} ${description})',False, 0, True),
+    (u'Clear Counters', 'clear_counters', u'<user> Cleared Counters of $attribute  (${client} ${description})',False, 0, True),
+    (u'Environmental', 'environment', u'$attribute $state $info',True, 0, True),
+    (u'Duplex Mismatch', 'duplex_mismatch', u'Duplex Mismatch, $attribute is not full duplex and <user> $info is full duplex',False, 0, True),
+    (u'ACL', 'acl', u'ACL $attribute $state $info packets from <user>',False, 0, True),
+    (u'Excess Collisions', 'collision', u'Excess Collisions on Interface $attribute',False, 0, True),
+    (u'Application', 'application', u'Application $attribute is $state $info (${client} ${description})',True, 0, True),
+    (u'Reachability', 'reachability', u'Host is $state with $info',True, 0, True),
+    (u'NTP', 'ntp', u'$attribute is $state $info',True, 0, True),
 
-    (u'APC Status', u'Critical', 'apc_status', u'$attribute is $state $info',True, 1, 0, True),
+    (u'APC Status', 'apc_status', u'$attribute is $state $info',True, 0, True),
 
-    (u'Alteon RServer', u'Fault', 'alteon_rserver', u'Real Server $attribute is $state',True, 1, 0, True),
-    (u'Alteon Service', u'Fault', 'alteon_service', u'Real Service $attribute is $state $info',True, 1, 0, True),
-    (u'Alteon VServer', u'Fault', 'alteon_vserver', u'Virtual Server $attribute is $state $info',False, 1, 0, True),
+    (u'Alteon RServer', 'alteon_rserver', u'Real Server $attribute is $state',True, 0, True),
+    (u'Alteon Service', 'alteon_service', u'Real Service $attribute is $state $info',True, 0, True),
+    (u'Alteon VServer', 'alteon_vserver', u'Virtual Server $attribute is $state $info',False, 0, True),
 
-    (u'Brocade FC Port', u'Fault', 'brocade_fcport', u'$attribute $state ($info)',True, 1, 0, True),
+    (u'Brocade FC Port', 'brocade_fcport', u'$attribute $state ($info)',True, 0, True),
 
-    (u'OS/400 Error', u'Critical', 'os400_error', u'A subsystem is $state on the OS/400',True, 1, 0, True),
-    (u'Storage Controller', u'Big Fault', 'storage_controller', u'$info',True, 1, 0, True)
+    (u'OS/400 Error', 'os400_error', u'A subsystem is $state on the OS/400',True, 0, True),
+    (u'Storage Controller', 'storage_controller', u'$info',True, 0, True)
     )
 
-event_severities = (
-    (u'Unknown',       127, '000000', 'ffffff'),
-    (u'Critical',       60, 'ff0000', 'ffffff'),
-    (u'Big Fault',      50, 'da4725','ffffff'),
-    (u'Fault',          40, 'f51d30', 'eeeeee'),
-    (u'Service',        35, '0090f0', 'ffffff'),
-    (u'Warning',        30, '00aa00', 'ffffff'),
-    (u'Information',    20, 'f9fd5f', '000000'),
-    (u'Administrative', 10, '8d00ba', 'ffffff'),
+severities = (
+    (u'Up', '00ff00', '000000'),
+    (u'Down', 'ff0000', 'ffffff'),
+    (u'Testing', 'f9fd5f', '000000'),
+    (u'Unknown',        '000000', 'ffffff'),
+    (u'Alert',        '00aa00', 'ffffff'),
+    (u'Big Fault',      'da4725','ffffff'),
+    (u'Fault',          'f51d30', 'eeeeee'),
+    (u'Service',        '0090f0', 'ffffff'),
+    (u'Information',    'f9fd5f', '000000'),
+    (u'Administrative', '8d00ba', 'ffffff'),
     )
 
 logfiles = (
@@ -1096,7 +1099,129 @@ poller_sets = [
             [u'SNMP Drops', u''],
             ]],
         ]
+"""
+graph templates:
+    lines: unrelated or single lines
+    inout: lines with input and output
+    area: unstacked area
+    stackedarea: areas stacked on top of each other
+    totalarea: used,free calculated total
+"""
+simple_graph_types = (
+    #Cisco MAC Accounting | Accounted Bytes | cisco_mac_bytes    
+    #Cisco MAC Accounting | Accounted Packets | cisco_mac_packets  
 
+    ('Apache', (
+        (u'Hits', u'Hits', 'area', '', (
+            ('tac', '', 'Hits per Second', '%8.0lf %sHits/s'),
+        )),
+        (u'Throughput', u'Bps', 'area',  '',(
+            ('tkb', '1000,*', 'Throughput', '%8.0lf %sB/s'),
+        )),
+        (u'Request Size', u'B/Req', 'area',  '',(
+            ('bpr', '', 'Bytes/Request', '%.0lf %s'),
+        )),
+        (u'Workers', 'Workers', 'totalused',  '',(
+            ('bw', '', 'Busy Workers', '%8.0lf %s'),
+            ('iw', '', 'Idle Workers', '%8.0lf %s'),
+        )),
+    )),
+    ('APC', (
+        (u'Battery Temperature', 'Deg', 'area', '', (
+            ('temperature', '', 'Temperature', '%5.0lf'),
+        )),
+        ('Load/Capacity', '%', 'area', '', (
+            ('capacity', '', 'Battery Capacity', '%5.0lf %%'),
+            ('load', '', 'Output Load', '%5.0lf %%'),
+        )),
+        ('Voltages', 'V', 'area', '',(
+            ('in_voltage', '', 'Input Voltage',  '%5.0lf VAC'),
+            ('out_voltage', '', 'Output Voltage',  '%5.0lf VAC'),
+        )),
+        ('Time Remaining', 'Minutes', 'area', '', (
+            ('time_remaining', '', 'Time Remaining', '%5.0lf mins'),
+        )),
+    )),
+    ('Applications', (
+        ('Threads', 'Threads', 'area', '',(
+            ('current_instances', '', 'Threads', '%5.0lf'),
+        )),
+        ('Memory', 'Bytes', 'area', '', (
+            ('used_memory', '', 'Memory', '%6.2lf %sB'),
+        )),
+    )),
+    ('BGP Neighbors', (
+        (u'Updates', 'Updates', 'inout', '', (
+            ('bgpin', '300,*', 'Inbound Updates in 5 mins', '%4.0lf %s'),
+            ('bgpout', '300,*', 'Outbound Updates in 5 mins', '%4.0lf %s'),
+        )),
+        (u'Routes', 'Routes', 'inout', '', (
+            ('accepted_routes', '', 'Accepted Routes', '%8.2lf %s'),
+            ('advertised_routes', '', 'Advertised Routes', '%8.2lf %s'),
+        )),
+    )),
+    ('Brocade FC Ports', (
+        (u'Traffic', 'bps', 'inout', '', (
+            ('rx_words', '32,*', 'Inbound', '%8.2lf %sbps'),
+            ('tx_words', '32,*', 'Outbound', '%8.2lf %sbps'),
+        )),
+        (u'Frames', 'Fps', 'inout', '', (
+            ('rx_frames', '', 'Inbound', '%8.2lf %sFps'),
+            ('tx_frames', '', 'Outbound', '%8.2lf %sFps'),
+        )),
+    )),
+    ('Brocade Sensors', (
+        (u'Sensor Value', '$unit', 'area', '', (
+            ('sensor_value', '', '$measure', '%5.0lf'),
+        )),
+    )),
+    ('Cisco System Info', (
+        (u'CPU Load', '%', 'area', '', (
+            ('cpu', '', 'CPU Utilization', '%4.0lf %'),
+        )),
+        (u'Memory', '%', 'totalarea', '', (
+            ('mem_used', '', 'Used Memory', '%6.2lf %sB'),
+            ('mem_free', '', 'Free Memory', '%6.2lf %sB'),
+        )),
+    )),
+        
+    ('Physical Interfaces', (
+        (u'Traffic', u'bps', 'inout', '', (
+            ('input', '8,*', 'Inbound', '%6.2lf'),
+            ('output', '8,*', 'Outbound', '%6.2lf'),
+        )),
+        (u'Packets', u'Pps', 'inout', '', (
+            ('inpackets', '', 'Inbound', '%6.2lf%S'),
+            ('outpackets', '', 'Outbound', '%6.2lf%S'),
+        )),
+        (u'Errors', u'Eps', 'inout', '', (
+            ('inputerrors', '', 'Input Errors', '%4.0lf %sEps'),
+            ('outputerrors', '', 'Output Errors', '%4.0lf %Eps'),
+        )),
+    )),
+    ('Sensors', (
+        (u'Sensor Value', '$unit', 'area', '', (
+         ('value', '${multiplier},*', '$measure', '%.2lf %s${units}'),
+        )),
+    )),
+    ('UPS', (
+        (u'Batttery Temperature', 'Deg', 'area', '', (
+            ('temperature', '', 'Temperature', '%5.0lf'),
+        )),
+        (u'Time Remaining', 'Minutes', 'area', '', (
+            ('minutes_remaining', '', 'Time Remaining', '%3.0lf'),
+        )),
+        (u'Charge Remaining', '%', 'area', '', (
+            ('charge_remaining', '', 'Charge Remaining', '%3.0lf %%'),
+        )),
+    )),
+    ('Windows System Info', (
+        (u'CPU Load', '%', 'area', '', (
+            ('cpu', '', 'CPU Utilization', '%8.2lf %%'),
+        )),
+    )),
+        
+)
 # Display Name, Atrribute Type, Title, v Label, extra options
 graph_types = (
         (u'Traffic', 'Physical Interfaces', '', u'bps', '',
@@ -1428,7 +1553,7 @@ graph_types = (
             ('PRINT', 'tlast', r'Current: %5.0lf mins'),
             ('PRINT', 'tlast_hr', r'(3.2lf Hours)\l'),
            )),
-        
+
         # Applications graph types
         (u'Threads', 'Applications', '', 'Threads', '',
          ( #DEF
@@ -1830,7 +1955,7 @@ graph_types = (
 
 triggers = (
         (
-        u'Interface Status Change', 'alarm', False, True, u'${attribute} ${state}',
+        u'Interface Status Change', False, True, u'${attribute} ${state}',
         u'The attribute ${attribute} is ${state} on host ${host}.', ( #rules
             ('event_type', '!IN', 'sla,admin', False, False),
             )),

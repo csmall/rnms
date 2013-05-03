@@ -30,8 +30,56 @@ from rnms.lib.parsers import fill_fields
 
 logger = logging.getLogger('rnms')
 
+graph_colors = ('ffcccc', 'ababab', 'aa00aa', '112233', '556677', '0000ff',
+                '00ff00')
 class GraphTypeError(Exception): pass
 class GraphTypeLineError(Exception): pass
+
+def format_def(rrd_def, attribute):
+    """
+    Return the DEF: line for this rrd graph definition
+    Format is
+    <dir>/<rrd_filename>:data:<attribute_type.rra_cf>
+    """
+    rrd_filename = rrd_def.attribute_type_rrd.filename(attribute.id)
+    if rrd_filename is None:
+        logger.warning('RRD filename not found')
+        return None
+    return str(''.join((
+            'DEF:',
+            rrd_def.name,
+            '=',
+            rrd_filename,
+            ':data:',
+            attribute.attribute_type.rra_cf)))
+
+def escape_legend(legend, attribute=None):
+    """
+    Returns colon escaped legend
+    If attribute suppled, replace fields with attribute fields
+    """
+    if attribute is None:
+        return str(legend.replace(':',r'\:'))
+    else:
+        return str(fill_fields(legend, attribute=attribute).replace(':',r'\:'))
+
+def maxavglast(vname):
+    return (
+        'VDEF:{0}_max={0},MAXIMUM'.format(vname),
+        'VDEF:{0}_avg={0},AVERAGE'.format(vname),
+        'VDEF:{0}_last={0},LAST'.format(vname),
+    )
+
+def print_line(attribute, line_type, vname, color, legend, legend_unit):
+    """ Return a list of lines for this specific item """
+    esc_units = escape_legend(legend_unit, attribute)
+    return (
+        '{}:{}#{}:{}'.format(line_type, vname, color,
+                             escape_legend(legend+': ', attribute)),
+        r'PRINT:{}_max:Max {}'.format(vname, esc_units),
+        r'PRINT:{}_avg:Average {}'.format(vname, esc_units),
+        r'PRINT:{}_last:Last {}\l'.format(vname, esc_units),
+    )
 
 class GraphType(DeclarativeBase):
     """
@@ -45,9 +93,9 @@ class GraphType(DeclarativeBase):
     attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'))
     title = Column(String(40), nullable=False, default='')
     left_label = Column(String(40), nullable=False, default='')
-    width = Column(Integer, nullable=False, default=0)
-    height = Column(Integer, nullable=False, default=0)
+    template = Column(String(10), nullable=False, default='custom')
     extra_options = Column(String(200), nullable=False, default='')
+    rrd_lines = relationship('GraphTypeRRDLine', backref='graph_type', cascade='all, delete, delete-orphan')
     defs = relationship('GraphTypeDef', backref='graph_type', cascade='all, delete, delete-orphan')
     vnames = relationship('GraphTypeVname', order_by='GraphTypeVname.position', backref='graph_type', cascade='all, delete, delete-orphan')
     lines = relationship('GraphTypeLine', order_by='GraphTypeLine.position', backref='graph_type', cascade='all, delete, delete-orphan')
@@ -84,11 +132,16 @@ class GraphType(DeclarativeBase):
         Return a tuple of rrdgraph lines based upon the definition of
         this GraphType and the RRDValues of the given attribute
         """
-
-        graph_defs = [ d.format(attribute) for d in self.defs ]
-        graph_vnames = [ vname.format(attribute) for vname in self.vnames ]
-        graph_lines = [ l.format(attribute) for l in self.lines ]
-        return graph_defs + graph_vnames + graph_lines
+        if self.template == 'custom':
+            graph_defs = [ d.format(attribute) for d in self.defs ]
+            graph_vnames = [ vname.format(attribute) for vname in self.vnames ]
+            graph_lines = [ l.format(attribute) for l in self.lines ]
+            return graph_defs + graph_vnames + graph_lines
+        try:
+            real_format = getattr(self, '_format_'+self.template)
+        except AttributeError:
+            raise GraphTypeError('No format method for {}'.format(self.template))
+        return real_format(attribute)
 
     def graph_options(self, attribute, start_time=0, end_time=0):
         """
@@ -126,12 +179,6 @@ class GraphType(DeclarativeBase):
         if end_time > 0:
             graph_options.extend(('-e', str(end_time)))
 
-        if self.width > 0:
-            graph_options.extend(('-w', str(self.width)))
-
-        if self.height > 0:
-            graph_options.extend(('-h', str(self.height)))
-
         if self.left_label != '':
             graph_options.extend(('-v', str(fill_fields(self.vertical_label,attribute=attribute))))
 
@@ -144,6 +191,48 @@ class GraphType(DeclarativeBase):
             attribute.display_name,
             self.display_name)
 
+    def _format_area(self, attribute):
+        """ Format the RRDgraph items for an AREA graph """
+        graph_defs = []
+        graph_vnames = []
+        graph_lines = []
+        for line in self.rrd_lines:
+            graph_defs.append(line.format_def(attribute))
+            line_vname, line_name = line.format_vnames(attribute)
+            if line_vname is not None:
+                graph_vnames.append(line_vname)
+            graph_vnames.extend(maxavglast(line_name))
+            graph_lines.extend(
+                print_line(attribute, 'AREA', line_vname, 'ffff00',
+                           line.legend, line.legend_unit)
+                )
+        return graph_defs + graph_vnames + graph_lines
+    
+    def _format_inout(self, attribute):
+        """ Format the RRDgraph items for an AREA graph """
+        graph_defs = []
+        graph_vnames = []
+        graph_lines = []
+        for idx,line in enumerate(self.rrd_lines):
+            if idx == 0:
+                template = 'AREA'
+                color = '00ff00'
+            elif idx == 1:
+                template = 'LINE2'
+                color = '0000ff'
+            else:
+                template = 'LINE2'
+                color = graph_colors[idx % len(graph_colors)]
+            graph_defs.append(line.format_def(attribute))
+            line_vname, line_name = line.format_vnames(attribute)
+            if line_vname is not None:
+                graph_vnames.append(line_vname)
+            graph_vnames.extend(maxavglast(line_name))
+            graph_lines.extend(
+                print_line(attribute, template, line_name, color,
+                           line.legend, line.legend_unit)
+                )
+        return graph_defs + graph_vnames + graph_lines
 
 
 class GraphTypeDef(DeclarativeBase):
@@ -166,21 +255,8 @@ class GraphTypeDef(DeclarativeBase):
 
     def format(self, attribute):
         """
-        Return the DEF: line for this rrd graph definition
-        Format is
-        <dir>/<rrd_filename>:data:<attribute_type.rra_cf>
-        """
-        rrd_filename = self.attribute_type_rrd.filename(attribute)
-        if rrd_filename is None:
-            logger.warning('RRD filename not found')
-            return None
-        return str(''.join((
-                'DEF:',
-                self.name,
-                '=',
-                rrd_filename,
-                ':data:',
-                attribute.attribute_type.rra_cf)))
+        Return the DEF: line for this rrd graph definition """
+        return format_def(self, attribute)
 
 
 class GraphTypeVname(DeclarativeBase):
@@ -486,7 +562,7 @@ class GraphTypeLine(DeclarativeBase):
 
     def get_legend(self, attribute=None):
         if self.legend is not None:
-            return ':' + self.escape_legend(attribute)
+            return ':' + escape_legend(self.legend, attribute)
         else:
             return ''
 
@@ -506,25 +582,20 @@ class GraphTypeLine(DeclarativeBase):
         else:
             return ''
 
-    def escape_legend(self, attribute=None):
-        """
-        Returns colon escaped legendi
-        If attribute suppled, replace fields with attribute fields
-        """
-        if attribute is None:
-            return str(self.legend.replace(':',r'\:'))
-        else:
-            return str(fill_fields(self.legend, attribute=attribute).replace(':',r'\:'))
 
     # Format methods for returing the output
     def format_print(self, attribute):
-        return 'PRINT:{}:{}'.format(self._get_vname().name, self.escape_legend(attribute))
+        return 'PRINT:{}:{}'.format(
+            self._get_vname().name,
+            escape_legend(self.legend, attribute))
 
     def format_gprint(self, attribute):
-        return 'GPRINT:{}:{}'.format(self._get_vname().name, self.escape_legend(attribute))
+        return 'GPRINT:{}:{}'.format(
+            self._get_vname().name,
+            escape_legend(self.legend, attribute))
 
     def format_comment(self, attribute):
-        return 'COMMENT:'+self.escape_legend(attribute)
+        return 'COMMENT:'+escape_legend(self.legend, attribute)
 
     def format_vrule(self, attribute):
         if self._get_vname():
@@ -562,3 +633,33 @@ class GraphTypeLine(DeclarativeBase):
         return 'TICK:{}#{}{}{}'.format(self._get_vname().name, self.color, fraction, self.get_legend())
 
 
+class GraphTypeRRDLine(DeclarativeBase):
+    __tablename__ = 'graph_type_rrd_lines'
+    #{ Columns
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    graph_type_id = Column(Integer, ForeignKey('graph_types.id'))
+    position = Column(SmallInteger, nullable=False,default=0)
+    attribute_type_rrd_id = Column(Integer,
+                    ForeignKey('attribute_type_rrds.id'), nullable=False)
+    attribute_type_rrd = relationship('AttributeTypeRRD')
+    multiplier = Column(String(20), nullable=False, default=1)
+    legend = Column(String(40), nullable=False, default='')
+    legend_unit = Column(String(40), nullable=False, default='')
+
+    @property
+    def name(self):
+        return self.attribute_type_rrd.name
+
+    def format_def(self, attribute):
+        """ Return the DEF lines for this model """
+        return format_def(self, attribute)
+
+    def format_vnames(self, attribute):
+        if self.multiplier == '':
+            return None,self.attribute_type_rrd.name
+        else:
+            line_name = self.attribute_type_rrd.name+'_mul'
+            return ('CDEF:{}={},{}'.format(line_name,
+                                           self.attribute_type_rrd.name,
+                                           self.multiplier),
+                    line_name)

@@ -46,7 +46,7 @@ def alarm(host, attribute, parameters, poller_result):
       default:       if poller_result is nothing use this string
       damp_time:     time to wait before raising event
     poller_result: dictionary
-      state - optional display_name to match AlarmState model
+      state - optional display_name to match EventState model
       info -  optional extra info
     """
     params = parameters.split(',')
@@ -69,28 +69,28 @@ def alarm(host, attribute, parameters, poller_result):
     if type(poller_result) is not dict:
         return 'Poller did not provide a dictionary type'
     if 'state' in poller_result:
-        alarm_description = poller_result['state']
+        event_state_name = poller_result['state']
     elif default_input == '':
-        alarm_description='down'
+        event_state_name='down'
     elif default_input != 'nothing':
-        alarm_description = default_input
+        event_state_name = default_input
     if 'info' in poller_result:
         event_info = poller_result['info']
 
-    alarm_state = model.AlarmState.by_name(alarm_description)
-    if alarm_state is None:
-        return "Description \"{0}\" is not found in AlarmState table.".format(alarm_description)
+    event_state = model.EventState.by_name(event_state_name)
+    if event_state is None:
+        return "Description \"{0}\" is not found in EventState table.".format(
+            event_state_name)
 
-    if backend_raise_event(attribute, event_type, alarm_state, damp_time):
+    if backend_raise_event(attribute, event_type, event_state, damp_time):
         if event_info is not None:
             event_fields = {'info': event_info}
         else:
             event_fields=None
         new_event = model.Event(event_type=event_type, host=attribute.host,
-                attribute=attribute, alarm_state=alarm_state,
+                attribute=attribute, event_state=event_state,
                 field_list=event_fields)
         model.DBSession.add(new_event)
-        new_event.process()
         return "Event added: {0}".format(new_event.id)
     else:
         return "Nothing was done"
@@ -103,7 +103,7 @@ def event(host, attribute, parameters, poller_result):
       event_type_id: ID for the event to raise
     poller_result: dictionary:
      info - optional info attribute
-     state - optional event AlarmState description
+     state - optional event EventState description
     """
     try:
         event_type_id = int(parameters)
@@ -115,17 +115,16 @@ def event(host, attribute, parameters, poller_result):
     if type(poller_result) is not dict:
         return 'Poller did not provide a dictionary type'
     if 'state' in poller_result:
-        alarm_description = poller_result['state']
-        alarm_state = model.AlarmState.by_name(alarm_description)
+        event_state_name = poller_result['state']
+        event_state = model.EventState.by_name(event_state_name)
     else:
-        alarm_state = None
+        event_state = None
     if 'info' in poller_result:
         event_fields = {'info' : poller_result['info']}
     else:
         event_fields = None
-    new_event = model.Event(event_type=event_type, host=host, attribute=attribute, alarm_state=alarm_state, fields=event_fields)
+    new_event = model.Event(event_type=event_type, host=host, attribute=attribute, event_state=event_state, fields=event_fields)
     model.DBSession.add(new_event)
-    new_event.process()
     return "Inserted event ID {0}".format(new_event.id)
 
 def admin_status(host, attribute, parameters, poller_result):
@@ -165,25 +164,25 @@ def oper_status(host, attribute, parameters, poller_result):
 ###################################################
 #
 # Private funxtions
-def backend_raise_event(attribute, event_type, alarm_state,wait_time):
+def backend_raise_event(attribute, event_type, event_state,wait_time):
     """
     Should the event backend raise an event?
     """
-    if alarm_state.is_alert():
+    if event_state.is_alert():
         return True # always raise alert level events
 
-    down_alarm = model.Alarm.find_down(attribute,event_type)
+    down_event = model.Event.find_down(attribute.id,event_type.id)
 
     # Raise an up event if the down event was more that wait_time minutes ago
-    if alarm_state.is_up() and down_alarm is not None:
-        if datetime.datetime.now() > down_alarm.start_time + datetime.timedelta(minutes=wait_time):
+    if event_state.is_up() and down_event is not None:
+        if datetime.datetime.now() > down_event.start_time + datetime.timedelta(minutes=wait_time):
             return True
 
-    if alarm_state.is_downtesting():
-        if down_alarm is None:
+    if event_state.is_downtesting():
+        if down_event is None:
             return True
         else:
-            if down_alarm.alarm_state != alarm_state:
+            if down_event.event_state != event_state:
                 return True
     return False 
 

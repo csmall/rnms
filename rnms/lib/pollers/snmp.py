@@ -27,7 +27,7 @@ def split_oid(params, host):
     SNMPv1 hosts
     """
     oids = params.split('|')
-    if host.ro_is_snmpv1():
+    if host.snmp_community.ro_is_snmpv1:
         try:
             return oids[1]
         except IndexError:
@@ -83,7 +83,7 @@ def cb_snmp_counter(value, error, pobj, attribute, poller_row, default_value=Non
     if multiplier is not None:
         value = int(value) * float(multiplier)
     pobj.poller_callback(attribute.id, poller_row, value)
-        
+
 
 def poll_snmp_status(poller_buffer, parsed_params, **kw):
     """
@@ -163,7 +163,6 @@ def cb_snmp_walk_average(values, error, pobj, attribute, poller_row, **kw):
         else:
             total_values += 1
 
-    print 'def',kw['default_value'], total_values
     if total_values == 0:
         average = kw['default_value']
     else:

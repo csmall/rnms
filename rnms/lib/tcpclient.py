@@ -81,7 +81,7 @@ class TCPDispatcher(zmqcore.Dispatcher):
         if errmsg == '':
             try:
                 errmsg = os.strerror(err)
-            except (ValueError, OverflowError, NameError):
+            except (TypeError, ValueError, OverflowError, NameError):
                 try:
                     errmsg = errorcode[err]
                 except NameError:
@@ -107,20 +107,24 @@ class TCPDispatcher(zmqcore.Dispatcher):
         self.kwargs = kwargs
         self.error = None
         self.start_connect = datetime.datetime.now()
-        self.connect(sockaddr)
+        try:
+            self.connect(sockaddr)
+        except socket.error as err:
+            self._set_error(err)
+            self._parse_response()
         return True
 
     def handle_connect_event(self):
-        self.connect_time = datetime.datetime.now() - self.start_connect
         err = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
         if err != 0:
             self._set_error(err)
             self._parse_response()
-        elif self.max_bytes is None:
-            self._parse_response()
-
-    def handle_connect(self):
-        self.connect_time = datetime.datetime.now() - self.start_connect
+        else:
+            self.connect_time = datetime.datetime.now() - self.start_connect
+            self.connected = True
+            self.connecting = False
+            if self.max_bytes is None:
+                self._parse_response()
 
     def handle_close(self):
         self.close()

@@ -28,14 +28,14 @@ from sqlalchemy import Column
 from sqlalchemy.types import Integer, Unicode, String
 #from sqlalchemy.orm import relation, backref
 
-from rnms.model import DeclarativeBase, DBSession, EventType, AlarmState, Event, Alarm
+from rnms.model import DeclarativeBase, DBSession, EventType, EventState, Event
 
 
 class Backend(DeclarativeBase):
     """
     Poller and SNMP trap backends
     The backend is used for pollers and for trap receivers and generally
-    is used to raise alarms/events or to set something in the database.
+    is used to raise events or to set something in the database.
 
     All backends have the same set of arguments:
         attribute     - Attribute that was polled
@@ -91,7 +91,7 @@ class Backend(DeclarativeBase):
         default:       if poller_result is nothing use this string
         damp_time:     time to wait before raising event
         poller_result: dictionary or (state,info) tuple
-           state - optional display_name to match AlarmState model
+           state - optional display_name to match EventState model
            other items are copied into event fields
 
         """
@@ -111,33 +111,33 @@ class Backend(DeclarativeBase):
             damp_time = 1
 
         if default_input == '':
-            alarm_description='down'
+            event_state_name='down'
         elif default_input != 'nothing':
-            alarm_description = default_input
+            event_state_name = default_input
 
         event_fields={}
         if type(poller_result) is list:
-            alarm_description = poller_result[0]
+            event_state_name = poller_result[0]
             try:
                 event_fields['info'] = poller_result[1]
             except IndexError:
                 pass # no additional info
         elif type(poller_result) is dict:
             try:
-                alarm_description = poller_result['state']
+                event_state_name = poller_result['state']
             except KeyError:
                 pass
             event_fields = {k:v for k,v in poller_result.items() if k!='state'}
         else:
-            alarm_description = poller_result
+            event_state_name = poller_result
 
-        alarm_state = AlarmState.by_name(alarm_description)
-        if alarm_state is None:
-            return "Description \"{0}\" is not found in AlarmState table.".format(alarm_description)
+        event_state = EventState.by_name(event_state_name)
+        if event_state is None:
+            return "Description \"{0}\" is not found in EventState table.".format(event_state_name)
 
-        if always==True or self._backend_raise_event(attribute, event_type, alarm_state, damp_time):
+        if always==True or self._backend_raise_event(attribute, event_type, event_state, damp_time):
             new_event = Event(event_type=event_type, 
-                    attribute=attribute, alarm_state=alarm_state,
+                    attribute=attribute, event_state=event_state,
                     field_list=event_fields)
             DBSession.add(new_event)
             return "Event added: {0}".format(new_event.id)
@@ -151,7 +151,7 @@ class Backend(DeclarativeBase):
         poller parameters: <event_type_id>
             event_type_id: ID for the event to raise
         poller_result: dictionary:
-            state - optional event AlarmState description
+            state - optional event EventState description
             other fields copied to event
         """
         return self._run_event(attribute, poller_result, True)
@@ -189,25 +189,25 @@ class Backend(DeclarativeBase):
         attribute.index = new_index
         return 'Changed {0} -> {1}'.format(old_index, new_index)
 
-    def _backend_raise_event(self, attribute, event_type, alarm_state, damp_time):
+    def _backend_raise_event(self, attribute, event_type, event_state, damp_time):
         """
         Should the event backend raise an event?
         """
-        if alarm_state.is_alert():
+        if event_state.is_alert():
             return True # always raise alert level events
 
-        down_alarm = Alarm.find_down(attribute,event_type)
+        down_event = Event.find_down(attribute.id,event_type.id)
 
         # Raise an up event if the down event was more that wait_time minutes ago
-        if alarm_state.is_up() and down_alarm is not None:
-            if datetime.datetime.now() > down_alarm.start_time + datetime.timedelta(minutes=damp_time):
+        if event_state.is_up() and down_event is not None:
+            if datetime.datetime.now() > down_event.start_time + datetime.timedelta(minutes=damp_time):
                 return True
 
-        if alarm_state.is_downtesting():
-            if down_alarm is None:
+        if event_state.is_downtesting():
+            if down_event is None:
                 return True
             else:
-                if down_alarm.alarm_state != alarm_state:
+                if down_event.event_state != event_state:
                     return True
         return False
 

@@ -18,6 +18,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 import re
+from rnms.model import AttributeField
 
 def poll_tcp_status(poller_buffer, parsed_params, **kwargs):
     """
@@ -35,7 +36,7 @@ def poll_tcp_status(poller_buffer, parsed_params, **kwargs):
         max_bytes = int(parsed_params)
     except ValueError:
         max_bytes = 1
-    if kwargs['attribute'].get_field('check_content') != '1':
+    if AttributeField.field_value(kwargs['attribute'].id, 'check_content') != '1':
         max_bytes = None
 
     return kwargs['pobj'].tcp_client.get_tcp(kwargs['attribute'].host, port, ' ', max_bytes, cb_tcp_status, **kwargs)
@@ -51,7 +52,7 @@ def cb_tcp_status(values, error, pobj, attribute, poller_row, **kwargs):
     else:
         state = u'closed'
         tcp_error = error[1]
-    
+
     response = values[0].rstrip()
     if values[1] is not None:
         connect_time = values[1].total_seconds()
@@ -84,9 +85,9 @@ def poll_tcp_content(poller_buffer, parsed_params, pobj, attribute, poller_row, 
     """
     Check tcp_content poller buffer for matches
     Requires tcp_content from poller buffer as the string matched against
-    Attribute fields: 
+    attribute fields: 
       check_content: 1 to run this check
-      check_regexp: PCRE pattern used for matching
+      check_regexp: PCRE attributeern used for matching
     """
 
     if attribute.get_field('check_content') != '1':

@@ -51,14 +51,14 @@ class AttributeTypeRRD(DeclarativeBase):
     #}
 
     @classmethod
-    def by_name(cls, attribute_type, name):
+    def by_name(cls, attribute_type_id, name):
         """ Return the RRD for this attribute_type with the given name """
         return DBSession.query(cls).filter(and_(
-                cls.attribute_type_id == attribute_type.id,
+                cls.attribute_type_id == attribute_type_id,
                 cls.name==name)).first()
 
 
-    def create(self, filename, attribute):
+    def create(self, filename, attribute_id):
         """
         Create a new RRD file of this RRD field for the given attribute
         Returns RRD object on success, otherwise None
@@ -75,8 +75,14 @@ class AttributeTypeRRD(DeclarativeBase):
         #  xff 0.5 
         #  steps 1
         #  rows attribute_type.rra_rows
-        ds_defn = "DS:data:{0}:{1}:{2}:{3}".format(self.dst2str(), self.attribute_type.ds_heartbeat, self.range_min, self.parse_range_max(attribute))
-        rra_defn = "RRA:{0}:0.5:1:{1}".format(self.attribute_type.rra_cf, self.attribute_type.rra_rows)
+        ds_defn = "DS:data:{0}:{1}:{2}:{3}".format(
+            self.dst2str(),
+            self.attribute_type.ds_heartbeat,
+            self.range_min,
+            self.parse_range_max(attribute_id))
+        rra_defn = "RRA:{0}:0.5:1:{1}".format(
+            self.attribute_type.rra_cf,
+            self.attribute_type.rra_rows)
         try:
             rrdtool.create(filename, [ds_defn], rra_defn)
         except rrdtool.error as errmsg:
@@ -89,7 +95,7 @@ class AttributeTypeRRD(DeclarativeBase):
             return False
         return True
 
-    def parse_range_max(self, attribute):
+    def parse_range_max(self, attribute_id):
         """
         range_max can either be the value stored in that field, or
         derived from an attributes field
@@ -97,7 +103,7 @@ class AttributeTypeRRD(DeclarativeBase):
         if self.range_max_field == '':
             return self.range_max
         attribute_field = DBSession.query(AttributeField).filter(and_(
-            AttributeField.attribute == attribute,
+            AttributeField.attribute_id == attribute_id,
             AttributeField.attribute_type_field_id == AttributeTypeField.id,
             AttributeTypeField.tag == self.range_max_field)).first()
         if attribute_field is None:
@@ -109,7 +115,7 @@ class AttributeTypeRRD(DeclarativeBase):
 
 
 
-    def filename(self, attribute):
+    def filename(self, attribute_id):
         """
         Returns the on-disk filename for this RRD and the given attribute
         Returns none if attribute doesn't have this RRD field
@@ -119,26 +125,23 @@ class AttributeTypeRRD(DeclarativeBase):
         if not os.path.isdir(rrd_dir):
             logging.error('rrd_dir config setting "%s" is not a directory/', rrd_dir)
             return None
-        if self.attribute_type_id != attribute.attribute_type_id:
-            logging.error('AttributeTypeRRD type doesnt match Attribute: %s != %s', self.attribute_type_id, attribute.attribute_type_id)
-            return None
         return ''.join((
                 rrd_dir,
                 os.sep,
-                str(attribute.id), 
+                str(attribute_id), 
                 '-',
                 str(self.position),
                 os.extsep,
                 'rrd'))
 
-    def update(self, attribute, value, rrd_client=None):
+    def update(self, attribute_id, value, rrd_client=None):
         """
         Update the RRD file for the given attribute with the given value
         Returns a key:value on success or error message
         """
-        filename = self.filename(attribute)
+        filename = self.filename(attribute_id)
         if not os.path.isfile(filename):
-            if not self.create(filename, attribute):
+            if not self.create(filename, attribute_id):
                 return '(No filename)'
 
         if rrd_client is None:
@@ -150,9 +153,9 @@ class AttributeTypeRRD(DeclarativeBase):
             rrd_client.update(filename, value)
         return value
 
-    def adjust_limits(self, attribute, new_min, new_max):
+    def adjust_limits(self, attribute_id, new_min, new_max):
         """ Adjust the RRD DS maximum and minimum """
-        filename = self.filename(attribute)
+        filename = self.filename(attribute_id)
         if filename is None:
             return False
         try:
@@ -166,19 +169,19 @@ class AttributeTypeRRD(DeclarativeBase):
         """ Return string representation of DST field"""
         return dst_names.get(self.data_source_type, None)
 
-    def fetch_values(self, attribute, start_time, end_time):
+    def fetch_values(self, attribute_id, start_time, end_time):
         """
         Return a list of values from the RRD for the given time 
         specifications
         """
-        raw_vals = self.fetch(attribute, start_time, end_time)
+        raw_vals = self.fetch(attribute_id, start_time, end_time)
         if raw_vals is None:
             return []
         else:
             return [float(value[0]) for value in raw_vals[2] if value[0]]
 
-    def fetch(self, attribute, start_time, end_time):
-        filename = self.filename(attribute)
+    def fetch(self, attribute_id, start_time, end_time):
+        filename = self.filename(attribute_id)
         if filename is None:
             return None
         try:
@@ -187,9 +190,9 @@ class AttributeTypeRRD(DeclarativeBase):
             logger.error('RRDTool fetch error: %s', errmsg)
         return None
 
-    def get_average_value(self, attribute, start_time, end_time):
+    def get_average_value(self, attribute_id, start_time, end_time):
         """ Return the average RRD value for given time period """
-        values = self.fetch_values(attribute, start_time, end_time)
+        values = self.fetch_values(attribute_id, start_time, end_time)
         if values == []:
             return 0
         return sum(values)/len(values)

@@ -126,12 +126,12 @@ class JffnmsImporter(object):
         return True
 
     def do_delete(self):
-        event_count = self._delete_all(model.Event)
-        field_delete_count = self._delete_all(model.AttributeField)
-        attribute_count = self._delete_all(model.Attribute, 1)
-        iface_count = self._delete_all(model.Iface)
-        host_count = self._delete_all(model.Host, 1)
-        zone_count = self._delete_all(model.Zone, 1)
+        self._delete_all(model.Event)
+        self._delete_all(model.AttributeField)
+        self._delete_all(model.Attribute, 1)
+        self._delete_all(model.Iface)
+        self._delete_all(model.Host, 1)
+        self._delete_all(model.Zone, 1)
         #user_count = self._delete_all(model.User, 2)
 
     def _delete_all(self,del_model, del_id=None):
@@ -318,6 +318,7 @@ class JffnmsImporter(object):
     def _import_attributes(self):
         attribute_count=0
         field_count=0
+        up_state = model.EventState.get_up()
         try:
             result = self.dbhandle.execute('SELECT interfaces.*,interface_types.description as itype, pollers_groups.description, slas.description FROM interfaces LEFT JOIN slas ON (slas.id=interfaces.sla),interface_types,pollers_groups WHERE host > 1 AND interfaces.type=interface_types.id AND interfaces.poll=pollers_groups.id ORDER BY interfaces.id')
             for row in result:
@@ -352,7 +353,8 @@ class JffnmsImporter(object):
                     att.sla_id = 1
                 else:
                     att.sla_id = sla.id
-                
+
+                att.state = up_state
                 model.DBSession.add(att)
                 if att.attribute_type is not None:
                     field_count += self._import_attribute_fields(att,row[0])
@@ -423,8 +425,8 @@ class JffnmsImporter(object):
                     DBSession.add(interface_field)
                 
                 # Alarm can be a state, or just a field called 'state'
-                ev.alarm_state = model.AlarmState.by_name(unicode(row[4]))
-                if ev.alarm_state is None:
+                ev.event_state = model.EventState.by_name(unicode(row[4]))
+                if ev.event_state is None:
                     state_field = model.EventField('state', unicode(row[4]))
                     ev.fields.append(state_field)
                     DBSession.add(state_field)

@@ -27,9 +27,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey, Column, desc
 from sqlalchemy.types import Integer, Unicode, Boolean, PickleType, String, DateTime, Text, SmallInteger, BigInteger
 
-from rnms.lib import states
 from rnms.model import DeclarativeBase, DBSession
-from rnms.model.alarm import Alarm, AlarmState
 from rnms.model.attribute import Attribute
 from rnms.model.snmp_names import SNMPEnterprise
 
@@ -139,15 +137,6 @@ class Host(DeclarativeBase):
         self.next_discover = datetime.datetime.now() + datetime.timedelta(
                 seconds = (discover_interval + (random.random() - 0.5) * discover_variance) * 60.0)
         transaction.commit()
-
-    def highest_alarm(self):
-        """
-        Return the highest alarm of all Attributes
-        """
-        return DBSession.query(Alarm).join(AlarmState).filter(
-            Alarm.attribute_id.in_(
-            DBSession.query(Attribute.id).filter(Attribute.host_id==self.id))).\
-            order_by(desc(AlarmState.alarm_level)).first()
 
 class Iface(DeclarativeBase):
     __tablename__ = 'interfaces'

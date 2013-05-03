@@ -2,7 +2,6 @@
 """Test suite for Alteon Attribute Discovery """
 from nose.tools import eq_
 
-from rnms import model
 from rnms.tests.att_discovery import AttDiscTest
 from rnms.lib import states
 
@@ -10,6 +9,7 @@ from rnms.lib.att_discovers.alteon import discover_alteon_realservers, cb_alteon
 
 class TestAlteonRealServer(AttDiscTest):
     values = [{'1': '1'}, {'1': '192.0.2.1'}, {'1': '12345'}, {'1': '2'}, {'1': 'realhost'}, {'1': '2'},]
+
     def test_none(self):
         """ Alteon RServer callback with None has no peers """
         self.check_callback_none(cb_alteon_realservers)
@@ -119,8 +119,8 @@ class TestAlteonRealService(AttDiscTest):
         self.assert_admin_state({'1.3.192.0.2.1': states.STATE_UP})
 
     def test_single_admin_down_rservice(self):
+        """ Alteon Rservice finds one real service admin down """
         values = self.get_values(6, {'1': '1'})
-        """ Alteon Rservice finds one real server admin down """
         cb_alteon_realservices(values, None, **self.test_callback_kwargs)
         self.assert_result_count(1)
         self.assert_oper_state({'1.3.192.0.2.1': states.STATE_UP})

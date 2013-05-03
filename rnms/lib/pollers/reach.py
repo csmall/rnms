@@ -17,9 +17,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-import logging
-
-logger = logging.getLogger('pReach')
+from rnms.model import AttributeField
 
 def poll_reach_ping(poller_buffer, parsed_params, **kw):
     """
@@ -27,17 +25,16 @@ def poll_reach_ping(poller_buffer, parsed_params, **kw):
     Parameters: none
     Returns: rtt,pl
     """
-    fields =  kw['attribute'].get_fields()
     try:
-        num_pings = int(fields['pings'])
-    except (KeyError, ValueError):
+        num_pings = int(AttributeField.field_value(kw['attribute'].id, 'pings'))
+    except ValueError:
         num_pings = 10
     try:
-        interval = int(fields['interval'])
-    except (KeyError, ValueError):
+        interval = int(AttributeField.field_value(kw['attribute'].id, 'interval'))
+    except ValueError:
         interval = 300
     kw['pings'] = num_pings
-    return kw['pobj'].ping_client.ping_host(kw['attribute'].host, cb_reach_ping, num_pings, interval, **kw)
+    return kw['pobj'].ping_client.ping_host(kw['attribute'].host.mgmt_address, cb_reach_ping, num_pings, interval, **kw)
 
 def cb_reach_ping(values, error, pobj, attribute, poller_row, **kw):
     pobj.poller_callback(attribute.id, poller_row, values)
@@ -52,7 +49,7 @@ def poll_reach_status(poller_buffer, parsed_params, pobj, attribute, poller_row,
 
     """
     try:
-        thres = int(attribute.get_field('threshold'))
+        thres = int(AttributeField.field_value(attribute.id, 'threshold'))
     except ValueError:
         thres = 90
 

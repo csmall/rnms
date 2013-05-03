@@ -34,7 +34,7 @@ from tg import validate
 
 # project specific imports
 from rnms.lib.base import BaseController
-from rnms.model import DBSession, Event, EventSeverity,EventType, Host,Attribute
+from rnms.model import DBSession, Event, Severity,EventType, Host,Attribute
 from rnms.widgets.event import EventsGrid
 from rnms.lib.jsonquery import json_query
 
@@ -78,14 +78,14 @@ class EventsController(BaseController):
 
     @expose('rnms.templates.severitycss', content_type='text/css')
     def severitycss(self):
-        severities = DBSession.query(EventSeverity)
+        severities = DBSession.query(Severity)
         return dict(
                 severities=severities,
                 )
 
     @expose('rnms.templates.mapseveritycss', content_type='text/css')
     def mapseveritycss(self):
-        severities = DBSession.query(EventSeverity)
+        severities = DBSession.query(Severity)
         return dict(
                 severities=[(s.id, s.bgcolor, '%.6x'%(int(s.bgcolor,16) & 0xfefefe >> 1)) for s in severities],
                 )

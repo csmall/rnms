@@ -33,7 +33,7 @@ from formencode import validators
 from rnms.lib.base import BaseController
 from rnms.widgets import AttributeSummary, InfoBox
 from rnms.widgets.host import HostsGrid, HostMap
-from rnms.model import DBSession, Host, Zone
+from rnms.model import DBSession, Host, Zone, Event
 from rnms.lib.jsonquery import json_query
 from rnms.widgets.event import EventsGrid
 
@@ -90,7 +90,7 @@ class HostsController(BaseController):
             flash('Host ID#{} not found'.format(host_id), 'error')
             return {}
         vendor,devmodel = host.snmp_type()
-        highest_alarm = host.highest_alarm()
+        highest_alarm = Event.host_alarm(host.id)
         if highest_alarm is  None:
             host_state = 'Up'
         else:

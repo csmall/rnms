@@ -6,9 +6,21 @@ import mock
 from nose.tools import eq_
 
 from rnms import model
+from rnms.tests import setup_db, teardown_db
+
 from rnms.lib.snmp.engine import SNMPRequest
 from rnms.lib.tcpclient import TCPClient
-from rnms.lib import states
+
+# Create an empty database before we start our tests for this module
+def setup():
+    """Function called by nose on module load"""
+    setup_db()
+
+# Tear down that database
+def teardown():
+    """Function called by nose after all tests in this module ran"""
+    teardown_db()
+
 
 class AttDiscTest(object):
     """ Base test case for the Attribute Discovery """
@@ -73,7 +85,6 @@ class AttDiscTest(object):
 
     def check_callback_empty(self, cb_fun, rows):
         """ Check discovery callback that has been returned empty rows """
-        attributes = [ {} for row in range(rows)]
         cb_fun(None, None, **self.test_callback_kwargs)
         self.assert_callback({})
 
@@ -90,7 +101,7 @@ class AttDiscTest(object):
         """ Check that the display_names are what we expect """
         got_names = set([ x.display_name for x in self.disc_cb.call_args[0][1].values()])
         eq_(got_names, set(expected_names))
-        
+
     def assert_result_fields(self, field_name, expected_fields):
         """ Check that this field is filled with the correct values
         field_name is the name of field, the values are a dictionary
@@ -102,7 +113,7 @@ class AttDiscTest(object):
     def assert_oper_state(self, expected_states):
         for idx,oper_state in expected_states.items():
             eq_(self.disc_cb.call_args[0][1][idx].oper_state, oper_state)
-    
+
     def assert_admin_state(self, expected_states):
         for idx,admin_state in expected_states.items():
             eq_(self.disc_cb.call_args[0][1][idx].admin_state, admin_state)

@@ -28,13 +28,13 @@ from sqlalchemy.types import Integer, Unicode, String, SmallInteger
 from rnms.model import DeclarativeBase, DBSession
 from rnms.lib import pollers
 from rnms.lib.genericset import GenericSet
-from rnms.lib.parsers import fill_fields
+from rnms.lib.parsers import safe_substitute, find_field_keys
 
 __all__ = [ 'PollerSet', 'Poller', 'PollerRow']
 
 class Poller(DeclarativeBase):
     __tablename__ = 'pollers'
-    
+
     #{ Columns
     id = Column(Integer, primary_key=True, nullable=False)
     display_name = Column(Unicode(40), nullable=False, unique=True)
@@ -60,7 +60,7 @@ class Poller(DeclarativeBase):
             return None
         return DBSession.query(cls).filter(cls.display_name == display_name).first()
 
-    def run(self, poller_row, pobj, attribute, poller_buf):
+    def run(self, poller_row, pobj, patt, poller_buf):
         """ 
         Run the real poller method "poll_BLAH" based upon the command
         field for this poller.
@@ -70,16 +70,40 @@ class Poller(DeclarativeBase):
         try:
             real_poller = getattr(pollers, "poll_"+self.command)
         except AttributeError:
-            pobj.logger.error("A:%d - Poller function poll_%s does not exist.", attribute.id, self.command)
+            pobj.logger.error(
+                "A:%d - Poller function poll_%s does not exist.",
+                patt.id, self.command)
             return None
-        return real_poller(poller_buf, pobj=pobj, poller_row=poller_row, attribute=attribute, parsed_params=poller_row.poller.parsed_parameters(attribute))
+        return real_poller(poller_buf, pobj=pobj, poller_row=poller_row,
+                           attribute=patt,
+                           parsed_params=self.parsed_parameters(patt))
 
-    def parsed_parameters(self, attribute):
+    def parsed_parameters(self, patt):
         """
         Poller.parameters may have certain fields that need to be parsed
         by filling in <item> with some value from the attribute
         """
-        return fill_fields(self.parameters, attribute=attribute)
+        from rnms.model import AttributeField
+        if self.parameters == '':
+            return ''
+        field_keys = find_field_keys(self.parameters)
+        if field_keys == []:
+            return self.parameters
+
+        # Put in the easy ones
+        field_values = {
+            'attribute_id': patt.id,
+            'host_id': patt.host_id,
+            'index': patt.index,
+        }
+        for field_key in field_keys:
+            if field_key in field_values:
+                continue
+            field_value = AttributeField.field_value(patt.id, field_key)
+            if field_value is not None:
+                field_values[field_key] = field_value
+        return safe_substitute(self.parameters, field_values)
+
 
 class PollerSet(DeclarativeBase, GenericSet):
     __tablename__ = 'poller_sets'
@@ -161,20 +185,21 @@ class PollerRow(DeclarativeBase):
             backend_name = 'None'
         return '<PollerRow position=%d poller=%s backend=%s>' % (self.position, poller_name, backend_name)
 
-    def run_poller(self, pobj, attribute, poller_buff):
+    def run_poller(self, pobj, patt, poller_buff):
         """
         Run the actual polling process for this poller row
         Requires the attribute that calls the poller
         Returns True if it worked or False if not
         """
         if self.poller is None:
-            pobj.logger.warning('run logger called with no poller!')
+            pobj.logger.warning('A%d: run_poller called with no poller!',
+                               patt.id)
             return False
         if self.poller.id == 1:
-            self.run_backend(attribute, None)
+            #self.run_backend(patt, None)
             return True
-        return self.poller.run(self, pobj, attribute, poller_buff)
-        
+        return self.poller.run(self, pobj, patt, poller_buff)
+
     def run_backend(self, attribute, value):
         """
         Run the actual backend process for this poller row
