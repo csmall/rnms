@@ -27,6 +27,8 @@ from logfiles import consolidate_logfiles
 from traps import consolidate_traps
 
 from rnms.lib.engine import RnmsEngine
+from rnms.lib.gettid import gettid
+
 class Consolidator(RnmsEngine):
     """
     Consolidator process, may have some sub-processes under it.
@@ -47,6 +49,7 @@ class Consolidator(RnmsEngine):
         return self.end_thread == False
 
     def consolidate(self):
+        self.logger.debug('Consolidator started TID:%d',gettid())
         if not self.do_once:
             check_all_attributes_state(self.logger)
 

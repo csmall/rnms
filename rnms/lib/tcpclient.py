@@ -111,20 +111,20 @@ class TCPDispatcher(zmqcore.Dispatcher):
             self.connect(sockaddr)
         except socket.error as err:
             self._set_error(err)
-            self._parse_response()
+            self.handle_close()
         return True
 
     def handle_connect_event(self):
         err = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
         if err != 0:
             self._set_error(err)
-            self._parse_response()
+            self.handle_close()
         else:
             self.connect_time = datetime.datetime.now() - self.start_connect
             self.connected = True
             self.connecting = False
             if self.max_bytes is None:
-                self._parse_response()
+                self.handle_close()
 
     def handle_close(self):
         self.close()
@@ -135,10 +135,10 @@ class TCPDispatcher(zmqcore.Dispatcher):
             self.inbuf += self.recv(8192)
         except socket.error as err:
             self._set_error(err.errno, err.strerror)
-            self._parse_response()
+            self.handle_close()
         else:
             if self.max_bytes is not None and self.max_bytes != 0 and len(self.inbuf) > self.max_bytes:
-                self._parse_response()
+                self.handle_close()
 
     def readable(self):
         return (self.max_bytes is not None)
@@ -152,7 +152,6 @@ class TCPDispatcher(zmqcore.Dispatcher):
 
     def _parse_response(self):
         if self.responded == False:
-            self.close()
             filtered_buf = ''.join([c for c in self.inbuf if c in string.printable])
             self.cb_fun((filtered_buf,self.connect_time), self.error, **self.kwargs)
             self.responded = True
@@ -162,12 +161,12 @@ class TCPDispatcher(zmqcore.Dispatcher):
         if self.connecting:
             if (now - self.start_connect).total_seconds() > self.connect_timeout:
                 self._set_error(-1, 'timed out connecting to host')
-                self._parse_response()
+                self.handle_close()
                 return False
         else:
             if (now - self.start_connect).total_seconds() > self.total_timeout:
                 self._set_error(-1, 'timed out getting data from host')
-                self._parse_response()
+                self.handle_close()
                 return False
         return True
 

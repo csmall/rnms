@@ -104,7 +104,7 @@ class RnmsEngine(object):
         """
         sleep_seconds = (wake_time - datetime.datetime.now()).total_seconds()
         while self.end_thread == False and sleep_seconds > 0.0:
-            #self.logger.debug('sleep secs %d',sleep_seconds)
+            self.logger.debug('sleep secs %d',sleep_seconds)
             if not self.zmq_core.poll(sleep_seconds):
                 return False
             sleep_seconds = (wake_time - datetime.datetime.now()).total_seconds()

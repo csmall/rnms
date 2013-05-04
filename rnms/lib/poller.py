@@ -30,6 +30,7 @@ from rnms.lib.engine import RnmsEngine
 from rnms.lib.snmp import SNMPRequest
 from rnms.lib.pollers.snmp import parse_oid, cb_snmp_counter, split_oid
 from rnms.lib.rrdworker import RRDClient
+from rnms.lib.gettid import gettid
 
 """
 There are multiple timers that are used to work out when to do various
@@ -124,6 +125,7 @@ class Poller(RnmsEngine):
         This will only exit if we have forced attributes and they are
         all polled.
         """
+        self.logger.debug('Poller started, TID:%d',gettid())
         while True:
             now = datetime.datetime.now()
             polls_running = False

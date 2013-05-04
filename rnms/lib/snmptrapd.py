@@ -18,7 +18,6 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 import socket
-import os
 import time
 
 import transaction
@@ -29,6 +28,7 @@ from pysnmp.proto import api
 
 from rnms.lib import zmqcore
 from rnms.lib.engine import RnmsEngine
+from rnms.lib.gettid import gettid
 from rnms.model import DBSession, Host, SnmpTrap
 
 SNMP_TRAP_OID = pyasn_types.ObjectIdentifier().prettyIn('1.3.6.1.6.3.1.1.4.1.0')
@@ -97,7 +97,7 @@ class SNMPtrapd(RnmsEngine):
         self.trap_cache = {}
 
     def run(self):
-        self.logger.info('SNMP trap daemon started PID:%s',os.getpid())
+        self.logger.info('SNMP trap daemon started TID:%s',gettid())
         cache_clean_time = time.time() + CACHE_SECONDS
         while True:
             self.logger.debug('run')
