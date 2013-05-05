@@ -28,6 +28,14 @@ from rnms.lib import states
 from rnms.lib.pingclient import PingClient
 from rnms.lib.pollers.reach import poll_reach_ping, cb_reach_ping
 
+field_values = {}
+def field_value(att_id, fname):
+    try:
+        return field_values[fname]
+    except:
+        return None
+
+
 class TestReachPoller(PollerTest):
 
     def setUp(self):
@@ -40,7 +48,7 @@ class TestReachPoller(PollerTest):
 
     def assert_ping_host_called(self, cb_fun, num_pings, interval):
         """ Check the PingClient ping_host method was called """
-        self.ping_client.ping_host.assert_called_once_with(self.test_host, cb_fun, num_pings, interval, pings=num_pings, **self.test_kwargs)
+        self.ping_client.ping_host.assert_called_once_with(self.test_host_ip, cb_fun, num_pings, interval, pings=num_pings, **self.test_kwargs)
 
     def test_poll_reach_ping_ok(self):
         """ poll_reach_ping calls ping client correctly """

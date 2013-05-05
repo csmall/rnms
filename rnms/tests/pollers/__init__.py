@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 """Test suite for attribute polling """
-import types
 
 import mock
 from nose.tools import eq_
 
 from rnms import model
+from rnms.model.attribute import AttributeField
 from rnms.lib.snmp.engine import SNMPRequest, SNMPEngine
-from rnms.lib.poller import Poller
-from rnms.lib import states
+from rnms.lib.poller import Poller, PollingHost, PollingAttribute
 
 class PollerTest(object):
     """ Base test class for Pollers """
@@ -18,7 +17,7 @@ class PollerTest(object):
     test_host_ip = '127.0.0.2'
     test_attribute_id = 456
     test_default_value = 789
-    #test_attribute_fields = None
+    test_attribute_fields = None
     use_tcpclient = False
 
     def setUp(self):
@@ -37,19 +36,22 @@ class PollerTest(object):
         self.snmp_engine.set = mock.Mock(return_value=True)
         self.pobj.snmp_engine = self.snmp_engine
 
-        self.test_host = mock.MagicMock(spec_set=model.Host, name='testhost')
+        self.test_host = mock.MagicMock(spec=PollingHost, name='testhost')
         self.test_host.id = self.test_host_id
         self.test_host.mgmt_address = self.test_host_ip
-        self.test_host.community_ro = ('2', 'public')
+        self.test_community = mock.MagicMock(spec_set=model.SnmpCommunity)
+        self.test_community.readonly = ('2', 'public')
+        self.test_host.snmp_community = self.test_community
         self.test_att_type = mock.MagicMock(spec_set=model.AttributeType)
         self.test_att_type.id = 1
 
-        self.test_attribute = mock.MagicMock(spec_set=model.Attribute)
+        self.test_attribute = mock.MagicMock(spec=PollingAttribute)
         self.test_attribute.id = self.test_attribute_id
         self.test_attribute.host_id = self.test_host_id
         self.test_attribute.host = self.test_host
-        self.test_attribute.attribute_type.id = 1
-        self.test_attribute.attribute_type = self.test_att_type
+        self.test_attribute.index = 1
+        #self.test_attribute.attribute_type.id = 1
+        #self.test_attribute.attribute_type = self.test_att_type
         
         self.test_poller_row = mock.MagicMock(spec=model.PollerRow)
 
@@ -62,6 +64,7 @@ class PollerTest(object):
 
         if self.use_tcpclient == True:
             self._setup_tcpclient()
+        AttributeField.field_value = self.field_value
 
     def _setup_tcpclient(self):
         from rnms.lib.tcpclient import TCPClient
@@ -70,6 +73,13 @@ class PollerTest(object):
         self.tcp_client.get_tcp = mock.Mock(return_value=True)
         self.pobj.tcp_client = self.tcp_client
     
+    def field_value(self, att_id, fname):
+        try:
+            return self.test_attribute_fields[fname]
+        except:
+            return None
+
+
     def set_attribute_fields(self, fields):
         self.test_attribute_fields = fields
         self.test_attribute.get_fields = mock.Mock(return_value=self.test_attribute_fields)

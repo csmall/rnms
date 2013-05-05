@@ -29,11 +29,6 @@ class TestTrigger(ModelTest):
     klass = model.Trigger
     attrs = dict( display_name = u'Test Trigger' )
 
-    @raises(ValueError)
-    def test_bad_match_type(self):
-        """ Trigger with bad match_type raises exception """
-        dumm = model.Trigger(match_type='bad')
-
     def test_repr(self):
         """ Trigger has correct repr """
         eq_(str(self.obj), '<Trigger name=Test Trigger rules=0>')
@@ -65,16 +60,6 @@ class TestTrigger(ModelTest):
         eq_(len(self.obj.rules),2)
         eq_(first_row.position,0)
         eq_(second_row.position,1)
-
-    def test_match_type_alarm(self):
-        """ Trigger returns correct match_type name for alarm """
-        self.obj.match_type = 0
-        eq_(self.obj.match_type_name(), 'alarm')
-
-    def test_match_type_event(self):
-        """ Trigger returns correct match_type name for event """
-        self.obj.match_type = 1
-        eq_(self.obj.match_type_name(), 'event')
 
 class TestTriggerRule(ModelTest):
     klass = model.TriggerRule
@@ -143,7 +128,7 @@ class TestTriggerRule(ModelTest):
                 ( True, 'and', True, True),
                 ( True, 'or', True, True)
                 )
-        self.obj._get_alarm_field = mock.Mock(return_value=1)
+        self.obj._get_event_field = mock.Mock(return_value=1)
         for (pval, and_rule, cval, result) in eval_tests:
             self.obj.and_rule = (and_rule == 'and')
             self.obj.operate = mock.Mock(return_value=cval)
@@ -158,7 +143,7 @@ class TestTriggerRule(ModelTest):
     @raises(ValueError)
     def test_init_rule_bad_field(self):
         """ TriggerRule init with bad field name raises ValueError """
-        new_rule = model.TriggerRule(field='BAD')
+        new_rule = model.TriggerRule(field='BAD') 
 
 
     def test_field_name(self):

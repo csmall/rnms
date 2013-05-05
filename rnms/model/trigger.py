@@ -56,7 +56,7 @@ class Trigger(DeclarativeBase, GenericSet):
     the Event to an Action.
     """
     __tablename__ = 'triggers'
-    
+
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(40), nullable=False, unique=True)
@@ -64,6 +64,7 @@ class Trigger(DeclarativeBase, GenericSet):
     email_users = Column(Boolean, nullable=False, default=True)
     subject = Column(Unicode(100), nullable=False, default=u'')
     body = Column(Unicode(500), nullable=False, default=u'')
+    alarmed_only = Column(Boolean, nullable=False, default=True)
     rules = relationship('TriggerRule', order_by='TriggerRule.position')
     users = relationship('User', secondary=trigger_user_table, backref='triggers')
     #}

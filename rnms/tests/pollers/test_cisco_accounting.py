@@ -26,7 +26,7 @@ from rnms.lib import states
 
 from rnms.lib.pollers.cisco_accounting import poll_cisco_accounting, set_acct_checkpoint, get_acct_table
 
-class TestCiscoAcctPoller(PollerTest):
+class NOTestCiscoAcctPoller(PollerTest):
 
     def test_poll_nocomm(self):
         """ poll_cisco_accounting with no RW community returns None """

@@ -25,7 +25,6 @@ instead of the core one.
 """
 import zmq
 import asyncore
-import time
 
 from random import randint
 
@@ -97,9 +96,7 @@ class ZmqCore(object):
                 try:
                     obj =  self.socket_map[sock]
                 except KeyError:
-                    self.logger.info(
-                        'Socket %d is not in our socket map, forcing unregister',
-                        sock)
+                    #print 'Socket {} is not in our socket map, forcing unregister'.format(sock)
                     self.unregister_sock(sock)
                 else:
                     if event & zmq.POLLIN:
@@ -107,7 +104,7 @@ class ZmqCore(object):
                     if event & zmq.POLLOUT:
                         obj.handle_write_event()
                     if event & zmq.POLLERR:
-                        self.logger.info('Socket %d error, closing',sock)
+                        #print 'Socket {} error, closing'format(sock)
                         obj.handle_close()
             else:
                 cb_func = self.zmq_map[sock]

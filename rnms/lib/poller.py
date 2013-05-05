@@ -46,6 +46,7 @@ POLLER_WINDOW_SECONDS = 10
 
 class PollingHost(object):
     def __init__(self, host):
+        self.id = host.id
         self.mgmt_address = host.mgmt_address
         self.snmp_community  = host.snmp_community
         #self.ro_is_snmpv1 = host.snmp_community.ro_is_snmpv1()

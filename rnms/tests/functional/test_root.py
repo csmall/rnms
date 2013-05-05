@@ -21,7 +21,7 @@ class TestRootController(TestController):
     def test_index(self):
         """The front page is working properly"""
         response = self.app.get('/')
-        msg = 'Welcome to Rosenberg NMS'
+        msg = 'Overview'
         # You can look for specific strings:
         assert_true(msg in response)
 

@@ -260,8 +260,8 @@ class Severity(DeclarativeBase):
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(40), nullable=False, unique=True)
-    bgcolor = Column(String(6), nullable=False)
-    fgcolor = Column(String(6), nullable=False)
+    bgcolor = Column(String(6), nullable=False, default='ffffff')
+    fgcolor = Column(String(6), nullable=False, default ='ffffff')
     #}
 
     def __init__(self, display_name=None, bgcolor='ffffff', fgcolor='000000'):

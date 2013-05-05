@@ -27,11 +27,11 @@ def poll_reach_ping(poller_buffer, parsed_params, **kw):
     """
     try:
         num_pings = int(AttributeField.field_value(kw['attribute'].id, 'pings'))
-    except ValueError:
+    except (TypeError, ValueError):
         num_pings = 10
     try:
         interval = int(AttributeField.field_value(kw['attribute'].id, 'interval'))
-    except ValueError:
+    except (TypeError, ValueError):
         interval = 300
     kw['pings'] = num_pings
     return kw['pobj'].ping_client.ping_host(kw['attribute'].host.mgmt_address, cb_reach_ping, num_pings, interval, **kw)
@@ -50,7 +50,7 @@ def poll_reach_status(poller_buffer, parsed_params, pobj, attribute, poller_row,
     """
     try:
         thres = int(AttributeField.field_value(attribute.id, 'threshold'))
-    except ValueError:
+    except (TypeError, ValueError):
         thres = 90
 
     loss = int(poller_buffer['pl'])
