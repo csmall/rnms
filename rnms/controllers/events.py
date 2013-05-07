@@ -59,8 +59,6 @@ class EventsController(BaseController):
     def jqgrid(self, page=1, rows=30, sidx=1, soid='asc', _search='false',
             searchOper=u'', searchField=u'', searchString=u'', **kw):
 
-        import logging
-        logging.info(kw)
         qry = DBSession.query(Event)
         qry = qry.filter()
         qry = qry.order_by()

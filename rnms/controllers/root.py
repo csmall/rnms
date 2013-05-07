@@ -11,7 +11,7 @@ from rnms.controllers.secure import SecureController
 from tgext.admin.controller import AdminController
 from tw2.jqplugins.ui import set_ui_theme_name
 
-from rnms.controllers.admin import MyAdminConfig
+from rnms.controllers.admin import MyAdminConfig#, AdminController2
 from rnms.widgets.attribute import AttributeStatusPie
 from rnms.widgets.base import InfoBox
 from rnms.model import DBSession, Attribute
