@@ -67,14 +67,15 @@ span.pager_dotdot {
   color: #000000;
   border: none;
 }
-
+i
 span#span_control {
   color: #000000;
-  position: absolute;
+  pnosition: absolute;
   margin: -5px;
   padding: 5px;
   left: 20%;
 }
+
 */
 /* Statistics table */
 .statrow { clear: left; padding: 6px; }

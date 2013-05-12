@@ -1,4 +1,5 @@
 
+from tg  import url
 from sprox.tablebase import TableBase
 from sprox.fillerbase import TableFiller
 
@@ -6,21 +7,24 @@ from tw2.jqplugins.jqgrid import jqGridWidget
 
 
 class jqGridGrid(jqGridWidget):
+    """
+    Standard jQuery UI grid for the TableBase
+    """
     id = 'jq-grid-id'
-    params = ['columns', 'column_widths',]
+    params = ['columns', 'column_widths', 'default_column_width']
     options = {
             'pager': 'hosts-grid-pager',
             'datatype': 'json',
             'viewrecords': True,
             'imgpath': 'scripts/jqGrid/themes/green/images',
-            'width': 900,
+            'width': '960',
             'height': 'auto',
             }
     columns = None
 
-    def __init__(self, action, attrs, value):
+    def __init__(self, action, attrs, value, params={}):
         super(jqGridGrid, self).__init__()
-        self.options['url'] = action
+        self.options['url'] = url(action,params)
         self.options['colNames'] = self._get_colnames()
         self.options['colModel'] = self._get_colmodel()
 
@@ -49,10 +53,14 @@ class jqGridGrid(jqGridWidget):
 
 
 class jqGridTableBase(TableBase):
-    """ A table widget """
+    """ A table widget using jqueryUI
+    Modifiers:
+        __headers__ dict of column field/header pairs
+        __column_widths__  dict of column field/width pairs
+        __default_column_width__  column width if not found above
+    """
     __base_widget_type__ = jqGridGrid
     __url__ = None
-    __column_options__ = {}
     __retrieves_own_value__ = True
 
     def _do_get_widget_args(self):
@@ -60,11 +68,12 @@ class jqGridTableBase(TableBase):
         if self.__url__ is not None:
             args['url'] = self.__url__
         args['columns'] = self.__fields__
-        args['column_options'] = self.__column_options__
         args['headers'] = self.__headers__
         return args
 
 class jqGridTableFiller(TableFiller):
+    __possible_field_names__ = ['display_name']
+
     def _calculate_pages(self, total_rows, **kw):
         try:
             limit = int(kw['rows'])
@@ -92,22 +101,31 @@ class jqGridTableFiller(TableFiller):
     def _do_get_provider_count_and_objs(self, _search=False,  **kw):
         limit = kw.pop('rows', None)
         page = kw.pop('page', 1)
-        kw.pop('sidx', None)
-        kw.pop('sord', 'asc')
+        sidx = kw.pop('sidx', None)
+        sord = kw.pop('sord', 'asc')
         kw.pop('nd', False)
-        #FIXME sort orders
-        desc =  False
-        order_by = None
-        if limit is None:
+        desc =  (sord == 'desc')
+        if sidx == '':
+            sidx = None
+        if limit is None or page < 1:
             offset = 0
         else:
             try:
-                offset = int(page) * int(limit)
+                offset = int(page-1) * int(limit)
             except TypeError:
                 offset = 0
+        # Extra filters
+        filters = {}
+        host_id = kw.pop('h', None)
+        if host_id is not None and  hasattr(self.__entity__, 'host_id'):
+            try:
+                filters['host_id'] = int(host_id)
+            except (ValueError, TypeError):
+                pass
         count, objs = self.__provider__.query(
             self.__entity__, limit, offset, self.__limit_fields__,
-            order_by, desc, filters={})
+            sidx, desc, filters=filters,
+            view_fields=self.__possible_field_names__)
         self.__count__ = count
         return count, objs
 
