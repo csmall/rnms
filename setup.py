@@ -77,6 +77,9 @@ setup(
             ('public/**', 'ignore', None)]},
 
     entry_points="""
+    [console_scripts]
+    rnmsd = rnms.scripts.rnmsd:main
+
     [paste.app_factory]
     main = rnms.config.middleware:make_app
 

@@ -17,30 +17,40 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-from argparse import ArgumentParser
-
 from rnms import model
-from rnms.lib.cmdline import BaseCmdLine
+from rnms.lib.cmdline import RnmsCommand
 
-class RnmsInfo(BaseCmdLine):
+class RnmsInfo(RnmsCommand):
     """
     Provides information about the various objects in rnms
     """
 
-    def run(self):
-        self.setup_app()
+    def real_command(self):
         try:
-            real_info = getattr(self, self.args.qtype+'_info')
+            real_info = getattr(self, self.options.qtype+'_info')
         except AttributeError:
-            print 'Unknown query type {}.'.format(self.args.qtype)
+            print 'Unknown query type {}.'.format(self.options.qtype)
             exit(1)
         real_info()
 
-    def setup_app(self):
-        parser = ArgumentParser()
-        parser.add_argument('qtype', type=str, choices=('attribute', 'atype', 'host', 'pollerset','autodiscovery','sla','trigger'), help='Choose attribute, atype, autodiscovery, host or pollerset,sla,trigger', metavar='<query_type>')
-        parser.add_argument('ids', metavar='ID ID...', type=int, nargs='+')
-        self.parse_args(parser)
+    def standard_options(self):
+        super(RnmsInfo, self).standard_options()
+        self.parser.add_argument(
+            action='store',
+            dest='qtype',
+            type=str,
+            choices=('attribute', 'atype', 'host', 'pollerset',
+                     'autodiscovery','sla','trigger'),
+            help='Choose attribute, atype, autodiscovery, host or pollerset,sla,trigger',
+            metavar='<query_type>')
+        self.parser.add_argument(
+            action='store',
+            dest='ids',
+            type=int,
+            metavar='ID ID...',
+            nargs='+',
+            help='IDs of object to get information on',
+        )
 
     def _snmp_data(self,community):
         if community is None:
@@ -270,7 +280,8 @@ Attribute Autodiscovery can do the following:
                         rule.position, rule.field_name(), rule.oper, rule.limit,andor, stop)
 
     def _get_objects(self, db_table, description): 
-        obj = model.DBSession.query(db_table).filter(db_table.id.in_(self.args.ids))
+        obj = model.DBSession.query(db_table).filter(
+            db_table.id.in_(self.options.ids))
         if obj.count() == 0:
             print "No {} found".format(description)
             return None

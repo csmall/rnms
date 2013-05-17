@@ -1,4 +1,18 @@
 
+form#actions {
+    margin: 0px;
+    width: auto;
+}
+
+.actions {
+    width: auto;
+    font-size: 10px;
+    font-weight: 400;
+    height: 18px;
+    line-height: 18px;
+    padding: 0px;
+    margin: 0 0 0 0;
+}
 #eventtable {
     border-collapse: collapse;
     width: 100%;

@@ -19,6 +19,6 @@
 #
 from rnms.lib.info import RnmsInfo
 
-rnms_info = RnmsInfo()
+rnms_info = RnmsInfo(__name__)
 rnms_info.run()
 

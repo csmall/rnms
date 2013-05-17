@@ -1,4 +1,4 @@
-TurboGears2 >= 2.2.0rc2
+TurboGears2 >= 2.2.2
 Genshi
 Mako
 zope.sqlalchemy >= 0.4
@@ -10,12 +10,11 @@ repoze.who-friendlyform >= 1.0.4
 tgext.admin >= 0.5.1
 repoze.who.plugins.sa
 tw2.forms
-tw2.rrd
 tw2.jqplugins.jqgrid
 tw2.jqplugins.jqplot
 tw2.jqplugins.portlets
 pysnmp
 python-rrdtool
 mysql-python
-pyparsing
+pyparsing < 2.0.0
 pyzmq

@@ -15,7 +15,8 @@ class jqGridGrid(jqGridWidget):
     options = {
             'pager': 'hosts-grid-pager',
             'datatype': 'json',
-            'viewrecords': True,
+            #'viewrecords': True,
+            #'gridview': True,
             'imgpath': 'scripts/jqGrid/themes/green/images',
             'width': '960',
             'height': 'auto',
@@ -47,6 +48,7 @@ class jqGridGrid(jqGridWidget):
                 width = default_width
             colmodel.append({
                 'name': colname,
+                'index': colname,
                 'width': width,
             })
         return colmodel
@@ -62,6 +64,7 @@ class jqGridTableBase(TableBase):
     __base_widget_type__ = jqGridGrid
     __url__ = None
     __retrieves_own_value__ = True
+    __default_column_width__ = '10'
 
     def _do_get_widget_args(self):
         args = super(jqGridTableBase, self)._do_get_widget_args()
@@ -93,7 +96,8 @@ class jqGridTableFiller(TableFiller):
         for item in items:
             try:
                 rows.append( { 'id': item[identifier],
-                    'cell':[ item[f] for f in self.__fields__] , })
+                              'cell':[item[f] for f in
+                                      self.__fields__] , })
             except IndexError:
                 pass
         return rows

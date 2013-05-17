@@ -1,7 +1,7 @@
 
 
 # Turbogears imports
-from tg import expose
+from tg import expose, request
 from tgext.admin.config import AdminConfig, CrudRestControllerConfig
 from tgext.crud.controller import CrudRestController
 
@@ -41,18 +41,23 @@ class MyAdminConfig(AdminConfig):
     class host(MyCrudRestControllerConfig):
         class table_type(st.host, jqGridTableBase):
             __id__ = 'host-table'
-            __column_widths__ = {'id': '15',}
+            __column_widths__ = {'id': '5',}
         class table_filler_type(st.host, jqGridTableFiller):
             def __actions__(self, obj):
                 value  = super(jqGridTableFiller, self).__actions__(obj)
+                print value
                 value +=\
      '<div><a href="/admin/attributes?h={}">Show Attributes</a></div>'.format(
          obj.id)
-                return value
+                value = '''<form class="actions" style="width: 100%"><select class="actions"><option>1</option><option>2</option></select><button class="btn btn-primary btn-mini" type="submit">Go</button></form>'''
+                return ''.join([
+                    '<a class="btn btn-mini" href="{}/edit">Edit</a>'.format(
+                        obj.id),
+                ])
     
     class zone(MyCrudRestControllerConfig):
         class table_type(st.zone, jqGridTableBase):
             __id__ = 'zone-table'
-            __column_widths__ = {'id': '15',}
+            __column_widths__ = {'id': '5',}
         class table_filler_type(st.zone, jqGridTableFiller):
             pass

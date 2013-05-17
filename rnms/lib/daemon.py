@@ -23,11 +23,10 @@ Rosenberg
 """
 import logging
 import threading
-from argparse import ArgumentParser
 
 import zmq
 
-from rnms.lib.cmdline import BaseCmdLine
+from rnms.lib.cmdline import RnmsCommand
 from rnms.lib.poller import Poller
 from rnms.lib.consolidate import Consolidator
 from rnms.lib.sla_analyzer import SLAanalyzer
@@ -36,7 +35,7 @@ from rnms.lib.snmptrapd import SNMPtrapd
 from rnms.lib import zmqmessage 
 
 
-class Rnmsd(BaseCmdLine):
+class Rnmsd(RnmsCommand):
     """
     Master object for the Rosenberg NMS daemon. This daemon is responsible
     for starting other sub-threads either continuously or at particular times.
@@ -46,15 +45,15 @@ class Rnmsd(BaseCmdLine):
     args = None
     threads = None
 
-    def __init__(self):
+    def __init__(self, name):
+        super(Rnmsd, self).__init__(name)
         self.zmq_context = zmq.Context()
         self.zmq_poller = zmq.Poller()
         self.control_socket = zmqmessage.control_server(self.zmq_context)
         self.threads = {}
 
-    def run(self):
+    def real_command(self):
         """ The entry point for the RNMS daemon """
-        self._setup_app()
         self.logger = logging.getLogger('rnms')
 
         self.poller = Poller(zmq_context=self.zmq_context, do_once=False)
@@ -88,11 +87,6 @@ class Rnmsd(BaseCmdLine):
                     self.logger.critical('Thread %s has died.', tname)
                     self._shutdown()
                     return
-
-    def _setup_app(self):
-        """ Parses command line arguments and does inital setup """
-        parser = ArgumentParser()
-        self.parse_args(parser)
 
     def _shutdown(self):
         """ Method that is called to shutdown the daemon """
