@@ -44,13 +44,13 @@ class TCPClient():
         self.dispatchers = []
         self.zmq_core = zmq_core
 
-    def get_tcp(self, tcphost, port, send_msg, max_bytes, cb_fun, **kwargs):
+    def get_tcp(self, ipaddr, port, send_msg, max_bytes, cb_fun, **kwargs):
         """
         Query a host with the given TCP port and collect the number
         of bytes. Returns a dictionary to the cb_fun 
         """
         new_dispatcher = TCPDispatcher(self.zmq_core)
-        if new_dispatcher.send_message(tcphost, port, send_msg, max_bytes, cb_fun, **kwargs) == True:
+        if new_dispatcher.send_message(ipaddr, port, send_msg, max_bytes, cb_fun, **kwargs) == True:
             self.dispatchers.append(new_dispatcher)
             return True
         return False
@@ -91,11 +91,11 @@ class TCPDispatcher(zmqcore.Dispatcher):
 
 
 
-    def send_message(self, host, port, send_msg, max_bytes, cb_fun, **kwargs):
+    def send_message(self, ipaddr, port, send_msg, max_bytes, cb_fun, **kwargs):
         try:
-            addrinfo = socket.getaddrinfo(host.mgmt_address, port)[0]
+            addrinfo = socket.getaddrinfo(ipaddr, port)[0]
         except socket.gaierror:
-            logger.error("Cannot resolve %s:%s", host.mgmt_address, port)
+            logger.error("Cannot resolve %s:%s", ipaddr, port)
             return False
         address_family, sockaddr = addrinfo[0], addrinfo[4]
         self.create_socket(address_family, socket.SOCK_STREAM)
@@ -103,7 +103,6 @@ class TCPDispatcher(zmqcore.Dispatcher):
         self.inbuf = ''
         self.max_bytes = max_bytes
         self.cb_fun = cb_fun
-        self.host = host
         self.kwargs = kwargs
         self.error = None
         self.start_connect = datetime.datetime.now()
@@ -153,6 +152,7 @@ class TCPDispatcher(zmqcore.Dispatcher):
     def _parse_response(self):
         if self.responded == False:
             filtered_buf = ''.join([c for c in self.inbuf if c in string.printable])
+            print self.kwargs
             self.cb_fun((filtered_buf,self.connect_time), self.error, **self.kwargs)
             self.responded = True
 

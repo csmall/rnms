@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,22 +24,24 @@
 """ Cisco-specific attribute types using SNMP """
 from rnms import model
 
-def discover_cisco_envmib(host, **kw):
+def discover_cisco_envmib(dobj, att_type, host):
     """
     Walk the ifTable to find any SNMP interfaces
     """
     env_oid = (1,3,6,1,4,1,9,9,13,1)
-    params =  kw['att_type'].ad_parameters.split(',')
+    params =  att_type.ad_parameters.split(',')
     if len(params) != 3:
         return False
     name_base = params[0]
     oids = ( env_oid + tuple( int (x) for x in params[1].split('.')),
              env_oid + tuple( int (x) for x in params[2].split('.')),)
 
-    return kw['dobj'].snmp_engine.get_table(host, oids, cb_cisco_envmib, table_trim=1, name_base=name_base, host=host, **kw)
+    return dobj.snmp_engine.get_table(
+        host, oids, cb_cisco_envmib, table_trim=1, name_base=name_base,
+        host=host, att_type=att_type, dobj=dobj)
 
 
-def cb_cisco_envmib(values, error, host, dobj, name_base, **kw):
+def cb_cisco_envmib(values, error, host, dobj, name_base, att_type):
     env_items = {}
 
     if values is None:
@@ -47,7 +49,7 @@ def cb_cisco_envmib(values, error, host, dobj, name_base, **kw):
         return
 
     for idx,name in values[0].items():
-        new_att = model.DiscoveredAttribute(host.id, kw['att_type'])
+        new_att = model.DiscoveredAttribute(host.id, att_type)
         new_att.display_name = unicode(name_base + idx)
         new_att.index = idx
         try:
@@ -62,7 +64,7 @@ def cb_cisco_envmib(values, error, host, dobj, name_base, **kw):
         env_items[idx] = new_att
     dobj.discover_callback(host.id, env_items)
 
-def discover_cisco_saagent(host, **kw):
+def discover_cisco_saagent(dobj, att_type, host):
     """
     Walk the SA Agent table to find any relevant items
     Index is the rtr <num> number
@@ -70,9 +72,11 @@ def discover_cisco_saagent(host, **kw):
     """
     oids =  ((1,3,6,1,4,1,9,9,42,1,5,2,1,1),
              (1,3,6,1,4,1,9,9,42,1,2,1,1,3),)
-    return kw['dobj'].snmp_engine.get_table(host, oids, cb_cisco_saagent, table_trim=1, host=host, **kw)
+    return dobj.snmp_engine.get_table(
+        host, oids, cb_cisco_saagent, table_trim=1,
+        host=host, dobj=dobj, att_type=att_type)
 
-def cb_cisco_saagent(values, error, host, dobj, **kw):
+def cb_cisco_saagent(values, error, host, dobj, att_type):
     saagents = {}
 
     if values is None:
@@ -84,23 +88,25 @@ def cb_cisco_saagent(values, error, host, dobj, **kw):
         except (KeyError, IndexError):
             description = ''
 
-        new_att = model.DiscoveredAttribute(host.id, kw['att_type'])
+        new_att = model.DiscoveredAttribute(host.id, att_type)
         new_att.display_name = unicode('SAA{} {}'.format(key, description))
         new_att.index = key
         saagents[key] = new_att
     dobj.discover_callback(host.id, saagents)
 
-def discover_pix_connections(host, **kw):
+def discover_pix_connections(dobj, att_type, host):
     """
     Walk the PIX Connection table
     """
     oids = (
             (1,3,6,1,4,1,9,9,147,1,2,2,2,1,3),
             )
-    return kw['dobj'].snmp_engine.get_table(host, oids, cb_pix_connections, table_trim=2, host=host, **kw)
+    return dobj.snmp_engine.get_table(
+        host, oids, cb_pix_connections, table_trim=2,
+        host=host, dobj=dobj, att_type=att_type)
 
 
-def cb_pix_connections(values, error, host, dobj, att_type, **kw):
+def cb_pix_connections(values, error, host, dobj, att_type):
     conns = {}
     for key,descr in values[0]:
         new_att = model.DiscoveredAttribute(host.id, att_type)

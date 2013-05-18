@@ -21,20 +21,22 @@
 
 from rnms import model
 
-def discover_bgp_peers(host, **kw):
+def discover_bgp_peers(dobj, att_type, host):
     table_oid = (1,3,6,1,2,1,15,3,1)
     columns = (1,2,5,7,9)
     oids = tuple([table_oid + (col,) for col in columns])
-    return kw['dobj'].snmp_engine.get_table(host, oids, cb_bgp_peers, table_trim=4, host=host, **kw)
+    return dobj.snmp_engine.get_table(
+        host, oids, cb_bgp_peers, table_trim=4,
+        host=host, dobj=dobj, att_type=att_type)
 
-def cb_bgp_peers(values, error, host, dobj, **kw):
+def cb_bgp_peers(values, error, host, dobj, att_type):
     bgp_peers = {}
     if values is None:
         dobj.discover_callback(host.id, bgp_peers)
         return
 
     for remote_addr in values[3].values():
-        new_peer = model.DiscoveredAttribute(host.id, kw['att_type'])
+        new_peer = model.DiscoveredAttribute(host.id, att_type)
         new_peer.display_name = remote_addr
         new_peer.index = remote_addr
         if values[1][remote_addr] != '6':

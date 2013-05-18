@@ -21,8 +21,10 @@ import datetime
 import transaction
 
 from sqlalchemy import and_
+from sqlalchemy.orm import joinedload
 
-from rnms import model
+from rnms.model import DBSession, Host, Attribute, AttributeType, Event
+
 from rnms.lib.engine import RnmsEngine
 
 SCAN_TABLE_SECONDS=300
@@ -111,7 +113,7 @@ class AttDiscover(RnmsEngine):
         host = active_host['host']
         attribute_type = active_host['attribute_type']
 
-        known_atts = { att.index:att for att in host.attributes if att.attribute_type == attribute_type }
+        known_atts = self._get_host_attributes(host.id, attribute_type.id)
         unique_indexes = list(set(known_atts.keys() + discovered_atts.keys()))
         for idx in unique_indexes:
             self.logger.debug('H:%d AT:%d index:%s DB:%s HOST:%s', host_id, attribute_type.id, idx,
@@ -136,9 +138,9 @@ class AttDiscover(RnmsEngine):
         if host.autodiscovery_policy.can_add(attribute):
             self.logger.debug('H:%d AT:%d New Interface Found: %s', host.id, attribute_type.id, attribute.index)
         if host.autodiscovery_policy.permit_add:
-            real_att = model.Attribute.from_discovered(host, attribute)
-            model.DBSession.add(real_att)
-            model.DBSession.flush()
+            real_att = Attribute.from_discovered(host, attribute)
+            DBSession.add(real_att)
+            DBSession.flush()
             self.logger.debug('H:%d AT:%d Added %s = %d', host.id, attribute_type.id, attribute.index, real_att.id)
 
     def _discovery_lost(self, host, attribute_type, attribute):
@@ -151,7 +153,7 @@ class AttDiscover(RnmsEngine):
         if attribute_type.ad_validate and attribute.poll_enabled:
             self.logger.debug('H:%d AT:%d Not found in host: %s', host.id, attribute_type.id, attribute.index)
             if host.autodiscovery_policy.can_del():
-                model.DBSession.delete(attribute)
+                DBSession.delete(attribute)
                 event_info = u' - Deleted'
             elif host.autodiscovery_policy.can_disable():
                 attribute.set_disabled()
@@ -159,10 +161,10 @@ class AttDiscover(RnmsEngine):
             else:
                 event_info = u''
             if host.autodiscovery_policy.alert_delete:
-                new_event = model.Event.create_admin(host, attribute,
+                new_event = Event.create_admin(host, attribute,
                         'Attribute not found in host{0}'.format(event_info))
                 if new_event is not None:
-                    model.DBSession.add(new_event)
+                    DBSession.add(new_event)
                     new_event.process()
 
     def _discovery_validate(self, host, att_type, known_att, disc_att):
@@ -189,10 +191,10 @@ class AttDiscover(RnmsEngine):
                 if host.autodiscovery_policy.permit_modify:
                     known_att.set_field(tag, disc_value)
         if changed_fields != []:
-            new_event = model.Event.create_admin(host, known_att, 
+            new_event = Event.create_admin(host, known_att, 
                     'detected modification'+(', '.join(changed_fields)))
             if new_event is not None:
-                model.DBSession.add(new_event)
+                DBSession.add(new_event)
                 new_event.process()
 
     def _check_user(self, host, attribute):
@@ -229,11 +231,15 @@ class AttDiscover(RnmsEngine):
         Add all or some hosts to the objects list that need
         autodiscovery run on them to find attributes
         """
+        hosts = DBSession.query(Host).options(
+            joinedload(Host.autodiscovery_policy),
+            joinedload(Host.snmp_community)).\
+                filter(Host.id > 1)
         if host_ids is not None:
             assert(type(host_ids) == list)
-            hosts = model.DBSession.query(model.Host).filter(model.Host.id.in_(host_ids))
+            hosts.filter(Host.id.in_(host_ids))
         else:
-            hosts = model.DBSession.query(model.Host).filter(model.Host.pollable == True)
+            hosts.filter(Host.pollable == True)
         for host in hosts:
             self._waiting_hosts.append(host)
 
@@ -245,10 +251,10 @@ class AttDiscover(RnmsEngine):
         self._attribute_types = []
         conditions = []
         if limit_atypes is not None:
-            conditions.append(model.AttributeType.id.in_(limit_atypes))
+            conditions.append(AttributeType.id.in_(limit_atypes))
         if self._force == False:
-            conditions.append(model.AttributeType.ad_enabled == True)
-        atypes = model.DBSession.query(model.AttributeType).filter(and_(*conditions))
+            conditions.append(AttributeType.ad_enabled == True)
+        atypes = DBSession.query(AttributeType).filter(and_(*conditions))
         for atype in atypes:
             self._attribute_types.append(atype)
             found_atypes.append(str(atype.id))
@@ -314,6 +320,16 @@ class AttDiscover(RnmsEngine):
         host['start_time'] = datetime.datetime.now()
         self.snmp_engine.get_str(host['host'], (1,3,6,1,2,1,1,2,0), self._cb_check_sysobjid, host_id=host['host'].id)
 
+    def _get_host_attributes(self, host_id, atype_id):
+        """ Return a list of Attributes for the given hosts for a given
+        AttributeType """
+        atts = DBSession.query(Attribute).filter(and_(
+            Attribute.host_id == host_id,
+            Attribute.attribute_type_id == atype_id))
+        if atts is None:
+            return {}
+        return { att.index:att for att in atts}
+
     def _cb_check_sysobjid(self, value, error, host_id):
         try:
             active_host = self._active_hosts[host_id]
@@ -327,7 +343,7 @@ class AttDiscover(RnmsEngine):
 
     def _sleep_until_next(self):
         """ Stay in this loop until we need to scan more hosts """
-        next_host = model.Host.next_autodiscover()
+        next_host = Host.next_autodiscover()
         if next_host is None:
             return self.sleep(self.scan_host_table_time)
         else:

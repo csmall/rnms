@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ sensor_types = (
         (3, '5', 'V', 'Voltage', '0.001'),
         )
 
-def discover_sensors(host, **kw):
+def discover_sensors(dobj, att_type, host):
     """
     Run snmpwalk on the lm-sensors table
     """
@@ -40,9 +40,11 @@ def discover_sensors(host, **kw):
              (1,3,6,1,4,1,2021,13,16,4,1,2), # volt
              (1,3,6,1,4,1,2021,13,16,5,1,2), # misc
              )
-    return kw['dobj'].snmp_engine.get_table(host, oids, cb_sensors, table_trim=1, host=host, **kw)
+    return dobj.snmp_engine.get_table(
+        host, oids, cb_sensors, table_trim=1,
+        host=host, dobj=dobj, att_type=att_type)
 
-def cb_sensors(values, error, host, dobj, att_type, **kw):
+def cb_sensors(values, error, host, dobj, att_type):
     sensors = {}
     last_sensor = ''
     for valkey,table_index,sunit,measure,multiplier in sensor_types:

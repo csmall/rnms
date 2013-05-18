@@ -23,7 +23,7 @@ from rnms import model
 
 iftable_columns = {'2': 'descr', '5': 'speed', '7': 'admin', '8': 'oper' }
 
-def discover_snmp_interfaces(host, **kw):
+def discover_snmp_interfaces(dobj, att_type, host):
     """
     Walk the ifTable to find any SNMP interfaces
     """
@@ -36,12 +36,14 @@ def discover_snmp_interfaces(host, **kw):
             (1,3,6,1,2,1,4,20,1,2),
             (1,3,6,1,2,1,4,20,1,3),
             )
-    return kw['dobj'].snmp_engine.get_table(host, oids, cb_snmp_interfaces, table_trim=1, host=host, **kw)
+    return dobj.snmp_engine.get_table(
+        host, oids, cb_snmp_interfaces, table_trim=1,
+        host=host, dobj=dobj, att_type=att_type)
 
 
-def cb_snmp_interfaces(values, error, host, **kw):
+def cb_snmp_interfaces(values, error, host, dobj, att_type):
     if values is None:
-        kw['dobj'].discover_callback(host.id, {})
+        dobj.discover_callback(host.id, {})
         return
     discovered_attributes = {}
 
@@ -70,7 +72,7 @@ def cb_snmp_interfaces(values, error, host, **kw):
     for ifindex in values[0].values():
         try:
             ifdesc = values[1][ifindex]
-            new_att = model.DiscoveredAttribute(host.id, kw['att_type'])
+            new_att = model.DiscoveredAttribute(host.id, att_type)
             new_att.display_name = ifdesc
             new_att.index = ifindex
         except IndexError:
@@ -99,9 +101,9 @@ def cb_snmp_interfaces(values, error, host, **kw):
                 new_att.set_field(k,v)
         discovered_attributes[unicode(ifindex)] = new_att
 
-    kw['dobj'].discover_callback(host.id, discovered_attributes)
+    dobj.discover_callback(host.id, discovered_attributes)
 
-def discover_snmp_simple(host, **kw):
+def discover_snmp_simple(dobj, att_type, host):
     """
     Check if the given OID exists and if so create the attribute
     Autodiscovery Parameters: <oid>|<display_name>
@@ -109,15 +111,18 @@ def discover_snmp_simple(host, **kw):
       display_name: Name of the attribute if we create it
     """
     try:
-        tmpoid,display_name = kw['att_type'].ad_parameters.split('|')
+        tmpoid,display_name = att_type.ad_parameters.split('|')
         oid = tuple([int(x) for x in tmpoid.split('.')])
     except ValueError:
         return False
-    kw['host'] = host
-    kw['display_name'] = display_name
+    kw={
+        'host': host,
+        'display_name':display_name,
+        'dobj': dobj,
+        'att_type':att_type}
     req = snmp.SNMPRequest(host)
     req.add_oid(oid, cb_snmp_simple, data=kw)
-    return kw['dobj'].snmp_engine.get(req)
+    return dobj.snmp_engine.get(req)
 
 def cb_snmp_simple(values, error, host, dobj, att_type, display_name, **kw):
     if values is None:

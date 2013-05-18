@@ -21,13 +21,20 @@
 from rnms.model.attribute import DiscoveredAttribute
 
 
-def discover_apache(host, **kw):
+def discover_apache(dobj, att_type, host):
     """
     Make a http call to the host to see if we get the apache status screen
     """
-    return kw['dobj'].tcp_client.get_tcp(host, 80, 'GET /server-status?auto HTTP/1.1\r\nHost: {0}\r\n\r\n'.format(host.mgmt_address), 40, cb_apache, **kw)
+    return dobj.tcp_client.get_tcp(
+        host.mgmt_address,
+        80,
+        'GET /server-status?auto HTTP/1.1\r\nHost: {0}\r\n\r\n'.format(
+            host.mgmt_address),
+        40,
+        cb_apache,
+        dobj=dobj, att_type=att_type, host=host)
 
-def cb_apache(values, error, host, dobj, att_type, **kw):
+def cb_apache(values, error, host, dobj, att_type):
     # values is (response, connect_time)
     if values is None or len(values) != 2:
         dobj.discover_callback(host.id, {})

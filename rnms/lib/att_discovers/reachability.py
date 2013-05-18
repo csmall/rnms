@@ -20,8 +20,8 @@
 """ Discover reachability (ping) """
 from rnms import model
 
-def discover_reachability(host, dobj, att_type, **kw):
-    if dobj.ping_client.get_fping(host) is None:
+def discover_reachability(dobj, att_type, host):
+    if dobj.ping_client.get_fping(host.mgmt_address) is None:
         dobj.discover_callback(host.id, {})
     else:
         new_att = model.DiscoveredAttribute(host.id, att_type)

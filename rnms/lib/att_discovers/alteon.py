@@ -22,7 +22,7 @@
 from rnms.lib import states
 from rnms import model
 
-def discover_alteon_realservers(host, **kw):
+def discover_alteon_realservers(dobj, att_type, host):
     oids = (
             (1,3,6,1,4,1,1872,2,1,5,2,1,1),
             (1,3,6,1,4,1,1872,2,1,5,2,1,2),
@@ -31,9 +31,12 @@ def discover_alteon_realservers(host, **kw):
             (1,3,6,1,4,1,1872,2,1,5,2,1,12),
             (1,3,6,1,4,1,1872,2,1,9,2,2,1,7),
             )
-    return kw['dobj'].snmp_engine.get_table(host, oids, cb_alteon_realservers, table_trim=1, host=host, **kw)
+    return dobj.snmp_engine.get_table(
+        host, oids, cb_alteon_realservers, table_trim=1,
+        dobj=dobj, att_type=att_type, host=host)
 
-def cb_alteon_realservers(values, error, host, dobj, **kw):
+
+def cb_alteon_realservers(values, error, host, dobj, att_type):
     rservers = {}
     if values is not None:
         for idx in values[0].values():
@@ -41,7 +44,7 @@ def cb_alteon_realservers(values, error, host, dobj, **kw):
                 ipaddress = values[1][idx]
             except (KeyError, IndexError):
                 continue
-            new_att = model.DiscoveredAttribute(host.id, kw['att_type'])
+            new_att = model.DiscoveredAttribute(host.id, att_type)
             new_att.display_name = ipaddress
             new_att.index = idx
             new_att.set_field('max_connections', values[2][idx])
@@ -60,7 +63,7 @@ def cb_alteon_realservers(values, error, host, dobj, **kw):
     dobj.discover_callback(host.id, rservers)
 
 
-def discover_alteon_realservices(host, **kw):
+def discover_alteon_realservices(dobj, att_type, host):
     oids = (
             (1,3,6,1,4,1,1872,2,1,9,2,4,1,1),
             (1,3,6,1,4,1,1872,2,1,9,2,4,1,2), #service
@@ -72,9 +75,11 @@ def discover_alteon_realservices(host, **kw):
             (1,3,6,1,4,1,1872,2,1,5,5,1,5), # virt server dname
             (1,3,6,1,4,1,1872,2,1,5,5,1,8), # virt server hname
             )
-    return kw['dobj'].snmp_engine.get_table(host, oids, cb_alteon_realservices, table_trim=1, host=host, **kw)
+    return dobj.snmp_engine.get_table(
+        host, oids, cb_alteon_realservices,
+        table_trim=1, host=host, dobj=dobj, att_type=att_type)
 
-def cb_alteon_realservices(values, error, host, dobj, **kw):
+def cb_alteon_realservices(values, error, host, dobj, att_type):
     rservices = {}
     if values is not None:
         for key,virt_server in values[0].items():
@@ -86,7 +91,7 @@ def cb_alteon_realservices(values, error, host, dobj, **kw):
             except KeyError:
                 continue
 
-            new_att = model.DiscoveredAttribute(host.id, kw['att_type'])
+            new_att = model.DiscoveredAttribute(host.id, att_type)
             new_att.display_name = '{}:{}'.format(ipaddress, port)
             new_att.index = '{}.{}.{}'.format(virt_server, service_idx, real_server)
             new_att.set_field('ipaddress', ipaddress)
@@ -106,7 +111,7 @@ def cb_alteon_realservices(values, error, host, dobj, **kw):
     dobj.discover_callback(host.id, rservices)
 
 
-def discover_alteon_virtualservers(host, **kw):
+def discover_alteon_virtualservers(dobj, att_type, host):
     oids = (
             (1,3,6,1,4,1,1872,2,1,5,5,1,1), #index
             (1,3,6,1,4,1,1872,2,1,5,5,1,2), #ipaddress
@@ -114,10 +119,12 @@ def discover_alteon_virtualservers(host, **kw):
             (1,3,6,1,4,1,1872,2,1,5,5,1,5), #dname
             (1,3,6,1,4,1,1872,2,1,5,5,1,8), #hname
             )
-    return kw['dobj'].snmp_engine.get_table(host, oids, cb_alteon_virtualservers, table_trim=1, host=host, **kw)
+    return dobj.snmp_engine.get_table(
+        host, oids, cb_alteon_virtualservers, table_trim=1,
+        host=host, dobj=dobj, att_type=att_type)
 
 
-def cb_alteon_virtualservers(values, error, host, dobj, **kw):
+def cb_alteon_virtualservers(values, error, host, dobj, att_type):
     vservers = {}
     if values is not None:
         for key,idx in values[0].items():
@@ -133,7 +140,7 @@ def cb_alteon_virtualservers(values, error, host, dobj, **kw):
             else:
                 servername = '{}.{}'.format(hname, dname)
 
-            new_att = model.DiscoveredAttribute(host.id, kw['att_type'])
+            new_att = model.DiscoveredAttribute(host.id, att_type)
             new_att.display_name = ipaddress
             new_att.index = idx
             new_att.set_field('hostname', servername)

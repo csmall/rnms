@@ -33,30 +33,31 @@ sys_fields = (('1','description'),
               ('6', 'location'),
               )
 
-def discover_host_information(host, **kw):
+def discover_host_information(dobj, att_type, host):
     """
     First find the sysObjectId to see if it is one we want
     """
     oid = (1,3,6,1,2,1,1,2,0)
-    kw['host']=host
-    return kw['dobj'].snmp_engine.get_str(host, oid, cb_match_host, **kw)
+    return dobj.snmp_engine.get_str(
+        host, oid, cb_match_host,
+        dobj=dobj, att_type=att_type, host=host)
 
-def cb_match_host(value, error, **kw):
+def cb_match_host(value, error, dobj, att_type, host):
     """
     Given the returned sysObjectId, is it one we want and if so 
     set of another round of queries
     """
     if value is None:
-        kw['dobj'].discover_callback(kw['host'].id, {})
+        dobj.discover_callback(host.id, {})
         return
-    match_sysobjs = kw['att_type'].ad_parameters.split(',')
+    match_sysobjs = att_type.ad_parameters.split(',')
     enterprise = unicode(value.replace('1.3.6.1.4.1.','',1))
     for match in match_sysobjs:
         if enterprise.find(match) == 0:
             break
     else:
         # Didnt match any of them
-        kw['dobj'].discover_callback(kw['host'].id, {})
+        dobj.discover_callback(host.id, {})
         return
 
     # Query for processor table and system info
@@ -66,18 +67,19 @@ def cb_match_host(value, error, **kw):
             (1,3,6,1,2,1,1,5,0),
             (1,3,6,1,2,1,1,6,0),
             )
-    req = snmp.SNMPRequest(kw['host'])
+    req = snmp.SNMPRequest(host)
     req.set_replyall(True)
     req.oid_trim = 2
     for oid in oids:
-        req.add_oid(oid, cb_host_information, data=kw)
-    kw['dobj'].snmp_engine.get(req)
+        req.add_oid(oid, cb_host_information,
+                    data={'dobj':dobj, 'host':host, 'att_type':att_type})
+    dobj.snmp_engine.get(req)
 
-def cb_host_information(values, error, dobj, host, **kw):
+def cb_host_information(values, error, dobj, host, att_type):
     if values is None:
         dobj.discover_callback(host.id, {})
 
-    new_att = model.DiscoveredAttribute(host.id, kw['att_type'])
+    new_att = model.DiscoveredAttribute(host.id, att_type)
     new_att.display_name = u'CPU'
     new_att.index = '1'
     new_att.set_field('contact', values['4.0'])

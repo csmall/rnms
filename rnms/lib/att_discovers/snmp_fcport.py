@@ -26,7 +26,7 @@
 from rnms.lib import states
 from rnms.model import DiscoveredAttribute
 
-def discover_fc_ports(host, **kw):
+def discover_fc_ports(dobj, att_type, host):
     """
     Discover Fibre Channel ports using SNMP
     """
@@ -36,9 +36,11 @@ def discover_fc_ports(host, **kw):
             (1,3,6,1,2,1,75,1,2,2,1,1), # admin status
             (1,3,6,1,2,1,75,1,2,2,1,2), # oper status
             )
-    return kw['dobj'].snmp_engine.get_table(host, oids, cb_fc_ports, table_trim=1, host=host, **kw)
+    return dobj.snmp_engine.get_table(
+        host, oids, cb_fc_ports, table_trim=1,
+        host=host, dobj=dobj, att_type=att_type)
 
-def cb_fc_ports(values, error, host, dobj, att_type, **kw):
+def cb_fc_ports(values, error, host, dobj, att_type):
     fc_ports = {}
     if values is None:
         dobj.discover_callback(host.id, fc_ports)

@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ Discover UPS devices and lines using either the standard or Mitsubishi MIB
 from rnms.lib import snmp
 from rnms import model
 
-def discover_ups(host, **kw):
+def discover_ups(dobj, att_type, host):
     """
     Discover a standard RFC 1628 UPS or Mitsubishi UPS using SNMP
     AD Parameters: none
@@ -36,26 +36,26 @@ def discover_ups(host, **kw):
             (1,3,6,1,4,1,13891,101,1,5,0), #Mitsu ident
             (1,3,6,1,4,1,13891,101,2,1,0), #Mitsu battery status
             )
-    kw['host'] = host
+    kw = { 'host': host, 'att_type': att_type, 'dobj': dobj}
     req = snmp.SNMPRequest(host)
     req.set_replyall(True)
     req.oid_trim=4
     for oid in oids:
         req.add_oid(oid, cb_ups, data=kw)
-    return kw['dobj'].snmp_engine.get(req)
+    return dobj.snmp_engine.get(req)
 
-def cb_ups(values, error, host, dobj, **kw):
+def cb_ups(values, error, host, dobj, att_type):
     if values is None:
         dobj.discover_callback(host.id, {})
     elif values['1.1.5.0'] is not None:
-        new_ups = model.DiscoveredAttribute(host.id, kw['att_type'])
+        new_ups = model.DiscoveredAttribute(host.id, att_type)
         new_ups.display_name = u'UPS'
         new_ups.index = '1'
         new_ups.set_field('ident', values['1.2.1.0'])
         new_ups.set_field('ups_oid', '1.3.6.1.2.1.33.1')
         dobj.discover_callback(host.id, {1: new_ups})
     elif values['101.1.5.0'] is not None:
-        new_ups = model.DiscoveredAttribute(host.id, kw['att_type'])
+        new_ups = model.DiscoveredAttribute(host.id, att_type)
         new_ups.display_name = u'UPS'
         new_ups.index = '1'
         new_ups.set_field('ident', values['101.2.1.0'])
@@ -64,7 +64,7 @@ def cb_ups(values, error, host, dobj, **kw):
     else:
         dobj.discover_callback(host.id, {})
 
-def discover_ups_lines(host, **kw):
+def discover_ups_lines(dobj, att_type, host):
     """
     Discover a standard RFC 1628 UPS or Mitsubishi UPS lines using SNMP
     AD Parameters: <oid>|<inout>|<add_index>
@@ -72,7 +72,7 @@ def discover_ups_lines(host, **kw):
       inout: "in" or "out" for input or output lines respectively
       add_index: Add this value to index
     """
-    params = kw['att_type'].ad_parameters.split('|')
+    params = att_type.ad_parameters.split('|')
     if len(params) != 3:
         return False
     try:
@@ -81,9 +81,10 @@ def discover_ups_lines(host, **kw):
         return False
     if params[1] not in ('in', 'out'):
         return False
-    kw['inout'] = params[1]
-    kw['add_index'] = int(params[2])
-    return kw['dobj'].snmp_engine.get_table(host, (oid,), cb_ups_lines, table_trim=1, host=host, **kw)
+    return dobj.snmp_engine.get_table(
+        host, (oid,), cb_ups_lines, table_trim=1,
+        host=host, dobj=dobj, att_type=att_type,
+        inout= params[1], add_index= int(params[2]))
 
 def cb_ups_lines(values, error, host, dobj, att_type, **kw):
     ups_lines = {}

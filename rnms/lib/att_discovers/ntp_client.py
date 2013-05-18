@@ -20,8 +20,11 @@
 """ Discover NTP clients """
 from rnms import model
 
-def discover_ntp_client(host, **kw):
-    return kw['dobj'].ntp_client.get_peers(host, cb_ntp_peer_list, **kw)
+def discover_ntp_client(dobj, att_type, host):
+    return dobj.ntp_client.get_peers(
+        host, cb_ntp_peer_list,
+        dobj=dobj, att_type=att_type)
+
 
 def cb_ntp_peer_list(host, ntp_response, dobj, att_type, **kw):
     if ntp_response is None or ntp_response.peers == []:

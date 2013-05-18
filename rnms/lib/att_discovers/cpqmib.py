@@ -20,19 +20,21 @@
 """ Discover items from Compaq cpqmib """
 from rnms.model import DiscoveredAttribute
 
-def discover_cpqmib(host, **kw):
+def discover_cpqmib(dobj, att_type, host):
     """
     Discover one of the items from the cpqmib, the ad_parameter will have the
     key used to select which oids to use
     """
     try:
-        mibinfo = cqpmib_oids[kw['att_type'].ad_parameters]
+        mibinfo = cqpmib_oids[att_type.ad_parameters]
     except KeyError:
         return False
-    return kw['dobj'].snmp_engine.get_table(host, mibinfo[1], mibinfo[0], table_trim=1, host=host, **kw)
+    return dobj.snmp_engine.get_table(
+        host, mibinfo[1], mibinfo[0], table_trim=1,
+        host=host, att_type=att_type, dobj=dobj)
 
 
-def cb_cpqmib_phydrv(values, error, host, dobj, att_type, **kw):
+def cb_cpqmib_phydrv(values, error, host, dobj, att_type):
     discovered_attributes = {}
     if values is not None:
         for key,controller in values[0].values():
@@ -54,7 +56,7 @@ def cb_cpqmib_phydrv(values, error, host, dobj, att_type, **kw):
                 discovered_attributes[new_att.index] = new_att
     dobj.discover_callback(host.id, discovered_attributes)
 
-def cb_cpqmib_fans(values, error, host, dobj, att_type, **kw):
+def cb_cpqmib_fans(values, error, host, dobj, att_type):
     """ Callback function for CPQMIB fan status """
 
     discovered_attributes = {}
@@ -81,7 +83,7 @@ def cb_cpqmib_fans(values, error, host, dobj, att_type, **kw):
                 discovered_attributes[new_att.index] = new_att
     dobj.discover_callback(host.id, discovered_attributes)
 
-def cb_cpqmib_ps(values, error, host, dobj, att_type, **kw):
+def cb_cpqmib_ps(values, error, host, dobj, att_type):
     """ Callback function for CPQMIB powersupply status """
 
     discovered_attributes = {}
@@ -106,7 +108,7 @@ def cb_cpqmib_ps(values, error, host, dobj, att_type, **kw):
                 discovered_attributes[new_att.index] = new_att
     dobj.discover_callback(host.id, discovered_attributes)
 
-def cb_cpqmib_temp(values, error, host, dobj, att_type, **kw):
+def cb_cpqmib_temp(values, error, host, dobj, att_type):
     """ Callback function for CPQMIB temperature status """
 
     discovered_attributes = {}

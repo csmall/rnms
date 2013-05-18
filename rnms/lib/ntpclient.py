@@ -41,29 +41,29 @@ class NTPClient():
         self.logger = logger
         self.dispatchers = { af : NTPDispatcher(zmq_core, af) for af in self.address_families}
 
-    def get_peers(self, host, cb_fun, **kwargs):
+    def get_peers(self, ntp_host, cb_fun, **kwargs):
         """
         Returns a list of peers to the callback function
         Returns true on success
         """
         query_packet = NTPControl()
-        return self._send_message(host, query_packet, cb_fun, **kwargs)
+        return self._send_message(ntp_host, query_packet, cb_fun, **kwargs)
 
-    def get_peer_by_id(self, host, assoc_id, cb_fun, **kwargs):
+    def get_peer_by_id(self, ntp_host, assoc_id, cb_fun, **kwargs):
         """
         Return the information known by the host for the specified peer
         """
         query_packet = NTPControl(opcode=2, assoc_id=assoc_id)
-        return self._send_message(host, query_packet, cb_fun, **kwargs)
+        return self._send_message(ntp_host, query_packet, cb_fun, **kwargs)
 
-    def _send_message(self, host, request_packet, cb_fun, **kwargs):
+    def _send_message(self, ntp_host, request_packet, cb_fun, **kwargs):
         try:
-            addrinfo = socket.getaddrinfo(host.mgmt_address, 123)[0]
+            addrinfo = socket.getaddrinfo(ntp_host.mgmt_address, 123)[0]
         except socket.gaierror:
             return False
         addr_family, sockaddr = addrinfo[0], addrinfo[4]
         try:
-            return self.dispatchers[addr_family].send_message(host,request_packet,cb_fun, **kwargs)
+            return self.dispatchers[addr_family].send_message(ntp_host,request_packet,cb_fun, **kwargs)
         except KeyError:
             self.logger.error('Cannot find dispatcher for address family {0}',addr_family)
             return False
@@ -136,9 +136,9 @@ class NTPDispatcher(zmqcore.Dispatcher):
             recv_job['cb_fun'](recv_job['host'], response_packet, **recv_job['kwargs'])
             del(self.sent_jobs[recv_addr])
 
-    def send_message(self, host, request_packet, cb_fun, **kwargs):
+    def send_message(self, ntp_host, request_packet, cb_fun, **kwargs):
         try:
-            addrinfo = socket.getaddrinfo(host.mgmt_address, 123)[0]
+            addrinfo = socket.getaddrinfo(ntp_host.mgmt_address, 123)[0]
         except socket.gaierror:
             #logging.warning("getaddrinfo error")
             return False
@@ -146,7 +146,7 @@ class NTPDispatcher(zmqcore.Dispatcher):
         request_packet.sequence = self._get_next_sequence()
 
         self.waiting_jobs.append({
-            'host': host,
+            'host': ntp_host,
             'sockaddr': sockaddr,
             'request_packet': request_packet,
             'response_packet': NTPControl(),

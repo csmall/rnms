@@ -22,7 +22,7 @@ from rnms.lib import snmp
 from rnms import model
 
 
-def discover_apc(host, **kw):
+def discover_apc(dobj, att_type, host):
     oids = (
             (1,3,6,1,4,1,318,1,1,1,1,1,1,0),
             (1,3,6,1,4,1,318,1,1,1,1,1,2,0),
@@ -31,10 +31,10 @@ def discover_apc(host, **kw):
     req = snmp.SNMPRequest(host)
     req.set_replyall(True)
     req.oid_trim = 4
-    kw['host'] = host
     for oid in oids:
-        req.add_oid(oid, cb_apc, data=kw)
-    return kw['dobj'].snmp_engine.get(req)
+        req.add_oid(oid, cb_apc,
+                    data={'dobj':dobj,'att_type':att_type,'host':host})
+    return dobj.snmp_engine.get(req)
 
 def cb_apc(values, error, host, dobj, att_type):
     if values is None or values['1.1.1.0'] is None:

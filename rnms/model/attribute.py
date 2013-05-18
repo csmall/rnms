@@ -405,7 +405,7 @@ class AttributeType(DeclarativeBase):
         except AttributeError:
             dobj.logger.error('H:%d AT:%d Attribute Discovery function "discover_%s" does not exist.', host.id, self.id, self.ad_command)
             return False
-        return real_discover(dobj=dobj, att_type=self, host=host)
+        return real_discover(dobj, self, host)
         return True
 
     def _match_sysobjid(self, host):

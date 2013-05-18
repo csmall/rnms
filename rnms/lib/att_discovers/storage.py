@@ -34,7 +34,7 @@ storage_device_types = {
         '8': u'RamDisk',
         }
 
-def discover_storage(host, **kw):
+def discover_storage(dobj, att_type, host):
     """
     Walk the hrStorageTable to find any storage items
     """
@@ -45,9 +45,11 @@ def discover_storage(host, **kw):
             (1,3,6,1,2,1,25,2,3,1,5),
             )
 
-    return kw['dobj'].snmp_engine.get_table(host, oids, cb_storage, table_trim=1, host=host, **kw)
+    return dobj.snmp_engine.get_table(
+        host, oids, cb_storage, table_trim=1,
+        host=host, dobj=dobj, att_type=att_type)
 
-def cb_storage(values, error, host, dobj, **kw):
+def cb_storage(values, error, host, dobj, att_type):
     if values is None:
         dobj.discover_callback(host.id, {})
         return
@@ -62,7 +64,7 @@ def cb_storage(values, error, host, dobj, **kw):
         if descr in blocked_device_names:
             continue
 
-        new_att = model.DiscoveredAttribute(host.id, kw['att_type'])
+        new_att = model.DiscoveredAttribute(host.id, att_type)
         new_att.display_name = descr
         new_att.index = sidx
         try:

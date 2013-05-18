@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,23 +18,22 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 """ Discover TCP ports by running nmap """
-import logging
 import re
 import os
 
 from rnms import model
 
-logger = logging.getLogger('rnms')
 nmap_bin = '/usr/bin/nmap'
 nmap_bin_ok =  os.access(nmap_bin, os.X_OK)
 
 port_re = re.compile(r'\d+(?:-\d+)?(?:,\d+(?:-\d+)?)*$')
 
-def discover_tcp_ports(host, **kw):
-    ports = kw['att_type'].ad_parameters
-    return kw['dobj'].nmap_client.scan_host(host, cb_tcp_ports, ports, host=host, **kw)
+def discover_tcp_ports(dobj, att_type, host):
+    ports = att_type.ad_parameters
+    return dobj.nmap_client.scan_host(
+        host, cb_tcp_ports, ports, host=host, att_type=att_type, dobj=dobj)
 
-def cb_tcp_ports(values, error, host, dobj, att_type, **kw):
+def cb_tcp_ports(values, error, host, dobj, att_type):
     tcp_ports = {}
     for port_info in values:
         if len(port_info) < 4 or port_info[1] != 'open':
