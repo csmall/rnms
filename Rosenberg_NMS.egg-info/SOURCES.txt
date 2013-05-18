@@ -35,12 +35,12 @@ rnms/lib/att_discover.py
 rnms/lib/backends.py
 rnms/lib/base.py
 rnms/lib/cmdline.py
-rnms/lib/daemon.py
 rnms/lib/engine.py
 rnms/lib/genericset.py
 rnms/lib/gettid.py
 rnms/lib/helpers.py
-rnms/lib/info.py
+rnms/lib/jffnms_config.py
+rnms/lib/jffnms_import.py
 rnms/lib/jsonquery.py
 rnms/lib/logger.py
 rnms/lib/nmapclient.py
@@ -81,7 +81,6 @@ rnms/lib/consolidate/events.py
 rnms/lib/consolidate/logfiles.py
 rnms/lib/consolidate/traps.py
 rnms/lib/importers/__init__.py
-rnms/lib/importers/jffnms.py
 rnms/lib/pollers/__init__.py
 rnms/lib/pollers/apache.py
 rnms/lib/pollers/buffer.py
@@ -96,6 +95,14 @@ rnms/lib/pollers/simple.py
 rnms/lib/pollers/snmp.py
 rnms/lib/pollers/tcp.py
 rnms/lib/pollers/verify_index.py
+rnms/lib/scripts/__init__.py
+rnms/lib/scripts/att_discovery.py
+rnms/lib/scripts/info.py
+rnms/lib/scripts/jffimport.py
+rnms/lib/scripts/poller.py
+rnms/lib/scripts/rnmsd.py
+rnms/lib/scripts/sla_analyzer.py
+rnms/lib/scripts/trapd.py
 rnms/lib/snmp/__init__.py
 rnms/lib/snmp/dispatcher.py
 rnms/lib/snmp/engine.py

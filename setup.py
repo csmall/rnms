@@ -78,7 +78,14 @@ setup(
 
     entry_points="""
     [console_scripts]
-    rnmsd = rnms.scripts.rnmsd:main
+    rnmsd = rnms.lib.scripts.rnmsd:main
+    rnms_adisc = rnms.lib.scripts.att_discovery:main
+    rnms_cons = rnms.lib.scripts.consolidate:main
+    rnms_info = rnms.lib.scripts.info:main
+    rnms_jffimport = rnms.lib.scripts.jffimport:main
+    rnms_poller = rnms.lib.scripts.poller:main
+    rnms_trapd = rnms.lib.scripts.trapd:main
+    rnms_sla = rnms.lib.scripts.sla_analyzer:main
 
     [paste.app_factory]
     main = rnms.config.middleware:make_app

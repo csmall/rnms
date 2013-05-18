@@ -54,12 +54,13 @@ code-block::
 Rosenberg Environment
 ---------------------
 The Rosenberg Environment is made almost the same way and will be located
-at /usr/local/pythonenv/rnms
+at /usr/local/pythonenv/rnms. It is best to install TurboGears first as
+it pulls in the right sort of dependencies, then install Rosenberg.
 
 .. code-block:: bash
 
   $ cd /usr/local/pythonenv
-  $ virtualenv rnms
+  $ virtualenv --no-site-packages rnms
   New python executable in rnms/bin/python
   Installing distribute....................................................
   .........................................................................
@@ -67,8 +68,10 @@ at /usr/local/pythonenv/rnms
   .....................done.
   Installing pip................done.
   $ source rnms/bin/activate
-  (rnms)$ easy_install --no-site-packages path./to/RosenbergNMS.egg
+  (rnms)$ easy_install -i http://tg.gy/current Turbogears2
+  (lots of lines of install as things happen!)
 
+  (rnms)$ easy_install /tmp/Rosenberg_NMS-0.0.0dev-py2.7.egg
 
 There will be an awful lot of work going on when you try to install
 Rosenberg as easy_install will go off and download all the dependent
@@ -94,6 +97,38 @@ have to be the same but are the defaults seen in most documentation.
 WSGI File
 ---------
 
+.. code-block:: python
+
+    import sys
+    prev_sys_path = list(sys.path)
+    import site
+    site.addsitedir('/usr/local/pythonenv/rnms/lib/python2.7/site-packages')
+
+    new_sys_path = []
+    for item in list(sys.path):
+        if item not in prev_sys_path:
+            new_sys_path.append(item)
+            sys.path.remove(item)
+    sys.path[:0] = new_sys_path
+    #End of virtualenv support
+
+    # This adds your project's root path to the PYTHONPATH so that you can import
+    # top-level modules from your project path.  This is how TurboGears QuickStarted
+    # projects are laid out by default.
+    import os, sys
+    sys.path.append('/usr/local/pythonenv/rnms')
+
+    # Set the environment variable PYTHON_EGG_CACHE to an appropriate directory
+    # where the Apache user has write permission and into which it can unpack egg files.
+    os.environ['PYTHON_EGG_CACHE'] = '/home/rnms/python-eggs'
+
+    # Initialize logging module from your TurboGears config file
+    from paste.script.util.logging_config import fileConfig
+    fileConfig('/home/rnms/production.ini')
+
+    # Finally, load your application's production.ini file.
+    from paste.deploy import loadapp
+    application = loadapp('config:/home/rnms/production.ini')
 
 .. _WSGI: http://wsgi.readthedocs.org/
 .. _virtualenv: http://www.virtualenv.org/

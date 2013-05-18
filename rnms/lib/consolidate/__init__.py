@@ -73,6 +73,8 @@ class Consolidator(RnmsEngine):
 
             sleep_time = int((next_cons_time - datetime.datetime.now()).total_seconds())
             self.logger.debug("Next consolidation in %d secs", sleep_time)
+            if self.do_once:
+                return
             if self.sleep(next_cons_time) == False:
                 return
 

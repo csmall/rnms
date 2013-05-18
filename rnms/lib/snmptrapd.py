@@ -19,6 +19,7 @@
 #
 import socket
 import time
+import sys
 
 import transaction
 
@@ -64,7 +65,12 @@ class SNMPtrap_dispatcher(zmqcore.Dispatcher):
     def __init__(self, zmq_core, address_family, host, port, cb_fun):
         super(SNMPtrap_dispatcher, self).__init__(zmq_core)
         self.create_socket(address_family, socket.SOCK_DGRAM)
-        self.bind(('',port))
+        try:
+            self.bind(('',port))
+        except socket.error as errmsg:
+            print 'Cannot bind to socket {}: {}'.format(
+                port, errmsg)
+            sys.exit(1)
         #self.listen(5)
         self.cb_fun = cb_fun
 
@@ -90,9 +96,10 @@ class SNMPtrapd(RnmsEngine):
     host_cache = None
     trap_cache = None
 
-    def __init__(self, zmq_context=None):
+    def __init__(self, zmq_context=None, bind_port=6162):
         super(SNMPtrapd, self).__init__('trapd', zmq_context)
-        self.dispatcher = SNMPtrap_dispatcher(self.zmq_core, socket.AF_INET6, '', 6162, self.recv_trap)
+        self.dispatcher = SNMPtrap_dispatcher(self.zmq_core, socket.AF_INET6,
+                                              '', bind_port, self.recv_trap)
         self.host_cache = {}
         self.trap_cache = {}
 

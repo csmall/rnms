@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
+import sys
+
 from rnms import model
 from rnms.lib.cmdline import RnmsCommand
 
@@ -289,3 +291,10 @@ Attribute Autodiscovery can do the following:
 
     def line(self, char):
         print char * 60
+
+def main():
+    info = RnmsInfo('info')
+    return info.run()
+
+if __name__ == '__main__':
+    sys.exit(main())

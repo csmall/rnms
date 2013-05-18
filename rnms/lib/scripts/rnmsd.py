@@ -23,6 +23,7 @@ Rosenberg
 """
 import logging
 import threading
+import sys
 
 import zmq
 
@@ -33,7 +34,6 @@ from rnms.lib.sla_analyzer import SLAanalyzer
 from rnms.lib.att_discover import AttDiscover
 from rnms.lib.snmptrapd import SNMPtrapd
 from rnms.lib import zmqmessage 
-
 
 class Rnmsd(RnmsCommand):
     """
@@ -91,3 +91,10 @@ class Rnmsd(RnmsCommand):
     def _shutdown(self):
         """ Method that is called to shutdown the daemon """
         self.control_socket.send(zmqmessage.IPC_END)
+
+def main():
+    rnmsd = Rnmsd(__name__)
+    return rnmsd.run()
+
+if __name__ == '__main__':
+    sys.exit(main())
