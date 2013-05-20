@@ -1,7 +1,8 @@
-Command Line
-============
-Rnms has many command line utilities that can either be used to run the
-system in various modes or used for debugging or informational purposes.
+Console Scripts
+===============
+While most of the time both administrators and users will use the web GUI
+to interact with Rosenberg, the back-end console scripts are essential
+for the running of the program.
 
 Logging
 -------
@@ -19,3 +20,21 @@ Nothing
 -q or --quiet
   Set logging level to Critical
  
+rnmsd
+-----
+All of the required engines can be run in a single program called rnmsd.
+This program has a small master thread which launches and monitors all the 
+sub-threads such as pollers and trap daemons. For most installations, 
+starting this program is all that is required.
+
+rnms_info
+---------
+While administrators can directly interrogate the database, the 
+rnms\_info tool can do simple queries against the database.  The
+command line is:
+
+  rnms\_info _query\_type_ _ids_
+
+The info tool can query the following models: attributes, attribute types,
+hosts, poller sets, autodiscovery policies, slas and triggers.  The second
+parameter is the ID of the item you want to query.

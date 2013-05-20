@@ -59,7 +59,8 @@ class EventsController(BaseController):
     def jqgrid(self, page=1, rows=30, sidx=1, soid='asc', _search='false',
             searchOper=u'', searchField=u'', searchString=u'', **kw):
 
-        qry = DBSession.query(Event)
+        qry = DBSession.query(Event).join(Event.event_type,
+                                          Event.event_state)
         qry = qry.filter()
         qry = qry.order_by()
         result_count = qry.count()
@@ -70,7 +71,12 @@ class EventsController(BaseController):
         qry.options(subqueryload(Event.event_type), contains_eager(Event.fields), subqueryload_all('attribute.fields.attribute_type_field'), subqueryload(Event.host))
 
         records = [{'id': rw,
-            'cell': [ rw.created.strftime('%d %b %H:%M:%S'), '<div class="severity{0}">{1}</div>'.format(rw.event_type.severity_id, rw.event_type.display_name), rw.host.display_name, rw.text()]} for rw in qry]
+            'cell': [
+                rw.created.strftime('%d %b %H:%M:%S'),
+                '<div class="severity{0}">{1}</div>'.format(
+                    rw.event_state.severity_id, rw.event_type.display_name),
+                rw.host.display_name,
+                rw.text()]} for rw in qry]
         total = int(math.ceil(result_count / float(rows)))
         return dict(page=int(page), total=total, records=result_count, rows=records)
 
@@ -117,9 +123,9 @@ class EventsController(BaseController):
         result_count, qry = json_query(qry, colnames, page, rows, sidx, sord, _search=='true', searchOper, searchField, searchString)
 
         records = [{'id': rw.id,
-                'cell': self.format_gridrow(rw.event_type.severity_id, (
+                'cell': self.format_gridrow(rw.event_state.severity_id, (
                     (rw.created, None),
-                    (rw.alarm_state.display_name, None),
+                    (rw.event_state.display_name, None),
                     (rw.event_type.display_name, None),
                     (rw.host.display_name, url('/hosts/'+str(rw.host_id))),
                     (rw.attribute.display_name, url('/attributes/'+str(rw.attribute_id))),

@@ -39,7 +39,9 @@ def poll_tcp_status(poller_buffer, parsed_params, **kwargs):
     if AttributeField.field_value(kwargs['attribute'].id, 'check_content') != '1':
         max_bytes = None
 
-    return kwargs['pobj'].tcp_client.get_tcp(kwargs['attribute'].host, port, ' ', max_bytes, cb_tcp_status, **kwargs)
+    return kwargs['pobj'].tcp_client.get_tcp(
+        kwargs['attribute'].host.mgmt_address, port, ' ',
+        max_bytes, cb_tcp_status, **kwargs)
 
 def cb_tcp_status(values, error, pobj, attribute, poller_row, **kwargs):
     """

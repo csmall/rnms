@@ -49,7 +49,12 @@ def _cons_logfile(logger, logfile):
     if logfile.is_new() == False:
         logger.info("LOGF(%s): 0 messages processed ( No new lines).", logfile.id)
         return
-    lfile = open(logfile.pathname, "r")
+    try:
+        lfile = open(logfile.pathname, "r")
+    except IOError as errmsg:
+        logger.debug("LOGF(%s): Cannot open %s: %s", logfile.id,
+                     logfile.pathname, errmsg)
+        return
     lfile.seek(logfile.file_offset)
     for line in lfile:
         find_data = logfile.logmatchset.find(line)
