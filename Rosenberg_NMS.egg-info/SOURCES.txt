@@ -24,7 +24,6 @@ rnms/controllers/error.py
 rnms/controllers/events.py
 rnms/controllers/graph.py
 rnms/controllers/hosts.py
-rnms/controllers/layouts.py
 rnms/controllers/root.py
 rnms/controllers/secure.py
 rnms/controllers/template.py

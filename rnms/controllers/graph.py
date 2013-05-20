@@ -26,7 +26,6 @@ import datetime
 # turbogears imports
 from tg import validate, flash, expose
 from formencode import validators
-from tw2.jqplugins import portlets
 from tw2 import forms as twf
 from tw2 import core as twc
 from sqlalchemy import and_
@@ -45,21 +44,6 @@ class GraphForm2(twf.Form):
         preset_time = GraphDatePresetWidget()
         start_time = GraphDatePicker()
         end_time = GraphDatePicker()
-
-class GraphLayout(portlets.ColumnLayout):
-    id='graph-layout'
-    graph_type_id=0
-
-    def display(self,gt):
-        portlets.ColumnLayout.display(self)
-
-    class porlet1(portlets.Portlet):
-        title = 'Events'
-        class GraphForm(twf.TableForm):
-            pass#graph_type = GraphType()
-def yaxis_format(value='foo'):
-    print 'value', value
-    return 'fff {}'.format(value)
 
 class GraphController(BaseController):
     #Uncomment this line if your controller requires an authenticated user

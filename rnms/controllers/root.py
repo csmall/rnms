@@ -24,7 +24,6 @@ from rnms.controllers.events import EventsController
 from rnms.controllers.graph import GraphController
 from rnms.controllers.attributes import AttributesController
 from rnms.controllers.hosts import HostsController
-from rnms.controllers.layouts import LayoutsController
 
 set_ui_theme_name(config['ui_theme'])
 __all__ = ['RootController']
@@ -69,7 +68,6 @@ class RootController(BaseController):
     events = EventsController()
     graphs = GraphController()
     hosts = HostsController()
-    layouts = LayoutsController()
 
 
     def _before(self, *args, **kw):
@@ -147,33 +145,3 @@ class RootController(BaseController):
         """
         flash(_('We hope to see you soon!'))
         redirect(came_from)
-
-    @expose('rnms.templates.widget')
-    def portal(self):
-        import tw2.jqplugins.portlets as p
-        import tw2.forms as twf
-
-        state_data = {}
-
-        down_attributes = DBSession.query(Attribute).filter(Attribute.admin_state == states.STATE_DOWN)
-        state_data[states.STATE_ADMIN_DOWN] = down_attributes.count()
-
-        attributes = DBSession.query(func.count(Attribute.admin_state), Attribute.admin_state).group_by(Attribute.admin_state)
-        for attribute in attributes:
-            state_data[attribute[1]] = attribute[0]
-        mypie = AttributeStatusPie()
-        mypie.state_data = state_data
-        class LayoutWidget(p.ColumnLayout):
-            id='awesome-layout'
-            class col1(p.Column):
-                width = "50%"
-                class por1(p.Portlet):
-                    title = "DB Entries"
-                    widgetry = twf.Label(text=get_overall_statistics())
-
-            class col2(p.Column):
-                width = "50%"
-                class por2(p.Portlet):
-                    title = 'Attribute Status'
-                    widget = mypie
-        return dict(w=LayoutWidget)

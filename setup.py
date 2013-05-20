@@ -36,7 +36,7 @@ install_requires=[
     "Mako",
     "zope.sqlalchemy >= 0.4",
     "repoze.tm2 >= 1.0a5",
-    "sqlalchemy",
+    "sqlalchemy<0.8b1",
     "sqlalchemy-migrate",
     "repoze.who",
     "repoze.who-friendlyform >= 1.0.4",
@@ -46,8 +46,8 @@ install_requires=[
     # Rosenberg NMS specific stuff follows
     "tw2.jqplugins.jqgrid",
     "tw2.jqplugins.jqplot",
-    "tw2.jqplugins.portlets",
     "pysnmp",
+    "psycopg2",
     "python-rrdtool",
     "mysql-python",
     "pyparsing < 2.0.0",

@@ -8,8 +8,6 @@ devdata.db
 data/*
 
 # Packages
-*.egg
-*.egg-info
 dist
 build
 apache
