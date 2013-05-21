@@ -79,14 +79,14 @@ class Rnmsd(RnmsCommand):
         while True:
             try:
                 self.zmq_poller.poll(10000)
+                for tname, tobj in self.threads.items():
+                    if not tobj.is_alive():
+                        self.logger.critical('Thread %s has died.', tname)
+                        self._shutdown()
+                        return -1
             except KeyboardInterrupt:
                 self._shutdown()
-                return
-            for tname, tobj in self.threads.items():
-                if not tobj.is_alive():
-                    self.logger.critical('Thread %s has died.', tname)
-                    self._shutdown()
-                    return
+                return 0
 
     def _shutdown(self):
         """ Method that is called to shutdown the daemon """

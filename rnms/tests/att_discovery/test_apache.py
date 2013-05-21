@@ -2,9 +2,7 @@
 """Test suite for Apache Attribute Discovery """
 from nose.tools import eq_
 
-from rnms import model
 from rnms.tests.att_discovery import AttDiscTest
-from rnms.lib import states
 
 from rnms.lib.att_discovers.apache import discover_apache, cb_apache
 
@@ -12,7 +10,7 @@ class TestApacheDiscovery(AttDiscTest):
 
     def test_disc_ok(self):
         """ Apache discovery calles tcpclient correctly """
-        eq_(discover_apache(self.test_host, **self.discover_kwargs), True)
+        eq_(discover_apache(*self.discover_args), True)
         self.assert_get_tcp_called(80, 'GET /server-status?auto HTTP/1.1\r\nHost: {}\r\n\r\n'.format(self.test_host_ip), 40, cb_apache)
 
     def test_cb_none(self):

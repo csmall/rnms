@@ -21,7 +21,7 @@
 """ Hosts controller """
 
 # turbogears imports
-from tg import expose, validate, flash,url
+from tg import expose, validate, flash,url, tmpl_context
 
 # third party imports
 #from tg.i18n import ugettext as _
@@ -78,16 +78,14 @@ class HostsController(BaseController):
         return dict(page=int(page), total=result_count, records=result_count, rows=records)
 
     @expose('rnms.templates.host')
-    @validate(validators={'h':validators.Int()})
+    @validate(validators={'h':validators.Int(min=1)})
     def _default(self, h):
-        try:
-            host_id = int(h)
-        except ValueError:
-            flash('Bad Host ID#{}'.format(h), 'error')
+        if tmpl_context.form_errors:
+            self.process_form_errors()
             return {}
-        host = Host.by_id(host_id)
+        host = Host.by_id(h)
         if host is None:
-            flash('Host ID#{} not found'.format(host_id), 'error')
+            flash('Host ID#{} not found'.format(h), 'error')
             return {}
         vendor,devmodel = host.snmp_type()
         highest_alarm = Event.host_alarm(host.id)
@@ -101,11 +99,11 @@ class HostsController(BaseController):
         attributesbox = InfoBox()
         attributesbox.title = 'Attribute Status'
         attributesbox.child_widget = AttributeSummary()
-        attributesbox.child_widget.host_id = host_id
+        attributesbox.child_widget.host_id = h
         eventsbox = InfoBox()
         eventsbox.title = 'Events'
         eventsbox.child_widget = EventsGrid()
-        eventsbox.child_widget.host_id = host_id
+        eventsbox.child_widget.host_id = h
         return dict(host=host, vendor=vendor, devmodel=devmodel,
                     host_state=host_state,
                     attributesbox=attributesbox,
@@ -113,12 +111,16 @@ class HostsController(BaseController):
                     eventsbox=eventsbox)
 
     @expose('rnms.templates.host_map')
-    @validate(validators={'z':validators.Int(),'events':validators.Bool(),
+    @validate(validators={
+        'z':validators.Int(min=1),'events':validators.Bool(),
                           'alarmed': validators.Bool()})
     def map(self, z=None, events=False, alarmed=False):
         """ Display a map of the Hosts, optionally filtered by Zone id
         and optionally showing events for those hosts
         """
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return {}
         hmap = HostMap()
         hmap.zone_id = z
         hmap.alarmed_only = alarmed

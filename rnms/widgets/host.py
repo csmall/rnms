@@ -25,7 +25,7 @@ from tw2.jqplugins.jqgrid import jqGridWidget
 from tw2.jqplugins.jqgrid.base import word_wrap_css
 
 from base import MapWidget
-from rnms.model import DBSession, Host, Zone
+from rnms.model import DBSession, Host, Zone, Event
 
 class HostsGrid(jqGridWidget):
     id = 'hosts-grid-id'
@@ -67,7 +67,7 @@ class HostMap(MapWidget):
         """ Returns the host state which is used for severity class and
         description box. Returns (class,text)
         """
-        alarm = host.highest_alarm()
+        alarm = Event.host_alarm(host.id)
         if alarm is None:
             return ('ok', 'Up')
         else:

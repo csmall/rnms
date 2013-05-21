@@ -128,7 +128,7 @@ class SNMPEngine():
             self.dispatchers[address_family].del_request(request_id)
             try:
                 request = self.active_requests[request_id]
-            except IndexError:
+            except KeyError:
                 self.logger.debug(
                     "receive_msg(): Cannot find request id %d",
                     request_id)

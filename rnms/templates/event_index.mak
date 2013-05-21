@@ -7,8 +7,10 @@ Rosenberg NMS: Event List
 <script>
 var grid = $("#events-grid-id"), intervalId = setInterval(function(){grid.setGridParam({datatype: 'json'}); grid.trigger('reloadGrid'); }, 4000);
 </script>
+%if w != UNDEFINED:
 <div class="row">
   <div class="span12">
     ${w.display() | n}
   </div>
 </div>
+%endif

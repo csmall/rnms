@@ -27,6 +27,11 @@ def bootstrap(command, conf, vars):
 
         model.DBSession.add(u)
 
+        for perm in database_data.permissions:
+            p = model.Permission()
+            (p.permission_name, p.description) = perm
+            model.DBSession.add(p)
+
         g = model.Group()
         g.group_name = u'managers'
         g.display_name = u'Managers Group'

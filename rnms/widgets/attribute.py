@@ -26,7 +26,7 @@ from tw2.jqplugins.jqplot import JQPlotWidget
 from tw2.jqplugins.jqplot.base import pieRenderer_js
 import tw2.core as twc
 
-from rnms.model import Attribute, DBSession, Host, EventState
+from rnms.model import Attribute, DBSession, Host, EventState, Event
 from rnms.lib import states
 
 from rnms.widgets.base import MapWidget
@@ -46,7 +46,7 @@ class AttributeMap(MapWidget):
         if attribute.admin_state == states.STATE_DOWN:
             return ('asd','Admin Down')
         else:
-            alarm = attribute.highest_alarm()
+            alarm = Event.attribute_alarm(attribute.id)
             if alarm is None:
                 return ('ok', 'Up')
             else:

@@ -22,6 +22,39 @@
 the database"""
 from rnms.lib import states
 
+# Name, description
+permissions = (
+    ('UserRO ', u'Read-Only Access to User, Group and Permissions'),
+    ('UserRW ', u'Read/Write Access to User, Group and Permissions'),
+    ('HostRO ', u'Read-Only Access to Host and Attribute'),
+    ('HostRW ', u'Read/Write Access to Host and Attribute'),
+    ('AdminRO', u'Read-Only Access to remaining models'),
+    ('AdminRW', u'Read/Write Access to remaining models'),
+)
+groups = (
+    ('User View', 'Users that can view Users', ('UserRO',)),
+    ('User Admin', 'Users that can edit Edits', ('UserRW',)),
+    ('Host View', 'Users that can view hosts', ('HostRO',)),
+    ('Host Admin', 'Uses that can edit Hosts', ('HostRW',)),
+    ('System View', 'Users that can view other items',
+    ('UserRO', 'HostRO', 'AdminRO')),
+    ('System Admin', 'Users that can edit other items',
+    ('UserRW', 'HostRW', 'AdminRW')),
+)
+
+group_perms = (
+    ('User View',   'UserRO'),
+    ('User Admin',  'UserRW'),
+    ('Host View',   'HostRO'),
+    ('Host Admin',  'HostRW'),
+    ('System View', 'UserRO'),
+    ('System View', 'HostRO'),
+    ('System View', 'AdminRO'),
+    ('System Admin', 'UserRW'),
+    ('System Admin', 'HostRW'),
+    ('System Admin', 'AdminRW'),
+)
+
 #Name, priority, down snd, up snd, int state, color
 event_states = (
     (u'down', 10, 'down.wav', 'up.wav', states.STATE_DOWN, u'Down'),

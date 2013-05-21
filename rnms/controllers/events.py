@@ -19,14 +19,13 @@
 #
 #
 """ Event controller module"""
-import math
+#import math
 from sqlalchemy import and_
-from sqlalchemy.orm import subqueryload, subqueryload_all, contains_eager
+#from sqlalchemy.orm import subqueryload, subqueryload_all, contains_eager
 from formencode import validators
 
 # turbogears imports
-from tg import expose, url
-from tg import validate
+from tg import expose, url, tmpl_context, validate
 
 # third party imports
 #from tg.i18n import ugettext as _
@@ -43,8 +42,12 @@ class EventsController(BaseController):
     #allow_only = authorize.not_anonymous()
 
     @expose('rnms.templates.event_index')
-    @validate(validators={'a':validators.Int(), 'h':validators.Int()})
+    @validate(validators={'a':validators.Int(min=1),
+                          'h':validators.Int(min=1)})
     def index(self, a=None, h=None):
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return {}
 
         w = EventsGrid()
         w.attribute_id = a
@@ -52,33 +55,30 @@ class EventsController(BaseController):
 
         return dict(w=w)
 
-    @expose('rnms.templates.event_index')
-    @validate(validators={'a':validators.Int()})
-
-    @expose('json')
-    def jqgrid(self, page=1, rows=30, sidx=1, soid='asc', _search='false',
-            searchOper=u'', searchField=u'', searchString=u'', **kw):
-
-        qry = DBSession.query(Event).join(Event.event_type,
-                                          Event.event_state)
-        qry = qry.filter()
-        qry = qry.order_by()
-        result_count = qry.count()
-        rows = int(rows)
-
-        offset = (int(page)-1) * rows
-        qry = qry.offset(offset).limit(rows)
-        qry.options(subqueryload(Event.event_type), contains_eager(Event.fields), subqueryload_all('attribute.fields.attribute_type_field'), subqueryload(Event.host))
-
-        records = [{'id': rw,
-            'cell': [
-                rw.created.strftime('%d %b %H:%M:%S'),
-                '<div class="severity{0}">{1}</div>'.format(
-                    rw.event_state.severity_id, rw.event_type.display_name),
-                rw.host.display_name,
-                rw.text()]} for rw in qry]
-        total = int(math.ceil(result_count / float(rows)))
-        return dict(page=int(page), total=total, records=result_count, rows=records)
+#    @expose('json')
+#    def jqgrid(self, page=1, rows=30, sidx=1, soid='asc', _search='false',
+#            searchOper=u'', searchField=u'', searchString=u'', **kw):
+#
+#        qry = DBSession.query(Event).join(Event.event_type,
+#                                          Event.event_state)
+#        qry = qry.filter()
+#        qry = qry.order_by()
+#        result_count = qry.count()
+#        rows = int(rows)
+#
+#        offset = (int(page)-1) * rows
+#        qry = qry.offset(offset).limit(rows)
+#        qry.options(subqueryload(Event.event_type), contains_eager(Event.fields), subqueryload_all('attribute.fields.attribute_type_field'), subqueryload(Event.host))
+#
+#        records = [{'id': rw,
+#            'cell': [
+#                rw.created.strftime('%d %b %H:%M:%S'),
+#                '<div class="severity{0}">{1}</div>'.format(
+#                    rw.event_state.severity_id, rw.event_type.display_name),
+#                rw.host.display_name,
+#                rw.text()]} for rw in qry]
+#        total = int(math.ceil(result_count / float(rows)))
+#        return dict(page=int(page), total=total, records=result_count, rows=records)
 
     @expose('rnms.templates.severitycss', content_type='text/css')
     def severitycss(self):
@@ -143,16 +143,16 @@ class EventsController(BaseController):
                 retvals.append('<div class="severity{}">{}</div>'.format(sev_id, text))
         return retvals
 
-    @expose('rnms.templates.event_detail')
-    def _default(self, *args):
-        event_id = int(args[0])
-        event = DBSession.query(Event).filter(Event.id==event_id).first()
-        attribs=[('Host', event.host.display_name),
-                ('Attribute', event.attribute.display_name),
-                ('Alarm State', event.alarm_state.display_name),
-                ('Text', event.text()),
-                ('Created', event.created)]
-        return dict(item_id=event.id,
-                item_type='Event',
-                attribs=attribs)
+#    @expose('rnms.templates.event_detail')
+#    def _default(self, *args):
+#        event_id = int(args[0])
+#        event = DBSession.query(Event).filter(Event.id==event_id).first()
+#        attribs=[('Host', event.host.display_name),
+#                ('Attribute', event.attribute.display_name),
+#                ('Alarm State', event.alarm_state.display_name),
+#                ('Text', event.text()),
+#                ('Created', event.created)]
+#        return dict(item_id=event.id,
+#                item_type='Event',
+#                attribs=attribs)
 

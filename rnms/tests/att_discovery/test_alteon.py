@@ -68,7 +68,7 @@ class TestAlteonRealServer(AttDiscTest):
 
     def test_discover_alteon_rserver(self):
         """ Alteon Real Server calls snmp correctly """
-        eq_(discover_alteon_realservers(self.test_host, **self.discover_kwargs), True)
+        eq_(discover_alteon_realservers(*self.discover_args), True)
         self.assert_snmp_table_called()
 
 
@@ -136,7 +136,7 @@ class TestAlteonRealService(AttDiscTest):
 
     def test_discover_alteon_rservice(self):
         """ Alteon Real Service calls snmp correctly """
-        eq_(discover_alteon_realservices(self.test_host, **self.discover_kwargs), True)
+        eq_(discover_alteon_realservices(*self.discover_args), True)
         self.assert_snmp_table_called()
 
 
@@ -200,5 +200,5 @@ class TestAlteonVirtualServer(AttDiscTest):
 
     def test_discover_alteon_rserver(self):
         """ Alteon Virtual Server calls snmp correctly """
-        eq_(discover_alteon_virtualservers(self.test_host, **self.discover_kwargs), True)
+        eq_(discover_alteon_virtualservers(*self.discover_args), True)
         self.assert_snmp_table_called()

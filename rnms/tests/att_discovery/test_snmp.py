@@ -2,7 +2,6 @@
 """Test suite for SNMP Attribute Discovery """
 from nose.tools import eq_
 
-from rnms import model
 from rnms.tests.att_discovery import AttDiscTest
 
 from rnms.lib.att_discovers.snmp import discover_snmp_simple, cb_snmp_simple
@@ -11,7 +10,7 @@ class TestSNMP(AttDiscTest):
     def test_discover_snmp_simple(self):
         """ snmp simple discovery calls snmp correctly """
         self.set_ad_parameters('1.2.3|Item')
-        eq_(discover_snmp_simple(self.test_host, **self.discover_kwargs), True)
+        eq_(discover_snmp_simple(*self.discover_args), True)
         self.assert_snmp_get_called(oid_count=1)
 
     def test_simple_none(self):

@@ -2,14 +2,13 @@
 """Unit and functional test suite for Rosenberg-NMS."""
 
 from os import path
-import sys
 
 from tg import config
 from paste.deploy import loadapp
 from paste.script.appinstall import SetupCommand
 from routes import url_for
 from webtest import TestApp
-from nose.tools import eq_
+from nose.tools import assert_true
 
 from rnms import model
 
@@ -61,3 +60,12 @@ class TestController(object):
         # Cleaning up the database:
         model.DBSession.remove()
         teardown_db()
+
+    def check_response(self, url, msgs):
+        """ Get the given url and check that the msgs appear in reponse """
+        response = self.app.get(url)
+        for msg in  msgs:
+            try:
+                assert_true(msg in response)
+            except AssertionError:
+                raise AssertionError('Not found:'+msg)

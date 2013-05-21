@@ -56,6 +56,10 @@ class AttDiscTest(object):
                 'dobj': self.dobj,
                 'att_type': self.test_att_type,
                 }
+        self.discover_args = (
+            self.dobj,
+            self.test_att_type,
+            self.test_host)
 
     def get_values(self, changes=None, cvalue=None):
         """
@@ -140,5 +144,9 @@ class AttDiscTest(object):
 
 
     def assert_get_tcp_called(self, port, sendstr, maxbytes, cb_fun):
-        self.tcp_client.get_tcp.assert_called_once_with(self.test_host, port, sendstr, maxbytes, cb_fun, **self.discover_kwargs)
+        self.tcp_client.get_tcp.assert_called_once_with(
+            self.test_host_ip, port, sendstr, maxbytes, cb_fun,
+            dobj=self.dobj, host=self.test_host,
+            att_type=self.test_att_type)
+                                                    
 

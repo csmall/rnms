@@ -2,7 +2,6 @@
 """Test suite for BGP Attribute Discovery """
 from nose.tools import eq_
 
-from rnms import model
 from rnms.tests.att_discovery import AttDiscTest
 
 from rnms.lib.att_discovers.bgp import discover_bgp_peers, cb_bgp_peers
@@ -35,6 +34,6 @@ class TestBGP(AttDiscTest):
 
     def test_discover_bgp_peer(self):
         """ BGP discovery calls snmp correctly """
-        eq_(discover_bgp_peers(self.test_host, **self.discover_kwargs), True)
+        eq_(discover_bgp_peers(*self.discover_args), True)
         self.assert_snmp_table_called()
 

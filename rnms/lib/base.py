@@ -2,12 +2,17 @@
 
 """The base Controller API."""
 
-from tg import TGController, tmpl_context
+from tg import TGController, tmpl_context, flash
 from tg import request
 from tw2.jqplugins.ui import set_ui_theme_name
 
 __all__ = ['BaseController']
 
+VARIABLE_NAMES={
+    'a': 'Attribute ID',
+    'h': 'Host ID',
+    'z': 'Zone ID',
+}
 
 class BaseController(TGController):
     """
@@ -28,3 +33,11 @@ class BaseController(TGController):
         request.identity = request.environ.get('repoze.who.identity')
         tmpl_context.identity = request.identity
         return TGController.__call__(self, environ, start_response)
+
+    def process_form_errors(self, **kw):
+        """ Display errors from a form input """
+        msgs=[]
+        for val,errmsg in tmpl_context.form_errors.items():
+            msgs.append('{} for {}'.format(errmsg, VARIABLE_NAMES.get(val,val)))
+        flash(' '.join(msgs), 'error')
+

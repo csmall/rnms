@@ -22,9 +22,13 @@ class TestRootController(TestController):
         """The front page is working properly"""
         response = self.app.get('/')
         msg = 'Overview'
-        # You can look for specific strings:
         assert_true(msg in response)
 
+    def test_about(self):
+        """ About information page is working properly """
+        response = self.app.get('/about')
+        msg = 'About Rosenberg NMS'
+        assert_true(msg in response)
         # You can also access a BeautifulSoup'ed response in your tests
         # (First run $ easy_install BeautifulSoup
         # and then uncomment the next two lines)

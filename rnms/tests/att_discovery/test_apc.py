@@ -13,7 +13,7 @@ class TestApcDiscover(AttDiscTest):
 
     def test_discover_apc(self):
         """ APC discovery calls snmp get correctly """
-        eq_(discover_apc(self.test_host, **self.discover_kwargs), True)
+        eq_(discover_apc(*self.discover_args), True)
         self.assert_snmp_get_called(oid_count=3)
 
     def test_cb_none(self):
