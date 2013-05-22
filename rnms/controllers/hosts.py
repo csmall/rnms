@@ -68,6 +68,9 @@ class HostsController(BaseController):
     @expose('json')
     @validate(validators={'page':validators.Int(), 'rows':validators.Int(), 'sidx':validators.String(), 'sord':validators.String(), '_search':validators.String(), 'searchOper':validators.String(), 'searchField':validators.String(), 'searchString':validators.String()})
     def griddata(self, page, rows, sidx, sord, _search='false', searchOper='', searchField='', searchString='', **kw):
+        if tmpl_context.form_errors:
+            return dict(errors={
+                k:str(v) for k,v in tmpl_context.form_errors.items()})
 
         qry = DBSession.query(Host).join(Host.zone)
         colnames = (('display_name',Host.display_name),('zone_display_name',Zone.display_name))

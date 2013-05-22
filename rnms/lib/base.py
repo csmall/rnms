@@ -1,17 +1,30 @@
 # -*- coding: utf-8 -*-
 
 """The base Controller API."""
+from formencode import validators, Invalid
 
 from tg import TGController, tmpl_context, flash
 from tg import request
 from tw2.jqplugins.ui import set_ui_theme_name
 
-__all__ = ['BaseController']
+__all__ = ['BaseController, BaseGridController']
 
 VARIABLE_NAMES={
     'a': 'Attribute ID',
     'h': 'Host ID',
     'z': 'Zone ID',
+}
+
+# Common griddata parameters
+GRID_VALIDATORS={ 
+    'page':validators.Int(min=1),
+    'rows':validators.Int(min=1),
+    'sidx':validators.String(),
+    'sord':validators.String(),
+    '_search':validators.String(),
+    'searchOper':validators.String(),
+    'searchField':validators.String(),
+    'searchString':validators.String(),
 }
 
 class BaseController(TGController):
@@ -40,4 +53,25 @@ class BaseController(TGController):
         for val,errmsg in tmpl_context.form_errors.items():
             msgs.append('{} for {}'.format(errmsg, VARIABLE_NAMES.get(val,val)))
         flash(' '.join(msgs), 'error')
+
+class BaseGridController(BaseController):
+    """ BaseController with griddata methods """
+
+    def griddata(self, filler, filler_validators, **kw):
+        form_errors={}
+        key_validators = GRID_VALIDATORS.copy()
+        key_validators.update(filler_validators)
+        for key,validator in key_validators.items():
+            try:
+                form_value = kw.pop(key)
+            except KeyError:
+                pass
+            try:
+                form_value = validator.to_python(form_value)
+            except Invalid as validator_msg:
+                form_errors[key] = str(validator_msg)
+            kw[key] = form_value
+        if form_errors != {}:
+            return dict(errors=form_errors)
+        return filler.get_value(**kw)
 

@@ -22,8 +22,7 @@
 from sqlalchemy import func
 
 # turbogears imports
-from tg import expose, url
-from tg import validate, flash
+from tg import expose, url, validate, flash, tmpl_context
 from sqlalchemy import and_
 
 # third party imports
@@ -31,27 +30,34 @@ from formencode import validators
 
 # project specific imports
 from rnms.lib import states
-from rnms.lib.base import BaseController
+from rnms.lib.base import BaseGridController
 from rnms.lib.jsonquery import json_query
 from rnms.model import DBSession, Attribute, AttributeType, Host
 from rnms.widgets import AttributeSummary, AttributeMap,\
         AttributeStatusPie, AttributesGrid, EventsGrid, InfoBox
 from rnms.widgets.graph import GraphWidget
+from rnms.lib.table import jqGridTableFiller
 
-class AttributesController(BaseController):
+class AttributesController(BaseGridController):
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = authorize.not_anonymous()
 
-    @expose('rnms.templates.widget')
-    @validate(validators={'h':validators.Int()})
+    @expose('rnms.templates.attribute_index')
+    @validate(validators={'h':validators.Int(min=1)})
     def index(self, h=None, *args, **kw):
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return {}
         agrid = AttributesGrid()
         agrid.host_id = h
         return dict(w=agrid, page='attribute')
 
     @expose('rnms.templates.attribute_detail')
-    @validate(validators={'a':validators.Int()})
+    @validate(validators={'a':validators.Int(min=1)})
     def _default(self, a):
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return {}
         attribute = Attribute.by_id(a)
         if attribute is None:
             flash('Attribute ID#{} not found'.format(a), 'error')
@@ -80,9 +86,12 @@ class AttributesController(BaseController):
                     graphbox=graphbox)
 
     @expose('rnms.templates.attribute_map')
-    @validate(validators={'h':validators.Int(), 'events':validators.Bool(),
+    @validate(validators={'h':validators.Int(min=1), 'events':validators.Bool(),
                           'alarmed':validators.Bool()})
     def map(self, h=None, events=False, alarmed=False):
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return {}
         amap = AttributeMap()
         amap.host_id = h
         amap.alarmed_only = alarmed
@@ -96,11 +105,26 @@ class AttributesController(BaseController):
         return dict(page='attributes', attribute_map=amap, eventsbox=eventsbox)
 
     @expose('json')
+    def griddata(self, *args, **kw):
+        class AttFiller(jqGridTableFiller):
+            __entity__ = Attribute
+            __limit_fields__ = ('id', 'display_name', 'host', 'attribute_type',
+                               'oper_state', 'admin_state')
+            def oper_state(self, obj):
+                return 'hello'
+        return super(AttributesController, self).griddata(
+            AttFiller(DBSession),
+            {'h': validators.Int(min=1)}, **kw)
+
+    @expose('json')
     @validate(validators={'h': validators.Int(), 'page':validators.Int(), 'rows':validators.Int(), 'sidx':validators.String(), 'sord':validators.String(), '_search':validators.String(), 'searchOper':validators.String(), 'searchField':validators.String(), 'searchString':validators.String()})
-    def griddata(self, page, rows, sidx, sord, _search='false',
+    def griddata_old(self, page, rows, sidx, sord, _search='false',
                  searchOper='', searchField='', searchString='', h=None,
                  **kw):
         conditions = []
+        if tmpl_context.form_errors:
+            return dict(errors={
+                k:str(v) for k,v in tmpl_context.form_errors.items()})
         if h is not None:
             conditions.append(Attribute.host_id == int(h))
         qry = DBSession.query(Attribute).\

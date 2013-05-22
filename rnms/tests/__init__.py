@@ -4,11 +4,12 @@
 from os import path
 
 from tg import config
+import json
 from paste.deploy import loadapp
 from paste.script.appinstall import SetupCommand
 from routes import url_for
 from webtest import TestApp
-from nose.tools import assert_true
+from nose.tools import assert_true, eq_
 
 from rnms import model
 
@@ -61,6 +62,17 @@ class TestController(object):
         model.DBSession.remove()
         teardown_db()
 
+    def check_json_response(self, url, expected_data):
+        """ Get the given url and check the JSON response """
+        response = self.app.get(url)
+        json_data = json.loads(response)
+        for k,v in expected_data:
+            try:
+                assert_true(k in json_data)
+            except AssertionError:
+                raise AssertionError('Key not found in data:'+k)
+            eq_(json_data[k] == v)
+
     def check_response(self, url, msgs):
         """ Get the given url and check that the msgs appear in reponse """
         response = self.app.get(url)
@@ -68,4 +80,24 @@ class TestController(object):
             try:
                 assert_true(msg in response)
             except AssertionError:
+                print response
                 raise AssertionError('Not found:'+msg)
+
+
+JQGRID_STD_ATTRIBS={
+    '_search': False,
+    'nd': 1234567890,
+    'rows': 15,
+    'page': 1,
+    'sidx': '',
+    'sord': 'asc',}
+
+def jqgrid_data_url(base_url, attribs={}):
+    """ Return a url with the standard jqgrid attributes """
+    my_attribs = JQGRID_STD_ATTRIBS.copy()
+    my_attribs.update(attribs)
+    return '{}?{}'.format(
+        base_url,
+        '&'.join('{}={}'.format(k,v) for k,v in my_attribs.items())
+    )
+
