@@ -65,7 +65,7 @@ class BaseGridController(BaseController):
             try:
                 form_value = kw.pop(key)
             except KeyError:
-                pass
+                continue
             try:
                 form_value = validator.to_python(form_value)
             except Invalid as validator_msg:
