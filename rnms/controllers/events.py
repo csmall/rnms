@@ -32,12 +32,14 @@ from tg import expose, url, tmpl_context, validate
 #from repoze.what import predicates
 
 # project specific imports
-from rnms.lib.base import BaseController
+from rnms.lib.base import BaseGridController
 from rnms.model import DBSession, Event, Severity,EventType, Host,Attribute
 from rnms.widgets.event import EventsGrid
+from rnms.lib.table import jqGridTableFiller
 from rnms.lib.jsonquery import json_query
+from rnms.lib import structures
 
-class EventsController(BaseController):
+class EventsController(BaseGridController):
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = authorize.not_anonymous()
 
@@ -52,7 +54,6 @@ class EventsController(BaseController):
         w = EventsGrid()
         w.attribute_id = a
         w.host_id = h
-
         return dict(w=w)
 
 #    @expose('json')
@@ -96,6 +97,12 @@ class EventsController(BaseController):
 
 
     @expose('json')
+    def griddata(self, **kw):
+        class EventFiller(structures.event, jqGridTableFiller):
+            pass
+        return super(EventsController, self).griddata(EventFiller, {}, **kw)
+
+    @expose('json')
     @validate(validators={'page':validators.Int(), 'rows':validators.Int(),
                           'sidx':validators.String(),
                           'sord':validators.String(),
@@ -105,7 +112,7 @@ class EventsController(BaseController):
                           'searchString':validators.String(),
                           'h':validators.Int(), 'a':validators.Int(),
                           'z':validators.Int()})
-    def griddata(self, page, rows, sidx, sord, _search='false', searchOper=u'',
+    def griddata2(self, page, rows, sidx, sord, _search='false', searchOper=u'',
                  searchField=u'', searchString=u'', h=None, a=None, z=None, **kw):
 
         conditions = []

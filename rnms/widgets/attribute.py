@@ -27,7 +27,8 @@ from tw2.jqplugins.jqplot.base import pieRenderer_js
 import tw2.core as twc
 
 from rnms.model import Attribute, DBSession, Host, EventState, Event
-from rnms.lib import states
+from rnms.lib import states, structures
+from rnms.lib.table import jqGridTableBase
 
 from rnms.widgets.base import MapWidget
 
@@ -88,6 +89,22 @@ class AttributeMap(MapWidget):
         super(AttributeMap,self).prepare()
 
 
+class MiniAttributesGrid(structures.attribute_mini, jqGridTableBase):
+    __entity__ = Attribute
+    __grid_id__ = 'mini-attributes-grid'
+    __url__ = '/attributes/minigriddata'
+    __hide_primary_field__ = True
+    __omit_fields__ = ('__actions__',)
+    __caption__ = 'Attributes'
+    __height__ = 190
+    __scroll__ = True
+
+class AttributesGrid(structures.attribute, jqGridTableBase):
+    __grid_id__ = 'attributes-grid'
+    __url__ = '/attributes/griddata'
+    __omit_fields__ = ('__actions__',)
+    __caption__ = 'Attributes'
+
 class AttributeSummary(twc.Widget):
 
     id = 'attribute-summary'
@@ -124,7 +141,7 @@ class AttributeSummary(twc.Widget):
                     self.att_states.append((label, 0 ))
         super(AttributeSummary, self).prepare()
 
-class AttributesGrid(jqGridWidget):
+class oldAttributesGrid(jqGridWidget):
     id ='attribute-grid-id'
     host_id = None
     pager_options = { "search" : True, "refresh" : True, "add" : False,

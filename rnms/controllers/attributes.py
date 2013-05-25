@@ -29,14 +29,14 @@ from sqlalchemy import and_
 from formencode import validators
 
 # project specific imports
-from rnms.lib import states
+from rnms.lib import states, structures
 from rnms.lib.base import BaseGridController
 from rnms.lib.jsonquery import json_query
 from rnms.model import DBSession, Attribute, AttributeType, Host
 from rnms.widgets import AttributeSummary, AttributeMap,\
         AttributeStatusPie, AttributesGrid, EventsGrid, InfoBox
 from rnms.widgets.graph import GraphWidget
-from rnms.lib.table import jqGridTableFiller
+from rnms.lib.table import jqGridTableBase, jqGridTableFiller
 
 class AttributesController(BaseGridController):
     #Uncomment this line if your controller requires an authenticated user
@@ -105,15 +105,20 @@ class AttributesController(BaseGridController):
         return dict(page='attributes', attribute_map=amap, eventsbox=eventsbox)
 
     @expose('json')
+    def minigriddata(self, **kw):
+        class AttFiller(structures.attribute_mini, jqGridTableFiller):
+            pass
+        return super(AttributesController, self).griddata(
+            AttFiller,
+            {'h': validators.Int(min=1)}, **kw)
+
+    @expose('json')
     def griddata(self, *args, **kw):
-        class AttFiller(jqGridTableFiller):
-            __entity__ = Attribute
-            __limit_fields__ = ('id', 'display_name', 'host', 'attribute_type',
-                               'oper_state', 'admin_state')
+        class AttFiller(structures.attribute, jqGridTableFiller):
             def oper_state(self, obj):
                 return 'hello'
         return super(AttributesController, self).griddata(
-            AttFiller(DBSession),
+            AttFiller,
             {'h': validators.Int(min=1)}, **kw)
 
     @expose('json')

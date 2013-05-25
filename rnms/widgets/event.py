@@ -27,8 +27,15 @@ from tw2.jqplugins.jqgrid import jqGridWidget, SQLAjqGridWidget
 from tw2.jqplugins.jqgrid.base import word_wrap_css
 
 from rnms import model
+from rnms.lib import structures
+from rnms.lib.table import jqGridTableBase
 
-class EventsGrid(jqGridWidget):
+class EventsGrid(structures.event, jqGridTableBase):
+    __url__ = '/events/griddata'
+    __grid_id__ = 'events-grid'
+    __caption__ = 'Events'
+    
+class EventsGrid2(jqGridWidget):
     id = 'events-grid-id'
     attribute_id = None
     host_id = None

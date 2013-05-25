@@ -21,7 +21,7 @@
 """ Hosts controller """
 
 # turbogears imports
-from tg import expose, validate, flash,url, tmpl_context
+from tg import expose, validate, flash,tmpl_context
 
 # third party imports
 #from tg.i18n import ugettext as _
@@ -30,12 +30,14 @@ import tw2.forms as twf
 from formencode import validators
 
 # project specific imports
-from rnms.lib.base import BaseController
-from rnms.widgets import AttributeSummary, InfoBox
-from rnms.widgets.host import HostsGrid, HostMap
-from rnms.model import DBSession, Host, Zone, Event
-from rnms.lib.jsonquery import json_query
+from rnms.lib.base import BaseGridController
+from rnms.widgets.host import HostMap, HostsGrid
+from rnms.model import DBSession, Host, Event
+from rnms.widgets import InfoBox
+from rnms.widgets.attribute import MiniAttributesGrid
 from rnms.widgets.event import EventsGrid
+from rnms.lib import structures
+from rnms.lib.table import jqGridTableFiller
 
 
 class HostDetails(twf.TableLayout):
@@ -56,30 +58,26 @@ class HostDetails(twf.TableLayout):
             self.children[3].value = host.sysobjid + "ff"
 
 
-class HostsController(BaseController):
+class HostsController(BaseGridController):
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = authorize.not_anonymous()
 
     @expose('rnms.templates.host_index')
     def index(self):
         w = HostsGrid()
-        return dict(w=w)
+        return dict(w=w, page='host')
 
     @expose('json')
-    @validate(validators={'page':validators.Int(), 'rows':validators.Int(), 'sidx':validators.String(), 'sord':validators.String(), '_search':validators.String(), 'searchOper':validators.String(), 'searchField':validators.String(), 'searchString':validators.String()})
-    def griddata(self, page, rows, sidx, sord, _search='false', searchOper='', searchField='', searchString='', **kw):
-        if tmpl_context.form_errors:
-            return dict(errors={
-                k:str(v) for k,v in tmpl_context.form_errors.items()})
-
-        qry = DBSession.query(Host).join(Host.zone)
-        colnames = (('display_name',Host.display_name),('zone_display_name',Zone.display_name))
-        result_count, qry = json_query(qry, colnames, page, rows, sidx, sord, _search=='true', searchOper, searchField, searchString)
-
-        records = [{'id': rw.id,
-            'cell': ['<a href="'+url('/hosts/'+str(rw.id))+'">'+rw.display_name+'</a>', rw.zone.display_name]} for rw in qry]
-        return dict(page=int(page), total=result_count, records=result_count, rows=records)
-
+    def griddata(self, **kw):
+        class HostFiller(structures.host, jqGridTableFiller):
+            pass
+        return super(HostsController, self).griddata(HostFiller, {}, **kw)
+    @expose('json')
+    def gridindex(self, **kw):
+        class HostFiller(structures.host_list, jqGridTableFiller):
+            pass
+        return super(HostsController, self).griddata(HostFiller, {}, **kw)
+    
     @expose('rnms.templates.host')
     @validate(validators={'h':validators.Int(min=1)})
     def _default(self, h):
@@ -95,23 +93,19 @@ class HostsController(BaseController):
         if highest_alarm is  None:
             host_state = 'Up'
         else:
-            host_state = highest_alarm.alarm_state.display_name.capitalize()
+            host_state = highest_alarm.event_state.display_name.capitalize()
 
         detailsbox = InfoBox()
         detailsbox.title = 'Host Details'
-        attributesbox = InfoBox()
-        attributesbox.title = 'Attribute Status'
-        attributesbox.child_widget = AttributeSummary()
-        attributesbox.child_widget.host_id = h
-        eventsbox = InfoBox()
-        eventsbox.title = 'Events'
-        eventsbox.child_widget = EventsGrid()
-        eventsbox.child_widget.host_id = h
+        attributes_grid = MiniAttributesGrid()
+        attributes_grid.host_id = h
+        events_grid = EventsGrid()
+        events_grid.host_id = h
         return dict(host=host, vendor=vendor, devmodel=devmodel,
                     host_state=host_state,
-                    attributesbox=attributesbox,
+                    attributes_grid=attributes_grid,
                     detailsbox=detailsbox,
-                    eventsbox=eventsbox)
+                    events_grid=events_grid)
 
     @expose('rnms.templates.host_map')
     @validate(validators={

@@ -27,6 +27,8 @@ import sys
 
 import zmq
 
+from tg import config
+
 from rnms.lib.cmdline import RnmsCommand
 from rnms.lib.poller import Poller
 from rnms.lib.consolidate import Consolidator
@@ -55,6 +57,7 @@ class Rnmsd(RnmsCommand):
     def real_command(self):
         """ The entry point for the RNMS daemon """
         self.logger = logging.getLogger('rnms')
+        self._create_info_socket()
 
         self.poller = Poller(zmq_context=self.zmq_context, do_once=False)
         self.threads['poller'] = threading.Thread(target=self.poller.main_loop)
@@ -78,7 +81,16 @@ class Rnmsd(RnmsCommand):
         self.threads['snmptrapd'].start()
         while True:
             try:
-                self.zmq_poller.poll(10000)
+                events = dict(self.zmq_poller.poll(10000))
+                for sock,event in events.items():
+                    if sock == self.info_socket:
+                        self.handle_info_read()
+                        continue
+                    # Unhandled socket?!
+                    self.logger.critical('Unhandled event from zmq poller')
+                    self._shutdown()
+                    return -1
+
                 for tname, tobj in self.threads.items():
                     if not tobj.is_alive():
                         self.logger.critical('Thread %s has died.', tname)
@@ -91,6 +103,25 @@ class Rnmsd(RnmsCommand):
     def _shutdown(self):
         """ Method that is called to shutdown the daemon """
         self.control_socket.send(zmqmessage.IPC_END)
+
+    def handle_info_read(self):
+        frames = self.info_socket.recv_multipart()
+        if frames[0] == zmqmessage.IPC_INFO_REQ:
+            self.info_socket.send(zmqmessage.IPC_INFO_REP, zmq.SNDMORE)
+            self.info_socket.send_json({'tasks':[tname for tname in
+                                                self.threads.keys()]})
+        else:
+            self.error('Info socket received invalid command')
+
+    def _create_info_socket(self):
+        try:
+            port_num = int(config['info_port'])
+        except (KeyError, ValueError):
+            self.logger.critical("Configuration doesn't have key 'info_port'")
+            sys.exit(1)
+        self.info_socket = self.zmq_context.socket(zmq.REP)
+        self.info_socket.bind('tcp://127.0.0.1:{}'.format(port_num))
+        self.zmq_poller.register(self.info_socket, zmq.POLLIN)
 
 def main():
     rnmsd = Rnmsd(__name__)

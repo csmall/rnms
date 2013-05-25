@@ -7,6 +7,7 @@ from tg import TGController, tmpl_context, flash
 from tg import request
 from tw2.jqplugins.ui import set_ui_theme_name
 
+from rnms.model import DBSession
 __all__ = ['BaseController, BaseGridController']
 
 VARIABLE_NAMES={
@@ -57,7 +58,7 @@ class BaseController(TGController):
 class BaseGridController(BaseController):
     """ BaseController with griddata methods """
 
-    def griddata(self, filler, filler_validators, **kw):
+    def griddata(self, filler_class, filler_validators, **kw):
         form_errors={}
         key_validators = GRID_VALIDATORS.copy()
         key_validators.update(filler_validators)
@@ -73,5 +74,6 @@ class BaseGridController(BaseController):
             kw[key] = form_value
         if form_errors != {}:
             return dict(errors=form_errors)
+        filler = filler_class(DBSession)
         return filler.get_value(**kw)
 

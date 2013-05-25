@@ -32,7 +32,6 @@ class MyAdminConfig(AdminConfig):
             __column_widths__ = {'id': '15',}
         class table_filler_type(st.attribute, jqGridTableFiller):
             def admin_state(self, obj):
-                print 'admin state'
                 return state_name(obj.admin_state)
 
             def oper_state(self, obj):

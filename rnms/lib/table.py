@@ -1,5 +1,4 @@
 
-from tg  import url
 from sprox.tablebase import TableBase
 from sprox.fillerbase import TableFiller
 
@@ -10,28 +9,36 @@ class jqGridGrid(jqGridWidget):
     """
     Standard jQuery UI grid for the TableBase
     """
-    id = 'jq-grid-id'
-    params = ['columns', 'column_widths', 'default_column_width']
+    id = None
+    __url__ = None
+    params = ['id', 'scroll', 'height', 'caption', 'columns', 'column_widths', 'default_column_width']
     options = {
-            'pager': 'hosts-grid-pager',
             'datatype': 'json',
-            #'viewrecords': True,
-            #'gridview': True,
+            'autowidth': True,
             'imgpath': 'scripts/jqGrid/themes/green/images',
-            'width': '960',
-            'height': 'auto',
             }
     columns = None
+    suppress_id = None
+    caption = None
+    scroll = False
+    height = None
 
-    def __init__(self, action, attrs, value, params={}):
+    def __init__(self):
         super(jqGridGrid, self).__init__()
-        self.options['url'] = url(action,params)
+        self.options['url'] = self.url
+        self.options['caption'] = self.caption
         self.options['colNames'] = self._get_colnames()
         self.options['colModel'] = self._get_colmodel()
+        self.options['scroll'] = self.scroll
+        if self.scroll == False:
+            self.options['pager'] = self.id+'-pager'
+        self.options['height'] = self.height
 
     def _get_colnames(self):
         colnames = []
         for col in self.columns:
+            if col== self.suppress_id:
+                continue
             try:
                 colnames.append(self.headers[col])
             except KeyError:
@@ -42,6 +49,8 @@ class jqGridGrid(jqGridWidget):
         colmodel  = []
         default_width =  self.default_column_width
         for colname in self.columns:
+            if colname == self.suppress_id:
+                continue
             try:
                 width = self.column_widths[colname]
             except KeyError:
@@ -61,21 +70,47 @@ class jqGridTableBase(TableBase):
         __column_widths__  dict of column field/width pairs
         __default_column_width__  column width if not found above
     """
+    __caption__ = None
     __base_widget_type__ = jqGridGrid
     __url__ = None
     __retrieves_own_value__ = True
-    __default_column_width__ = '10'
+    __default_column_width__ = 15
+    __hide_primary_field__ = False
+    __scroll__ = False
+    __height__ = 'auto'
+
+    def _do_get_url(self):
+        try:
+            if self.attribute_id is not None:
+                return '{}?a={}'.format(self.__url__, self.attribute_id)
+        except AttributeError:
+            pass
+        try:
+            if self.host_id is not None:
+                return '{}?h={}'.format(self.__url__, self.host_id)
+        except AttributeError:
+            pass
+        return self.__url__
 
     def _do_get_widget_args(self):
         args = super(jqGridTableBase, self)._do_get_widget_args()
         if self.__url__ is not None:
-            args['url'] = self.__url__
+            args['url'] = self._do_get_url()
+        if self.__caption__ is not None:
+            args['caption'] = self.__caption__
         args['columns'] = self.__fields__
         args['headers'] = self.__headers__
+        args['id'] = self.__grid_id__
+        args['scroll'] = self.__scroll__
+        args['height'] = self.__height__
+        if self.__hide_primary_field__:
+            args['suppress_id'] = \
+                    self.__provider__.get_primary_field(self.__entity__)
         return args
 
 class jqGridTableFiller(TableFiller):
     __possible_field_names__ = ['display_name']
+    __hide_primary_field__ = False
 
     def _calculate_pages(self, total_rows, **kw):
         try:
@@ -86,18 +121,23 @@ class jqGridTableFiller(TableFiller):
         if limit  is None or limit < 1:
             total_pages = 1
         else:
-            total_pages = total_rows / limit
+            total_pages = total_rows / limit + 1
         return current_page, total_pages
 
     def _get_rows(self, items):
         """ Convert the items into rows that jqGrid understands """
         identifier = self.__provider__.get_primary_field(self.__entity__)
+        if self.__hide_primary_field__ == True:
+            suppress_id = identifier
+        else:
+            suppress_id = ''
+
         rows=[]
         for item in items:
             try:
                 rows.append( { 'id': item[identifier],
                               'cell':[item[f] for f in
-                                      self.__fields__] , })
+                                      self.__fields__ if f != suppress_id] , })
             except IndexError:
                 pass
         return rows
@@ -124,6 +164,12 @@ class jqGridTableFiller(TableFiller):
         if host_id is not None and  hasattr(self.__entity__, 'host_id'):
             try:
                 filters['host_id'] = int(host_id)
+            except (ValueError, TypeError):
+                pass
+        attribute_id = kw.pop('a', None)
+        if attribute_id is not None and  hasattr(self.__entity__, 'attribute_id'):
+            try:
+                filters['attribute_id'] = int(attribute_id)
             except (ValueError, TypeError):
                 pass
         count, objs = self.__provider__.query(

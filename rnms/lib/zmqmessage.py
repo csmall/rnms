@@ -37,6 +37,8 @@ IPC_END     = "\x01" # Sent from main process, the sub-process will die
 INIT        = "\x02" # Child init sent to parent
 CONF        = "\x03" # Parent sending config to child
 READY       = "\x04" # Config/job consumed
+IPC_INFO_REQ    = '\x05' # Info request
+IPC_INFO_REP    = '\x06' # Info reply
 
 
 

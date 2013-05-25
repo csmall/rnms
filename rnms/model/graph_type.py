@@ -203,7 +203,7 @@ class GraphType(DeclarativeBase):
                 graph_vnames.append(line_vname)
             graph_vnames.extend(maxavglast(line_name))
             graph_lines.extend(
-                print_line(attribute, 'AREA', line_vname, 'ffff00',
+                print_line(attribute, 'AREA', line_name, 'ffff00',
                            line.legend, line.legend_unit)
                 )
         return graph_defs + graph_vnames + graph_lines

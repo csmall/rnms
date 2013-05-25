@@ -21,38 +21,17 @@
 """ Hosts Widgets """
 from tg import flash, url
 from sqlalchemy import and_, asc
-from tw2.jqplugins.jqgrid import jqGridWidget
-from tw2.jqplugins.jqgrid.base import word_wrap_css
 
 from base import MapWidget
 from rnms.model import DBSession, Host, Zone, Event
+from rnms.lib import structures
+from rnms.lib.table import jqGridTableBase
 
-class HostsGrid(jqGridWidget):
-    id = 'hosts-grid-id'
-    options = {
-            'pager': 'hosts-grid-pager',
-            'url': '/hosts/griddata',
-            'colNames': [ 'Host Name', 'Zone' ],
-            'datatype': 'json',
-            'colModel' : [
-                {
-                    'name': 'display_name',
-                    'width': 30,
-                    'align': 'left',
-                },{
-                    'name': 'zone_display_name',
-                    'width': 30,
-                    'align': 'left',
-                }],
-            'viewrecords': True,
-            'imgpath': 'scripts/jqGrid/themes/green/images',
-            'width': 900,
-            'height': 'auto',
-            }
-    def prepare(self):
-        self.resources.append(word_wrap_css)
-        super(HostsGrid, self).prepare()
-
+class HostsGrid(structures.host, jqGridTableBase):
+    __grid_id__ = 'hosts-grid'
+    __url__ = '/hosts/griddata'
+    __omit_fields__ = ('__actions__',)
+    __caption__ = 'Hosts'
 
 class HostMap(MapWidget):
     id = 'host-map'

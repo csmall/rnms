@@ -22,14 +22,14 @@ Rosenberg NMS: Host ${host.display_name}
   <div class="span6">
     ${detailsbox.display(text=capture(self.host_details)) | n }
   </div>
-  <div class="span4">
-    ${attributesbox.display() | n}
+  <div class="span6">
+    ${attributes_grid.display() | n}
   </div>
 </div>
 
 <div class="row">
   <div class="span12">
-  ${eventsbox.display() | n}
+  ${events_grid.display() | n}
   </div>
 </div>
 
