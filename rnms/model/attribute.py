@@ -380,6 +380,12 @@ class AttributeType(DeclarativeBase):
             return None
         return DBSession.query(cls).filter(cls.display_name == display_name).first()
 
+    @classmethod
+    def name_by_id(cls, atype_id):
+        """ Return AttributeType name for given ID """
+        return DBSession.query(cls.display_name).select_from(cls).\
+                filter(cls.id == atype_id).scalar()
+
     def autodiscover(self, dobj, host, force):
         """
         Attempt to autodiscover attributes of this object's type on the
@@ -483,30 +489,23 @@ class DiscoveredAttribute(object):
     """
     Attributes that are disocvered through the autodisovery process
     do not have any database backend but just lists.
-    oper_state is just used as a indicator on the GUI, its not
+    state is just used as a indicator on the GUI, its not
     transferred to the real Attribute.
     """
 
     def __init__(self, host_id=1, attribute_type=None):
         self.host_id=host_id
         self.display_name = ''
-        self.admin_state = states.STATE_UP
-        self.oper_state = states.STATE_UP
+        self.admin_state = ''
+        self.oper_state = 'up'
         self.attribute_type=attribute_type
         self.index = ''
         self.fields = {}
 
-    def set_oper_up(self):
-        """ Set the state of this to unknown """
-        self.oper_state = states.STATE_UP
-
-    def set_oper_unknown(self):
-        """ Set the state of this to unknown """
-        self.oper_state = states.STATE_UNKNOWN
-
-    def set_oper_down(self):
-        """ Set the state of this to down """
-        self.oper_state = states.STATE_DOWN
+    def oper_state_name(self):
+        return self.oper_state.capitalize()
+    def admin_state_name(self):
+        return self.admin_state.capitalize()
 
     def set_field(self, key, value):
         self.fields[key] = value

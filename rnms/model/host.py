@@ -22,16 +22,17 @@
 import datetime
 import transaction
 import random
+import time
 
 from sqlalchemy.orm import relationship
-from sqlalchemy import ForeignKey, Column, desc
+from sqlalchemy import ForeignKey, Column
 from sqlalchemy.types import Integer, Unicode, Boolean, PickleType, String, DateTime, Text, SmallInteger, BigInteger
 
 from rnms.model import DeclarativeBase, DBSession
-from rnms.model.attribute import Attribute
 from rnms.model.snmp_names import SNMPEnterprise
 
-__all__ = ['Host', 'Iface', 'ConfigTransfer', 'HostConfig', 'SnmpCommunity']
+__all__ = ['Host', 'Iface', 'ConfigTransfer', 'HostConfig',
+           'SnmpCommunity', 'DiscoveryHost']
 
 MINDATE=datetime.date(1900,1,1)
 discover_interval = 30.0 # 30 min
@@ -211,3 +212,71 @@ class SnmpCommunity(DeclarativeBase):
     def ro_is_snmpv2(self):
         """ Returns True if Read Only Community is SNMP v2 """
         return self.readonly != '' and self.readonly[0] == '2'
+
+class DiscoveryHost(object):
+    """ Host object used for autodiscovering attributes """
+
+    def __init__(self, ad_engine, host):
+        self.ad_engine = ad_engine
+        self.id = host.id
+        self.obj = host
+        self.in_discovery = False
+        self.discovery_index = -1
+        self.attribute_type = None
+        self.discovered_attributes = {}
+
+    def start_discovery(self, cb_fun):
+        if self.need_sysobjid():
+            self.check_sysobjid(cb_fun)
+            return True
+        else:
+            return self.cb_discovery_row(None)
+
+    def start_discovery_row(self):
+        self.in_discovery = True
+        self.start_time = time.time()
+
+    def cb_check_sysobjid(self, value):
+        """ Callback for when queried host for its sysObjectID """
+        if value is not None:
+            new_sysobjid = value.replace('1.3.6.1.4.1','ent')
+            self.obj.sysobjid = new_sysobjid
+        self.cb_discovery_row()
+
+    def cb_discovery_row(self, discovered_atts=None):
+        """
+        Finish up the current discovery and start the next one
+        Return True if there is more polling going on
+        """
+        if self.attribute_type is not None and discovered_atts is not None:
+            self.discovered_attributes[self.attribute_type.id] =\
+                    discovered_atts
+        self.start_time = time.time()
+        while True:
+            self.discovery_index += 1
+            self.attribute_type =\
+                    self.ad_engine.get_discovery_row(self.discovery_index)
+            if self.attribute_type is None:
+                # Got the the end of the line
+                break
+            if self.attribute_type.autodiscover(
+                self.ad_engine, self.obj, self.ad_engine._force) == True:
+                return True
+
+        self.in_discovery = False
+        return False
+
+    def check_sysobjid(self, cb_fun):
+        """ Check the host's system object id using SNMP """
+        self.start_discovery_row()
+        self.ad_engine.snmp_engine.get_str(
+            self.obj, (1,3,6,1,2,1,1,2,0), cb_fun,
+            host_id=self.id)
+
+    def need_sysobjid(self):
+        """ Do we need to check the sysObjectId ? """
+        if (self.obj.sysobjid is not None and self.obj.sysobjid != '') or\
+           self.obj.snmp_community.readonly is None:
+            return False
+        return True
+

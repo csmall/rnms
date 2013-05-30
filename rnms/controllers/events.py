@@ -30,6 +30,7 @@ from tg import expose, url, tmpl_context, validate
 # third party imports
 #from tg.i18n import ugettext as _
 #from repoze.what import predicates
+from tg.predicates import has_permission
 
 # project specific imports
 from rnms.lib.base import BaseGridController
@@ -40,8 +41,10 @@ from rnms.lib.jsonquery import json_query
 from rnms.lib import structures
 
 class EventsController(BaseGridController):
+    allow_only = has_permission('manage')
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = authorize.not_anonymous()
+
 
     @expose('rnms.templates.event_index')
     @validate(validators={'a':validators.Int(min=1),

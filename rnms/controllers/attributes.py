@@ -75,6 +75,7 @@ class AttributesController(BaseGridController):
             graphbox = None
         else:
             gw = GraphWidget()
+            gw.id = 'graph-widget-{}'.format(a)
             gw.attribute = attribute
             gw.graph_type = graph_type
             graphbox = InfoBox()

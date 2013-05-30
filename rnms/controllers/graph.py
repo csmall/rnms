@@ -24,7 +24,7 @@ import time
 import datetime
 
 # turbogears imports
-from tg import validate, flash, expose
+from tg import validate, flash, expose, tmpl_context
 from formencode import validators
 from tw2 import forms as twf
 from tw2 import core as twc
@@ -39,38 +39,55 @@ from rnms.widgets import InfoBox
 logger = logging.getLogger('rnms')
 
 class GraphForm2(twf.Form):
-    class child(twf.TableLayout):
-        graph_types = GraphTypeSelector()
-        preset_time = GraphDatePresetWidget()
-        start_time = GraphDatePicker()
-        end_time = GraphDatePicker()
+    class MainTable(twf.TableLayout):
+        class FirstRow(twc.CompoundWidget):
+            graph_types = GraphTypeSelector()
+            preset_time = GraphDatePresetWidget()
+            start_time = GraphDatePicker()
+            end_time = GraphDatePicker()
 
 class GraphController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = predicates.not_anonymous()
 
+    @expose('images/png')
+    def image(self, a, gt, st, et):
+        """ Returns a RRDgraph """
+        attribute = Attribute.by_id(a)
+        if attribute is None:
+            logger.error('Attribute %d does not exist', a)
+            return
+        graph_type = GraphType.by_id(gt)
+        if graph_type is None:
+            logger.error('GraphType %d does not exist', gt)
+            return
+        if graph_type.attribute_type_id != attribute.attribute_type_id:
+            logger.error('GraphType %d is not for Attribute %d',gt,a)
+            return
+
 
     @expose('rnms.templates.graph')
     @validate(validators={'a':validators.String(), 'gt':validators.Set(), 'preset_time':validators.Int(), 'start_time':validators.String(), 'end_time':validators.String()})
     def index(self, a=[], gt=[], preset_time=0, start_time=0, end_time=None, **kw):
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return {}
         try:
             att_ids = [int(x) for x in a.split(',')]
-            print att_ids
         except ValueError:
             flash('Bad Attribute IDs', 'error')
-            return
+            return {}
         try:
             gt_ids = [int(x) for x in gt]
         except ValueError:
-            flash('Bad Attribute IDs', 'error')
-            return
+            flash('Bad GraphType IDs', 'error')
+            return {}
 
         graph_widgets=[]
         if att_ids != [] and gt_ids != []:
             if preset_time is not None and preset_time > 0:
                 end_timestamp = int(time.time())
                 start_timestamp = end_timestamp - preset_time
-                print 'preset'
             else:
                 end_timestamp = GraphDatePicker.time2epoch(end_time)
                 start_timestamp = GraphDatePicker.time2epoch(start_time)
@@ -119,6 +136,7 @@ class GraphController(BaseController):
         gw.attribute = attribute
         gw.graph_type = graph_type
         return dict(gw=gw)
+
 
     @expose('rnms.templates.widget')
     def test(self, a):

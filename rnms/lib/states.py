@@ -20,7 +20,7 @@ STATE_NAMES = {
 def state_name(val):
     """ Return the state name for the given value, if known """
     try:
-        return STATE_NAMES[val]
-    except KeyError:
+        return STATE_NAMES[int(val)]
+    except (ValueError, KeyError):
         pass
     return 'Unknown state {}'.format(val)

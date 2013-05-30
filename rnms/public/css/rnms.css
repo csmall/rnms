@@ -125,3 +125,9 @@ span#span_control {
 .status-admin-down { color: #999999; }
 .status-testing { color: #3887ad; }
 .status-unknown { color: #222222; }
+
+.event_type_td {
+    text-align: center;
+    border-radius: 2px;
+    margin: 1px;
+}

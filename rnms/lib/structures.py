@@ -1,5 +1,22 @@
+# -*- coding: utf-8 -*-
 #
-# Structures for Admin screens
+# This file is part of the Rosenberg NMS
+#
+# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>
+#
 from rnms import model
 from tg import url
 
@@ -77,15 +94,17 @@ class event(base_table):
     __column_widths__ = {'created': 25, 'event_type': 10, 'description': '100%'}
 
     def host(self, obj):
-        return '<div class="severity{}"><a href="{}">{}</a></div>'.format(
-            obj.event_state.severity_id,
+        return '<a href="{}">{}</a>'.format(
             url('/hosts/{}'.format(obj.host_id)),
             obj.host.display_name)
     def attribute(self, obj):
-        return '<div class="severity{}"><a href="{}">{}</a></div>'.format(
-            obj.event_state.severity_id,
+        return '<a href="{}">{}</a>'.format(
             url('/attributes/{}'.format(obj.attribute_id)),
             obj.attribute.display_name)
+    def event_type(self, obj):
+        return '<div class="severity{} event_type_td">{}</div>'.format(
+            obj.event_state.severity_id,
+            obj.event_state.display_name)
 
 
     def description(self, obj):

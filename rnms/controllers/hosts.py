@@ -30,14 +30,14 @@ import tw2.forms as twf
 from formencode import validators
 
 # project specific imports
+from rnms.lib import structures
+from rnms.lib.table import jqGridTableFiller, DiscoveryFiller
 from rnms.lib.base import BaseGridController
-from rnms.widgets.host import HostMap, HostsGrid
 from rnms.model import DBSession, Host, Event
 from rnms.widgets import InfoBox
-from rnms.widgets.attribute import MiniAttributesGrid
+from rnms.widgets.host import HostMap, HostsGrid
+from rnms.widgets.attribute import MiniAttributesGrid, DiscoveredAttsGrid
 from rnms.widgets.event import EventsGrid
-from rnms.lib import structures
-from rnms.lib.table import jqGridTableFiller
 
 
 class HostDetails(twf.TableLayout):
@@ -77,7 +77,16 @@ class HostsController(BaseGridController):
         class HostFiller(structures.host_list, jqGridTableFiller):
             pass
         return super(HostsController, self).griddata(HostFiller, {}, **kw)
-    
+
+    @expose('json')
+    @validate(validators={'h':validators.Int(min=1)})
+    def griddiscover(self, **kw):
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return {}
+        filler = DiscoveryFiller()
+        return filler.get_value(**kw)
+
     @expose('rnms.templates.host')
     @validate(validators={'h':validators.Int(min=1)})
     def _default(self, h):
@@ -129,3 +138,13 @@ class HostsController(BaseGridController):
         else:
             eventsbox = None
         return dict(page='hosts', host_map=hmap, eventsbox=eventsbox)
+
+    @expose('rnms.templates.host_discover')
+    @validate(validators={'h':validators.Int(min=2)})
+    def discover(self, h):
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return {}
+        w = DiscoveredAttsGrid()
+        w.host_id = h
+        return dict(w=w, page='host')

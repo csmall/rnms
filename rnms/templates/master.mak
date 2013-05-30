@@ -14,6 +14,7 @@
     ${self.content_wrapper()}
     ${self.footer()}
   </div>
+<script src="${tg.url('/javascript/bootstrap.min.js')}" type="text/javascript"></script>
 </body>
 
 <%def name="content_wrapper()">
@@ -85,5 +86,4 @@
   </div>
 </%def>
 
-<script src="${tg.url('/javascript/bootstrap.min.js')}" type="text/javascript"></script>
 </html>

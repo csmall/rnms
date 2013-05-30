@@ -30,8 +30,9 @@ from rnms.lib.parsers import fill_fields
 
 logger = logging.getLogger('rnms')
 
-graph_colors = ('ffcccc', 'ababab', 'aa00aa', '112233', '556677', '0000ff',
-                '00ff00')
+graph_colors = ("4bb2c5", "c5b47f", "EAA228", "579575", "839557",
+                "958c12", "953579", "4b5de4", "d8b83f", "ff5800",
+                "0085cc")
 class GraphTypeError(Exception): pass
 class GraphTypeLineError(Exception): pass
 
@@ -76,9 +77,9 @@ def print_line(attribute, line_type, vname, color, legend, legend_unit):
     return (
         '{}:{}#{}:{}'.format(line_type, vname, color,
                              escape_legend(legend+': ', attribute)),
-        r'PRINT:{}_max:Max {}'.format(vname, esc_units),
-        r'PRINT:{}_avg:Average {}'.format(vname, esc_units),
-        r'PRINT:{}_last:Last {}\l'.format(vname, esc_units),
+        r'GPRINT:{}_max:Max {}'.format(vname, esc_units),
+        r'GPRINT:{}_avg:Average {}'.format(vname, esc_units),
+        r'GPRINT:{}_last:Last {}\l'.format(vname, esc_units),
     )
 
 class GraphType(DeclarativeBase):
@@ -149,7 +150,7 @@ class GraphType(DeclarativeBase):
         """
         graph_options = [
                 '--pango-markup',
-                '--legend-position=east',
+                #'--legend-position=east',
                 '-n', 'TITLE:12:Arial',
                 '-n', 'AXIS:7:Arial',
                 '-n', 'UNIT:9:Arial',
@@ -158,6 +159,7 @@ class GraphType(DeclarativeBase):
                 '-c', 'SHADEA#ffffff00',
                 '-c', 'SHADEB#ffffff00',
                 '--width', '570',
+                '--height', '175',
                 '--full-size-mode',
                 #'-t', str(attribute.host.display_name + ' - ' + attribute.display_name),
                 ]
@@ -203,7 +205,7 @@ class GraphType(DeclarativeBase):
                 graph_vnames.append(line_vname)
             graph_vnames.extend(maxavglast(line_name))
             graph_lines.extend(
-                print_line(attribute, 'AREA', line_name, 'ffff00',
+                print_line(attribute, 'AREA', line_name, '00ff00',
                            line.legend, line.legend_unit)
                 )
         return graph_defs + graph_vnames + graph_lines
@@ -223,6 +225,25 @@ class GraphType(DeclarativeBase):
             else:
                 template = 'LINE2'
                 color = graph_colors[idx % len(graph_colors)]
+            graph_defs.append(line.format_def(attribute))
+            line_vname, line_name = line.format_vnames(attribute)
+            if line_vname is not None:
+                graph_vnames.append(line_vname)
+            graph_vnames.extend(maxavglast(line_name))
+            graph_lines.extend(
+                print_line(attribute, template, line_name, color,
+                           line.legend, line.legend_unit)
+                )
+        return graph_defs + graph_vnames + graph_lines
+
+    def _format_lines(self, attribute):
+        """ A Lines format has several lines in a graph """
+        graph_defs = []
+        graph_vnames = []
+        graph_lines = []
+        for idx,line in enumerate(self.rrd_lines):
+            template = 'LINE2'
+            color = graph_colors[idx % len(graph_colors)]
             graph_defs.append(line.format_def(attribute))
             line_vname, line_name = line.format_vnames(attribute)
             if line_vname is not None:
@@ -585,7 +606,7 @@ class GraphTypeLine(DeclarativeBase):
 
     # Format methods for returing the output
     def format_print(self, attribute):
-        return 'PRINT:{}:{}'.format(
+        return 'GPRINT:{}:{}'.format(
             self._get_vname().name,
             escape_legend(self.legend, attribute))
 

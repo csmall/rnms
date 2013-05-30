@@ -34,7 +34,9 @@ class RnmsAttd(RnmsCommand):
         if self.options.atypes is not None:
             atype_ids = self.options.atypes.split(',')
 
-        autodiscovery = AttDiscover(force=self.options.force)
+        autodiscovery = AttDiscover(force=self.options.force,
+                                    print_only=self.options.print_only,
+                                   do_once=True)
         autodiscovery.discover(limit_hosts=host_ids, limit_atypes=atype_ids)
         transaction.commit()
     
@@ -61,6 +63,12 @@ class RnmsAttd(RnmsCommand):
             action='store_true',
             dest='force',
             help='Force Attribute Type discoveries',
+        )
+        self.parser.add_argument(
+            '-n', '--dry-run',
+            action='store_true',
+            dest='print_only',
+            help='Dry run - do not modify the database',
         )
 
 def main():

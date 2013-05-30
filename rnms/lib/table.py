@@ -1,9 +1,11 @@
 
 from sprox.tablebase import TableBase
-from sprox.fillerbase import TableFiller
+from sprox.fillerbase import TableFiller, FillerBase
+from tg import url
 
 from tw2.jqplugins.jqgrid import jqGridWidget
 
+from rnms.model import AttributeType
 
 class jqGridGrid(jqGridWidget):
     """
@@ -188,3 +190,36 @@ class jqGridTableFiller(TableFiller):
                 records=total_records, rows=rows)
 
 
+class DiscoveryFiller(FillerBase):
+
+    def get_value(self, value=None, **kw):
+        from rnms.model.host import Host
+        from rnms.lib.att_discover import SingleDiscover
+
+        host_id = kw.pop('h', None)
+        if host_id is None:
+            return {}
+        host = Host.by_id(host_id)
+        if host is None:
+            return {}
+        sd = SingleDiscover('attdisc')
+        sd.discover(host)
+        rows = []
+        for atype_id, atts in sd.combined_atts.items():
+            atype_name = AttributeType.name_by_id(atype_id)
+            for idx, att in atts.items():
+                if hasattr(att, 'id'):
+                    action = '<a href="{}">Edit</a>'.format(
+                        url('/admin/attributes/'+str(att.id)))
+                else:
+                    action = 'Add'
+                rows.append({'id': atype_id,
+                             'cell': (
+                                 action,
+                                 atype_name, 
+                                 idx,
+                                 att.display_name,
+                                 att.oper_state_name(),
+                                 'desc',
+                                     )})
+        return {'records': len(rows), 'rows': rows}

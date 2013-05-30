@@ -1,7 +1,7 @@
 
 
 # Turbogears imports
-from tg import expose, request
+from tg import expose
 from tgext.admin.config import AdminConfig, CrudRestControllerConfig
 from tgext.crud.controller import CrudRestController
 
@@ -9,7 +9,7 @@ from tgext.crud.controller import CrudRestController
 
 from rnms.lib.states import state_name
 from rnms.lib.table import jqGridTableBase, jqGridTableFiller
-from rnms.lib import structures as st
+from rnms.lib import admin_structures as st
 
 class MyCrudRestController(CrudRestController):
     keep_params = ['h']

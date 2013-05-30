@@ -85,6 +85,10 @@ class Group(DeclarativeBase):
     def __unicode__(self):
         return self.group_name
     
+    @classmethod
+    def by_group_name(cls, groupname):
+        """Return the group object whose group name is ``groupname``."""
+        return DBSession.query(cls).filter(cls.group_name==groupname).first()
     #}
 
 
@@ -227,6 +231,10 @@ class Permission(DeclarativeBase):
         return self.permission_name
     
     #}
+    @classmethod
+    def by_name(cls, name):
+        """Return the permission object whose name is ``name``."""
+        return DBSession.query(cls).filter(cls.permission_name==name).first()
 
 
 #}

@@ -19,33 +19,36 @@ def bootstrap(command, conf, vars):
 
     # <websetup.bootstrap.before.auth
     try:
-        u = model.User()
-        u.user_name = u'manager'
-        u.display_name = u'Example manager'
-        u.email_address = u'manager@somedomain.com'
-        u.password = u'managepass'
-
-        model.DBSession.add(u)
 
         for perm in database_data.permissions:
             p = model.Permission()
             (p.permission_name, p.description) = perm
             model.DBSession.add(p)
 
-        g = model.Group()
-        g.group_name = u'managers'
-        g.display_name = u'Managers Group'
+        for grp in database_data.groups:
+            g = model.Group()
+            (g.group_name, g.display_name, perms) = grp
+            for perm_name in perms:
+                p = model.Permission.by_name(perm_name)
+                if p is None:
+                    raise ValueError(
+                        'Perm name {} not known in group {}'.format(
+                            perm_name, g.group_name))
+                p.groups.append(g)
+            model.DBSession.add(g)
 
-        g.users.append(u)
     
         model.DBSession.add(g)
 
-        p = model.Permission()
-        p.permission_name = u'manage'
-        p.description = u'This permission give an administrative right to the bearer'
-        p.groups.append(g)
+        u = model.User()
+        u.user_name = u'manager'
+        u.display_name = u'Example manager'
+        u.email_address = u'manager@somedomain.com'
+        u.password = u'managepass'
 
-        model.DBSession.add(p)
+        g = model.Group.by_group_name('System Admin')
+        g.users.append(u)
+        model.DBSession.add(u)
 
         u1 = model.User()
         u1.user_name = u'customer'

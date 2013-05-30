@@ -20,6 +20,7 @@
 """ SNMP attribute types autodiscovery """
 from rnms.lib import snmp
 from rnms import model
+from rnms.lib.states import state_name
 
 iftable_columns = {'2': 'descr', '5': 'speed', '7': 'admin', '8': 'oper' }
 
@@ -85,13 +86,13 @@ def cb_snmp_interfaces(values, error, host, dobj, att_type):
         new_att.set_field('speed', ifspeed)
 
         try:
-            new_att.admin_state = int(values[3][ifindex])
+            new_att.admin_state = state_name(values[3][ifindex])
         except IndexError:
-            new_att.admin_state = 2
+            new_att.admin_state = 'down'
         try:
-            new_att.oper_state = int(values[4][ifindex])
+            new_att.oper_state = state_name(values[4][ifindex])
         except IndexError:
-            new_att.oper_state = 2
+            new_att.oper_state = 'down'
         try:
             ipinfo = ipaddrs[ifindex]
         except KeyError:

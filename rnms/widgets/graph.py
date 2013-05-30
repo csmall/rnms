@@ -35,6 +35,7 @@ from rnms.lib.parsers import fill_fields
 
 logger = logging.getLogger('rnms')
 
+
 class GraphDatePicker(twf.CalendarDatePicker):
     date_format = '%Y/%m/%d %H:%M'
     picker_shows_time = True
@@ -102,7 +103,6 @@ class GraphTypeSelector(twf.MultipleSelectField):
                                distinct(Attribute.attribute_type_id)).filter(
                                    Attribute.id.in_(att_ids))
                           ))
-            print graph_types[0]
             self.options = tuple(gt for gt in graph_types)
             try:
                 self.value = tmpl_context.form_values['gt']
@@ -182,7 +182,6 @@ class GraphWidget(twc.Widget):
             self.img_height = graphv['image_height']
 
     def prepare(self):
-        print self.start_time,'st'
         self.get_graphv()
         self.tg_url = url
         super(GraphWidget, self).prepare

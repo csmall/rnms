@@ -24,36 +24,29 @@ from rnms.lib import states
 
 # Name, description
 permissions = (
-    ('UserRO ', u'Read-Only Access to User, Group and Permissions'),
-    ('UserRW ', u'Read/Write Access to User, Group and Permissions'),
-    ('HostRO ', u'Read-Only Access to Host and Attribute'),
-    ('HostRW ', u'Read/Write Access to Host and Attribute'),
+    ('manage', u'Access to Admin screens'),
+    ('UserRO', u'Read-Only Access to User, Group and Permissions'),
+    ('UserRW', u'Read/Write Access to User, Group and Permissions'),
+    ('HostRO', u'Read-Only Access to Host and Attribute'),
+    ('HostRW', u'Read/Write Access to Host and Attribute'),
     ('AdminRO', u'Read-Only Access to remaining models'),
     ('AdminRW', u'Read/Write Access to remaining models'),
 )
 groups = (
-    ('User View', 'Users that can view Users', ('UserRO',)),
-    ('User Admin', 'Users that can edit Edits', ('UserRW',)),
-    ('Host View', 'Users that can view hosts', ('HostRO',)),
-    ('Host Admin', 'Uses that can edit Hosts', ('HostRW',)),
+    ('User View', 'Users that can view Users',
+     ('manage', 'UserRO',)),
+    ('User Admin', 'Users that can edit Edits',
+     ('manage', 'UserRW',)),
+    ('Host View', 'Users that can view hosts',
+     ('manage', 'HostRO',)),
+    ('Host Admin', 'Uses that can edit Hosts',
+     ('manage', 'HostRW',)),
     ('System View', 'Users that can view other items',
-    ('UserRO', 'HostRO', 'AdminRO')),
+    ('manage', 'UserRO', 'HostRO', 'AdminRO')),
     ('System Admin', 'Users that can edit other items',
-    ('UserRW', 'HostRW', 'AdminRW')),
+    ('manage', 'UserRW', 'HostRW', 'AdminRW')),
 )
 
-group_perms = (
-    ('User View',   'UserRO'),
-    ('User Admin',  'UserRW'),
-    ('Host View',   'HostRO'),
-    ('Host Admin',  'HostRW'),
-    ('System View', 'UserRO'),
-    ('System View', 'HostRO'),
-    ('System View', 'AdminRO'),
-    ('System Admin', 'UserRW'),
-    ('System Admin', 'HostRW'),
-    ('System Admin', 'AdminRW'),
-)
 
 #Name, priority, down snd, up snd, int state, color
 event_states = (
@@ -1145,6 +1138,9 @@ simple_graph_types = (
     #Cisco MAC Accounting | Accounted Packets | cisco_mac_packets  
 
     ('Apache', (
+        ('CPU Load', u'', 'area', '', (
+            ('cplo', '', 'CPU Load', '%.3lf'),
+        )),
         (u'Hits', u'Hits', 'area', '', (
             ('tac', '', 'Hits per Second', '%8.0lf %sHits/s'),
         )),
@@ -1167,7 +1163,7 @@ simple_graph_types = (
             ('capacity', '', 'Battery Capacity', '%5.0lf %%'),
             ('load', '', 'Output Load', '%5.0lf %%'),
         )),
-        ('Voltages', 'V', 'area', '',(
+        ('Voltages', 'V', 'lines', '',(
             ('in_voltage', '', 'Input Voltage',  '%5.0lf VAC'),
             ('out_voltage', '', 'Output Voltage',  '%5.0lf VAC'),
         )),
@@ -1208,6 +1204,11 @@ simple_graph_types = (
             ('sensor_value', '', '$measure', '%5.0lf'),
         )),
     )),
+    ('Cisco 802.11X Device',(
+        (u'Associated Devices', 'Clients', 'area', '', (
+            ('associated', '', 'Associated Clients', '%3.0lf'),
+        )),
+    )),
     ('Cisco System Info', (
         (u'CPU Load', '%', 'area', '', (
             ('cpu', '', 'CPU Utilization', '%4.0lf %'),
@@ -1217,7 +1218,65 @@ simple_graph_types = (
             ('mem_free', '', 'Free Memory', '%6.2lf %sB'),
         )),
     )),
-        
+    ('Cisco Temperature', (
+        (u'Temperature', 'deg', 'area', '',(
+            ('temperature', '', 'Temperature', '%5.0lf'),
+        )),
+    )),
+    ('Cisco SA Agent', (
+        (u'Round Trip Latency', 'msec', 'area', '', (
+            ('rt_latency', '', 'Round-Trip Latency', '%5.0lf msec'),
+        )),
+        (u'Jitter', '', 'inout', '', (
+            ('forward_jitter', '', 'Forward Jitter', '%5.0lf'),
+            ('backward_jitter', '', 'Backward Jitter', '%5.0lf'),
+        )),
+        (u'Packet Loss', '', 'inout', '', (
+            ('forward_packetloss', '', 'Forward Packetloss', '%5.0lf'),
+            ('backward_packetloss', '', 'Backward Packetloss', '%5.0lf'),
+        )),
+    )),
+
+    ('Linux/Unix System Info', (
+        (u'CPU Usage', '%', 'stackedarea', 'rigid upper-limit=100', (
+            ('cpu_user_ticks', 'num_cpu,/', 'User Time', '%8.2lf %%'),
+            ('cpu_nice_ticks', 'num_cpu,/', 'Nice Time', '%8.2lf %%'),
+            ('cpu_system_ticks', 'num_cpu,/', 'System Time', '%8.2lf %%'),
+            ('cpu_idle_ticks', 'num_cpu,/', 'Idle Time', '%8.2lf %%'),
+        )),
+        (u'Load Average', 'Load', 'lines', '', (
+            ('load_average_1', '', ' 1 Minute  Load Average', '%5.2lf'),
+            ('load_average_5', '', ' 5 Minutes Load Average', '%5.2lf'),
+            ('load_average_15', '', '15 Minutes Load Average', '%5.2lf'),
+        )),
+        (u'Processes', 'procs', 'area', '', (
+            ('num_procs', '', 'Processes', '%8.0lf'),
+        )),
+        (u'Users', 'Users', 'area', '', (
+            ('num_users', '', 'Users', '%8.0lf'),
+        )),
+        (u'TCP Connection Status', 'Connections', 'lines', '', (
+            ('tcp_established', '300,*', 'Established Connections', '%8.0lf'),
+            ('tcp_active', '300,*', 'Outgoing Connections', '%8.0lf'),
+            ('tcp_passive', '300,*', 'Incoming Connections', '%8.0lf'),
+        )),
+    )),
+    ('Mitsubishi UPS Input Line', (
+        (u'Voltage', 'V', 'area', '', (
+            ('voltage', '', 'Voltage', '%3.0lf'),
+        )),
+        (u'Current', 'Amps', 'area', '', (
+            ('current', '', 'Current', '%3.0lf %sAmp'),
+        )),
+    )),
+    ('Mitsubishi UPS Output Line', (
+        (u'Voltage', 'V', 'area', '', (
+            ('voltage', '', 'Voltage', '%3.0lf'),
+        )),
+        (u'Current', 'Amps', 'area', '', (
+            ('current', '', 'Current', '%3.0lf %sAmp'),
+        )),
+    )),
     ('Physical Interfaces', (
         (u'Traffic', u'bps', 'inout', '', (
             ('input', '8,*', 'Inbound', '%6.2lf'),
@@ -1229,12 +1288,28 @@ simple_graph_types = (
         )),
         (u'Errors', u'Eps', 'inout', '', (
             ('inputerrors', '', 'Input Errors', '%4.0lf %sEps'),
-            ('outputerrors', '', 'Output Errors', '%4.0lf %Eps'),
+            ('outputerrors', '', 'Output Errors', '%4.0lf %sEps'),
+        )),
+    )),
+    ('Reachable', (
+        (u'Packet Loss', '%', 'area', '', (
+            ('packetloss', '', 'Packet Loss', '%5.0lf %%'),
+        )),
+        (u'Round Trip Time', 'msec', 'area', '', (
+            ('rtt', '', 'Round Trip Time', '%5.0lf %%'),
         )),
     )),
     ('Sensors', (
         (u'Sensor Value', '$unit', 'area', '', (
          ('value', '${multiplier},*', '$measure', '%.2lf %s${units}'),
+        )),
+    )),
+    ('TCP Ports', (
+        (u'Established Connections',  'Connections', 'lines', '', (
+            ('tcp_established', '', 'Established Connections', '%8.0lf'),
+        )),
+        ('Connection Delay', 'Seconds', 'lines', '', (
+            ('conn_delay', '', 'Connection Delay', '%8.2lf %ssec'),
         )),
     )),
     ('UPS', (
@@ -1248,84 +1323,42 @@ simple_graph_types = (
             ('charge_remaining', '', 'Charge Remaining', '%3.0lf %%'),
         )),
     )),
+    ('UPS Input Line', (
+        (u'Voltage', 'V', 'area', '', (
+            ('voltage', '', 'Voltage', '%3.0lf'),
+        )),
+        (u'Current', 'Amps', 'area', '', (
+            ('current', '', 'Current', '%3.0lf %sAmp'),
+        )),
+    )),
+    ('UPS Output Line', (
+        (u'Voltage', 'V', 'area', '', (
+            ('voltage', '', 'Voltage', '%3.0lf'),
+        )),
+        (u'Current', 'Amps', 'area', '', (
+            ('current', '', 'Current', '%3.0lf %sAmp'),
+        )),
+    )),
     ('Windows System Info', (
         (u'CPU Load', '%', 'area', '', (
             ('cpu', '', 'CPU Utilization', '%8.2lf %%'),
+        )),
+        (u'Processes', 'procs', 'area', '', (
+            ('num_procs', '', 'Processes', '%8.0lf'),
+        )),
+        (u'Users', 'Users', 'area', '', (
+            ('num_users', '', 'Users', '%8.0lf'),
+        )),
+        (u'TCP Connection Status', 'Connections', 'lines', '', (
+            ('tcp_established', '300,*', 'Established Connections', '%8.0lf'),
+            ('tcp_active', '300,*', 'Outgoing Connections', '%8.0lf'),
+            ('tcp_passive', '300,*', 'Incoming Connections', '%8.0lf'),
         )),
     )),
         
 )
 # Display Name, Atrribute Type, Title, v Label, extra options
 graph_types = (
-        (u'Traffic', 'Physical Interfaces', '', u'bps', '',
-            ( #DEF
-                ('input', 'input'),
-                ('output', 'output'),
-            ),( #vnames
-                ('CDEF', 'inputbits', 'input,UN,input,input,IF,8,*'),
-                ('CDEF', 'outputbits', 'output,UN,output,output,IF,8,*'),
-                ('VDEF', 'inputmax', 'inputbits,MAXIMUM'),
-                ('VDEF', 'inputavg', 'inputbits,AVERAGE'),
-                ('VDEF', 'inputlast', 'inputbits,LAST'),
-                ('VDEF', 'outputmax', 'outputbits,MAXIMUM'),
-                ('VDEF', 'outputavg', 'outputbits,AVERAGE'),
-                ('VDEF', 'outputlast', 'outputbits,LAST'),
-            ),( #lines
-                ('HRULE', 'speed', 'CC0000', 'Bandwidth ${speed_units}bps\l'),
-                ('AREA', 'inputbits', '00CC00', ' Inbound\\n', False),
-                ('PRINT', 'inputmax', 'Max: %6.2lf%S'),
-                ('PRINT', 'inputavg', 'Avg: %6.2lf%S'),
-                ('PRINT', 'inputlast', r'Cur: %6.2lf%S\l'),
-                ('LINE', 'outputbits', '0000CC', 2, 'Outbound (bps)'),
-                ('PRINT', 'outputmax', 'Max: %6.2lf%S'),
-                ('PRINT', 'outputavg', 'Avg: %6.2lf%S'),
-                ('PRINT', 'outputlast', 'Cur: %6.2lf%S\l'),
-            ) ),
-        (u'Utilization', 'Physical Interfaces', 'Utilization', u'%', '',
-            ( #DEF
-                ('input', 'input'),
-                ('output', 'output'),
-            ),( #vnames
-                ('CDEF', 'input_pct', 'input,UN,0,input,IF,800,*,$speed,/'),
-                ('CDEF', 'output_pct', 'output,UN,0,output,IF,800,*,$speed,/'),
-                ('VDEF', 'inputmax', 'input_pct,MAXIMUM'),
-                ('VDEF', 'inputavg', 'input_pct,AVERAGE'),
-                ('VDEF', 'inputlast', 'input_pct,LAST'),
-                ('VDEF', 'outputmax', 'output_pct,MAXIMUM'),
-                ('VDEF', 'outputavg', 'output_pct,AVERAGE'),
-                ('VDEF', 'outputlast', 'output_pct,LAST'),
-            ),( #lines
-                ('HRULE', '100', 'CC0000', None),
-                ('AREA', 'input_pct', '00CC00', ' Input\\n', False),
-                ('PRINT', 'inputmax', 'Max: %5.1lf%%'),
-                ('PRINT', 'inputavg', 'Avg: %5.1lf%%'),
-                ('PRINT', 'inputlast', r'Cur: %5.1lf%%\l'),
-                ('LINE', 'output_pct', '0000CC', 2, 'Output'),
-                ('PRINT', 'outputmax', 'Max: %5.1lf%%'),
-                ('PRINT', 'outputavg', 'Avg: %5.1lf%%'),
-                ('PRINT', 'outputlast', 'Cur: %5.1lf%%\l'),
-            ) ),
-        (u'Packets', 'Physical Interfaces', '', u'Pps', '',
-            ( #DEF
-                ('input', 'inpackets'),
-                ('output', 'outpackets'),
-            ),( #vnames
-                ('VDEF', 'inputmax', 'input,MAXIMUM'),
-                ('VDEF', 'inputavg', 'input,AVERAGE'),
-                ('VDEF', 'inputlast', 'input,LAST'),
-                ('VDEF', 'outputmax', 'output,MAXIMUM'),
-                ('VDEF', 'outputavg', 'output,AVERAGE'),
-                ('VDEF', 'outputlast', 'output,LAST'),
-            ),( #lines
-                ('AREA', 'input', '00CC00', ' Input Packets\n', False),
-                ('PRINT', 'inputmax', 'Max: %6.2lf%S'),
-                ('PRINT', 'inputavg', 'Avg: %6.2lf%S'),
-                ('PRINT', 'inputlast', r'Cur: %6.2lf%S\l'),
-                ('LINE', 'output', '0000CC', 2, 'Output Packets'),
-                ('PRINT', 'outputmax', 'Max: %6.2lf%S'),
-                ('PRINT', 'outputavg', 'Avg: %6.2lf%S'),
-                ('PRINT', 'outputlast', 'Cur: %6.2lf%S\l'),
-            ) ),
         (u'Packets New', 'Physical Interfaces', '', u'Pps', '',
             ( #DEF
                 ('inpackets', 'inpackets'),
@@ -1382,428 +1415,36 @@ graph_types = (
                 ('VDEF', 'outerrpctlast', 'oerrpct,LAST'),
             ),( #lines
                 ('AREA', 'input', '00CC00', 'Input  Packets\n', False),
-                ('PRINT', 'inputmax', r'%6.2lf%S\g'),
-                ('PRINT', 'inpctmax', '(%5.1lf%%)\g'),
-                ('PRINT', 'inputavg', r'%6.2lf%S\g'),
-                ('PRINT', 'inpctavg', '(%5.1lf%%)\g'),
-                ('PRINT', 'inputlast', r'%6.2lf%S\g'),
-                ('PRINT', 'inpctlast', '(%5.1lf%%)\j'),
+                ('GPRINT', 'inputmax', r'%6.2lf%S\g'),
+                ('GPRINT', 'inpctmax', '(%5.1lf%%)\g'),
+                ('GPRINT', 'inputavg', r'%6.2lf%S\g'),
+                ('GPRINT', 'inpctavg', '(%5.1lf%%)\g'),
+                ('GPRINT', 'inputlast', r'%6.2lf%S\g'),
+                ('GPRINT', 'inpctlast', '(%5.1lf%%)\j'),
                 ('AREA', 'ierrpct', 'FF0000', r'Input  Errors \g', True),
-                ('PRINT', 'inerrmax', r'%6.2lf%S\g'),
-                ('PRINT', 'inerrpctmax', '(%5.1lf%%)\g'),
-                ('PRINT', 'inerravg', r'%6.2lf%S\g'),
-                ('PRINT', 'inerrpctavg', '(%5.1lf%%)\g'),
-                ('PRINT', 'inerrlast', r'%6.2lf%S\g'),
-                ('PRINT', 'inerrpctlast', '(%5.1lf%%)\j'),
+                ('GPRINT', 'inerrmax', r'%6.2lf%S\g'),
+                ('GPRINT', 'inerrpctmax', '(%5.1lf%%)\g'),
+                ('GPRINT', 'inerravg', r'%6.2lf%S\g'),
+                ('GPRINT', 'inerrpctavg', '(%5.1lf%%)\g'),
+                ('GPRINT', 'inerrlast', r'%6.2lf%S\g'),
+                ('GPRINT', 'inerrpctlast', '(%5.1lf%%)\j'),
 
                 ('AREA', 'outputrev', '0000FF', 'Output Packets\n', False),
-                ('PRINT', 'outputmax', '%6.2lf%S\g'),
-                ('PRINT', 'outpctmax', '(%5.1lf%%)\g'),
-                ('PRINT', 'outputavg', '%6.2lf%S\g'),
-                ('PRINT', 'outpctavg', '(%5.1lf%%)\g'),
-                ('PRINT', 'outputlast', '%6.2lf%S\g'),
-                ('PRINT', 'outpctlast', '(%5.1lf%%)\j'),
+                ('GPRINT', 'outputmax', '%6.2lf%S\g'),
+                ('GPRINT', 'outpctmax', '(%5.1lf%%)\g'),
+                ('GPRINT', 'outputavg', '%6.2lf%S\g'),
+                ('GPRINT', 'outpctavg', '(%5.1lf%%)\g'),
+                ('GPRINT', 'outputlast', '%6.2lf%S\g'),
+                ('GPRINT', 'outpctlast', '(%5.1lf%%)\j'),
                 ('AREA', 'oerrpct', 'AA0000', 'Output Errors \g', True),
-                ('PRINT', 'outerrmax', '%6.2lf%S\g'),
-                ('PRINT', 'outerrpctmax', '(%5.1lf%%)\g'),
-                ('PRINT', 'outerravg', '%6.2lf%S\g'),
-                ('PRINT', 'outerrpctavg', '(%5.1lf%%)\g'),
-                ('PRINT', 'outerrlast', '%6.2lf%S\g'),
-                ('PRINT', 'outerrpctlast', '(%5.1lf%%)\j'),
+                ('GPRINT', 'outerrmax', '%6.2lf%S\g'),
+                ('GPRINT', 'outerrpctmax', '(%5.1lf%%)\g'),
+                ('GPRINT', 'outerravg', '%6.2lf%S\g'),
+                ('GPRINT', 'outerrpctavg', '(%5.1lf%%)\g'),
+                ('GPRINT', 'outerrlast', '%6.2lf%S\g'),
+                ('GPRINT', 'outerrpctlast', '(%5.1lf%%)\j'),
 
             ) ),
-        (u'Errors', 'Physical Interfaces', '', u'Errors/sec', '',
-            ( #DEF
-                ('input', 'inputerrors'),
-                ('output', 'outputerrors'),
-            ),( #vnames
-                ('VDEF', 'inputavg', 'input,AVERAGE'),
-                ('VDEF', 'inputlast', 'input,LAST'),
-                ('VDEF', 'outputavg', 'output,AVERAGE'),
-                ('VDEF', 'outputlast', 'output,LAST'),
-            ),( #lines
-                ('AREA', 'input', '00CC00', ' Input Errors\\n', False),
-                ('PRINT', 'inputavg', 'Input Errors :- Average: %4.0lf %sEps'),
-                ('PRINT', 'inputlast', r'Current: %4.0lf %sEps\l'),
-                ('LINE', 'output', '0000CC', 2, 'Output Errors'),
-                ('PRINT', 'outputavg', 'Output Errors :- Average: %4.0lf %sEps'),
-                ('PRINT', 'outputlast', 'Current: %4.0lf %sEps\l'),
-            ) ),
-
-        # Apache Server Graphs
-        (u'Hits', 'Apache', '', u'Hits', '',
-            ( #DEF
-                ('tac', 'tac'),
-            ),( #vnames
-                ('VDEF', 'tacmax', 'tac,MAXIMUM'),
-                ('VDEF', 'tacavg', 'tac,AVERAGE'),
-                ('VDEF', 'taclast', 'tac,LAST'),
-            ),( #lines
-                ('LINE', 'tac', '0000CC', 2, 'Hits per Second'),
-                ('PRINT', 'tacmax', 'Maximum: %8.0lf %sHits/s'),
-                ('PRINT', 'tacavg', 'Average: %8.0lf %sHits/s'),
-                ('PRINT', 'taclast', 'Current: %8.0lf %sHits/s\l'),
-            )
-        ),
-        (u'Throughput', 'Apache', '', u'Bytes/Sec', '',
-            ( #DEF
-                ('tkb', 'tkb'),
-            ),( #vnames
-                ('CDEF', 'bytes', 'tkb,1000,*'),
-                ('VDEF', 'bytesmax', 'bytes,MAXIMUM'),
-                ('VDEF', 'bytesavg', 'bytes,AVERAGE'),
-                ('VDEF', 'byteslast', 'bytes,LAST'),
-            ),( #lines
-                ('LINE', 'bytes', '0000CC', 2, ''),
-                ('PRINT', 'bytesmax', 'Maximum: %8.0lf %sBps'),
-                ('PRINT', 'bytesavg', 'Average: %8.0lf %sBps'),
-                ('PRINT', 'byteslast', 'Current: %8.0lf %sBps\l'),
-            )
-        ),
-        (u'CPU Load', 'Apache', '', u'Bytes/Sec', '',
-            ( #DEF
-                ('up', 'up'),
-                ('load', 'cplo'),
-            ),( #vnames
-                ('VDEF', 'loadmax', 'load,MAXIMUM'),
-                ('VDEF', 'loadavg', 'load,AVERAGE'),
-                ('VDEF', 'loadlast', 'load,LAST'),
-                ('VDEF', 'uplast', 'up,LAST'),
-            ),( #lines
-                ('LINE', 'load', '0000CC', 2, ''),
-                ('PRINT', 'uplast', 'Uptime  -  %.0lf %s seconds\l'),
-                ('PRINT', 'loadmax', 'CPU Load - Maximum: %.3lf'),
-                ('PRINT', 'loadavg', 'Average: %.3lf'),
-                ('PRINT', 'loadlast', 'Current: %.3lf\l'),
-            )
-        ),
-        (u'Bytes/Req', 'Apache', '', u'Bytes/Req', '',
-            ( #DEF
-                ('bpr', 'bpr'),
-            ),( #vnames
-                ('VDEF', 'bprmax', 'bpr,MAXIMUM'),
-                ('VDEF', 'bpravg', 'bpr,AVERAGE'),
-                ('VDEF', 'bprlast', 'bpr,LAST'),
-            ),( #lines
-                ('LINE', 'bpr', '0000CC', 2, 'Bytes/Request'),
-                ('PRINT', 'bprmax', 'Maximum: %.0lf %s'),
-                ('PRINT', 'bpravg', 'Average: %.0lf %s'),
-                ('PRINT', 'bprlast', 'Current: %.0lf %s\l'),
-            )
-        ),
-        (u'Workers', 'Apache', '', u'Workers', 'lower-limit=0',
-            ( #DEF
-                ('bw', 'bw'),
-                ('iw', 'iw'),
-            ),( #vnames
-                ('VDEF', 'bwmax', 'bw,MAXIMUM'),
-                ('VDEF', 'bwavg', 'bw,AVERAGE'),
-                ('VDEF', 'bwlast', 'bw,LAST'),
-                ('VDEF', 'iwmax', 'iw,MAXIMUM'),
-                ('VDEF', 'iwavg', 'iw,AVERAGE'),
-                ('VDEF', 'iwlast', 'iw,LAST'),
-            ),( #lines
-                ('HRULE', '0', '000000', ''),
-                ('AREA', 'bw', 'DD2200', r'Busy Workers\l'),
-                ('AREA', 'iw', '00CC00', 'Idle Workers\l', True),
-                ('PRINT', 'bwmax', r'Workers (busy:idle) - Maximum: %.0lf:\g'),
-                ('PRINT', 'iwmax', r'%.0lf'),
-                ('PRINT', 'bwavg', r'Average: %.0lf:\g'),
-                ('PRINT', 'iwavg', r'%.0lf'),
-                ('PRINT', 'bwlast', r'Current: %.0lf:\g'),
-                ('PRINT', 'iwlast', r'%.0lf'),
-            )
-        ),
-
-        # APC graphs
-        (u'Battery Temperature', 'APC', '', 'Temperature', '',
-         ( #DEF
-          ('temperature', 'temperature'),
-         ),( #vnames
-            ('VDEF', 'tmax', 'temperature,MAXIMUM'),
-            ('VDEF', 'tavg', 'temperature,AVERAGE'),
-            ('VDEF', 'tlast', 'temperature,LAST'),
-         ),( #lines
-            ('AREA', 'temperature', 'ff0000', r'Degrees\l'),
-            ('PRINT', 'tmax', r'Maximum: %.2lf'),
-            ('PRINT', 'tavg', r'Average: %.2lf'),
-            ('PRINT', 'tlast', r'Current: %.2lf\l'),
-           )),
-        (u'Load/Capacity', 'APC', '', '%', '',
-         ( #DEF
-          ('capacity', 'capacity'),
-          ('load', 'load'),
-         ),( #vnames
-            ('VDEF', 'cap_max', 'capacity,MAXIMUM'),
-            ('VDEF', 'cap_avg', 'capacity,AVERAGE'),
-            ('VDEF', 'cap_last', 'capacity,LAST'),
-            ('VDEF', 'load_max', 'load,MAXIMUM'),
-            ('VDEF', 'load_avg', 'load,AVERAGE'),
-            ('VDEF', 'load_last', 'load,LAST'),
-         ),( #lines
-            ('LINE', 'capacity', 'ff0000', 2, r'Battery Capacity\l'),
-            ('PRINT', 'cap_max', r'Maximum: %5.0lf %%'),
-            ('PRINT', 'cap_avg', r'Average: %5.0lf %%'),
-            ('PRINT', 'cap_last', r'Current: %5.0lf %%\l'),
-            ('LINE', 'load', 'ff0000', 2, r'Output Load\l'),
-            ('PRINT', 'load_max', r'Maximum: %5.0lf %%'),
-            ('PRINT', 'load_avg', r'Average: %5.0lf %%'),
-            ('PRINT', 'load_last', r'Current: %5.0lf %%\l'),
-           )),
-        (u'Voltages', 'APC', '', 'Voltage', '',
-         ( #DEF
-          ('in_voltage', 'in_voltage'),
-          ('out_voltage', 'out_voltage'),
-         ),( #vnames
-            ('VDEF', 'in_max', 'in_voltage,MAXIMUM'),
-            ('VDEF', 'in_avg', 'in_voltage,AVERAGE'),
-            ('VDEF', 'in_last', 'in_voltage,LAST'),
-            ('VDEF', 'out_max', 'out_voltage,MAXIMUM'),
-            ('VDEF', 'out_avg', 'out_voltage,AVERAGE'),
-            ('VDEF', 'out_last', 'out_voltage,LAST'),
-         ),( #lines
-            ('LINE', 'in_voltage', 'ff0000', 2, r'Input Voltage:'),
-            ('PRINT', 'in_max', r'Max: %5.0lf VAC'),
-            ('PRINT', 'in_avg', r'Average: %5.0lf VAC'),
-            ('PRINT', 'in_last', r'Current: %5.0lf VAC\l'),
-            ('LINE', 'out_voltage', '0000ff', 2, r'Output Voltage:'),
-            ('PRINT', 'out_max', r'Max: %5.0lf VAC'),
-            ('PRINT', 'out_avg', r'Average: %5.0lf VAC'),
-            ('PRINT', 'out_last', r'Current: %5.0lf VAC\l'),
-           )),
-        (u'Voltages', 'APC', '', 'Minutes', '',
-         ( #DEF
-          ('time_remaining', 'time_remaining'),
-         ),( #vnames
-            ('VDEF', 'tmax', 'time_remaining,MAXIMUM'),
-            ('VDEF', 'tavg', 'time_remaining,AVERAGE'),
-            ('VDEF', 'tlast', 'time_remaining,LAST'),
-            ('VDEF', 'tlast_hr', 'tlast,60,/'),
-         ),( #lines
-            ('AREA', 'time_remaining', '00dd00', r'Time Remaining:\l'),
-            ('PRINT', 'tmax', r'Max: %5.0lf mins'),
-            ('PRINT', 'tavg', r'Average: %5.0lf mins'),
-            ('PRINT', 'tlast', r'Current: %5.0lf mins'),
-            ('PRINT', 'tlast_hr', r'(3.2lf Hours)\l'),
-           )),
-
-        # Applications graph types
-        (u'Threads', 'Applications', '', 'Threads', '',
-         ( #DEF
-          ('current_instances', 'current_instances'),
-         ),( #vnames
-            ('VDEF', 'ci_max', 'current_instances,MAXIMUM'),
-            ('VDEF', 'ci_avg', 'current_instances,AVERAGE'),
-            ('VDEF', 'ci_last', 'current_instances,LAST'),
-         ),( #lines
-            ('HRULE', 'instances', '00ff00', 'Initial threads: {instances}\l'),
-            ('LINE', 'current_instances', 'ff0000', 3, r'Threads\l'),
-            ('PRINT', 'ci_max', r'Max: %5.0lf'),
-            ('PRINT', 'ci_avg', r'Average: %5.0lf'),
-            ('PRINT', 'ci_last', r'Last: %5.0lf\l'),
-           )),
-        (u'Memory', 'Applications', '', 'Bytes', '',
-         ( #DEF
-          ('used_memory', 'used_memory'),
-         ),( #vnames
-            ('CDEF', 'used_bytes', 'used_memory,1000'),
-            ('VDEF', 'used_max', 'used_bytes,MAXIMUM'),
-            ('VDEF', 'used_avg', 'used_bytes,AVERAGE'),
-            ('VDEF', 'used_last', 'used_bytes,LAST'),
-         ),( #lines
-            ('AREA', 'used_bytes', 'ff8800', r'Memory: '),
-            ('PRINT', 'used_max', r'Max: %6.2lf %sB'),
-            ('PRINT', 'used_avg', r'Average: %6.2lf %sB'),
-            ('PRINT', 'used_last', r'Last: %6.2lf %sB\l'),
-           )),
-
-        # BGP graph_types
-        (u'BGP Updates', 'BGP Neighbors', '', 'Updates', '',
-         ( #DEF
-          ('bgpin', 'bgpin'),
-          ('bgpout', 'bgpout'),
-          ('bgpuptime', 'bgpuptime'),
-         ),( #vnames
-            ('CDEF', 'bgpuptime_hr', 'bgpuptime,3600,/'),
-            ('CDEF', 'in_5min', 'bgpin,300,*'),
-            ('CDEF', 'out_5min', 'bgpout,300,*'),
-            ('VDEF', 'uptime_sec', 'bgpuptime,LAST'),
-            ('VDEF', 'uptime_hour', 'bgpuptime_hr,LAST'),
-            ('VDEF', 'in_max', 'in_5min,MAXIMUM'),
-            ('VDEF', 'in_avg', 'in_5min,AVERAGE'),
-            ('VDEF', 'in_last', 'in_5min,LAST'),
-            ('VDEF', 'out_max', 'out_5min,MAXIMUM'),
-            ('VDEF', 'out_avg', 'out_5min,AVERAGE'),
-            ('VDEF', 'out_last', 'out_5min,LAST'),
-         ),( #lines
-            ('PRINT', 'uptime_sec', 'Peer Uptime: %6.2lf Hours'),
-            ('PRINT', 'uptime_hour', '(%9.0 seconds)\l'),
-            ('AREA', 'in_5min', '00cc00', r'Inbound Updates in 5 minutes: '),
-            ('PRINT', 'in_max', r'Max: %4.0lf %s'),
-            ('PRINT', 'in_avg', r'Average: %4.0lf %s'),
-            ('PRINT', 'in_last', r'Last: %4.0lf %s\l'),
-            ('LINE', 'out_5min', '0000ff', 2, r'Outbound Updates in 5 minutes: '),
-            ('PRINT', 'out_max', r'Max: %4.0lf %s'),
-            ('PRINT', 'out_avg', r'Average: %4.0lf %s'),
-            ('PRINT', 'out_last', r'Last: %4.0lf %s\l'),
-           )),
-        (u'Routes', 'BGP Neighbors', '', 'Routes', '',
-         ( #DEF
-          ('accepted_routes', 'accepted_routes'),
-          ('advertised_routes', 'advertised_routes'),
-         ),( #vnames
-            ('VDEF', 'acc_max', 'accepted_routes,MAXIMUM'),
-            ('VDEF', 'acc_avg', 'accepted_routes,AVERAGE'),
-            ('VDEF', 'acc_last', 'accepted_routes,LAST'),
-            ('VDEF', 'adv_max', 'advertised_routes,MAXIMUM'),
-            ('VDEF', 'adv_avg', 'advertised_routes,AVERAGE'),
-            ('VDEF', 'adv_last', 'advertised_routes,LAST'),
-         ),( #lines
-            ('LINE', 'accepted_routes', '00cc00', 2, r'Accepted Routes '),
-            ('PRINT', 'acc_max', r'Max: %6.2lf %sB'),
-            ('PRINT', 'acc_avg', r'Average: %6.2lf %sB'),
-            ('PRINT', 'acc_last', r'Last: %6.2lf %sB\l'),
-            ('LINE', 'advertised_routes', '0000ff', 2, r'Advertised Routes '),
-            ('PRINT', 'adv_max', r'Max: %6.2lf %sB'),
-            ('PRINT', 'adv_avg', r'Average: %6.2lf %sB'),
-            ('PRINT', 'adv_last', r'Last: %6.2lf %sB\l'),
-           )),
-
-        # Brocade FC Ports
-        (u'Traffic', 'Brocade FC Ports', '', 'bps', '',
-         ( #DEF
-          ('rx_words', 'rx_words'),
-          ('tx_words', 'tx_words'),
-         ),( #vnames
-            ('CDEF', 'in_bits', 'rx_words,32,*'),
-            ('CDEF', 'out_bits', 'tx_words,32,*'),
-            ('VDEF', 'in_max', 'in_bits,MAXIMUM'),
-            ('VDEF', 'in_avg', 'in_bits,AVERAGE'),
-            ('VDEF', 'in_last', 'in_bits,LAST'),
-            ('VDEF', 'out_max', 'out_bits,MAXIMUM'),
-            ('VDEF', 'out_avg', 'out_bits,AVERAGE'),
-            ('VDEF', 'out_last', 'out_bits,LAST'),
-         ),( #lines
-            ('AREA', 'in_bits', '00cc00', r'Input '),
-            ('PRINT', 'in_max', r'Max: %8.2lf %sbps'),
-            ('PRINT', 'in_avg', r'Average: %8.2lf %sbps'),
-            ('PRINT', 'in_last', r'Last: %8.2lf %sbps\l'),
-            ('LINE', 'out_bits', '0000ff', 2, r'Output '),
-            ('PRINT', 'out_max', r'Max: %8.2lf %sbps'),
-            ('PRINT', 'out_avg', r'Average: %8.2lf %sbps'),
-            ('PRINT', 'out_last', r'Last: %8.2lf %sbps\l'),
-           )),
-        (u'Frames', 'Brocade FC Ports', '', 'Frames/sec', '',
-         ( #DEF
-          ('rx_frames', 'rx_frames'),
-          ('tx_frames', 'tx_frames'),
-         ),( #vnames
-            ('VDEF', 'in_max', 'rx_frames,MAXIMUM'),
-            ('VDEF', 'in_avg', 'rx_frames,AVERAGE'),
-            ('VDEF', 'in_last', 'rx_frames,LAST'),
-            ('VDEF', 'out_max', 'tx_frames,MAXIMUM'),
-            ('VDEF', 'out_avg', 'tx_frames,AVERAGE'),
-            ('VDEF', 'out_last', 'tx_frames,LAST'),
-         ),( #lines
-            ('AREA', 'rx_frames', '00cc00', r'Input '),
-            ('PRINT', 'in_max', r'Max: %8.2lf %sFps'),
-            ('PRINT', 'in_avg', r'Average: %8.2lf %sFps'),
-            ('PRINT', 'in_last', r'Last: %8.2lf %Fbps\l'),
-            ('LINE', 'tx_frames', '0000ff', 2, r'Output '),
-            ('PRINT', 'out_max', r'Max: %8.2lf %Fbps'),
-            ('PRINT', 'out_avg', r'Average: %8.2lf %Fbps'),
-            ('PRINT', 'out_last', r'Last: %8.2lf %Fbps\l'),
-           )),
-
-        # Brocade Sensors
-        (u'Sensor Value', 'Brocade Sensors', '', '$unit', '',
-         ( #DEF
-          ('sensor_value', 'sensor_value'),
-         ),( #vnames
-            ('VDEF', 'vmax', 'sensor_value,MAXIMUM'),
-            ('VDEF', 'vavg', 'sensor_value,AVERAGE'),
-            ('VDEF', 'vlast', 'sensor_value,LAST'),
-         ),( #lines
-            ('AREA', 'sensor_value', '00cc00', r'$measure '),
-            ('PRINT', 'vmax', r'Max: %5.0lf'),
-            ('PRINT', 'vavg', r'Average: %5.0lf'),
-            ('PRINT', 'vlast', r'Last: %5.0lf\l'),
-           )),
-
-        # Cisco System
-        (u'CPU Load', 'Cisco System Info', '', u'%', 'rigid upper-limit=100',
-         ( # DEF
-          ('cpu', 'cpu'),
-         ), ( #vnames
-             ('VDEF', 'cpu_avg', 'cpu,AVERAGE'),
-             ('VDEF', 'cpu_max', 'cpu,MAX'),
-             ('VDEF', 'cpu_last', 'cpu,LAST'),
-         ), ( #lines
-             ('LINE', 'cpu', '0000ff', 1, r'CPU Utilisation\l'),
-             ('PRINT', 'cpu_max', r'Maximum: %8.2lf %%'),
-             ('PRINT', 'cpu_avg', r'Average: %8.2lf %%'),
-             ('PRINT', 'cpu_last', r'Current: %8.2lf %%\l'),
-            )),
-        (u'Memory', 'Cisco System Info', '', u'%', 'rigid upper-limit=100',
-         ( # DEF
-          ('mem_used', 'mem_used'),
-          ('mem_free', 'mem_free'),
-         ), ( #vnames
-             ('CDEF', 'mem_total', 'mem_used,mem_free,+'),
-             ('CDEF', 'mem_free_p', 'mem_free,100,*,mem_total,/'),
-             ('CDEF', 'mem_used_p', 'mem_used,100,*,mem_total,/'),
-
-             ('VDEF', 'total_max', 'mem_total,MAX'),
-
-             ('VDEF', 'free_max', 'mem_free,MAX'),
-             ('VDEF', 'free_avg', 'mem_free,AVERAGE'),
-             ('VDEF', 'free_last', 'mem_free,LAST'),
-             ('VDEF', 'free_max_p', 'mem_free_p,MAX'),
-             ('VDEF', 'free_avg_p', 'mem_free_p,AVERAGE'),
-             ('VDEF', 'free_last_p', 'mem_free_p,LAST'),
-
-             ('VDEF', 'used_max', 'mem_used,MAX'),
-             ('VDEF', 'used_avg', 'mem_used,AVERAGE'),
-             ('VDEF', 'used_last', 'mem_used,LAST'),
-             ('VDEF', 'used_max_p', 'mem_used_p,MAX'),
-             ('VDEF', 'used_avg_p', 'mem_used_p,AVERAGE'),
-             ('VDEF', 'used_last_p', 'mem_used_p,LAST'),
-         ), ( #lines
-             ('LINE', 'mem_total', '000000', 3, r'Total Memory\l'),
-             ('PRINT', 'total_max', r'%6.0lf %sB'),
-
-             ('AREA', 'mem_used', 'ff0000', r'Used\l'),
-             ('PRINT', 'used_max', r'Max: %6.2lf %sB'),
-             ('PRINT', 'used_max_p', r'(%3.0lf %%)'),
-             ('PRINT', 'used_avg', r'Average: %6.2lf %sB'),
-             ('PRINT', 'used_avg_p', r'(%3.0lf %%)'),
-             ('PRINT', 'used_last', r'Current: %6.2lf %sB'),
-             ('PRINT', 'used_last_p', r'(%3.0lf %%)'),
-
-             ('AREA', 'mem_free', '00cc00', r'Free\l', True),
-             ('PRINT', 'free_max', r'Max: %6.2lf %sB'),
-             ('PRINT', 'free_max_p', r'(%3.0lf %%)'),
-             ('PRINT', 'free_avg', r'Average: %6.2lf %sB'),
-             ('PRINT', 'free_avg_p', r'(%3.0lf %%)'),
-             ('PRINT', 'free_last', r'Current: %6.2lf %sB'),
-             ('PRINT', 'free_last_p', r'(%3.0lf %%)'),
-            )),
-
-        (u'Sensor Value', 'Sensors', '$measure', u'$unit', '',
-            ( #DEF
-                ('value', 'value'),
-            ),( #vnames
-                ('CDEF', 'valk', 'value,${multiplier},*',),
-                ('VDEF', 'vmax', 'valk,MAXIMUM'),
-                ('VDEF', 'vavg', 'valk,AVERAGE'),
-                ('VDEF', 'vlast', 'valk,LAST'),
-            ),( #lines
-                ('LINE', 'valk', '0000ff', 2, r'${measure}\l'),
-                ('PRINT', 'vmax', r'$measure - Maximum: %.2lf %S${units}'),
-                ('PRINT', 'vavg', r'Average: %.2lf %S${units}'),
-                ('PRINT', 'vlast', r'Current: %.2lf %S${units}\l'),
-            )
-        ),
 
         # Storage Attribute Type
         (u'Storage Blocks', 'Storage', '', 'Blocks', '',
@@ -1835,20 +1476,20 @@ graph_types = (
             ('VDEF', 'free_last_p', 'free_pct,LAST'),
          ),( #lines
             ('AREA', 'used_blocks', 'FF0000', r'Used Blocks\l'),
-            ('PRINT', 'used_max', r'Maximum: %.0lf'),
-            ('PRINT', 'used_max_p', r'(%3.0lf %%)'),
-            ('PRINT', 'used_avg', r'Average: %.0lf'),
-            ('PRINT', 'used_avg_p', r'(%3.0lf %%)'),
-            ('PRINT', 'used_last', r'Current: %.0lf'),
-            ('PRINT', 'used_last_p', r'(%3.0lf %%)\l'),
+            ('GPRINT', 'used_max', r'Maximum: %.0lf'),
+            ('GPRINT', 'used_max_p', r'(%3.0lf %%)'),
+            ('GPRINT', 'used_avg', r'Average: %.0lf'),
+            ('GPRINT', 'used_avg_p', r'(%3.0lf %%)'),
+            ('GPRINT', 'used_last', r'Current: %.0lf'),
+            ('GPRINT', 'used_last_p', r'(%3.0lf %%)\l'),
 
             ('AREA', 'free_blocks', '00FF00', r'Free Blocks\l', True),
-            ('PRINT', 'free_max', r'Maximum: %.0lf'),
-            ('PRINT', 'free_max_p', r'(%3.0lf %%)'),
-            ('PRINT', 'free_avg', r'Average: %.0lf'),
-            ('PRINT', 'free_avg_p', r'(%3.0lf %%)'),
-            ('PRINT', 'free_last', r'Current: %.0lf'),
-            ('PRINT', 'free_last_p', r'(%3.0lf %%)\l'),
+            ('GPRINT', 'free_max', r'Maximum: %.0lf'),
+            ('GPRINT', 'free_max_p', r'(%3.0lf %%)'),
+            ('GPRINT', 'free_avg', r'Average: %.0lf'),
+            ('GPRINT', 'free_avg_p', r'(%3.0lf %%)'),
+            ('GPRINT', 'free_last', r'Current: %.0lf'),
+            ('GPRINT', 'free_last_p', r'(%3.0lf %%)\l'),
            )),
 
         (u'Storage Bytes', 'Storage', '', 'Bytes', '',
@@ -1882,106 +1523,20 @@ graph_types = (
             ('VDEF', 'free_last_p', 'free_pct,LAST'),
          ),( #lines
             ('AREA', 'used_bytes', 'FF0000', r'Used Bytes\l'),
-            ('PRINT', 'used_max', r'Maximum: %6.2lf %sB'),
-            ('PRINT', 'used_max_p', r'(%3.0lf %%)'),
-            ('PRINT', 'used_avg', r'Average: %6.2lf %sB'),
-            ('PRINT', 'used_avg_p', r'(%3.0lf %%)'),
-            ('PRINT', 'used_last', r'Current: %6.2lf %sB'),
-            ('PRINT', 'used_last_p', r'(%3.0lf %%)\l'),
+            ('GPRINT', 'used_max', r'Maximum: %6.2lf %sB'),
+            ('GPRINT', 'used_max_p', r'(%3.0lf %%)'),
+            ('GPRINT', 'used_avg', r'Average: %6.2lf %sB'),
+            ('GPRINT', 'used_avg_p', r'(%3.0lf %%)'),
+            ('GPRINT', 'used_last', r'Current: %6.2lf %sB'),
+            ('GPRINT', 'used_last_p', r'(%3.0lf %%)\l'),
 
             ('AREA', 'free_bytes', '00FF00', r'Free Bytes\l', True),
-            ('PRINT', 'free_max', r'Maximum: %6.2lf %sB'),
-            ('PRINT', 'free_max_p', r'(%3.0lf %%)'),
-            ('PRINT', 'free_avg', r'Average: %6.2lf %sB'),
-            ('PRINT', 'free_avg_p', r'(%3.0lf %%)'),
-            ('PRINT', 'free_last', r'Current: %6.2lf %sB'),
-            ('PRINT', 'free_last_p', r'(%3.0lf %%)\l'),
-           )),
-
-        # UPS Attribute Types
-        (u'Battery Temperature', 'UPS', '', 'Temperature', '',
-         ( #DEF
-          ('temperature', 'temperature'),
-         ),( #vnames
-            ('VDEF', 'tmax', 'temperature,MAXIMUM'),
-            ('VDEF', 'tavg', 'temperature,AVERAGE'),
-            ('VDEF', 'tlast', 'temperature,LAST'),
-         ),( #lines
-            ('AREA', 'temperature', 'ff0000', r'Degrees\l'),
-            ('PRINT', 'tmax', r'Maximum: %.2lf'),
-            ('PRINT', 'tavg', r'Average: %.2lf'),
-            ('PRINT', 'tlast', r'Current: %.2lf\l'),
-           )),
-        (u'Time Remaining', 'UPS', '', 'Time Remaining', '',
-         ( #DEF
-          ('minutes_remaining', 'minutes_remaining'),
-         ),( #vnames
-            ('VDEF', 'mmax', 'minutes_remaining,MAXIMUM'),
-            ('VDEF', 'mavg', 'minutes_remaining,AVERAGE'),
-            ('VDEF', 'mlast', 'minutes_remaining,LAST'),
-            ('VDEF', 'hlast', 'hlast,60,/'),
-         ),( #lines
-            ('AREA', 'minutes_remaining', '00DD00', r'Time Remaining\l'),
-            ('PRINT', 'mmax', r'Maximum: %3.0lf'),
-            ('PRINT', 'mavg', r'Average: %3.0lf'),
-            ('PRINT', 'mlast', r'Current: %3.0lf'),
-            ('PRINT', 'hlast', r'(%3.2lf Hours)\l'),
-           )),
-        (u'Charge Remaining', 'UPS', '', 'Charge Remaining', '',
-         ( #DEF
-          ('charge_remaining', 'charge_remaining'),
-         ),( #vnames
-            ('VDEF', 'cmax', 'charge_remaining,MAXIMUM'),
-            ('VDEF', 'cavg', 'charge_remaining,AVERAGE'),
-            ('VDEF', 'clast', 'charge_remaining,LAST'),
-         ),( #lines
-            ('AREA', 'charge_remaining', '00DD00', r'Charge Remaining\l'),
-            ('PRINT', 'cmax', r'Maximum: %3.0lf %%'),
-            ('PRINT', 'cavg', r'Average: %3.0lf %%'),
-            ('PRINT', 'clast', r'Current: %3.0lf %%\l'),
-           )),
-
-        # Windows System Info
-        (u'CPU Load', 'Windows System Info', '', u'%', 'rigid upper-limit=100',
-         ( # DEF
-          ('cpu', 'cpu'),
-         ), ( #vnames
-             ('VDEF', 'cpu_avg', 'cpu,AVERAGE'),
-             ('VDEF', 'cpu_max', 'cpu,MAX'),
-             ('VDEF', 'cpu_last', 'cpu,LAST'),
-         ), ( #lines
-             ('LINE', 'cpu', '0000ff', 1, r'CPU Utilisation\l'),
-             ('PRINT', 'cpu_max', r'Maximum: %8.2lf %%'),
-             ('PRINT', 'cpu_avg', r'Average: %8.2lf %%'),
-             ('PRINT', 'cpu_last', r'Current: %8.2lf %%\l'),
-            )),
-
-        # Reachable
-        (u'Packet Loss', 'Reachable', '', u'%', '',
-         ( #DEF
-          ('packetloss', 'packetloss'),
-         ),( #vnames
-            ('VDEF', 'pl_max', 'packetloss,MAXIMUM'),
-            ('VDEF', 'pl_avg', 'packetloss,AVERAGE'),
-            ('VDEF', 'pl_last', 'packetloss,LAST'),
-         ),( #lines
-            ('LINE', 'packetloss', 'FF0000', 1, r'Packet Loss\l'),
-            ('PRINT','pl_max', r'Max: %5.0lf %%'),
-            ('PRINT','pl_avg', r'Average: %5.0lf %%'),
-            ('PRINT','pl_last', r'Last: %5.0lf %%\l'),
-           )),
-        (u'Round Trip time', 'Reachable', '', u'msec', '',
-         ( #DEF
-          ('rtt', 'rtt'),
-         ),( #vnames
-            ('VDEF', 'rtt_max', 'rtt,MAXIMUM'),
-            ('VDEF', 'rtt_avg', 'rtt,AVERAGE'),
-            ('VDEF', 'rtt_last', 'rtt,LAST'),
-         ),( #lines
-            ('AREA', 'rtt', '00CC00', r'Round Trip Time\l'),
-            ('PRINT','rtt_max', r'Max: %5.0lf %%'),
-            ('PRINT','rtt_avg', r'Average: %5.0lf %%'),
-            ('PRINT','rtt_last', r'Last: %5.0lf %%\l'),
+            ('GPRINT', 'free_max', r'Maximum: %6.2lf %sB'),
+            ('GPRINT', 'free_max_p', r'(%3.0lf %%)'),
+            ('GPRINT', 'free_avg', r'Average: %6.2lf %sB'),
+            ('GPRINT', 'free_avg_p', r'(%3.0lf %%)'),
+            ('GPRINT', 'free_last', r'Current: %6.2lf %sB'),
+            ('GPRINT', 'free_last_p', r'(%3.0lf %%)\l'),
            )),
 
     ) # end of graph types

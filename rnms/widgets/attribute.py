@@ -105,6 +105,61 @@ class AttributesGrid(structures.attribute, jqGridTableBase):
     __omit_fields__ = ('__actions__',)
     __caption__ = 'Attributes'
 
+class DiscoveredAttsGrid(jqGridWidget):
+    id = 'discovered-atts-grid'
+    host_id = None
+    options = {
+        'datatype':     'json',
+        'autowidth':    True,
+        'imgpath':      'scripts/jqGrid/themes/green/images',
+        'url':          '/hosts/griddiscover',
+        'caption':      'Discovered Attributes',
+        'colNames': ('Actions', 'Type', 'Index', 'Name',
+                     'State','Description'),
+        'colModel': [
+            {
+                'name': '__actions__', 'align': 'center','width':30,
+            },{
+                'name': 'attribute_type',
+                'id': 'attribute_type',
+            },{
+                'name': 'index',
+                'id': 'index',
+                'width': 55,
+            },{
+                'name': 'display_name',
+                'id': 'display_name',
+                'width': 100,
+            },{
+                'name': 'state',
+                'id': 'state',
+                'width': 30,
+            }, {
+                'name': 'description',
+                'id': 'description',
+                'width': 100,
+            },
+        ],
+        'viewrecords':True,
+        'grouping' : True,
+        'groupingView' : {
+            'groupText': ['<b>{0}</b>'],
+            'groupField' : ['attribute_type',],
+            'groupOrder': ['asc' ],
+            'groupColumnShow': False,
+        },
+
+    }
+
+    def prepare(self):
+        self.options['url'] += '?h={}'.format(self.host_id)
+        super(DiscoveredAttsGrid, self).prepare()
+
+
+
+
+
+
 class AttributeSummary(twc.Widget):
 
     id = 'attribute-summary'
