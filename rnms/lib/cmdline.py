@@ -64,7 +64,7 @@ class RnmsCommand(Command):
             action='store',
             dest='config',
             help='Specify the config file to use for the command',
-            default='development.ini',
+            default='production.ini',
         )
         self.parser.add_argument(
             '-d', '--debug',
@@ -130,30 +130,4 @@ class RnmsCommand(Command):
         conf = appconfig('config:' + os.path.abspath(self.options.config))
         load_environment(conf.global_conf, conf.local_conf)
 
-class foo(object):
-    def parse_args(self, parser):
-        """
-        Add the common arguments to the command line
-        """
-        parser.add_argument("-c", "--conf_file", help="configuration to use", default="development.ini")
-        parser.add_argument("-d", "--debug", action='store_true', help="turn on debugging")
-        parser.add_argument("-q", "--quiet", action='store_true', help="critical messages only")
-        parser.add_argument("-v", "--verbosity", action='store_true', help="verbose messages")
-
-        self.args = parser.parse_args()
-
-        self._set_logging()
-        conf = appconfig('config:' + os.path.abspath(self.args.conf_file))
-        load_environment(conf.global_conf, conf.local_conf)
-
-    def _set_logging(self):
-        logging_level = logging.WARNING
-        if self.args.quiet == True:
-            logging_level = logging.CRITICAL
-        elif self.args.debug == True:
-            logging_level = logging.DEBUG
-        elif self.args.verbosity == True:
-            logging_level = logging.INFO
-
-        logging.basicConfig(level=logging_level, format=LOG_FORMAT)
 

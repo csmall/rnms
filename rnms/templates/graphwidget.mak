@@ -1,4 +1,7 @@
 <div>
+%if more_url != UNDEFINED:
+  <a href="${more_url}" class="btn btn-primary">More</a>
+%endif
 <div class='rrdgraph'>
   <img src="data:image/png;base64,${w.img_data}" height="${w.img_height}" width="${w.img_width}" />
   <div class="graph_legend">

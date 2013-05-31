@@ -169,6 +169,7 @@ class GraphWidget(twc.Widget):
 
         graph_definition = graph_type.format(attribute)
         graph_options = graph_type.graph_options(attribute, self.start_time, self.end_time)
+        #print graph_options + graph_definition
         try:
             graphv = rrdtool.graphv('-', graph_options + graph_definition)
         except TypeError as errmsg:

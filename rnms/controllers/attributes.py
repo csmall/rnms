@@ -36,7 +36,7 @@ from rnms.model import DBSession, Attribute, AttributeType, Host
 from rnms.widgets import AttributeSummary, AttributeMap,\
         AttributeStatusPie, AttributesGrid, EventsGrid, InfoBox
 from rnms.widgets.graph import GraphWidget
-from rnms.lib.table import jqGridTableBase, jqGridTableFiller
+from rnms.lib.table import jqGridTableFiller
 
 class AttributesController(BaseGridController):
     #Uncomment this line if your controller requires an authenticated user
@@ -82,8 +82,11 @@ class AttributesController(BaseGridController):
             graphbox.title = graph_type.title(attribute)
             graphbox.child_widget = gw
 
+            more_url = url('/graphs',{'a':a})
+
         return dict(page='attribute', attribute=attribute,
                     detailsbox=detailsbox, eventsbox=eventsbox,
+                    more_url=more_url,
                     graphbox=graphbox)
 
     @expose('rnms.templates.attribute_map')

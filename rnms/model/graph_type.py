@@ -71,12 +71,14 @@ def maxavglast(vname):
         'VDEF:{0}_last={0},LAST'.format(vname),
     )
 
-def print_line(attribute, line_type, vname, color, legend, legend_unit):
+def print_line(attribute, line_type, vname, color, legend, legend_unit, 
+              stack=False):
     """ Return a list of lines for this specific item """
     esc_units = escape_legend(legend_unit, attribute)
     return (
-        '{}:{}#{}:{}'.format(line_type, vname, color,
-                             escape_legend(legend+': ', attribute)),
+        '{}:{}#{}:{}{}'.format(line_type, vname, color,
+                             escape_legend(legend+': ', attribute),
+                               ('',':STACK')[stack]),
         r'GPRINT:{}_max:Max {}'.format(vname, esc_units),
         r'GPRINT:{}_avg:Average {}'.format(vname, esc_units),
         r'GPRINT:{}_last:Last {}\l'.format(vname, esc_units),
@@ -198,15 +200,66 @@ class GraphType(DeclarativeBase):
         graph_defs = []
         graph_vnames = []
         graph_lines = []
-        for line in self.rrd_lines:
+        for idx,line in enumerate(self.rrd_lines):
+            color = graph_colors[idx % len(graph_colors)]
             graph_defs.append(line.format_def(attribute))
             line_vname, line_name = line.format_vnames(attribute)
             if line_vname is not None:
                 graph_vnames.append(line_vname)
             graph_vnames.extend(maxavglast(line_name))
             graph_lines.extend(
-                print_line(attribute, 'AREA', line_name, '00ff00',
+                print_line(attribute, 'AREA', line_name, color,
                            line.legend, line.legend_unit)
+                )
+        return graph_defs + graph_vnames + graph_lines
+    
+    def _format_totalarea(self, attribute):
+        """ Graph Type for used/free type graphs. First line is a read
+        area with the second being green.
+        """
+        graph_defs = []
+        graph_vnames = []
+        graph_lines = []
+        for idx,line in enumerate(self.rrd_lines):
+            graph_defs.append(line.format_def(attribute))
+            line_vname, line_name = line.format_vnames(attribute)
+            if line_vname is not None:
+                graph_vnames.append(line_vname)
+            graph_vnames.extend(maxavglast(line_name))
+            if idx == 0 :
+                graph_lines.extend(
+                    print_line(attribute, 'AREA', line_name, 'ff0000',
+                               line.legend, line.legend_unit)
+                )
+            elif idx == 1:
+                graph_lines.extend(
+                    print_line(attribute, 'AREA', line_name, '00ff00',
+                               line.legend, line.legend_unit,True)
+                )
+        return graph_defs + graph_vnames + graph_lines
+    
+    def _format_stackedarea(self, attribute):
+        """ Graph Type for stacking areas on top of each other 
+        """
+        graph_defs = []
+        graph_vnames = []
+        graph_lines = []
+        for idx,line in enumerate(self.rrd_lines):
+            graph_defs.append(line.format_def(attribute))
+            line_vname, line_name = line.format_vnames(attribute)
+            if line_vname is not None:
+                graph_vnames.append(line_vname)
+            graph_vnames.extend(maxavglast(line_name))
+            color = graph_colors[idx % len(graph_colors)]
+            if idx == 0 :
+                graph_lines.extend(
+                    print_line(attribute, 'AREA', line_name, color,
+                               line.legend, line.legend_unit)
+                )
+            else:
+                graph_lines.extend(
+                    print_line(attribute, 'AREA', line_name, color,
+                               line.legend, line.legend_unit,True)
                 )
         return graph_defs + graph_vnames + graph_lines
     
@@ -682,5 +735,5 @@ class GraphTypeRRDLine(DeclarativeBase):
             line_name = self.attribute_type_rrd.name+'_mul'
             return ('CDEF:{}={},{}'.format(line_name,
                                            self.attribute_type_rrd.name,
-                                           self.multiplier),
+                                           fill_fields(self.multiplier,attribute=attribute)),
                     line_name)

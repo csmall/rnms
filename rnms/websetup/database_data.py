@@ -1211,7 +1211,7 @@ simple_graph_types = (
     )),
     ('Cisco System Info', (
         (u'CPU Load', '%', 'area', '', (
-            ('cpu', '', 'CPU Utilization', '%4.0lf %'),
+            ('cpu', '', 'CPU Utilization', '%4.0lf %%'),
         )),
         (u'Memory', '%', 'totalarea', '', (
             ('mem_used', '', 'Used Memory', '%6.2lf %sB'),
@@ -1239,10 +1239,10 @@ simple_graph_types = (
 
     ('Linux/Unix System Info', (
         (u'CPU Usage', '%', 'stackedarea', 'rigid upper-limit=100', (
-            ('cpu_user_ticks', 'num_cpu,/', 'User Time', '%8.2lf %%'),
-            ('cpu_nice_ticks', 'num_cpu,/', 'Nice Time', '%8.2lf %%'),
-            ('cpu_system_ticks', 'num_cpu,/', 'System Time', '%8.2lf %%'),
-            ('cpu_idle_ticks', 'num_cpu,/', 'Idle Time', '%8.2lf %%'),
+            ('cpu_user_ticks', '$cpu_num,/', 'User Time', '%8.2lf %%'),
+            ('cpu_nice_ticks', '$cpu_num,/', 'Nice Time', '%8.2lf %%'),
+            ('cpu_system_ticks', '$cpu_num,/', 'System Time', '%8.2lf %%'),
+            ('cpu_idle_ticks', '$cpu_num,/', 'Idle Time', '%8.2lf %%'),
         )),
         (u'Load Average', 'Load', 'lines', '', (
             ('load_average_1', '', ' 1 Minute  Load Average', '%5.2lf'),

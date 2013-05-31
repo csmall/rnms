@@ -39,12 +39,11 @@ from rnms.widgets import InfoBox
 logger = logging.getLogger('rnms')
 
 class GraphForm2(twf.Form):
-    class MainTable(twf.TableLayout):
-        class FirstRow(twc.CompoundWidget):
-            graph_types = GraphTypeSelector()
-            preset_time = GraphDatePresetWidget()
-            start_time = GraphDatePicker()
-            end_time = GraphDatePicker()
+    class child(twf.TableLayout):
+        graph_types = GraphTypeSelector()
+        preset_time = GraphDatePresetWidget()
+        start_time = GraphDatePicker()
+        end_time = GraphDatePicker()
 
 class GraphController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
