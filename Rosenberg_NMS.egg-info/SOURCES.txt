@@ -29,6 +29,7 @@ rnms/controllers/secure.py
 rnms/controllers/template.py
 rnms/i18n/ru/LC_MESSAGES/rnms.po
 rnms/lib/__init__.py
+rnms/lib/admin_structures.py
 rnms/lib/app_globals.py
 rnms/lib/att_discover.py
 rnms/lib/backends.py
@@ -45,6 +46,7 @@ rnms/lib/logger.py
 rnms/lib/nmapclient.py
 rnms/lib/ntpclient.py
 rnms/lib/parsers.py
+rnms/lib/permissions.py
 rnms/lib/pingclient.py
 rnms/lib/poller.py
 rnms/lib/rrdworker.py
@@ -146,11 +148,15 @@ rnms/public/images/under_the_hood_blue.png
 rnms/public/javascript/bootstrap.js
 rnms/public/javascript/bootstrap.min.js
 rnms/public/javascript/jquery.js
+rnms/templates/.host_index.mak.swp
 rnms/templates/__init__.py
 rnms/templates/__init__.pyc
 rnms/templates/about.mak
-rnms/templates/about.mak.old
+rnms/templates/admin_menu.mak
+rnms/templates/admin_top.mak
+rnms/templates/admin_view.mak
 rnms/templates/attribute_detail.mak
+rnms/templates/attribute_index.mak
 rnms/templates/attribute_map.mak
 rnms/templates/attributes.mak
 rnms/templates/data.mak
@@ -162,11 +168,12 @@ rnms/templates/event_index.mak
 rnms/templates/event_sprox.mak
 rnms/templates/eventswidget.mak
 rnms/templates/eventswidget2.mak
-rnms/templates/get_all.mak
+rnms/templates/get_all.mak.orig
 rnms/templates/graph.mak
 rnms/templates/graph_image.mak
 rnms/templates/graphwidget.mak
 rnms/templates/host.mak
+rnms/templates/host_discover.mak
 rnms/templates/host_index.mak
 rnms/templates/host_map.mak
 rnms/templates/index.mak
@@ -188,6 +195,7 @@ rnms/templates/attribute/graph.mak
 rnms/templates/widgets/__init__.py
 rnms/templates/widgets/__init__.pyc
 rnms/templates/widgets/attribute_summary.mak
+rnms/templates/widgets/graph_widget.mak
 rnms/templates/widgets/infobox.mak
 rnms/templates/widgets/map.mak
 rnms/tests/__init__.py
@@ -205,7 +213,10 @@ rnms/tests/engine/test_slaanalyzer.py
 rnms/tests/engine/test_snmp.py
 rnms/tests/engine/test_tcp.py
 rnms/tests/functional/__init__.py
+rnms/tests/functional/test_attribute.py
 rnms/tests/functional/test_authentication.py
+rnms/tests/functional/test_event.py
+rnms/tests/functional/test_host.py
 rnms/tests/functional/test_root.py
 rnms/tests/models/__init__.py
 rnms/tests/models/test_attribute.py
