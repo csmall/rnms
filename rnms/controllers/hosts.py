@@ -21,7 +21,8 @@
 """ Hosts controller """
 
 # turbogears imports
-from tg import expose, validate, flash,tmpl_context
+from tg import expose, validate, flash,tmpl_context, url
+from tg.decorators import require
 
 # third party imports
 #from tg.i18n import ugettext as _
@@ -31,6 +32,7 @@ from formencode import validators
 
 # project specific imports
 from rnms.lib import structures
+from rnms.lib import permissions
 from rnms.lib.table import jqGridTableFiller, DiscoveryFiller
 from rnms.lib.base import BaseGridController
 from rnms.model import DBSession, Host, Event
@@ -61,6 +63,7 @@ class HostDetails(twf.TableLayout):
 class HostsController(BaseGridController):
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = authorize.not_anonymous()
+    allow_only = permissions.host_ro
 
     @expose('rnms.templates.host_index')
     def index(self):
@@ -80,6 +83,7 @@ class HostsController(BaseGridController):
 
     @expose('json')
     @validate(validators={'h':validators.Int(min=1)})
+    @require(permissions.host_rw)
     def griddiscover(self, **kw):
         if tmpl_context.form_errors:
             self.process_form_errors()
@@ -147,4 +151,5 @@ class HostsController(BaseGridController):
             return {}
         w = DiscoveredAttsGrid()
         w.host_id = h
-        return dict(w=w, page='host')
+        edit_url = url('/attributes/add_disc', {'h':h})
+        return dict(w=w, page='host', edit_url=edit_url)

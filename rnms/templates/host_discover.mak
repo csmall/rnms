@@ -9,5 +9,18 @@ Rosenberg NMS: Discovered Attributes
 	    ${w.display() | n}
 	  </div>
 	</div>
-%endif
+<div class="row">
+  <div class="span4">
+    <a href="javascript:void(0)" class="btn btn-primary" id="add-rows">Add Selected Rows</a> 
+  </div
+</div>
+<script>
+jQuery("#add-rows").click( function() {
+   var s;
+   s = jQuery("#discovered-atts-grid").jqGrid('getGridParam','selarrrow')
+   url = "${edit_url}&" + s
+   alert(url);
+});
+</script>
+ %endif
 

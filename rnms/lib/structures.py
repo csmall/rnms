@@ -34,10 +34,7 @@ class base_table(object):
         'event_type': 'Event Type',
         'user': 'Owner',
     }
-    __column_widths__ = {
-        'id': 5,
-        'created': 30,
-    }
+
     def created(self, obj):
         return obj.created.strftime('%Y-%b-%d %H:%M:%S')
 

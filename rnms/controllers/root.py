@@ -2,9 +2,9 @@
 """Main Controller"""
 from sqlalchemy import func
 
-from tg import expose, flash, require, lurl, request, redirect, tmpl_context, config
+from tg import expose, flash, require, lurl, request, redirect, \
+        tmpl_context, config, predicates
 from tg.i18n import ugettext as _, lazy_ugettext as l_
-from tg import predicates
 from rnms import model
 from rnms.controllers.secure import SecureController
 #from tgext.admin.tgadminconfig import TGAdminConfig
@@ -60,6 +60,7 @@ class RootController(BaseController):
     """
     secc = SecureController()
     admin = AdminController(model, DBSession, config_type=MyAdminConfig)
+    admin.allow_only = predicates.has_permission('manage')
 
     error = ErrorController()
 
@@ -101,7 +102,7 @@ class RootController(BaseController):
         return dict(page='data', params=kw)
 
     @expose('rnms.templates.index')
-    @require(predicates.has_permission('manage', msg=l_('Only for managers')))
+    #@require(predicates.has_permission('manage', msg=l_('Only for managers')))
     def manage_permission_only(self, **kw):
         """Illustrate how a page for managers only works."""
         return dict(page='managers stuff')

@@ -12,11 +12,11 @@ class jqGridGrid(jqGridWidget):
     Standard jQuery UI grid for the TableBase
     """
     id = None
-    __url__ = None
+    url = None
     params = ['id', 'scroll', 'height', 'caption', 'columns', 'column_widths', 'default_column_width']
     options = {
             'datatype': 'json',
-            'autowidth': True,
+            #'autowidth': True,
             'imgpath': 'scripts/jqGrid/themes/green/images',
             }
     columns = None
@@ -25,9 +25,12 @@ class jqGridGrid(jqGridWidget):
     scroll = False
     height = None
 
-    def __init__(self):
+    def __init__(self, action=None):
         super(jqGridGrid, self).__init__()
-        self.options['url'] = self.url
+        if action is not None:
+            self.options['url'] = action
+        else:
+            self.options['url'] = self.url
         self.options['caption'] = self.caption
         self.options['colNames'] = self._get_colnames()
         self.options['colModel'] = self._get_colmodel()
@@ -76,7 +79,7 @@ class jqGridTableBase(TableBase):
     __base_widget_type__ = jqGridGrid
     __url__ = None
     __retrieves_own_value__ = True
-    __default_column_width__ = 15
+    __default_column_width__ = 100
     __hide_primary_field__ = False
     __scroll__ = False
     __height__ = 'auto'
@@ -211,10 +214,13 @@ class DiscoveryFiller(FillerBase):
                 if hasattr(att, 'id'):
                     action = '<a href="{}">Edit</a>'.format(
                         url('/admin/attributes/'+str(att.id)))
+                    row_id = ''
                 else:
                     action = 'Add'
-                rows.append({'id': atype_id,
+                    row_id =  '{}-{}'.format(atype_id,idx)
+                rows.append({'id': row_id,
                              'cell': (
+                                 row_id,
                                  action,
                                  atype_name, 
                                  idx,

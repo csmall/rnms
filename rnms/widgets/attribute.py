@@ -114,10 +114,12 @@ class DiscoveredAttsGrid(jqGridWidget):
         'imgpath':      'scripts/jqGrid/themes/green/images',
         'url':          '/hosts/griddiscover',
         'caption':      'Discovered Attributes',
-        'colNames': ('Actions', 'Type', 'Index', 'Name',
+        'colNames': ('ID', 'Actions', 'Type', 'Index', 'Name',
                      'State','Description'),
         'colModel': [
             {
+                'name':'id', 'id': 'id', 'hidden': True,
+            },{
                 'name': '__actions__', 'align': 'center','width':30,
             },{
                 'name': 'attribute_type',
@@ -148,6 +150,7 @@ class DiscoveredAttsGrid(jqGridWidget):
             'groupOrder': ['asc' ],
             'groupColumnShow': False,
         },
+        'multiselect': True,
 
     }
 
