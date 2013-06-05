@@ -48,6 +48,12 @@ class MyAdminConfig(AdminConfig):
                         obj.default_poller_set_id,
                         obj.default_poller_set.display_name)
 
+    class autodiscoverypolicy(MyCrudRestControllerConfig):
+        class table_type(st.autodiscovery_policy, jqGridTableBase):
+            pass
+        class table_filler_type(st.autodiscovery_policy, jqGridTableFiller):
+            pass
+    
     class backend(MyCrudRestControllerConfig):
         class table_type(st.backend, jqGridTableBase):
             pass

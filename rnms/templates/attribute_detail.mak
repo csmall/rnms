@@ -32,7 +32,7 @@ Rosenberg NMS: Attribute ${attribute.display_name}
 </div>
 <div class="row">
   <div class="span12">
-  ${eventsbox.display() | n}
+  ${eventsgrid.display() | n}
   </div>
 </div>
 

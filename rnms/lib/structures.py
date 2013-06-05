@@ -64,7 +64,7 @@ class host(base_table):
     __entity__ = model.Host
     __limit_fields__ = ('id', 'display_name', 'zone', 'created')
     __omit_fields__ = ('__actions__',)
-    __column_widths__ = {'id': 10, 'display_name': 30, 'zone': 30, 'created':30}
+    __column_widths__ = {'id': 30, 'created':140}
 
     def zone(self, obj):
         return click('zones', obj.zone_id, obj.zone.display_name)
@@ -88,7 +88,7 @@ class event(base_table):
     __omit_fields__ = ('__actions__',)
     __limit_fields__ = ('id', 'created', 'host', 'attribute',
                         'event_type', 'description' )
-    __column_widths__ = {'created': 25, 'event_type': 10, 'description': '100%'}
+    __column_widths__ = {'created': 140, 'event_type': 80, 'description': 500}
 
     def host(self, obj):
         return '<a href="{}">{}</a>'.format(
@@ -101,7 +101,7 @@ class event(base_table):
     def event_type(self, obj):
         return '<div class="severity{} event_type_td">{}</div>'.format(
             obj.event_state.severity_id,
-            obj.event_state.display_name)
+            obj.event_type.display_name)
 
 
     def description(self, obj):

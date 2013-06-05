@@ -20,6 +20,7 @@
      <li class="${('', 'active')[model=='PollerSet']}"><a href="${tg.url('/admin/pollersets/')}">Poller Sets</a></li>
      <li class="${('', 'active')[model=='Poller']}"><a href="${tg.url('/admin/pollers/')}">Pollers</a></li>
      <li class="${('', 'active')[model=='Backend']}"><a href="${tg.url('/admin/backends/')}">Backends</a></li>
+     <li class="${('', 'active')[model=='AutodiscoveryPolicy']}"><a href="${tg.url('/admin/autodiscoverypolicys/')}">Discovery Policy</a></li>
      </ul>
   </div>
   <div class="well" style="padding: 8px 0;">

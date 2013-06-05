@@ -35,7 +35,7 @@ class EventsGrid(structures.event, jqGridTableBase):
     __grid_id__ = 'events-grid'
     __caption__ = 'Events'
     
-class EventsGrid2(jqGridWidget):
+class oldEventsGrid2(jqGridWidget):
     id = 'events-grid-id'
     attribute_id = None
     host_id = None

@@ -131,3 +131,14 @@ span#span_control {
     border-radius: 2px;
     margin: 1px;
 }
+
+.statusbar {
+	border-radius: 4px 4px 4px 4px;
+	min-height: 50px;
+	margin-bottom: 10px;
+    }
+
+.statusbar div {
+    float: left;
+    margin-left: 20px;
+}

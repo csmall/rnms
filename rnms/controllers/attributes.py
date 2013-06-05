@@ -64,10 +64,8 @@ class AttributesController(BaseGridController):
             return {}
         detailsbox = InfoBox()
         detailsbox.title = 'Attribute Details'
-        eventsbox = InfoBox()
-        eventsbox.title = 'Events for Attribute'
-        eventsbox.child_widget = EventsGrid()
-        eventsbox.child_widget.attribute_id = a
+        events_grid = EventsGrid()
+        events_grid.attribute_id = a
 
         graph_type = attribute.attribute_type.get_graph_type()
         if graph_type is None:
@@ -85,7 +83,7 @@ class AttributesController(BaseGridController):
             more_url = url('/graphs',{'a':a})
 
         return dict(page='attribute', attribute=attribute,
-                    detailsbox=detailsbox, eventsbox=eventsbox,
+                    detailsbox=detailsbox, eventsgrid=events_grid,
                     more_url=more_url,
                     graphbox=graphbox)
 

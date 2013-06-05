@@ -12,7 +12,7 @@ from tgext.admin.controller import AdminController
 from tw2.jqplugins.ui import set_ui_theme_name
 
 from rnms.controllers.admin import MyAdminConfig#, AdminController2
-from rnms.widgets.attribute import AttributeStatusPie
+from rnms.widgets.attribute import AttributeStatusPie, AttributeStatusBar
 from rnms.widgets.base import InfoBox
 from rnms.model import DBSession, Attribute
 
@@ -82,8 +82,9 @@ class RootController(BaseController):
         piebox = get_attribute_pie()
         statsbox = InfoBox()
         statsbox.title = 'Statistics'
+        status_bar = AttributeStatusBar()
         return dict(page='index', piebox=piebox, statsbox=statsbox,
-                    statrows=statrows)
+                    statrows=statrows, status_bar=status_bar)
 
     @expose('rnms.templates.about')
     def about(self):

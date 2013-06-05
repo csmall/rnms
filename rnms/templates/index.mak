@@ -7,6 +7,9 @@
     ${piebox.display() | n }
   </div>
 </div>
+<div class="row-fluid"><div class="span6 offset3">
+${status_bar.display() | }
+</div></div>
 
 <%def name="statistics()">
 %for statrow in statrows:

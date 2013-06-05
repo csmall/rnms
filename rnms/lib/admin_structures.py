@@ -58,6 +58,11 @@ class attribute_type(base_table):
             'ad_parameters': 'Discovery Parameters',
             }
 
+class autodiscovery_policy(base_table):
+    __grid_id__ = 'adpolicies-grid'
+    __entity__ = model.AutodiscoveryPolicy
+    __limit_fields__ = ('id', 'display_name')
+
 class backend(base_table):
     __grid_id__ = 'backends-grid'
     __entity__ = model.Backend

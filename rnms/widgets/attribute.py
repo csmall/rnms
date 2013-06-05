@@ -58,7 +58,7 @@ class AttributeMap(MapWidget):
         if self.host_id is not None:
             conditions.append(Attribute.host_id == self.host_id)
         if self.alarmed_only == True:
-            conditions.append(Attribute.state.internal_state != states.STATE_UP)
+            conditions.append(EventState.internal_state != states.STATE_UP)
         attributes = DBSession.query(Attribute).join(Host,EventState).\
                 filter(and_(*conditions)).\
                 order_by(asc(Host.display_name), asc(Attribute.display_name))
@@ -104,6 +104,31 @@ class AttributesGrid(structures.attribute, jqGridTableBase):
     __url__ = '/attributes/griddata'
     __omit_fields__ = ('__actions__',)
     __caption__ = 'Attributes'
+
+class AttributeSelector(jqGridWidget):
+    id = 'attribute-selector'
+    host_id = None
+    options = {
+        'datatype': 'json',
+        'autowidth':    True,
+        'imgpath':      'scripts/jqGrid/themes/green/images',
+        'url':          '/attributes/gridselector',
+        'caption':      'Attributes',
+        'colNames': ('ID', 'Host', 'Attribute',),
+        'colModel': [
+            {
+                'name':'id', 'id': 'id', 'hidden': True,
+            },{
+                'name': 'host',
+                'id': 'host',
+                'width': 100,
+            }, {
+                'name': 'attribute',
+                'id': 'attribute',
+                'width': 100,
+            }],
+        'multiselect': True,
+    }
 
 class DiscoveredAttsGrid(jqGridWidget):
     id = 'discovered-atts-grid'
@@ -173,7 +198,7 @@ class AttributeSummary(twc.Widget):
     def prepare(self):
         self.url = url
         hostid_filter=[]
-        if self.host_id is not None:
+        if hasattr(self, 'host_id') and self.host_id is not None:
             hostid_filter = [Attribute.host_id == self.host_id]
 
         admin_down = DBSession.query(func.count(Attribute.id)).filter(and_(*(hostid_filter + [Attribute.admin_state == states.STATE_DOWN]))).first()
@@ -198,6 +223,13 @@ class AttributeSummary(twc.Widget):
                 except KeyError:
                     self.att_states.append((label, 0 ))
         super(AttributeSummary, self).prepare()
+
+class AttributeStatusBar(AttributeSummary):
+    """ Small full-sized row that shows the status of the attributes in
+    one line """
+
+    id = 'attribute-statusbar'
+    template = 'rnms.templates.widgets.attribute_statusbar'
 
 class oldAttributesGrid(jqGridWidget):
     id ='attribute-grid-id'
