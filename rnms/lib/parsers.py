@@ -50,8 +50,8 @@ def fill_fields(string, host=None, attribute=None, event=None, alarm=None):
       speed_units       attribute field speed converted to SI units (64k)
       host              host.display_name or attribute.host.display_name
 
-      state             event.alarm_state.display_name
-                    or  alarm.alarm_state.diplay_name
+      state             event.event_state.display_name
+                    or  alarm.event_state.diplay_name
 
 
       plus any fields from the event or attribute in that order
@@ -78,10 +78,10 @@ def fill_fields(string, host=None, attribute=None, event=None, alarm=None):
             continue
         if alarm is not None:
             if field_key == 'state':
-                field_values[field_key] = alarm.alarm_state.display_name
+                field_values[field_key] = alarm.event_state.display_name
         if event is not None:
             if field_key == 'state' and alarm is None:
-                field_values[field_key] = event.alarm_state.display_name
+                field_values[field_key] = event.event_state.display_name
         if attribute is not None:
             # expensive ones go here
             if field_key == 'client':

@@ -36,7 +36,7 @@ class MyAdminConfig(AdminConfig):
 
             def oper_state(self, obj):
                 return 'hello'#state_name(obj.oper_state)
-    
+
     class attributetype(MyCrudRestControllerConfig):
         class table_type(st.attribute_type, jqGridTableBase):
             __id__ = 'attribute_type-table'

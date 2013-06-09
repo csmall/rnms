@@ -8,7 +8,7 @@ from tg import request
 from tw2.jqplugins.ui import set_ui_theme_name
 
 from rnms.model import DBSession
-__all__ = ['BaseController, BaseGridController']
+__all__ = ['BaseController', 'BaseGridController']
 
 VARIABLE_NAMES={
     'a': 'Attribute ID',
@@ -22,7 +22,7 @@ GRID_VALIDATORS={
     'rows':validators.Int(min=1),
     'sidx':validators.String(),
     'sord':validators.String(),
-    '_search':validators.String(),
+    '_search':validators.StringBool(),
     'searchOper':validators.String(),
     'searchField':validators.String(),
     'searchString':validators.String(),

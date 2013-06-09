@@ -138,19 +138,23 @@ class Event(DeclarativeBase):
              cls.stop_time < datetime.datetime.now()])
 
     @classmethod
-    def find_down(cls, attribute_id, event_type_id):
+    def find_down(cls, attribute_id, event_type_id, exclude_event=None):
         """
         Find the first down or testing alarmed Event of the given
         EventType and Attribute
         """
-        return DBSession.query(cls).join(EventState).filter(and_(
+        conditions = [
             cls.alarmed == True,
             cls.stop_time == None,
             cls.attribute_id == attribute_id,
             cls.event_type_id == event_type_id,
             EventState.internal_state.in_(
-                [states.STATE_DOWN, states.STATE_TESTING]))).\
-                order_by(desc(cls.id)).first()
+                [states.STATE_DOWN, states.STATE_TESTING])
+        ]
+        if exclude_event is not None:
+            conditions.append(cls.id != exclude_event)
+        return DBSession.query(cls).join(EventState).filter(
+            and_(*conditions)).order_by(desc(cls.id)).first()
 
     @classmethod
     def attribute_alarm(cls, attribute_id):

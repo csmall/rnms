@@ -10,7 +10,11 @@
 </head>
 <body class="${self.body_class()}">
   <div class="container">
-    ${self.main_menu()}
+%if main_menu == UNDEFINED:
+    ${self.adm_main_menu()}
+%else:
+    ${main_menu.display(page=page) | n}
+%endif
     ${self.content_wrapper()}
     ${self.footer()}
   </div>
@@ -42,7 +46,8 @@
   </footer>
 </%def>
 
-<%def name="main_menu()">
+<%def name="adm_main_menu()">
+
   <div class="navbar">
     <div class="navbar-inner">
       <div class="container">
@@ -71,16 +76,14 @@
           <li class="${('', 'active')[page=='about']}"><a href="${tg.url('/about')}">About</a></li>
         </ul>
 
-        % if tg.auth_stack_enabled:
           <ul class="nav nav-pills pull-right">
-            % if not request.identity:
+            % if not tg.request.identity:
               <li><a href="${tg.url('/login')}">Login</a></li>
             % else:
               <li><a href="${tg.url('/logout_handler')}">Logout</a></li>
               <li><a href="${tg.url('/admin')}">Admin</a></li>
             % endif
           </ul>
-        % endif
       </div>
     </div>
   </div>

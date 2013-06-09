@@ -1,7 +1,11 @@
 
+import operator
+
 from sprox.tablebase import TableBase
 from sprox.fillerbase import TableFiller, FillerBase
 from tg import url
+from sqlalchemy import and_, desc
+from sqlalchemy.orm import RelationshipProperty
 
 from tw2.jqplugins.jqgrid import jqGridWidget
 
@@ -13,24 +17,33 @@ class jqGridGrid(jqGridWidget):
     """
     id = None
     url = None
-    params = ['id', 'scroll', 'height', 'caption', 'columns', 'column_widths', 'default_column_width']
-    options = {
-            'datatype': 'json',
-            #'autowidth': True,
-            'imgpath': 'scripts/jqGrid/themes/green/images',
-            }
+    url_args = None
     columns = None
     suppress_id = None
     caption = None
     scroll = False
     height = None
 
+    params = ['id', 'scroll', 'height', 'caption', 'columns',
+              'column_widths', 'default_column_width', 'url_args',]
+    options = {
+        'datatype': 'json',
+        #'autowidth': True,
+        'imgpath': 'scripts/jqGrid/themes/green/images',
+        'jsonReader' : {
+            'repeatitems': False,
+            'id': 0,
+        },
+    }
+    pager_options = { "search" : True, "refresh" : True, "edit" : False,
+                     "del" : False, "add" : False}
     def __init__(self, action=None):
+        self.url_args = {}
         super(jqGridGrid, self).__init__()
         if action is not None:
             self.options['url'] = action
         else:
-            self.options['url'] = self.url
+            self.options['url'] = url(self.url,self.url_args)
         self.options['caption'] = self.caption
         self.options['colNames'] = self._get_colnames()
         self.options['colModel'] = self._get_colmodel()
@@ -60,13 +73,70 @@ class jqGridGrid(jqGridWidget):
                 width = self.column_widths[colname]
             except KeyError:
                 width = default_width
-            colmodel.append({
+
+            col_def = self._get_search(colname)
+            col_def.update({
                 'name': colname,
                 'index': colname,
-                'width': width,
-            })
+                'width': width})
+            
+            colmodel.append(col_def)
         return colmodel
 
+    def _get_search(self, colname):
+        """ Create the colmodel search items for the given colname
+        this is a dict that is placed into the columns colmodel """
+        
+        if colname == 'host' and 'h' not in self.url_args:
+            try:
+                data_url = url('/hosts/option', {'z':self.url_args['z']})
+            except KeyError:
+                data_url = url('/hosts/option')
+            return {
+                'stype': 'select',
+                'searchoptions': {
+                    'dataUrl': data_url,
+                    'sopt': ['eq', 'ne'],
+                }
+            }
+        if colname == 'attribute' and 'a' not in self.url_args:
+            try:
+                data_url = url('/attributes/option', {'h':self.url_args['h']})
+            except KeyError:
+                data_url = url('/attributes/option')
+            return {
+                'stype': 'select',
+                'searchoptions': {
+                    'dataUrl': data_url,
+                    'sopt': ['eq', 'ne'],
+                }
+            }
+        if colname == 'created':
+            return {
+                'stype': 'text',
+                'searchoptions': {
+                    'dataInit': 'datePick',
+                    'attr': {'title': 'Select Date'}}
+            }
+        if colname == 'event_type':
+            data_url = url('/events/type_option')
+            return {
+                'stype': 'select',
+                'searchoptions': {
+                    'dataUrl': data_url,
+                    'sopt': ['eq', 'ne'],
+                }
+            }
+        if colname == 'zone' and 'z' not in self.url_args:
+            data_url = url('/zones/option')
+            return {
+                'stype': 'select',
+                'searchoptions': {
+                    'dataUrl': data_url,
+                    'sopt': ['eq', 'ne'],
+                }
+            }
+        return dict(search=False)
 
 class jqGridTableBase(TableBase):
     """ A table widget using jqueryUI
@@ -84,23 +154,24 @@ class jqGridTableBase(TableBase):
     __scroll__ = False
     __height__ = 'auto'
 
-    def _do_get_url(self):
+    def _do_get_url_args(self):
         try:
             if self.attribute_id is not None:
-                return '{}?a={}'.format(self.__url__, self.attribute_id)
+                return dict(a=self.attribute_id)
         except AttributeError:
             pass
         try:
             if self.host_id is not None:
-                return '{}?h={}'.format(self.__url__, self.host_id)
+                return dict(h=self.host_id)
         except AttributeError:
             pass
-        return self.__url__
+        return {}
 
     def _do_get_widget_args(self):
         args = super(jqGridTableBase, self)._do_get_widget_args()
         if self.__url__ is not None:
-            args['url'] = self._do_get_url()
+            args['url'] = self.__url__
+            args['url_args'] = self._do_get_url_args()
         if self.__caption__ is not None:
             args['caption'] = self.__caption__
         args['columns'] = self.__fields__
@@ -140,22 +211,45 @@ class jqGridTableFiller(TableFiller):
         rows=[]
         for item in items:
             try:
-                rows.append( { 'id': item[identifier],
-                              'cell':[item[f] for f in
-                                      self.__fields__ if f != suppress_id] , })
+#                rows.append( { 'id': item[identifier],
+#                              'cell':[item[f] for f in
+#                                      self.__fields__ if f != suppress_id] , })
+                rows.append({f:item[f] for f  in self.__fields__})
             except IndexError:
                 pass
         return rows
 
+    def _do_search_conditions(self, query, _search, **kw):
+        """ Add additional filter objects if we are being called with
+        search options """
+        if _search != True:
+            return query
+        try:
+            search_field = kw['searchField']
+            search_string = kw['searchString']
+            search_oper = kw['searchOper']
+        except KeyError:
+            return query
+
+        try:
+            op = getattr(operator, search_oper)
+        except:
+            return query
+        # I'll fix this one day when i understand inspect()
+        try:
+            field = getattr(self.__entity__, search_field+'_id')
+        except AttributeError:
+            return query
+        
+        return query.filter(op(field, search_string))
+
     def _do_get_provider_count_and_objs(self, _search=False,  **kw):
         limit = kw.pop('rows', None)
         page = kw.pop('page', 1)
-        sidx = kw.pop('sidx', None)
+        sidx = kw.pop('sidx', '')
         sord = kw.pop('sord', 'asc')
         kw.pop('nd', False)
-        desc =  (sord == 'desc')
-        if sidx == '':
-            sidx = None
+        sort_desc =  (sord == 'desc')
         if limit is None or page < 1:
             offset = 0
         else:
@@ -164,23 +258,26 @@ class jqGridTableFiller(TableFiller):
             except TypeError:
                 offset = 0
         # Extra filters
-        filters = {}
+        conditions = []
         host_id = kw.pop('h', None)
         if host_id is not None and  hasattr(self.__entity__, 'host_id'):
             try:
-                filters['host_id'] = int(host_id)
+                conditions.append(self.__entity__.host_id == host_id)
             except (ValueError, TypeError):
                 pass
         attribute_id = kw.pop('a', None)
         if attribute_id is not None and  hasattr(self.__entity__, 'attribute_id'):
             try:
-                filters['attribute_id'] = int(attribute_id)
+                conditions.append(self.__entity__.attribute_id == attribute_id)
             except (ValueError, TypeError):
                 pass
-        count, objs = self.__provider__.query(
-            self.__entity__, limit, offset, self.__limit_fields__,
-            sidx, desc, filters=filters,
-            view_fields=self.__possible_field_names__)
+#        filters = {'host_id': 1}
+#        count, objs = self.__provider__.query(
+#            self.__entity__, limit, offset, self.__limit_fields__,
+#            sidx, desc, filters=filters,
+#            view_fields=self.__possible_field_names__)
+        count,objs = self.query( limit, offset, sidx, sort_desc,
+                                conditions, _search, **kw)
         self.__count__ = count
         return count, objs
 
@@ -191,6 +288,40 @@ class jqGridTableFiller(TableFiller):
         rows = self._get_rows(items)
         return dict(total=total_pages, page=current_page,
                 records=total_records, rows=rows)
+
+    def query(self, limit, offset, sort_idx, sort_desc, conditions, _search,
+             **kw):
+        """
+        Query the database, this is based upon the sprox sa_provider
+        query method but is better as its filtering does a lot more
+        """
+        query = self.__provider__.session.query(self.__entity__).filter(
+            and_(*conditions))
+        query = self._do_search_conditions(query, _search, **kw)
+        count = query.count()
+
+        # sorting
+        if sort_idx != '' and hasattr(self.__entity__, sort_idx):
+            if  self.is_relation(sort_idx):
+                pass
+            else:
+                sort_field = self.__entity__.__mapper__.c[sort_idx]
+                if sort_desc:
+                    query = query.order_by(desc(sort_field))
+                else:
+                    query = query.order_by(sort_field)
+        if offset is not None:
+            query = query.offset(offset)
+        if limit is not None:
+            query = query.limit(limit)
+
+        objs = query.all()
+        return count, objs
+    def is_relation(self, field_name):
+        """ Return True if field_name is a relation for __entity__ """
+        return isinstance(
+            self.__entity__.__mapper__.get_property(field_name),
+            RelationshipProperty)
 
 
 class DiscoveryFiller(FillerBase):

@@ -142,3 +142,8 @@ span#span_control {
     float: left;
     margin-left: 20px;
 }
+
+td.columns > select,
+td.operators > select {
+    width: 100px;
+}

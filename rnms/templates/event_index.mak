@@ -4,9 +4,6 @@
 <%def name="title()">
 Rosenberg NMS: Event List
 </%def>
-<script>
-var grid = $("#events-grid-id"), intervalId = setInterval(function(){grid.setGridParam({datatype: 'json'}); grid.trigger('reloadGrid'); }, 4000);
-</script>
 %if w != UNDEFINED:
 <div class="row">
   <div class="span12">
@@ -14,3 +11,8 @@ var grid = $("#events-grid-id"), intervalId = setInterval(function(){grid.setGri
   </div>
 </div>
 %endif
+<script>
+var grid = $("#events-grid");
+var intervalId = setInterval(function(){grid.setGridParam({datatype: 'json'}); grid.trigger('reloadGrid'); }, 10000);
+datePick = function(elem) { jQuery(elem).datepicker();}
+</script>

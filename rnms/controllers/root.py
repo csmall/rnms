@@ -13,6 +13,7 @@ from tw2.jqplugins.ui import set_ui_theme_name
 
 from rnms.controllers.admin import MyAdminConfig#, AdminController2
 from rnms.widgets.attribute import AttributeStatusPie, AttributeStatusBar
+from rnms.widgets import MainMenu
 from rnms.widgets.base import InfoBox
 from rnms.model import DBSession, Attribute
 
@@ -24,6 +25,7 @@ from rnms.controllers.events import EventsController
 from rnms.controllers.graph import GraphController
 from rnms.controllers.attributes import AttributesController
 from rnms.controllers.hosts import HostsController
+from rnms.controllers.zones import ZonesController
 
 set_ui_theme_name(config['ui_theme'])
 __all__ = ['RootController']
@@ -69,12 +71,22 @@ class RootController(BaseController):
     events = EventsController()
     graphs = GraphController()
     hosts = HostsController()
+    zones = ZonesController()
 
 
     def _before(self, *args, **kw):
         tmpl_context.project_name = "rnms"
         set_ui_theme_name(config['ui_theme'])
 
+    @expose('rnms.templates.test')
+    def test1(self):
+        from tw2.jquery import jquery_js
+        from rnms.widgets import MainMenu
+
+        #mm = MainMenu(page='host')
+        return {'text': 'texttext', 'jjs': jquery_js, 'mm': MainMenu,
+                'page':'hosts'}
+            
     @expose('rnms.templates.index')
     def index(self):
         """Handle the front-page."""
@@ -83,13 +95,14 @@ class RootController(BaseController):
         statsbox = InfoBox()
         statsbox.title = 'Statistics'
         status_bar = AttributeStatusBar()
-        return dict(page='index', piebox=piebox, statsbox=statsbox,
+        return dict(page='index', main_menu=MainMenu,
+                    piebox=piebox, statsbox=statsbox,
                     statrows=statrows, status_bar=status_bar)
 
     @expose('rnms.templates.about')
     def about(self):
         """Handle the 'about' page."""
-        return dict(page='about')
+        return dict(page='about', main_menu=MainMenu)
 
     @expose('rnms.templates.environ')
     def environ(self):

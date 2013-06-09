@@ -47,6 +47,8 @@ class attribute(base_table):
     def display_name(self,obj):
         return click('attributes',obj.id, obj.display_name)
     def host(self, obj):
+        if obj.host is None:
+            return ''
         return click('hosts', obj.host_id, obj.host.display_name)
 
 class attribute_mini(base_table):
@@ -91,17 +93,24 @@ class event(base_table):
     __column_widths__ = {'created': 140, 'event_type': 80, 'description': 500}
 
     def host(self, obj):
+        if obj.host is None:
+            return ''
         return '<a href="{}">{}</a>'.format(
             url('/hosts/{}'.format(obj.host_id)),
             obj.host.display_name)
     def attribute(self, obj):
+        if obj.attribute is None:
+            return ''
         return '<a href="{}">{}</a>'.format(
             url('/attributes/{}'.format(obj.attribute_id)),
             obj.attribute.display_name)
     def event_type(self, obj):
-        return '<div class="severity{} event_type_td">{}</div>'.format(
-            obj.event_state.severity_id,
-            obj.event_type.display_name)
+        try:
+            return '<div class="severity{} event_type_td">{}</div>'.format(
+                obj.event_state.severity_id,
+                obj.event_type.display_name)
+        except AttributeError:
+            return ''
 
 
     def description(self, obj):

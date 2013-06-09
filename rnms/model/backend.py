@@ -205,6 +205,7 @@ class Backend(DeclarativeBase):
 
         if event_state.is_downtesting():
             if down_event is None:
+                print 'no down'
                 return True
             else:
                 if down_event.event_state != event_state:

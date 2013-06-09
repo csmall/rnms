@@ -36,7 +36,7 @@ from rnms.lib import permissions
 from rnms.lib.table import jqGridTableFiller, DiscoveryFiller
 from rnms.lib.base import BaseGridController
 from rnms.model import DBSession, Host, Event
-from rnms.widgets import InfoBox
+from rnms.widgets import InfoBox, MainMenu
 from rnms.widgets.host import HostMap, HostsGrid
 from rnms.widgets.attribute import MiniAttributesGrid, DiscoveredAttsGrid
 from rnms.widgets.event import EventsGrid
@@ -68,7 +68,8 @@ class HostsController(BaseGridController):
     @expose('rnms.templates.host_index')
     def index(self):
         w = HostsGrid()
-        return dict(w=w, page='host')
+        return dict(page='host', main_menu=MainMenu,
+                   w=w)
 
     @expose('json')
     def griddata(self, **kw):
@@ -96,11 +97,11 @@ class HostsController(BaseGridController):
     def _default(self, h):
         if tmpl_context.form_errors:
             self.process_form_errors()
-            return {}
+            return dict(page='host', main_menu=MainMenu)
         host = Host.by_id(h)
         if host is None:
             flash('Host ID#{} not found'.format(h), 'error')
-            return {}
+            return dict(page='host', main_menu=MainMenu)
         vendor,devmodel = host.snmp_type()
         highest_alarm = Event.host_alarm(host.id)
         if highest_alarm is  None:
@@ -114,7 +115,8 @@ class HostsController(BaseGridController):
         attributes_grid.host_id = h
         events_grid = EventsGrid()
         events_grid.host_id = h
-        return dict(host=host, vendor=vendor, devmodel=devmodel,
+        return dict(page='host', main_menu=MainMenu,
+                    host=host, vendor=vendor, devmodel=devmodel,
                     host_state=host_state,
                     attributes_grid=attributes_grid,
                     detailsbox=detailsbox,
@@ -130,7 +132,7 @@ class HostsController(BaseGridController):
         """
         if tmpl_context.form_errors:
             self.process_form_errors()
-            return {}
+            return dict(page='host', main_menu=MainMenu)
         hmap = HostMap()
         hmap.zone_id = z
         hmap.alarmed_only = alarmed
@@ -141,15 +143,22 @@ class HostsController(BaseGridController):
             eventsbox.child_widget.zone_id = z
         else:
             eventsbox = None
-        return dict(page='hosts', host_map=hmap, eventsbox=eventsbox)
+        return dict(page='hosts', main_menu=MainMenu,
+                    host_map=hmap, eventsbox=eventsbox)
 
     @expose('rnms.templates.host_discover')
     @validate(validators={'h':validators.Int(min=2)})
     def discover(self, h):
         if tmpl_context.form_errors:
             self.process_form_errors()
-            return {}
+            return dict(page='host', main_menu=MainMenu)
         w = DiscoveredAttsGrid()
         w.host_id = h
         edit_url = url('/attributes/add_disc', {'h':h})
-        return dict(w=w, page='host', edit_url=edit_url)
+        return dict(page='host', main_menu=MainMenu,
+                    w=w, edit_url=edit_url)
+
+    @expose('rnms.templates.widgets.select')
+    def option(self):
+        hosts = DBSession.query(Host.id, Host.display_name)
+        return dict(items=hosts)

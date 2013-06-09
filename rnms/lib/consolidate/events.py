@@ -45,7 +45,8 @@ def process_events(logger):
 
         if event.event_state.is_alert() == False:
             down_event = Event.find_down(event.attribute_id,
-                                         event.event_type_id)
+                                         event.event_type_id,
+                                        event.id)
             if event.event_state.is_downtesting():
                 process_event_downtesting(logger, event, down_event)
             elif event.event_state.is_up():

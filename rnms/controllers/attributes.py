@@ -34,7 +34,8 @@ from rnms.lib.base import BaseGridController
 from rnms.lib.jsonquery import json_query
 from rnms.model import DBSession, Attribute, AttributeType, Host
 from rnms.widgets import AttributeSummary, AttributeMap,\
-        AttributeStatusPie, AttributesGrid, EventsGrid, InfoBox
+        AttributeStatusPie, AttributesGrid, EventsGrid, InfoBox,\
+        MainMenu
 from rnms.widgets.graph import GraphWidget
 from rnms.lib.table import jqGridTableFiller
 
@@ -47,21 +48,22 @@ class AttributesController(BaseGridController):
     def index(self, h=None, *args, **kw):
         if tmpl_context.form_errors:
             self.process_form_errors()
-            return {}
+            return dict(page='attribute', main_menu=MainMenu)
         agrid = AttributesGrid()
         agrid.host_id = h
-        return dict(w=agrid, page='attribute')
+        return dict(page='attribute', main_menu=MainMenu,
+                   w=agrid)
 
     @expose('rnms.templates.attribute_detail')
     @validate(validators={'a':validators.Int(min=1)})
     def _default(self, a):
         if tmpl_context.form_errors:
             self.process_form_errors()
-            return {}
+            return dict(page='attribute', main_menu=MainMenu)
         attribute = Attribute.by_id(a)
         if attribute is None:
             flash('Attribute ID#{} not found'.format(a), 'error')
-            return {}
+            return dict(page='attribute', main_menu=MainMenu)
         detailsbox = InfoBox()
         detailsbox.title = 'Attribute Details'
         events_grid = EventsGrid()
@@ -71,6 +73,7 @@ class AttributesController(BaseGridController):
         if graph_type is None:
             print 'no graph'
             graphbox = None
+            more_url = None
         else:
             gw = GraphWidget()
             gw.id = 'graph-widget-{}'.format(a)
@@ -82,7 +85,8 @@ class AttributesController(BaseGridController):
 
             more_url = url('/graphs',{'a':a})
 
-        return dict(page='attribute', attribute=attribute,
+        return dict(page='attribute', main_menu=MainMenu,
+                    attribute=attribute,
                     detailsbox=detailsbox, eventsgrid=events_grid,
                     more_url=more_url,
                     graphbox=graphbox)
@@ -93,7 +97,7 @@ class AttributesController(BaseGridController):
     def map(self, h=None, events=False, alarmed=False):
         if tmpl_context.form_errors:
             self.process_form_errors()
-            return {}
+            return dict(page='attribute', main_menu=MainMenu)
         amap = AttributeMap()
         amap.host_id = h
         amap.alarmed_only = alarmed
@@ -104,7 +108,8 @@ class AttributesController(BaseGridController):
             eventsbox.child_widget.host_id = h
         else:
             eventsbox = None
-        return dict(page='attributes', attribute_map=amap, eventsbox=eventsbox)
+        return dict(page='attribute', main_menu=MainMenu,
+                    attribute_map=amap, eventsbox=eventsbox)
 
     @expose('json')
     def minigriddata(self, **kw):
@@ -161,7 +166,8 @@ class AttributesController(BaseGridController):
                         rw.oper_state_name(),
                         rw.admin_state_name()
                     )} for rw in qry]
-        return dict(page='attributes', total=result_count,
+        return dict(page='attribute', main_menu=MainMenu,
+                    total=result_count,
                     records=result_count, rows=records)
 
 
@@ -192,3 +198,18 @@ class AttributesController(BaseGridController):
         w= AttributeSummary()
         return dict(widget=w)
 
+    @expose('rnms.templates.widgets.select')
+    def option(self, h=None, **kw):
+        conditions = []
+        if h is not None:
+            try:
+                conditions.append(Attribute.host_id == 
+                                  validators.Int(min=1).to_python(h))
+            except:
+                pass
+        rows = DBSession.query(
+            Attribute.id, Host.display_name, Attribute.display_name).\
+                select_from(Attribute).join(Host).\
+                filter(*conditions)
+        atts = [(a[0], ' - '.join(a[1:])) for a in rows]
+        return dict(items=atts)
