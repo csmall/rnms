@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012,2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ class AttributeMap(MapWidget):
             if alarm is None:
                 return ('ok', 'Up')
             else:
-                return (alarm.event_type.severity_id, alarm.alarm_state.display_name.capitalize())
+                return (alarm.event_state.severity_id, alarm.event_state.display_name.capitalize())
 
     def prepare(self):
         conditions = []

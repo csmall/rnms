@@ -133,18 +133,18 @@ class HostsController(BaseGridController):
         if tmpl_context.form_errors:
             self.process_form_errors()
             return dict(page='host', main_menu=MainMenu)
-        hmap = HostMap()
-        hmap.zone_id = z
-        hmap.alarmed_only = alarmed
+        hmap_infobox = InfoBox()
+        hmap_infobox.title = 'Host Map'
+        hmap_infobox.child_widget = HostMap()
+        hmap_infobox.child_widget.zone_id = z
+        hmap_infobox.child_widget.alarmed_only = alarmed
         if events == True:
-            eventsbox = InfoBox()
-            eventsbox.title = 'Host Events'
-            eventsbox.child_widget = EventsGrid()
-            eventsbox.child_widget.zone_id = z
+            events_grid = EventsGrid()
+            events_grid.zone_id = z
         else:
-            eventsbox = None
+            events_grid = None
         return dict(page='hosts', main_menu=MainMenu,
-                    host_map=hmap, eventsbox=eventsbox)
+                    host_map=hmap_infobox, events_grid=events_grid)
 
     @expose('rnms.templates.host_discover')
     @validate(validators={'h':validators.Int(min=2)})

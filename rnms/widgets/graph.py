@@ -110,6 +110,15 @@ class GraphTypeSelector(twf.MultipleSelectField):
                 pass
         super(GraphTypeSelector, self).prepare()
 
+class GraphWidget2(twc.Widget):
+    template = 'rnms.templates.widgets.graph'
+
+    def prepare(self):
+        end_time = int(time.time())
+        start_time = end_time - 3600*24
+        self.url = '/graphs/image/1/27/{}/{}'.format(
+            start_time, end_time)
+
 
 class GraphWidget(twc.Widget):
     id='graph-widget'

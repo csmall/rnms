@@ -22,6 +22,7 @@
 import logging
 import time
 import datetime
+import rrdtool
 
 # turbogears imports
 from tg import validate, flash, expose, tmpl_context
@@ -49,9 +50,22 @@ class GraphController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = predicates.not_anonymous()
 
-    @expose('images/png')
+    @expose('rnms.templates.widget')
+    def blah(self):
+        from rnms.widgets.graph import GraphWidget2
+        w = GraphWidget2
+        return dict(w=w)
+    
+    @expose(content_type='images/png')
+    @validate(validators={'a':validators.Int(min=1),
+                          'gt':validators.Int(min=1),
+                          'st':validators.Int(min=1),
+                          'et':validators.Int(min=1)
+                         })
     def image(self, a, gt, st, et):
         """ Returns a RRDgraph """
+        if tmpl_context.form_errors:
+            return tmpl_context.form_errors
         attribute = Attribute.by_id(a)
         if attribute is None:
             logger.error('Attribute %d does not exist', a)
@@ -63,6 +77,16 @@ class GraphController(BaseController):
         if graph_type.attribute_type_id != attribute.attribute_type_id:
             logger.error('GraphType %d is not for Attribute %d',gt,a)
             return
+        graph_definition = graph_type.format(attribute)
+        graph_options = graph_type.graph_options(attribute, st,et)
+        try:
+            graphv = rrdtool.graphv('-', graph_options + graph_definition)
+        except TypeError as errmsg:
+            logger.error('RRDTool error: {}'.format(errmsg))
+        except rrdtool.error as errmsg:
+            logger.error('RRDTool error: {}'.format(errmsg))
+        else:
+            return graphv['image']
 
 
     @expose('rnms.templates.graph')

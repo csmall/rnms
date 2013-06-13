@@ -102,14 +102,12 @@ class AttributesController(BaseGridController):
         amap.host_id = h
         amap.alarmed_only = alarmed
         if events == True:
-            eventsbox = InfoBox()
-            eventsbox.title = 'Attribute Events'
-            eventsbox.child_widget = EventsGrid()
-            eventsbox.child_widget.host_id = h
+            events_grid = EventsGrid()
+            events_grid.host_id = h
         else:
-            eventsbox = None
+            events_grid = None
         return dict(page='attribute', main_menu=MainMenu,
-                    attribute_map=amap, eventsbox=eventsbox)
+                    attribute_map=amap, eventsgrid=events_grid)
 
     @expose('json')
     def minigriddata(self, **kw):

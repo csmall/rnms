@@ -24,7 +24,7 @@
 </div>
 %endif
 <script type="text/javascript">
-window.onload=function(){$('[rel=mappop]').popover();}
+$(function(){$('[rel=mappop]').popover();});
 </script>
 <%def name="item_data(data)">
 %for title,value in data:

@@ -50,7 +50,7 @@ class HostMap(MapWidget):
         if alarm is None:
             return ('ok', 'Up')
         else:
-            return (alarm.event_type.severity_id, alarm.alarm_state.display_name.capitalize())
+            return (alarm.event_state.severity_id, alarm.event_state.display_name.capitalize())
 
     def prepare(self):
         conditions = []

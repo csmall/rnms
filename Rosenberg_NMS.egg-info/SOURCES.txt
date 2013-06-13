@@ -27,6 +27,7 @@ rnms/controllers/hosts.py
 rnms/controllers/root.py
 rnms/controllers/secure.py
 rnms/controllers/template.py
+rnms/controllers/zones.py
 rnms/i18n/ru/LC_MESSAGES/rnms.po
 rnms/lib/__init__.py
 rnms/lib/admin_structures.py
@@ -148,10 +149,10 @@ rnms/public/images/under_the_hood_blue.png
 rnms/public/javascript/bootstrap.js
 rnms/public/javascript/bootstrap.min.js
 rnms/public/javascript/jquery.js
-rnms/templates/.host_index.mak.swp
 rnms/templates/__init__.py
 rnms/templates/__init__.pyc
 rnms/templates/about.mak
+rnms/templates/about.mak.old
 rnms/templates/admin_menu.mak
 rnms/templates/admin_top.mak
 rnms/templates/admin_view.mak
@@ -168,7 +169,6 @@ rnms/templates/event_index.mak
 rnms/templates/event_sprox.mak
 rnms/templates/eventswidget.mak
 rnms/templates/eventswidget2.mak
-rnms/templates/get_all.mak.orig
 rnms/templates/graph.mak
 rnms/templates/graph_image.mak
 rnms/templates/graphwidget.mak
@@ -194,10 +194,15 @@ rnms/templates/attribute/__init__.pyc
 rnms/templates/attribute/graph.mak
 rnms/templates/widgets/__init__.py
 rnms/templates/widgets/__init__.pyc
+rnms/templates/widgets/attribute_selector.mak
+rnms/templates/widgets/attribute_statusbar.mak
 rnms/templates/widgets/attribute_summary.mak
+rnms/templates/widgets/graph.mak
 rnms/templates/widgets/graph_widget.mak
 rnms/templates/widgets/infobox.mak
+rnms/templates/widgets/main_menu.mak
 rnms/templates/widgets/map.mak
+rnms/templates/widgets/select.mak
 rnms/tests/__init__.py
 rnms/tests/att_discovery/__init__.py
 rnms/tests/att_discovery/test_alteon.py
@@ -249,3 +254,4 @@ rnms/widgets/base.py
 rnms/widgets/event.py
 rnms/widgets/graph.py
 rnms/widgets/host.py
+rnms/widgets/main_menu.py
