@@ -4,12 +4,25 @@ import operator
 from sprox.tablebase import TableBase
 from sprox.fillerbase import TableFiller, FillerBase
 from tg import url
-from sqlalchemy import and_, desc
+from sqlalchemy import and_, desc, not_
 from sqlalchemy.orm import RelationshipProperty
+from sqlalchemy.sql.operators import ColumnOperators as coop
 
 from tw2.jqplugins.jqgrid import jqGridWidget
 
 from rnms.model import AttributeType
+
+COL_OPERATORS = {
+    'eq':   (coop.__eq__, False),
+    'ne':   (coop.__ne__, False),
+    'bw':   (coop.startswith, False),
+    'bn':   (coop.startswith, True),
+    'ew':   (coop.endswith, False),
+    'en':   (coop.endswith, True),
+    'cn':   (coop.contains, False),
+    'nc':   (coop.contains, True),
+}
+SEARCH_OPTIONS = [x for x in COL_OPERATORS.keys()]
 
 class jqGridGrid(jqGridWidget):
     """
@@ -79,14 +92,21 @@ class jqGridGrid(jqGridWidget):
                 'name': colname,
                 'index': colname,
                 'width': width})
-            
+
             colmodel.append(col_def)
         return colmodel
 
     def _get_search(self, colname):
         """ Create the colmodel search items for the given colname
         this is a dict that is placed into the columns colmodel """
-        
+
+        if colname == 'display_name':
+            return {
+                'stype': 'text',
+                'searchoptions': {
+                    'sopt': SEARCH_OPTIONS,
+                },
+            }
         if colname == 'host' and 'h' not in self.url_args:
             try:
                 data_url = url('/hosts/option', {'z':self.url_args['z']})
@@ -115,7 +135,8 @@ class jqGridGrid(jqGridWidget):
             return {
                 'stype': 'text',
                 'searchoptions': {
-                    'dataInit': 'datePick',
+                    'dataInit':
+                    'function(el){$(el).datepicker().change(function(){$("#grid-id")[0].triggerToolbar();});};',
                     'attr': {'title': 'Select Date'}}
             }
         if colname == 'event_type':
@@ -214,7 +235,8 @@ class jqGridTableFiller(TableFiller):
 #                rows.append( { 'id': item[identifier],
 #                              'cell':[item[f] for f in
 #                                      self.__fields__ if f != suppress_id] , })
-                rows.append({f:item[f] for f  in self.__fields__})
+                rows.append({f:item[f] for f  in self.__fields__
+                             if f != suppress_id})
             except IndexError:
                 pass
         return rows
@@ -231,16 +253,23 @@ class jqGridTableFiller(TableFiller):
         except KeyError:
             return query
 
-        try:
-            op = getattr(operator, search_oper)
-        except:
-            return query
-        # I'll fix this one day when i understand inspect()
-        try:
-            field = getattr(self.__entity__, search_field+'_id')
-        except AttributeError:
-            return query
+        op,do_not = self._get_search_op(search_oper)
+        if op is None:
+            return query.filter('0=1')
+        if self.is_relation(search_field):
+            # I'll fix this one day when i understand inspect()
+            try:
+                field = getattr(self.__entity__, search_field+'_id')
+            except AttributeError:
+                return query.filter('0=1')
+        else:
+            try:
+                field = getattr(self.__entity__, search_field)
+            except AttributeError:
+                return query.filter('0=1')
         
+        if do_not:
+            return query.filter(not_(op(field, search_string)))
         return query.filter(op(field, search_string))
 
     def _do_get_provider_count_and_objs(self, _search=False,  **kw):
@@ -298,6 +327,7 @@ class jqGridTableFiller(TableFiller):
         query = self.__provider__.session.query(self.__entity__).filter(
             and_(*conditions))
         query = self._do_search_conditions(query, _search, **kw)
+        print query
         count = query.count()
 
         # sorting
@@ -317,12 +347,24 @@ class jqGridTableFiller(TableFiller):
 
         objs = query.all()
         return count, objs
+
     def is_relation(self, field_name):
         """ Return True if field_name is a relation for __entity__ """
         return isinstance(
             self.__entity__.__mapper__.get_property(field_name),
             RelationshipProperty)
 
+    def _get_search_op(self, search_oper):
+        """ Translate the search_oper string into a real operator """
+        try:
+            return COL_OPERATORS[search_oper]
+        except KeyError:
+            pass
+        try:
+            return getattr(operator, search_oper),False
+        except:
+            pass
+        return None,False
 
 class DiscoveryFiller(FillerBase):
 

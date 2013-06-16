@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,12 +30,12 @@ from rnms import model
 from rnms.lib import structures
 from rnms.lib.table import jqGridTableBase
 
-class EventsGrid(structures.event, jqGridTableBase):
+class EventGrid(structures.event, jqGridTableBase):
     __url__ = '/events/griddata'
     __grid_id__ = 'events-grid'
     __caption__ = 'Events'
     
-class oldEventsGrid2(jqGridWidget):
+class oldEventGrid2(jqGridWidget):
     id = 'events-grid-id'
     attribute_id = None
     host_id = None
@@ -82,7 +82,7 @@ class oldEventsGrid2(jqGridWidget):
             'height': 'auto',
             }
 
-        super(EventsGrid, self).__init__()
+        super(EventGrid, self).__init__()
 
     def prepare(self):
         url_fields = []
@@ -95,7 +95,7 @@ class oldEventsGrid2(jqGridWidget):
 
         if url_fields != []:
             self.options['url'] += '?' + '&'.join(url_fields)
-        super(EventsGrid, self).prepare()
+        super(EventGrid, self).prepare()
 
 class EventsWidget3(twc.Widget):
     id = 'events-widget'
@@ -131,9 +131,9 @@ class EventsWidget3(twc.Widget):
         
         self.events = self.currentPage.items
         self.tgurl = tg.url
-        super(EventsWidget, self).prepare
+        super(EventWidget, self).prepare
 
-class EventsWidget(SQLAjqGridWidget):
+class EventWidget(SQLAjqGridWidget):
     entity = model.Event
     options = {
             'url': '/events/jqgridsqla',
@@ -146,7 +146,7 @@ class EventsWidget(SQLAjqGridWidget):
 
     def prepare(self):
         self.resources.append(word_wrap_css)
-        super(EventsWidget, self).prepare()
+        super(EventWidget, self).prepare()
 
 class EventsWidget2(jqGridWidget):
     def prepare(self):

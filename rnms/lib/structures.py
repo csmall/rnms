@@ -82,6 +82,7 @@ class host_list(host):
 
 class zone(base_table):
     __entity__ = model.Zone
+    __hide_primary_field__ = True
     __limit_fields__ = ('id', 'display_name', 'short_name')
 
 class event(base_table):

@@ -34,7 +34,7 @@ from tg.predicates import has_permission
 # project specific imports
 from rnms.lib.base import BaseGridController
 from rnms.model import DBSession, Severity,EventType
-from rnms.widgets import EventsGrid, MainMenu
+from rnms.widgets import EventGrid, MainMenu
 from rnms.lib.table import jqGridTableFiller
 from rnms.lib import structures
 
@@ -52,7 +52,7 @@ class EventsController(BaseGridController):
             self.process_form_errors()
             return dict(page='event', main_menu=MainMenu)
 
-        w = EventsGrid()
+        w = EventGrid()
         w.attribute_id = a
         w.host_id = h
         return dict(page='event', main_menu=MainMenu,

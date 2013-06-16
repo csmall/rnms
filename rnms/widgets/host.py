@@ -27,7 +27,7 @@ from rnms.model import DBSession, Host, Zone, Event
 from rnms.lib import structures
 from rnms.lib.table import jqGridTableBase
 
-class HostsGrid(structures.host, jqGridTableBase):
+class HostGrid(structures.host, jqGridTableBase):
     __grid_id__ = 'hosts-grid'
     __url__ = '/hosts/griddata'
     __omit_fields__ = ('__actions__',)

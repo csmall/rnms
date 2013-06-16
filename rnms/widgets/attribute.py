@@ -89,7 +89,7 @@ class AttributeMap(MapWidget):
         super(AttributeMap,self).prepare()
 
 
-class MiniAttributesGrid(structures.attribute_mini, jqGridTableBase):
+class MiniAttributeGrid(structures.attribute_mini, jqGridTableBase):
     __entity__ = Attribute
     __grid_id__ = 'mini-attributes-grid'
     __url__ = '/attributes/minigriddata'
@@ -99,7 +99,7 @@ class MiniAttributesGrid(structures.attribute_mini, jqGridTableBase):
     __height__ = 190
     __scroll__ = True
 
-class AttributesGrid(structures.attribute, jqGridTableBase):
+class AttributeGrid(structures.attribute, jqGridTableBase):
     __grid_id__ = 'attributes-grid'
     __url__ = '/attributes/griddata'
     __omit_fields__ = ('__actions__',)

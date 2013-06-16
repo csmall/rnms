@@ -1,7 +1,8 @@
 
 from base import InfoBox
-from event import EventsWidget, EventsGrid
-from attribute import AttributesGrid, AttributeSummary, AttributeMap,\
-        AttributeStatusPie
-from host import HostsGrid
 from main_menu import MainMenu
+from attribute import AttributeGrid, AttributeSummary, AttributeMap,\
+        AttributeStatusPie
+from event import EventWidget, EventGrid
+from host import HostGrid, HostMap
+from zone import ZoneGrid

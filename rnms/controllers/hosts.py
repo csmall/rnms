@@ -27,7 +27,6 @@ from tg.decorators import require
 # third party imports
 #from tg.i18n import ugettext as _
 #from repoze.what import predicates
-import tw2.forms as twf
 from formencode import validators
 
 # project specific imports
@@ -36,28 +35,8 @@ from rnms.lib import permissions
 from rnms.lib.table import jqGridTableFiller, DiscoveryFiller
 from rnms.lib.base import BaseGridController
 from rnms.model import DBSession, Host, Event
-from rnms.widgets import InfoBox, MainMenu
-from rnms.widgets.host import HostMap, HostsGrid
-from rnms.widgets.attribute import MiniAttributesGrid, DiscoveredAttsGrid
-from rnms.widgets.event import EventsGrid
-
-
-class HostDetails(twf.TableLayout):
-    """
-    Returns a TableLayout Widget showing host details
-    """
-    hostname = twf.LabelField(value='Host not found')
-    ip_address = twf.LabelField(id='IP_Address', value='Unknown')
-    zone = twf.LabelField(value='Unknown')
-    snmp_sysobjid = twf.LabelField(value='Unknown')
-    def prepare(self):
-        twf.TableLayout.prepare(self)
-        host = DBSession.query(Host).filter(Host.id==self.host_id).first()
-        if host is not None:
-            self.children[0].value = host.display_name
-            self.children[1].value = host.mgmt_address
-            self.children[2].value = host.zone.display_name
-            self.children[3].value = host.sysobjid + "ff"
+from rnms.widgets import InfoBox, MainMenu, HostMap, HostGrid, EventGrid
+from rnms.widgets.attribute import MiniAttributeGrid, DiscoveredAttsGrid
 
 
 class HostsController(BaseGridController):
@@ -67,7 +46,7 @@ class HostsController(BaseGridController):
 
     @expose('rnms.templates.host_index')
     def index(self):
-        w = HostsGrid()
+        w = HostGrid()
         return dict(page='host', main_menu=MainMenu,
                    w=w)
 
@@ -111,9 +90,9 @@ class HostsController(BaseGridController):
 
         detailsbox = InfoBox()
         detailsbox.title = 'Host Details'
-        attributes_grid = MiniAttributesGrid()
+        attributes_grid = MiniAttributeGrid()
         attributes_grid.host_id = h
-        events_grid = EventsGrid()
+        events_grid = EventGrid()
         events_grid.host_id = h
         return dict(page='host', main_menu=MainMenu,
                     host=host, vendor=vendor, devmodel=devmodel,
@@ -139,7 +118,7 @@ class HostsController(BaseGridController):
         hmap_infobox.child_widget.zone_id = z
         hmap_infobox.child_widget.alarmed_only = alarmed
         if events == True:
-            events_grid = EventsGrid()
+            events_grid = EventGrid()
             events_grid.zone_id = z
         else:
             events_grid = None

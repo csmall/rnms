@@ -9,4 +9,7 @@ Rosenberg NMS: Host List
 	    ${w.display() | n}
 	  </div>
 	</div>
+<script type="text/javascript">
+datePick=function(elem){$(elem).datepicker();}
+</script>
 %endif

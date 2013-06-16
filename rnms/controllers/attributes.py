@@ -34,7 +34,7 @@ from rnms.lib.base import BaseGridController
 from rnms.lib.jsonquery import json_query
 from rnms.model import DBSession, Attribute, AttributeType, Host
 from rnms.widgets import AttributeSummary, AttributeMap,\
-        AttributeStatusPie, AttributesGrid, EventsGrid, InfoBox,\
+        AttributeStatusPie, AttributeGrid, EventGrid, InfoBox,\
         MainMenu
 from rnms.widgets.graph import GraphWidget
 from rnms.lib.table import jqGridTableFiller
@@ -49,7 +49,7 @@ class AttributesController(BaseGridController):
         if tmpl_context.form_errors:
             self.process_form_errors()
             return dict(page='attribute', main_menu=MainMenu)
-        agrid = AttributesGrid()
+        agrid = AttributeGrid()
         agrid.host_id = h
         return dict(page='attribute', main_menu=MainMenu,
                    w=agrid)
@@ -66,7 +66,7 @@ class AttributesController(BaseGridController):
             return dict(page='attribute', main_menu=MainMenu)
         detailsbox = InfoBox()
         detailsbox.title = 'Attribute Details'
-        events_grid = EventsGrid()
+        events_grid = EventGrid()
         events_grid.attribute_id = a
 
         graph_type = attribute.attribute_type.get_graph_type()
@@ -102,7 +102,7 @@ class AttributesController(BaseGridController):
         amap.host_id = h
         amap.alarmed_only = alarmed
         if events == True:
-            events_grid = EventsGrid()
+            events_grid = EventGrid()
             events_grid.host_id = h
         else:
             events_grid = None

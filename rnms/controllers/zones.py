@@ -30,12 +30,27 @@ from tg import expose#, validate, flash,tmpl_context, url
 #from formencode import validators
 
 # project specific imports
-#from rnms.lib import structures
+from rnms.lib import structures
 #from rnms.lib import permissions
 from rnms.lib.base import BaseGridController
+from rnms.lib.table import jqGridTableFiller
 from rnms.model import DBSession, Zone
+from rnms.widgets import MainMenu, ZoneGrid
 
 class ZonesController(BaseGridController):
+
+    @expose('rnms.templates.zone_index')
+    def index(self):
+        zone_grid = ZoneGrid()
+        return dict(page='host', main_menu=MainMenu,
+                    zone_grid=zone_grid)
+    
+    @expose('json')
+    def griddata(self, *args, **kw):
+        class TableFiller(structures.zone, jqGridTableFiller):
+            pass
+        return super(ZonesController, self).griddata(
+            TableFiller, {}, **kw)
 
     @expose('rnms.templates.widgets.select')
     def option(self):
