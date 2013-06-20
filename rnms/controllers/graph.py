@@ -34,8 +34,9 @@ from sqlalchemy import and_
 # project specific imports
 from rnms.lib.base import BaseController
 from rnms.model import DBSession, GraphType, Attribute
-from rnms.widgets.graph import GraphDatePresetWidget, GraphDatePicker, GraphTypeSelector, GraphWidget
-from rnms.widgets import InfoBox
+from rnms.widgets.graph import GraphDatePresetWidget, GraphDatePicker,\
+GraphTypeSelector, GraphWidget, GraphWidget2
+from rnms.widgets import InfoBox, MainMenu
 
 logger = logging.getLogger('rnms')
 
@@ -50,12 +51,6 @@ class GraphController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = predicates.not_anonymous()
 
-    @expose('rnms.templates.widget')
-    def blah(self):
-        from rnms.widgets.graph import GraphWidget2
-        w = GraphWidget2
-        return dict(w=w)
-    
     @expose(content_type='images/png')
     @validate(validators={'a':validators.Int(min=1),
                           'gt':validators.Int(min=1),
@@ -88,10 +83,13 @@ class GraphController(BaseController):
         else:
             return graphv['image']
 
+    @expose('rnms.templates.graph_index')
+    def index(self):
+        return dict(page='graphs', main_menu=MainMenu())
 
     @expose('rnms.templates.graph')
     @validate(validators={'a':validators.String(), 'gt':validators.Set(), 'preset_time':validators.Int(), 'start_time':validators.String(), 'end_time':validators.String()})
-    def index(self, a=[], gt=[], preset_time=0, start_time=0, end_time=None, **kw):
+    def index2(self, a=[], gt=[], preset_time=0, start_time=0, end_time=None, **kw):
         if tmpl_context.form_errors:
             self.process_form_errors()
             return {}
@@ -231,3 +229,31 @@ class GraphController(BaseController):
         w.options['axes']['xaxis']['max'] = end_time.ctime()
         return dict(widget=w)
 
+    @expose('rnms.templates.widgets.graph_widget2')
+    @validate(validators={'a':validators.Int(min=2), 'gt':validators.Int(min=1),
+                          'pt':validators.Int(min=1)})
+    def test2(self,a,gt,pt=None):
+        if tmpl_context.form_errors:
+            return dict(errmsg=' '.join(
+                ['{0[1]} for {0[0]}'.format(x) for x in
+                 tmpl_context.form_errors.items()]))
+        class MyGraph(GraphWidget2):
+            id = 'graph-{}-{}'.format(a,gt)
+            attribute_id = a
+            graph_type_id = gt
+            preset_time = pt
+        #   return dict(page='graph', main_menu=MainMenu(), w=w)
+        return dict(w=MyGraph)
+
+    @expose('rnms.templates.widgets.select')
+    def types_option(self, a=None):
+        if a is not None and type(a) is not list:
+            a=[a]
+        att_ids = [int(x) for x in a]
+        atype = DBSession.query(GraphType.id, GraphType.display_name, 
+                               GraphType.attribute_type_id).\
+                filter(GraphType.attribute_type_id.in_(
+                    DBSession.query(Attribute.attribute_type_id).\
+                    filter(Attribute.id.in_(att_ids))
+                ))
+        return dict(data_name='atype', items=atype.all())

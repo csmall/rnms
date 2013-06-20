@@ -1296,12 +1296,19 @@ simple_graph_types = (
             ('packetloss', '', 'Packet Loss', '%5.0lf %%'),
         )),
         (u'Round Trip Time', 'msec', 'area', '', (
-            ('rtt', '', 'Round Trip Time', '%5.0lf %%'),
+            ('rtt', '', 'Round Trip Time', '%5.0lf %ss'),
         )),
     )),
     ('Sensors', (
         (u'Sensor Value', '$unit', 'area', '', (
          ('value', '${multiplier},*', '$measure', '%.2lf %s${units}'),
+        )),
+    )),
+    ('Storage', (
+        (u'Used Storage', 'Bytes', 'multotarea', '' ,(
+            ('block_size', '', '', ''),
+            ('total_blocks', '', 'Total Storage', '%8.2lf %sB'),
+            ('used_blocks', '', 'Used Storage', '%8.2ld %sB'),
         )),
     )),
     ('TCP Ports', (
@@ -1357,189 +1364,7 @@ simple_graph_types = (
     )),
         
 )
-# Display Name, Atrribute Type, Title, v Label, extra options
-graph_types = (
-        (u'Packets New', 'Physical Interfaces', '', u'Pps', '',
-            ( #DEF
-                ('inpackets', 'inpackets'),
-                ('outpackets', 'outpackets'),
-                ('inputerrors', 'inputerrors'),
-                ('outputerrors', 'outputerrors'),
-            ),( #vnames
-                ('CDEF', 'input', 'inpackets,UN,0,inpackets,IF'),
-                ('CDEF', 'output', 'outpackets,UN,0,outpackets,IF'),
-                ('CDEF', 'inputerr', 'inputerrors,UN,0,inputerrors,IF'),
-                ('CDEF', 'outputerr', 'outputerrors,UN,0,outputerrors,IF'),
-                ('CDEF', 'outputrev', 'output,-1,*'),
-                ('CDEF', 'totin', 'input,inputerr,+'),
-                ('CDEF', 'totout', 'output,outputerr,+'),
 
-                ('CDEF', 'inpct1', 'input,100,*,totin,/'),
-                ('CDEF', 'outpct1', 'output,100,*,totout,/'),
-
-                ('CDEF', 'inpct', 'inpct1,UN,100,inpct1,IF'),
-                ('CDEF', 'outpct', 'outpct1,UN,100,outpct1,IF'),
-
-                ('CDEF', 'ierrpct1', 'inputerr,100,*,totin,/,0.01,100,LIMIT'),
-                ('CDEF', 'oerrpct1', 'outputerr,100,*,totout,/,0.01,100,LIMIT'),
-
-                ('CDEF', 'ierrpct', 'ierrpct1,UN,0,ierrpct1,IF'),
-                ('CDEF', 'oerrpct', 'oerrpct1,UN,0,oerrpct1,IF'),
-
-                ('VDEF', 'inputmax', 'input,MAXIMUM'),
-                ('VDEF', 'inputavg', 'input,AVERAGE'),
-                ('VDEF', 'inputlast', 'input,LAST'),
-                ('VDEF', 'inpctmax', 'inpct,MAXIMUM'),
-                ('VDEF', 'inpctavg', 'inpct,AVERAGE'),
-                ('VDEF', 'inpctlast', 'inpct,LAST'),
-
-                ('VDEF', 'inerrmax', 'inputerr,MAXIMUM'),
-                ('VDEF', 'inerravg', 'inputerr,AVERAGE'),
-                ('VDEF', 'inerrlast', 'inputerr,LAST'),
-                ('VDEF', 'inerrpctmax', 'ierrpct,MAXIMUM'),
-                ('VDEF', 'inerrpctavg', 'ierrpct,AVERAGE'),
-                ('VDEF', 'inerrpctlast', 'ierrpct,LAST'),
-
-                ('VDEF', 'outputmax', 'output,MAXIMUM'),
-                ('VDEF', 'outputavg', 'output,AVERAGE'),
-                ('VDEF', 'outputlast', 'output,LAST'),
-                ('VDEF', 'outpctmax', 'outpct,MAXIMUM'),
-                ('VDEF', 'outpctavg', 'outpct,AVERAGE'),
-                ('VDEF', 'outpctlast', 'outpct,LAST'),
-
-                ('VDEF', 'outerrmax', 'outputerr,MAXIMUM'),
-                ('VDEF', 'outerravg', 'outputerr,AVERAGE'),
-                ('VDEF', 'outerrlast', 'outputerr,LAST'),
-                ('VDEF', 'outerrpctmax', 'oerrpct,MAXIMUM'),
-                ('VDEF', 'outerrpctavg', 'oerrpct,AVERAGE'),
-                ('VDEF', 'outerrpctlast', 'oerrpct,LAST'),
-            ),( #lines
-                ('AREA', 'input', '00CC00', 'Input  Packets\n', False),
-                ('GPRINT', 'inputmax', r'%6.2lf%S\g'),
-                ('GPRINT', 'inpctmax', '(%5.1lf%%)\g'),
-                ('GPRINT', 'inputavg', r'%6.2lf%S\g'),
-                ('GPRINT', 'inpctavg', '(%5.1lf%%)\g'),
-                ('GPRINT', 'inputlast', r'%6.2lf%S\g'),
-                ('GPRINT', 'inpctlast', '(%5.1lf%%)\j'),
-                ('AREA', 'ierrpct', 'FF0000', r'Input  Errors \g', True),
-                ('GPRINT', 'inerrmax', r'%6.2lf%S\g'),
-                ('GPRINT', 'inerrpctmax', '(%5.1lf%%)\g'),
-                ('GPRINT', 'inerravg', r'%6.2lf%S\g'),
-                ('GPRINT', 'inerrpctavg', '(%5.1lf%%)\g'),
-                ('GPRINT', 'inerrlast', r'%6.2lf%S\g'),
-                ('GPRINT', 'inerrpctlast', '(%5.1lf%%)\j'),
-
-                ('AREA', 'outputrev', '0000FF', 'Output Packets\n', False),
-                ('GPRINT', 'outputmax', '%6.2lf%S\g'),
-                ('GPRINT', 'outpctmax', '(%5.1lf%%)\g'),
-                ('GPRINT', 'outputavg', '%6.2lf%S\g'),
-                ('GPRINT', 'outpctavg', '(%5.1lf%%)\g'),
-                ('GPRINT', 'outputlast', '%6.2lf%S\g'),
-                ('GPRINT', 'outpctlast', '(%5.1lf%%)\j'),
-                ('AREA', 'oerrpct', 'AA0000', 'Output Errors \g', True),
-                ('GPRINT', 'outerrmax', '%6.2lf%S\g'),
-                ('GPRINT', 'outerrpctmax', '(%5.1lf%%)\g'),
-                ('GPRINT', 'outerravg', '%6.2lf%S\g'),
-                ('GPRINT', 'outerrpctavg', '(%5.1lf%%)\g'),
-                ('GPRINT', 'outerrlast', '%6.2lf%S\g'),
-                ('GPRINT', 'outerrpctlast', '(%5.1lf%%)\j'),
-
-            ) ),
-
-        # Storage Attribute Type
-        (u'Storage Blocks', 'Storage', '', 'Blocks', '',
-         ( #DEF
-          ('total_blocks', 'total_blocks'),
-          ('block_size', 'block_size'),
-          ('used_blocks', 'used_blocks'),
-         ),( #vnames
-            ('CDEF', 'free_blocks', 'total_blocks,used_blocks,-'),
-            ('CDEF', 'used_pct', 'used_blocks,100,*,total_blocks,/'),
-            ('CDEF', 'free_pct', 'total_blocks,used_blocks,-,100,*,total_blocks,/'),
-
-            ('VDEF', 'total_max', 'total_blocks,MAXIMUM'),
-
-            ('VDEF', 'used_max', 'used_blocks,MAXIMUM'),
-            ('VDEF', 'used_avg', 'used_blocks,AVERAGE'),
-            ('VDEF', 'used_last', 'used_blocks,LAST'),
-
-            ('VDEF', 'used_max_p', 'used_pct,MAXIMUM'),
-            ('VDEF', 'used_avg_p', 'used_pct,AVERAGE'),
-            ('VDEF', 'used_last_p', 'used_pct,LAST'),
-
-            ('VDEF', 'free_max', 'free_blocks,MAXIMUM'),
-            ('VDEF', 'free_avg', 'free_blocks,AVERAGE'),
-            ('VDEF', 'free_last', 'free_blocks,LAST'),
-
-            ('VDEF', 'free_max_p', 'free_pct,MAXIMUM'),
-            ('VDEF', 'free_avg_p', 'free_pct,AVERAGE'),
-            ('VDEF', 'free_last_p', 'free_pct,LAST'),
-         ),( #lines
-            ('AREA', 'used_blocks', 'FF0000', r'Used Blocks\l'),
-            ('GPRINT', 'used_max', r'Maximum: %.0lf'),
-            ('GPRINT', 'used_max_p', r'(%3.0lf %%)'),
-            ('GPRINT', 'used_avg', r'Average: %.0lf'),
-            ('GPRINT', 'used_avg_p', r'(%3.0lf %%)'),
-            ('GPRINT', 'used_last', r'Current: %.0lf'),
-            ('GPRINT', 'used_last_p', r'(%3.0lf %%)\l'),
-
-            ('AREA', 'free_blocks', '00FF00', r'Free Blocks\l', True),
-            ('GPRINT', 'free_max', r'Maximum: %.0lf'),
-            ('GPRINT', 'free_max_p', r'(%3.0lf %%)'),
-            ('GPRINT', 'free_avg', r'Average: %.0lf'),
-            ('GPRINT', 'free_avg_p', r'(%3.0lf %%)'),
-            ('GPRINT', 'free_last', r'Current: %.0lf'),
-            ('GPRINT', 'free_last_p', r'(%3.0lf %%)\l'),
-           )),
-
-        (u'Storage Bytes', 'Storage', '', 'Bytes', '',
-         ( #DEF
-          ('total_blocks', 'total_blocks'),
-          ('block_size', 'block_size'),
-          ('used_blocks', 'used_blocks'),
-         ),( #vnames
-            ('CDEF', 'total_bytes', 'total_blocks,block_size,*'),
-            ('CDEF', 'used_bytes', 'used_blocks,block_size,*'),
-            ('CDEF', 'free_bytes', 'total_blocks,used_blocks,-,block_size,*'),
-            ('CDEF', 'used_pct', 'used_blocks,100,*,total_blocks,/'),
-            ('CDEF', 'free_pct', 'total_blocks,used_blocks,-,100,*,total_blocks,/'),
-
-            ('VDEF', 'total_max', 'total_bytes,MAXIMUM'),
-
-            ('VDEF', 'used_max', 'used_bytes,MAXIMUM'),
-            ('VDEF', 'used_avg', 'used_bytes,AVERAGE'),
-            ('VDEF', 'used_last', 'used_bytes,LAST'),
-
-            ('VDEF', 'used_max_p', 'used_pct,MAXIMUM'),
-            ('VDEF', 'used_avg_p', 'used_pct,AVERAGE'),
-            ('VDEF', 'used_last_p', 'used_pct,LAST'),
-
-            ('VDEF', 'free_max', 'free_bytes,MAXIMUM'),
-            ('VDEF', 'free_avg', 'free_bytes,AVERAGE'),
-            ('VDEF', 'free_last', 'free_bytes,LAST'),
-
-            ('VDEF', 'free_max_p', 'free_pct,MAXIMUM'),
-            ('VDEF', 'free_avg_p', 'free_pct,AVERAGE'),
-            ('VDEF', 'free_last_p', 'free_pct,LAST'),
-         ),( #lines
-            ('AREA', 'used_bytes', 'FF0000', r'Used Bytes\l'),
-            ('GPRINT', 'used_max', r'Maximum: %6.2lf %sB'),
-            ('GPRINT', 'used_max_p', r'(%3.0lf %%)'),
-            ('GPRINT', 'used_avg', r'Average: %6.2lf %sB'),
-            ('GPRINT', 'used_avg_p', r'(%3.0lf %%)'),
-            ('GPRINT', 'used_last', r'Current: %6.2lf %sB'),
-            ('GPRINT', 'used_last_p', r'(%3.0lf %%)\l'),
-
-            ('AREA', 'free_bytes', '00FF00', r'Free Bytes\l', True),
-            ('GPRINT', 'free_max', r'Maximum: %6.2lf %sB'),
-            ('GPRINT', 'free_max_p', r'(%3.0lf %%)'),
-            ('GPRINT', 'free_avg', r'Average: %6.2lf %sB'),
-            ('GPRINT', 'free_avg_p', r'(%3.0lf %%)'),
-            ('GPRINT', 'free_last', r'Current: %6.2lf %sB'),
-            ('GPRINT', 'free_last_p', r'(%3.0lf %%)\l'),
-           )),
-
-    ) # end of graph types
 
 triggers = (
         (

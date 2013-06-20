@@ -206,8 +206,8 @@ class AttributesController(BaseGridController):
             except:
                 pass
         rows = DBSession.query(
-            Attribute.id, Host.display_name, Attribute.display_name).\
+            Attribute.id, Attribute.attribute_type_id, Host.display_name, Attribute.display_name).\
                 select_from(Attribute).join(Host).\
                 filter(*conditions)
-        atts = [(a[0], ' - '.join(a[1:])) for a in rows]
-        return dict(items=atts)
+        atts = [(a[0], ' - '.join(a[2:]),a[1]) for a in rows]
+        return dict(data_name='atype', items=atts)

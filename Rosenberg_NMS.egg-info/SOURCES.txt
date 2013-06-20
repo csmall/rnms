@@ -39,6 +39,7 @@ rnms/lib/cmdline.py
 rnms/lib/engine.py
 rnms/lib/genericset.py
 rnms/lib/gettid.py
+rnms/lib/graph.py
 rnms/lib/helpers.py
 rnms/lib/jffnms_config.py
 rnms/lib/jffnms_import.py
@@ -171,6 +172,7 @@ rnms/templates/eventswidget.mak
 rnms/templates/eventswidget2.mak
 rnms/templates/graph.mak
 rnms/templates/graph_image.mak
+rnms/templates/graph_index.mak
 rnms/templates/graphwidget.mak
 rnms/templates/host.mak
 rnms/templates/host_discover.mak
@@ -189,6 +191,7 @@ rnms/templates/test.mak
 rnms/templates/testindex.mak
 rnms/templates/welcome.mak
 rnms/templates/widget.mak
+rnms/templates/zone_index.mak
 rnms/templates/attribute/__init__.py
 rnms/templates/attribute/__init__.pyc
 rnms/templates/attribute/graph.mak
@@ -199,6 +202,7 @@ rnms/templates/widgets/attribute_statusbar.mak
 rnms/templates/widgets/attribute_summary.mak
 rnms/templates/widgets/graph.mak
 rnms/templates/widgets/graph_widget.mak
+rnms/templates/widgets/graph_widget2.mak
 rnms/templates/widgets/infobox.mak
 rnms/templates/widgets/main_menu.mak
 rnms/templates/widgets/map.mak
@@ -255,3 +259,4 @@ rnms/widgets/event.py
 rnms/widgets/graph.py
 rnms/widgets/host.py
 rnms/widgets/main_menu.py
+rnms/widgets/zone.py

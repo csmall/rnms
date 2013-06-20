@@ -96,7 +96,7 @@ class GraphType(DeclarativeBase):
     attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'))
     title = Column(String(40), nullable=False, default='')
     left_label = Column(String(40), nullable=False, default='')
-    template = Column(String(10), nullable=False, default='custom')
+    template = Column(String(20), nullable=False, default='custom')
     extra_options = Column(String(200), nullable=False, default='')
     rrd_lines = relationship('GraphTypeRRDLine', backref='graph_type', cascade='all, delete, delete-orphan')
     defs = relationship('GraphTypeDef', backref='graph_type', cascade='all, delete, delete-orphan')

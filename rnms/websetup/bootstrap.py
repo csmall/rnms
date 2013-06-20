@@ -10,7 +10,6 @@ from sqlalchemy.exc import IntegrityError
 
 from rnms import model
 from rnms.websetup import database_data
-from rnms.model.graph_type import GraphTypeLineError
 
 logger  = logging.getLogger('rnms')
 
@@ -91,7 +90,7 @@ class BootStrapper(object):
     models = ('defaults', 'autodiscovery', 'severities', 'event_states', 'config_transfers',
             'event_types',
             'logmatches', 'snmp_communities',
-            'attribute_types', 'simple_graph_types', 'graph_types', 'slas',
+            'attribute_types', 'graph_types', 'slas',
             'pollers', 'backends', 'poller_sets', 'triggers'
 
             )
@@ -250,7 +249,7 @@ class BootStrapper(object):
                 exit()
             model.DBSession.add(et)
 
-    def create_simple_graph_types(self):
+    def create_graph_types(self):
         for atype_name,graphs in database_data.simple_graph_types:
             attribute_type = model.AttributeType.by_display_name(atype_name)
             if attribute_type is None:
@@ -283,70 +282,6 @@ class BootStrapper(object):
                     gt.rrd_lines.append(gl)
                     position += 1
                 model.DBSession.add(gt)
-
-    def create_graph_types(self):
-        for row in database_data.graph_types:
-            gt = model.GraphType()
-            try:
-                (gt.display_name, atype_name, gt.title, gt.vertical_label, gt.extra_options, graph_defs, graph_vnames, graph_lines ) = row
-            except ValueError as errmsg:
-                raise ValueError('{}\nRow:{}'.format(errmsg, row))
-            attribute_type = model.AttributeType.by_display_name(atype_name)
-            if attribute_type is None:
-                raise ValueError("Attribute Type {} not found in GraphType {}".format(atype_name, gt.display_name))
-            gt.attribute_type_id = attribute_type.id
-            for graph_def in graph_defs:
-                at_rrd = model.AttributeTypeRRD.by_name(attribute_type.id, graph_def[1])
-                if at_rrd is None:
-                    raise ValueError("AttributeTypeRRD {} not found in GraphType {}".format(graph_def[1], gt.display_name))
-                gt_def = model.GraphTypeDef(gt, graph_def[0], at_rrd)
-                gt.defs.append(gt_def)
-
-            position=0
-            for vname in graph_vnames:
-                vn = model.GraphTypeVname()
-                (def_type, vn.name, vn.expression) = vname
-                vn.set_def_type(def_type)
-                vn.position = position
-                gt.vnames.append(vn)
-
-            position = 0
-            for graph_line in graph_lines:
-                gl = model.GraphTypeLine()
-                gl.position = position
-
-                if graph_line[0] == 'COMMENT':
-                    gl.set_comment(*graph_line[1:])
-                elif graph_line[0] == 'HRULE':
-                    gl.set_hrule(*graph_line[1:])
-                else:
-                    vname = gt.vname_by_name(graph_line[1])
-                    if vname is None:
-                        raise ValueError('Vname {} not found in GraphType {}'.format(graph_line[1], gt.display_name))
-                    try:
-                        if graph_line[0] == 'PRINT':
-                            gl.set_print(vname, graph_line[2])
-                        elif graph_line[0] == 'GPRINT':
-                            gl.set_gprint(vname, graph_line[2])
-                        elif graph_line[0] == 'VRULE':
-                            gl.set_vrule(vname, *graph_line[2:])
-                        elif graph_line[0] == 'LINE':
-                            gl.set_line(vname, *graph_line[2:])
-                        elif graph_line[0] == 'AREA':
-                            gl.set_area(vname, *graph_line[2:])
-                        elif graph_line[0] == 'TICK':
-                            gl.set_tick(vname, *graph_line[3:])
-                        else:
-                            raise ValueError('Bad GraphTypeLine type {} in GraphType {}'.format(graph_line[0], gt.display_name))
-                    except GraphTypeLineError as err:
-                        raise GraphTypeLineError(
-                            'Error in GraphTypeLine {} in GraphType {} - {}'.format(
-                                graph_line, gt.display_name, err))
-
-                position += 1
-                gt.lines.append(gl)
-
-            model.DBSession.add(gt)
 
     def create_pollers(self):
         for row in database_data.pollers:
