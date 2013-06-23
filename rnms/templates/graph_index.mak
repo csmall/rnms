@@ -7,6 +7,8 @@
   <option value="60">Last  Hour</option>
   <option value="720">Last Half Day</option>
   <option value="1440">Last Day</option>
+  <option value="10080">Last Week</option>
+  <option value="43200">Last Month</option>
 </select>
 <div id="graphChooserPane">
   <label for="graphChooserControl">Selection Type:</label>
@@ -63,7 +65,7 @@ function(event){
     my_id = 'graph-'+$(this).val()+'-'+graphtype_id
     $("#resulting_graphs").append('<div id="'+my_id+'"></div>');
     $("#"+my_id).load(
-    "${tg.url('/graphs/test2/')}"+$(this).val()+"/"+graphtype_id+"?pt="+$("#graph_time_span").val());
+    "${tg.url('/graphs/widget/')}"+$(this).val()+"/"+graphtype_id+"?pt="+$("#graph_time_span").val());
     });
     });
   });

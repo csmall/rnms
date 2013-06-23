@@ -1,10 +1,26 @@
-<div id="${w.id} class="ui-widget-content">
-  <div class="ui-widget-header ui-corner-top ui-helper-clearfix">
-    <a class="ui-graph_widgey-titlebar-close HeaderButton" href="javascript:void(0)" role="link" style="right: 0px;"></a>
-    <span class="ui-title">Graph</span>
-  </div>
-  <div>
-  <button class="btn btn-primary">More</button>
-  <img src="${w.image_url}" />
-  </div>
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+%if errmsg != UNDEFINED:
+	${errmsg}
+%endif
+%if w != UNDEFINED:
+${w.display() |n}
+%endif
+<script type="text/javascript">
+var siUnits = { 'G':1000000000, 'M':1000000, 'k':1000, '':1, 'm': 0.001};
+tickFormatter=function(format, val){
+  $.each(siUnits, function(unit_name, divisor){
+  if (val >= divisor) {
+    val = val / divisor;
+    val = val.toFixed(1)+unit_name;
+    return false;
+    }
+  });
+  return val;
+}
+ </script> 
+</body>
+</html>

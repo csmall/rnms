@@ -1126,14 +1126,9 @@ poller_sets = [
             ]],
         ]
 """
-graph templates:
-    lines: unrelated or single lines
-    inout: lines with input and output
-    area: unstacked area
-    stackedarea: areas stacked on top of each other
-    totalarea: used,free calculated total
+graph templates - see widgets.graph.py
 """
-simple_graph_types = (
+graph_types = (
     #Cisco MAC Accounting | Accounted Bytes | cisco_mac_bytes    
     #Cisco MAC Accounting | Accounted Packets | cisco_mac_packets  
 
@@ -1142,107 +1137,107 @@ simple_graph_types = (
             ('cplo', '', 'CPU Load', '%.3lf'),
         )),
         (u'Hits', u'Hits', 'area', '', (
-            ('tac', '', 'Hits per Second', '%8.0lf %sHits/s'),
+            ('tac', '', 'Hits per Second', '%8.0f %sHits/s'),
         )),
         (u'Throughput', u'Bps', 'area',  '',(
-            ('tkb', '1000,*', 'Throughput', '%8.0lf %sB/s'),
+            ('tkb', '1000,*', 'Throughput', '%8.0f %sB/s'),
         )),
         (u'Request Size', u'B/Req', 'area',  '',(
-            ('bpr', '', 'Bytes/Request', '%.0lf %s'),
+            ('bpr', '', 'Bytes/Request', '%8.0f %s'),
         )),
-        (u'Workers', 'Workers', 'totalused',  '',(
-            ('bw', '', 'Busy Workers', '%8.0lf %s'),
-            ('iw', '', 'Idle Workers', '%8.0lf %s'),
+        (u'Workers', 'Workers', 'ufarea',  '',(
+            ('bw', '', 'Busy Workers', '%8.0f %s'),
+            ('iw', '', 'Idle Workers', '%8.0f %s'),
         )),
     )),
     ('APC', (
         (u'Battery Temperature', 'Deg', 'area', '', (
-            ('temperature', '', 'Temperature', '%5.0lf'),
+            ('temperature', '', 'Temperature', '%4.0f'),
         )),
         ('Load/Capacity', '%', 'area', '', (
-            ('capacity', '', 'Battery Capacity', '%5.0lf %%'),
-            ('load', '', 'Output Load', '%5.0lf %%'),
+            ('capacity', '', 'Battery Capacity', '%5.2f %%'),
+            ('load', '', 'Output Load', '%5.2f %%'),
         )),
         ('Voltages', 'V', 'lines', '',(
-            ('in_voltage', '', 'Input Voltage',  '%5.0lf VAC'),
-            ('out_voltage', '', 'Output Voltage',  '%5.0lf VAC'),
+            ('in_voltage', '', 'Input Voltage',  '%5.0f VAC'),
+            ('out_voltage', '', 'Output Voltage',  '%5.0f VAC'),
         )),
         ('Time Remaining', 'Minutes', 'area', '', (
-            ('time_remaining', '', 'Time Remaining', '%5.0lf mins'),
+            ('time_remaining', '', 'Time Remaining', '%5.0f mins'),
         )),
     )),
     ('Applications', (
         ('Threads', 'Threads', 'area', '',(
-            ('current_instances', '', 'Threads', '%5.0lf'),
+            ('current_instances', '', 'Threads', '%5.0f'),
         )),
         ('Memory', 'Bytes', 'area', '', (
-            ('used_memory', '', 'Memory', '%6.2lf %sB'),
+            ('used_memory', '', 'Memory', '%6.2f %sB'),
         )),
     )),
     ('BGP Neighbors', (
         (u'Updates', 'Updates', 'inout', '', (
-            ('bgpin', '300,*', 'Inbound Updates in 5 mins', '%4.0lf %s'),
-            ('bgpout', '300,*', 'Outbound Updates in 5 mins', '%4.0lf %s'),
+            ('bgpin', '300,*', 'Inbound Updates in 5 mins', '%4.0f %s'),
+            ('bgpout', '300,*', 'Outbound Updates in 5 mins', '%4.0f %s'),
         )),
         (u'Routes', 'Routes', 'inout', '', (
-            ('accepted_routes', '', 'Accepted Routes', '%8.2lf %s'),
-            ('advertised_routes', '', 'Advertised Routes', '%8.2lf %s'),
+            ('accepted_routes', '', 'Accepted Routes', '%0.2f %s'),
+            ('advertised_routes', '', 'Advertised Routes', '%0.2f %s'),
         )),
     )),
     ('Brocade FC Ports', (
         (u'Traffic', 'bps', 'inout', '', (
-            ('rx_words', '32,*', 'Inbound', '%8.2lf %sbps'),
-            ('tx_words', '32,*', 'Outbound', '%8.2lf %sbps'),
+            ('rx_words', '32,*', 'Inbound', '%0.2f %sbps'),
+            ('tx_words', '32,*', 'Outbound', '%0.2f %sbps'),
         )),
         (u'Frames', 'Fps', 'inout', '', (
-            ('rx_frames', '', 'Inbound', '%8.2lf %sFps'),
-            ('tx_frames', '', 'Outbound', '%8.2lf %sFps'),
+            ('rx_frames', '', 'Inbound', '%0.2f %sFps'),
+            ('tx_frames', '', 'Outbound', '%0.2f %sFps'),
         )),
     )),
     ('Brocade Sensors', (
         (u'Sensor Value', '$unit', 'area', '', (
-            ('sensor_value', '', '$measure', '%5.0lf'),
+            ('sensor_value', '', '$measure', '%5.0f'),
         )),
     )),
     ('Cisco 802.11X Device',(
         (u'Associated Devices', 'Clients', 'area', '', (
-            ('associated', '', 'Associated Clients', '%3.0lf'),
+            ('associated', '', 'Associated Clients', '%3.0f'),
         )),
     )),
     ('Cisco System Info', (
         (u'CPU Load', '%', 'area', '', (
-            ('cpu', '', 'CPU Utilization', '%4.0lf %%'),
+            ('cpu', '', 'CPU Utilization', '%4.0f %%'),
         )),
-        (u'Memory', '%', 'totalarea', '', (
-            ('mem_used', '', 'Used Memory', '%6.2lf %sB'),
-            ('mem_free', '', 'Free Memory', '%6.2lf %sB'),
+        (u'Memory', '%', 'ufarea', '', (
+            ('mem_used', '', 'Used Memory', '%6.2f %sB'),
+            ('mem_free', '', 'Free Memory', '%6.2f %sB'),
         )),
     )),
     ('Cisco Temperature', (
         (u'Temperature', 'deg', 'area', '',(
-            ('temperature', '', 'Temperature', '%5.0lf'),
+            ('temperature', '', 'Temperature', '%5.0f'),
         )),
     )),
     ('Cisco SA Agent', (
         (u'Round Trip Latency', 'msec', 'area', '', (
-            ('rt_latency', '', 'Round-Trip Latency', '%5.0lf msec'),
+            ('rt_latency', '', 'Round-Trip Latency', '%5.0f msec'),
         )),
         (u'Jitter', '', 'inout', '', (
-            ('forward_jitter', '', 'Forward Jitter', '%5.0lf'),
-            ('backward_jitter', '', 'Backward Jitter', '%5.0lf'),
+            ('forward_jitter', '', 'Forward Jitter', '%5.0f'),
+            ('backward_jitter', '', 'Backward Jitter', '%5.0f'),
         )),
         (u'Packet Loss', '', 'inout', '', (
-            ('forward_packetloss', '', 'Forward Packetloss', '%5.0lf'),
-            ('backward_packetloss', '', 'Backward Packetloss', '%5.0lf'),
+            ('forward_packetloss', '', 'Forward Packetloss', '%5.0f'),
+            ('backward_packetloss', '', 'Backward Packetloss', '%5.0f'),
         )),
     )),
 
     ('Linux/Unix System Info', (
         (u'CPU Usage', '%', 'stackedarea', 'rigid upper-limit=100', (
-            ('cpu_user_ticks', '$cpu_num,/', 'User Time', '%8.2lf %%'),
-            ('cpu_nice_ticks', '$cpu_num,/', 'Nice Time', '%8.2lf %%'),
-            ('cpu_system_ticks', '$cpu_num,/', 'System Time', '%8.2lf %%'),
-            ('cpu_idle_ticks', '$cpu_num,/', 'Idle Time', '%8.2lf %%'),
+            ('cpu_user_ticks', '$cpu_num,/', 'User Time', '%0.2f %%'),
+            ('cpu_nice_ticks', '$cpu_num,/', 'Nice Time', '%0.2f %%'),
+            ('cpu_system_ticks', '$cpu_num,/', 'System Time', '%0.2f %%'),
+            ('cpu_idle_ticks', '$cpu_num,/', 'Idle Time', '%0.2f %%'),
         )),
         (u'Load Average', 'Load', 'lines', '', (
             ('load_average_1', '', ' 1 Minute  Load Average', '%5.2lf'),
@@ -1263,28 +1258,28 @@ simple_graph_types = (
     )),
     ('Mitsubishi UPS Input Line', (
         (u'Voltage', 'V', 'area', '', (
-            ('voltage', '', 'Voltage', '%3.0lf'),
+            ('voltage', '', 'Voltage', '%3.0f'),
         )),
         (u'Current', 'Amps', 'area', '', (
-            ('current', '', 'Current', '%3.0lf %sAmp'),
+            ('current', '', 'Current', '%3.0f %sAmp'),
         )),
     )),
     ('Mitsubishi UPS Output Line', (
         (u'Voltage', 'V', 'area', '', (
-            ('voltage', '', 'Voltage', '%3.0lf'),
+            ('voltage', '', 'Voltage', '%3.0f'),
         )),
         (u'Current', 'Amps', 'area', '', (
-            ('current', '', 'Current', '%3.0lf %sAmp'),
+            ('current', '', 'Current', '%3.0f %sAmp'),
         )),
     )),
     ('Physical Interfaces', (
         (u'Traffic', u'bps', 'inout', '', (
-            ('input', '8,*', 'Inbound', '%6.2lf'),
-            ('output', '8,*', 'Outbound', '%6.2lf'),
+            ('input', '8,*', 'Inbound', '%6.2lf %sbps'),
+            ('output', '8,*', 'Outbound', '%6.2lf %sbps'),
         )),
         (u'Packets', u'Pps', 'inout', '', (
-            ('inpackets', '', 'Inbound', '%6.2lf%S'),
-            ('outpackets', '', 'Outbound', '%6.2lf%S'),
+            ('inpackets', '', 'Inbound', '%6.2lf %spps'),
+            ('outpackets', '', 'Outbound', '%6.2lfi %spps'),
         )),
         (u'Errors', u'Eps', 'inout', '', (
             ('inputerrors', '', 'Input Errors', '%4.0lf %sEps'),
@@ -1293,22 +1288,22 @@ simple_graph_types = (
     )),
     ('Reachable', (
         (u'Packet Loss', '%', 'area', '', (
-            ('packetloss', '', 'Packet Loss', '%5.0lf %%'),
+            ('packetloss', '', 'Packet Loss', '%5.0f %%'),
         )),
         (u'Round Trip Time', 'msec', 'area', '', (
-            ('rtt', '', 'Round Trip Time', '%5.0lf %ss'),
+            ('rtt', '', 'Round Trip Time', '%5.0f %ss'),
         )),
     )),
     ('Sensors', (
         (u'Sensor Value', '$unit', 'area', '', (
-         ('value', '${multiplier},*', '$measure', '%.2lf %s${units}'),
+         ('value', '${multiplier},*', '$measure', '%6.2f %s${units}'),
         )),
     )),
     ('Storage', (
-        (u'Used Storage', 'Bytes', 'multotarea', '' ,(
-            ('block_size', '', '', ''),
-            ('total_blocks', '', 'Total Storage', '%8.2lf %sB'),
-            ('used_blocks', '', 'Used Storage', '%8.2ld %sB'),
+        (u'Used Storage', 'Bytes', 'mtuarea', '' ,(
+            ('block_size', '', 'Free Storage', '%0.2f %sB'),
+            ('total_blocks', '', 'Total Storage', '%0.2f %sB'),
+            ('used_blocks', '', 'Used Storage', '%0.2f %sB'),
         )),
     )),
     ('TCP Ports', (
@@ -1316,42 +1311,42 @@ simple_graph_types = (
             ('tcp_established', '', 'Established Connections', '%8.0lf'),
         )),
         ('Connection Delay', 'Seconds', 'lines', '', (
-            ('conn_delay', '', 'Connection Delay', '%8.2lf %ssec'),
+            ('conn_delay', '', 'Connection Delay', '%0.2f %ssec'),
         )),
     )),
     ('UPS', (
         (u'Batttery Temperature', 'Deg', 'area', '', (
-            ('temperature', '', 'Temperature', '%5.0lf'),
+            ('temperature', '', 'Temperature', '%5.0f'),
         )),
         (u'Time Remaining', 'Minutes', 'area', '', (
-            ('minutes_remaining', '', 'Time Remaining', '%3.0lf'),
+            ('minutes_remaining', '', 'Time Remaining', '%3.0f'),
         )),
         (u'Charge Remaining', '%', 'area', '', (
-            ('charge_remaining', '', 'Charge Remaining', '%3.0lf %%'),
+            ('charge_remaining', '', 'Charge Remaining', '%3.0f %%'),
         )),
     )),
     ('UPS Input Line', (
         (u'Voltage', 'V', 'area', '', (
-            ('voltage', '', 'Voltage', '%3.0lf'),
+            ('voltage', '', 'Voltage', '%3.0f'),
         )),
         (u'Current', 'Amps', 'area', '', (
-            ('current', '', 'Current', '%3.0lf %sAmp'),
+            ('current', '', 'Current', '%3.0f %sAmp'),
         )),
     )),
     ('UPS Output Line', (
         (u'Voltage', 'V', 'area', '', (
-            ('voltage', '', 'Voltage', '%3.0lf'),
+            ('voltage', '', 'Voltage', '%d'),
         )),
         (u'Current', 'Amps', 'area', '', (
-            ('current', '', 'Current', '%3.0lf %sAmp'),
+            ('current', '', 'Current', '%d %sAmp'),
         )),
     )),
     ('Windows System Info', (
         (u'CPU Load', '%', 'area', '', (
-            ('cpu', '', 'CPU Utilization', '%8.2lf %%'),
+            ('cpu', '', 'CPU Utilization', '%0.2f %%'),
         )),
         (u'Processes', 'procs', 'area', '', (
-            ('num_procs', '', 'Processes', '%8.0lf'),
+            ('num_procs', '', 'Processes', '%d'),
         )),
         (u'Users', 'Users', 'area', '', (
             ('num_users', '', 'Users', '%8.0lf'),

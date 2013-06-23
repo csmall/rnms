@@ -250,11 +250,11 @@ class BootStrapper(object):
             model.DBSession.add(et)
 
     def create_graph_types(self):
-        for atype_name,graphs in database_data.simple_graph_types:
+        for atype_name,graphs in database_data.graph_types:
             attribute_type = model.AttributeType.by_display_name(atype_name)
             if attribute_type is None:
                 raise ValueError(
-                    "Attribute Type {} not found in simple GraphType".\
+                    "Attribute Type {} not found in GraphType".\
                     format(atype_name))
             for graph in graphs:
                 gt = model.GraphType()
@@ -266,12 +266,12 @@ class BootStrapper(object):
                 gt.attribute_type_id = attribute_type.id
                 position=0
                 for graph_line in graph_lines:
-                    gl = model.GraphTypeRRDLine()
+                    gl = model.GraphTypeLine()
                     try:
                         (rrd_name, gl.multiplier, gl.legend, gl.legend_unit) = graph_line
                     except ValueError as errmsg:
                         raise ValueError(
-                            '{}: Bad Graphline in simple graph type {}'.\
+                            '{}: Bad Graphline in graph type {}'.\
                             format(errmsg, graph_line))
                     gl.attribute_type_rrd = model.AttributeTypeRRD.by_name(
                         attribute_type.id, rrd_name)
@@ -279,7 +279,7 @@ class BootStrapper(object):
                         raise ValueError('Bad RRD name {} in line {}'.format(
                             rrd_name, graph_line))
                     gl.position = position
-                    gt.rrd_lines.append(gl)
+                    gt.lines.append(gl)
                     position += 1
                 model.DBSession.add(gt)
 

@@ -184,11 +184,11 @@ class AttributeTypeRRD(DeclarativeBase):
         filename = self.filename(attribute_id)
         if filename is None:
             return None
-        try:
-            return rrdtool.fetch(filename, str(self.attribute_type.rra_cf), '-s', start_time, '-e', end_time)
-        except rrdtool.error as errmsg:
-            logger.error('RRDTool fetch error: %s', errmsg)
-        return None
+        return rrdtool.fetch(
+            filename,
+            str(self.attribute_type.rra_cf),
+            '-s', str(start_time),
+            '-e', str(end_time))
 
     def get_average_value(self, attribute_id, start_time, end_time):
         """ Return the average RRD value for given time period """

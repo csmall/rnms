@@ -67,8 +67,7 @@ from rnms.model.autodiscovery_policy import AutodiscoveryPolicy
 from rnms.model.event import Event, EventType, EventField, EventState,\
         Severity
 from rnms.model.backend import Backend
-from rnms.model.graph_type import GraphType, GraphTypeDef, GraphTypeLine,\
-        GraphTypeVname, GraphTypeError, GraphTypeLineError, GraphTypeRRDLine
+from rnms.model.graph_type import GraphType, GraphTypeError, GraphTypeLineError, GraphTypeLine
 #from rnms.model.host import Host, Iface, ConfigTransfer
 from rnms.model.host import *
 from rnms.model.logfile import Logfile, LogmatchSet, LogmatchRow, LogmatchField
