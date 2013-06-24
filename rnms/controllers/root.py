@@ -81,13 +81,13 @@ class RootController(BaseController):
     @expose('rnms.templates.test')
     def test1(self):
         from tw2.jquery import jquery_js
-        from rnms.widgets import MainMenu
 
         #mm = MainMenu(page='host')
         return {'text': 'texttext', 'jjs': jquery_js, 'mm': MainMenu,
                 'page':'hosts'}
             
     @expose('rnms.templates.index')
+    @require(predicates.not_anonymous())
     def index(self):
         """Handle the front-page."""
         statrows = get_overall_statistics()
@@ -149,7 +149,10 @@ class RootController(BaseController):
                 params=dict(came_from=came_from, __logins=login_counter))
         userid = request.identity['repoze.who.userid']
         flash(_('Welcome back, %s!') % userid)
-        redirect(came_from)
+        if predicates.has_permission('manage'):
+            redirect(came_from)
+        else:
+            redirect(lurl('/graphs/'))
 
     @expose()
     def post_logout(self, came_from=lurl('/')):

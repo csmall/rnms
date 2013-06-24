@@ -22,14 +22,15 @@
 from sqlalchemy import func
 
 # turbogears imports
-from tg import expose, url, validate, flash, tmpl_context
+from tg import expose, url, validate, flash, tmpl_context, predicates, request
+
 from sqlalchemy import and_
 
 # third party imports
 from formencode import validators
 
 # project specific imports
-from rnms.lib import states, structures
+from rnms.lib import states, structures, permissions
 from rnms.lib.base import BaseGridController
 from rnms.lib.jsonquery import json_query
 from rnms.model import DBSession, Attribute, AttributeType, Host
@@ -41,7 +42,7 @@ from rnms.lib.table import jqGridTableFiller
 
 class AttributesController(BaseGridController):
     #Uncomment this line if your controller requires an authenticated user
-    #allow_only = authorize.not_anonymous()
+    allow_only = predicates.not_anonymous()
 
     @expose('rnms.templates.attribute_index')
     @validate(validators={'h':validators.Int(min=1)})
@@ -199,6 +200,10 @@ class AttributesController(BaseGridController):
     @expose('rnms.templates.widgets.select')
     def option(self, h=None, **kw):
         conditions = []
+        if not permissions.host_ro:
+            conditions.append(
+                Attribute.user_id == request.identity['user'].user_id
+            )
         if h is not None:
             try:
                 conditions.append(Attribute.host_id == 

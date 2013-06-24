@@ -46,6 +46,6 @@ def cb_apc(values, error, host, dobj, att_type):
         new_att.set_field('description', unicode(values['1.1.2.0']))
         state = values['2.1.1.0']
         if state == 1 or state == 3:
-            new_att.set_oper_down()
+            new_att.oper_down()
         dobj.discover_callback(host.id, {'1': new_att})
 

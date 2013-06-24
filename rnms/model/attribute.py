@@ -496,16 +496,11 @@ class DiscoveredAttribute(object):
     def __init__(self, host_id=1, attribute_type=None):
         self.host_id=host_id
         self.display_name = ''
-        self.admin_state = ''
+        self.admin_state = 'up'
         self.oper_state = 'up'
         self.attribute_type=attribute_type
         self.index = ''
         self.fields = {}
-
-    def oper_state_name(self):
-        return self.oper_state.capitalize()
-    def admin_state_name(self):
-        return self.admin_state.capitalize()
 
     def set_field(self, key, value):
         self.fields[key] = value
@@ -515,3 +510,15 @@ class DiscoveredAttribute(object):
             return self.fields[key]
         except KeyError:
             return None
+
+    def oper_down(self):
+        self.oper_state = 'down'
+
+    def oper_unknown(self):
+        self.oper_state = 'unknown'
+
+    def admin_down(self):
+        self.admin_state = 'down'
+
+    def admin_unknown(self):
+        self.admin_state = 'unknown'

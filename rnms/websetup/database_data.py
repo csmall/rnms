@@ -1137,17 +1137,17 @@ graph_types = (
             ('cplo', '', 'CPU Load', '%.3lf'),
         )),
         (u'Hits', u'Hits', 'area', '', (
-            ('tac', '', 'Hits per Second', '%8.0f %sHits/s'),
+            ('tac', '', 'Hits per Second', '%6.2f %sHits/s'),
         )),
         (u'Throughput', u'Bps', 'area',  '',(
-            ('tkb', '1000,*', 'Throughput', '%8.0f %sB/s'),
+            ('tkb', '1000,*', 'Throughput', '%6.2f %sB/s'),
         )),
         (u'Request Size', u'B/Req', 'area',  '',(
-            ('bpr', '', 'Bytes/Request', '%8.0f %s'),
+            ('bpr', '', 'Bytes/Request', '%6.2f %sB'),
         )),
         (u'Workers', 'Workers', 'ufarea',  '',(
-            ('bw', '', 'Busy Workers', '%8.0f %s'),
-            ('iw', '', 'Idle Workers', '%8.0f %s'),
+            ('bw', '', 'Busy Workers', '%6d'),
+            ('iw', '', 'Idle Workers', '%6d'),
         )),
     )),
     ('APC', (
@@ -1155,8 +1155,8 @@ graph_types = (
             ('temperature', '', 'Temperature', '%4.0f'),
         )),
         ('Load/Capacity', '%', 'area', '', (
-            ('capacity', '', 'Battery Capacity', '%5.2f %%'),
-            ('load', '', 'Output Load', '%5.2f %%'),
+            ('capacity', '', 'Battery Capacity', '%6.2f %%'),
+            ('load', '', 'Output Load', '%6.2f %%'),
         )),
         ('Voltages', 'V', 'lines', '',(
             ('in_voltage', '', 'Input Voltage',  '%5.0f VAC'),
@@ -1180,18 +1180,18 @@ graph_types = (
             ('bgpout', '300,*', 'Outbound Updates in 5 mins', '%4.0f %s'),
         )),
         (u'Routes', 'Routes', 'inout', '', (
-            ('accepted_routes', '', 'Accepted Routes', '%0.2f %s'),
-            ('advertised_routes', '', 'Advertised Routes', '%0.2f %s'),
+            ('accepted_routes', '', 'Accepted Routes', '%6.2f %s'),
+            ('advertised_routes', '', 'Advertised Routes', '%6.2f %s'),
         )),
     )),
     ('Brocade FC Ports', (
         (u'Traffic', 'bps', 'inout', '', (
-            ('rx_words', '32,*', 'Inbound', '%0.2f %sbps'),
-            ('tx_words', '32,*', 'Outbound', '%0.2f %sbps'),
+            ('rx_words', '32,*', 'Inbound', '%6.2f %sbps'),
+            ('tx_words', '32,*', 'Outbound', '%6.2f %sbps'),
         )),
         (u'Frames', 'Fps', 'inout', '', (
-            ('rx_frames', '', 'Inbound', '%0.2f %sFps'),
-            ('tx_frames', '', 'Outbound', '%0.2f %sFps'),
+            ('rx_frames', '', 'Inbound', '%6.2f %sFps'),
+            ('tx_frames', '', 'Outbound', '%6.2f %sFps'),
         )),
     )),
     ('Brocade Sensors', (
@@ -1234,10 +1234,10 @@ graph_types = (
 
     ('Linux/Unix System Info', (
         (u'CPU Usage', '%', 'stackedarea', 'rigid upper-limit=100', (
-            ('cpu_user_ticks', '$cpu_num,/', 'User Time', '%0.2f %%'),
-            ('cpu_nice_ticks', '$cpu_num,/', 'Nice Time', '%0.2f %%'),
-            ('cpu_system_ticks', '$cpu_num,/', 'System Time', '%0.2f %%'),
-            ('cpu_idle_ticks', '$cpu_num,/', 'Idle Time', '%0.2f %%'),
+            ('cpu_user_ticks', '$cpu_num,/', 'User Time', '%6.2f %%'),
+            ('cpu_nice_ticks', '$cpu_num,/', 'Nice Time', '%6.2f %%'),
+            ('cpu_system_ticks', '$cpu_num,/', 'System Time', '%6.2f %%'),
+            ('cpu_idle_ticks', '$cpu_num,/', 'Idle Time', '%6.2f %%'),
         )),
         (u'Load Average', 'Load', 'lines', '', (
             ('load_average_1', '', ' 1 Minute  Load Average', '%5.2lf'),
@@ -1261,7 +1261,7 @@ graph_types = (
             ('voltage', '', 'Voltage', '%3.0f'),
         )),
         (u'Current', 'Amps', 'area', '', (
-            ('current', '', 'Current', '%3.0f %sAmp'),
+            ('current', '', 'Current', '%6.2f %sAmp'),
         )),
     )),
     ('Mitsubishi UPS Output Line', (
@@ -1269,21 +1269,21 @@ graph_types = (
             ('voltage', '', 'Voltage', '%3.0f'),
         )),
         (u'Current', 'Amps', 'area', '', (
-            ('current', '', 'Current', '%3.0f %sAmp'),
+            ('current', '', 'Current', '%6.2f %sAmp'),
         )),
     )),
     ('Physical Interfaces', (
         (u'Traffic', u'bps', 'inout', '', (
-            ('input', '8,*', 'Inbound', '%6.2lf %sbps'),
-            ('output', '8,*', 'Outbound', '%6.2lf %sbps'),
+            ('input', '8,*', 'Inbound', '%6.2f %sbps'),
+            ('output', '8,*', 'Outbound', '%6.2f %sbps'),
         )),
         (u'Packets', u'Pps', 'inout', '', (
-            ('inpackets', '', 'Inbound', '%6.2lf %spps'),
-            ('outpackets', '', 'Outbound', '%6.2lfi %spps'),
+            ('inpackets', '', 'Inbound', '%6.2f %spps'),
+            ('outpackets', '', 'Outbound', '%6.2f %spps'),
         )),
         (u'Errors', u'Eps', 'inout', '', (
-            ('inputerrors', '', 'Input Errors', '%4.0lf %sEps'),
-            ('outputerrors', '', 'Output Errors', '%4.0lf %sEps'),
+            ('inputerrors', '', 'Input Errors', '%6.2f %sEps'),
+            ('outputerrors', '', 'Output Errors', '%6.2f %sEps'),
         )),
     )),
     ('Reachable', (
@@ -1291,7 +1291,7 @@ graph_types = (
             ('packetloss', '', 'Packet Loss', '%5.0f %%'),
         )),
         (u'Round Trip Time', 'msec', 'area', '', (
-            ('rtt', '', 'Round Trip Time', '%5.0f %ss'),
+            ('rtt', '', 'Round Trip Time', '%5.0f ms'),
         )),
     )),
     ('Sensors', (
@@ -1301,9 +1301,9 @@ graph_types = (
     )),
     ('Storage', (
         (u'Used Storage', 'Bytes', 'mtuarea', '' ,(
-            ('block_size', '', 'Free Storage', '%0.2f %sB'),
-            ('total_blocks', '', 'Total Storage', '%0.2f %sB'),
-            ('used_blocks', '', 'Used Storage', '%0.2f %sB'),
+            ('block_size', '', 'Free Storage', '%6.2f %sB'),
+            ('total_blocks', '', 'Total Storage', '%6.2f %sB'),
+            ('used_blocks', '', 'Used Storage', '%6.2f %sB'),
         )),
     )),
     ('TCP Ports', (
@@ -1311,7 +1311,7 @@ graph_types = (
             ('tcp_established', '', 'Established Connections', '%8.0lf'),
         )),
         ('Connection Delay', 'Seconds', 'lines', '', (
-            ('conn_delay', '', 'Connection Delay', '%0.2f %ssec'),
+            ('conn_delay', '', 'Connection Delay', '%6.2f %ssec'),
         )),
     )),
     ('UPS', (
@@ -1330,31 +1330,31 @@ graph_types = (
             ('voltage', '', 'Voltage', '%3.0f'),
         )),
         (u'Current', 'Amps', 'area', '', (
-            ('current', '', 'Current', '%3.0f %sAmp'),
+            ('current', '', 'Current', '%6.2f %sAmp'),
         )),
     )),
     ('UPS Output Line', (
         (u'Voltage', 'V', 'area', '', (
-            ('voltage', '', 'Voltage', '%d'),
+            ('voltage', '', 'Voltage', '%4.0f V'),
         )),
         (u'Current', 'Amps', 'area', '', (
-            ('current', '', 'Current', '%d %sAmp'),
+            ('current', '', 'Current', '%6.2f %sAmp'),
         )),
     )),
     ('Windows System Info', (
         (u'CPU Load', '%', 'area', '', (
-            ('cpu', '', 'CPU Utilization', '%0.2f %%'),
+            ('cpu', '', 'CPU Utilization', '%6.2f %%'),
         )),
         (u'Processes', 'procs', 'area', '', (
-            ('num_procs', '', 'Processes', '%d'),
+            ('num_procs', '', 'Processes', '%6f'),
         )),
         (u'Users', 'Users', 'area', '', (
-            ('num_users', '', 'Users', '%8.0lf'),
+            ('num_users', '', 'Users', '%6.0f'),
         )),
         (u'TCP Connection Status', 'Connections', 'lines', '', (
-            ('tcp_established', '300,*', 'Established Connections', '%8.0lf'),
-            ('tcp_active', '300,*', 'Outgoing Connections', '%8.0lf'),
-            ('tcp_passive', '300,*', 'Incoming Connections', '%8.0lf'),
+            ('tcp_established', '300,*', 'Established Connections', '%6.0f'),
+            ('tcp_active', '300,*', 'Outgoing Connections', '%6.0f'),
+            ('tcp_passive', '300,*', 'Incoming Connections', '%6.0f'),
         )),
     )),
         

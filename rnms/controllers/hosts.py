@@ -21,7 +21,7 @@
 """ Hosts controller """
 
 # turbogears imports
-from tg import expose, validate, flash,tmpl_context, url
+from tg import expose, validate, flash,tmpl_context, url, predicates, request
 from tg.decorators import require
 
 # third party imports
@@ -34,15 +34,15 @@ from rnms.lib import structures
 from rnms.lib import permissions
 from rnms.lib.table import jqGridTableFiller, DiscoveryFiller
 from rnms.lib.base import BaseGridController
-from rnms.model import DBSession, Host, Event
+from rnms.model import DBSession, Host, Event, Attribute
 from rnms.widgets import InfoBox, MainMenu, HostMap, HostGrid, EventGrid
 from rnms.widgets.attribute import MiniAttributeGrid, DiscoveredAttsGrid
 
 
 class HostsController(BaseGridController):
     #Uncomment this line if your controller requires an authenticated user
-    #allow_only = authorize.not_anonymous()
-    allow_only = permissions.host_ro
+    allow_only = predicates.not_anonymous()
+    #allow_only = permissions.host_ro
 
     @expose('rnms.templates.host_index')
     def index(self):
@@ -139,5 +139,17 @@ class HostsController(BaseGridController):
 
     @expose('rnms.templates.widgets.select')
     def option(self):
-        hosts = DBSession.query(Host.id, Host.display_name)
-        return dict(items=hosts)
+        """ Return a list of hosts. If user has required
+        permission it shows all, else just their ones """
+        if permissions.host_ro:
+            hosts = DBSession.query(Host.id, Host.display_name)
+        else:
+            hosts = DBSession.query(Host.id, Host.display_name).filter(
+                Host.id.in_(
+                    DBSession.query(Attribute.host_id).filter(
+                        Attribute.user_id == request.identity['user'].user_id)
+                )
+            )
+        items = hosts.all()
+        items.insert(0, ('','-- Choose Host --'))
+        return dict(items=items)

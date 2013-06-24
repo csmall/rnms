@@ -209,10 +209,20 @@ class BaseFormat(object):
             val_time += step
         return dict(max=row_max,sum=row_sum,len=row_len,values=rowval)
 
-    def set_series_label(self, idx, rrd_line, row_max, row_sum, row_len, row_last):
+    def update_row(self, row_data, data_time, value):
+        if row_data['max'] < value:
+            row_data['max'] = value
+        row_data['sum'] += value
+        row_data['len'] += 1
+        row_data['values'].append((data_time*1000,value))
+
+    def set_series_label(self, idx, rrd_line, row_max, row_sum, row_len,
+                         row_last, legend=None):
+        if legend is None:
+            legend = rrd_line.legend
         label = {
             'label': '{} - Max: {} Average: {} Last: {}'.format(
-                rrd_line.legend,
+                legend,
                 self.format_value(
                     rrd_line.legend_unit,
                     row_max),
@@ -613,7 +623,7 @@ class GraphWidget(JQPlotWidget):
                         row['values'][-1][1])
             return data
 
-    class ufarea(BaseFormat):
+    class ufareaFormat(BaseFormat):
         """ Stacked area of used and free, total is calculated """
         def get_options(self):
             return {
@@ -652,8 +662,64 @@ class GraphWidget(JQPlotWidget):
                 }
             }
 
+        def get_data(self):
+            """ Return used,free and total for the area
+            total is calculated
+            """
+            data = [[], [], []]
+            rrd_lines = []
+            used_row = {'max':0, 'sum':0, 'len':0, 'values':[]}
+            free_row = {'max':0, 'sum':0, 'len':0, 'values':[]}
+            total_row = {'max':0, 'sum':0, 'len':0, 'values':[]}
+            data_len = 0
+            for line_idx in (0,1):
+                rrd_line = self.parent.graph_type.lines[line_idx]
+                mult_op,mult_val = self.get_mult(rrd_line)
+                rrd_lines.append( {
+                    'rrd_line': rrd_line,
+                    'mult_op': mult_op,
+                    'mult_val': mult_val,
+                    'values': rrd_line.attribute_type_rrd.\
+                    fetch(self.parent.attribute_id,
+                          self.parent.start_time,
+                          self.parent.end_time),
+                })
 
-    class mtuareaFormat(ufarea):
+            start_time,end_time, step = rrd_lines[0]['values'][0]
+            val_time = start_time
+            for idx,used_values in enumerate(rrd_lines[0]['values'][2]):
+                try:
+                    free_values = rrd_lines[1]['values'][2][idx]
+                except IndexError:
+                    continue
+                if used_values[0] is None or free_values[0] is None:
+                    continue
+                self.update_row(used_row, val_time, used_values[0])
+                self.update_row(free_row, val_time, free_values[0])
+                self.update_row(total_row, val_time,
+                                free_values[0]+used_values[0])
+                val_time += step
+            self.set_series_label(
+                0, rrd_lines[0]['rrd_line'],
+                used_row['max'], used_row['sum'],
+                used_row['len'], used_row['values'][-1][1])
+            self.set_series_label(
+                1, rrd_lines[1]['rrd_line'],
+                free_row['max'], free_row['sum'],
+                free_row['len'], free_row['values'][-1][1])
+            self.set_series_label(
+                2, rrd_lines[1]['rrd_line'],
+                total_row['max'], total_row['sum'],
+                total_row['len'], total_row['values'][-1][1],
+                rrd_lines[1]['rrd_line'].legend.replace(
+                    'Free', 'Total')
+            )
+
+            return [used_row['values'],free_row['values'],
+                    total_row['values']]
+
+
+    class mtuareaFormat(ufareaFormat):
         """
         Graph that shows a two calculated lines as green/orange area
         RRDs are multiplier, total, used
@@ -679,6 +745,8 @@ class GraphWidget(JQPlotWidget):
                     'rrd_line': rrd_line,
                     'values': row_values,
                 })
+            start_time,end_time, step = rrd_lines[0]['values'][0]
+            val_time = start_time
             for idx,raw_multiplier in enumerate(rrd_line_values[0]['values'][2]):
                 if raw_multiplier[0] is None:
                     continue
@@ -687,8 +755,6 @@ class GraphWidget(JQPlotWidget):
                     raw_used = rrd_line_values[2]['values'][2][idx][0]
                 except IndexError:
                     continue # skip this one
-
-                print raw_total, raw_used, raw_multiplier[0]
 
                 if  rrd_line_values[0]['mult_op'] is None:
                     multiplier = raw_multiplier[0]
@@ -714,22 +780,9 @@ class GraphWidget(JQPlotWidget):
                             multiplier
 
                 free = max(total - used,0.0)
-                if used_row['max'] < used:
-                    used_row['max'] = used
-                used_row['sum'] += used
-                used_row['len'] += 1
-                used_row['values'].append(used)
-                if free_row['max'] < free:
-                    free_row['max'] = free
-                free_row['sum'] += free
-                free_row['len'] += 1
-                free_row['values'].append(free)
-                if total_row['max'] < total:
-                    total_row['max'] = total
-                total_row['sum'] += total
-                total_row['len'] += 1
-                total_row['values'].append(total)
-            
+                self.update_row(used_row, val_time, used)
+                self.update_row(free_row, val_time, free)
+                self.update_row(total_row, val_time, total)
             data = (used_row['values'],free_row['values'],
                     total_row['values'])
             
