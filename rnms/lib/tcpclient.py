@@ -84,7 +84,7 @@ class TCPDispatcher(zmqcore.Dispatcher):
             except (TypeError, ValueError, OverflowError, NameError):
                 try:
                     errmsg = errorcode[err]
-                except NameError:
+                except (KeyError,NameError):
                     errmsg = 'Unknown Error {}'.format(err)
         self.error = (err, errmsg)
 

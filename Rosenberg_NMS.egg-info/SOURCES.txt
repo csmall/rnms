@@ -39,7 +39,6 @@ rnms/lib/cmdline.py
 rnms/lib/engine.py
 rnms/lib/genericset.py
 rnms/lib/gettid.py
-rnms/lib/graph.py
 rnms/lib/helpers.py
 rnms/lib/jffnms_config.py
 rnms/lib/jffnms_import.py
@@ -202,7 +201,6 @@ rnms/templates/widgets/attribute_statusbar.mak
 rnms/templates/widgets/attribute_summary.mak
 rnms/templates/widgets/graph.mak
 rnms/templates/widgets/graph_widget.mak
-rnms/templates/widgets/graph_widget2.mak
 rnms/templates/widgets/infobox.mak
 rnms/templates/widgets/main_menu.mak
 rnms/templates/widgets/map.mak

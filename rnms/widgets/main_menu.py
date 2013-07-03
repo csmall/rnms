@@ -23,6 +23,8 @@ from tw2 import core as twc
 from tw2.jquery import jquery_js
 import tg
 
+from rnms.lib import permissions
+
 class MainMenu(twc.Widget):
     id = 'main-menu'
     template = 'rnms.templates.widgets.main_menu'
@@ -35,4 +37,8 @@ class MainMenu(twc.Widget):
 
     def prepare(self):
         self.tg = tg
+        self.permissions={
+            'manage': tg.predicates.has_permission('manage'),
+            'host': permissions.host_ro,
+        }
         self.logged_in = tg.request.identity

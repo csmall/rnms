@@ -74,6 +74,27 @@ from rnms.lib.parsers import fill_fields
 
 SI_UNITS = (('T', 1e12),('G',1e9), ('M',1e6),('k',1e3),('',1),('m',0.001))
 
+# Measured in minutes
+# max timespan, label, labelinterval
+TICK_INTERVALS = (
+    (0,         '%H:%M',    1),
+    (12,        '%H:%M',    1),
+    (30,        '%H:%M',    5),
+    (60,        '%H:%M',    10),
+    (180,       '%H:%M',    20),
+    (360,       '%H:%M',    60),
+    (1080,      '%H:%M',    2*60),
+    (3600,      '%a %H:%M', 6*60),
+    (7200,      '%a',       24*60),
+    (10800,     '%d',       24*60),
+    (14400,     '%a %d',    2*24*60),
+    (21600,     '%a',       2*24*60),
+    (64800,     'Week %V',  7*24*60),
+    (129600,    'Week %V',  14*24*60),
+    (1036800,   '%b',       30*24*60),
+    (1892160,   '%b',       3*30*24*60),
+    (5184000,   '%y',       12*30*24*60),
+)
 class GraphDatePicker(twf.CalendarDatePicker):
     date_format = '%Y/%m/%d %H:%M'
     picker_shows_time = True
@@ -263,6 +284,28 @@ class BaseFormat(object):
             if value >= divisor:
                 return unit,divisor
         return unit,divisor
+
+    def set_xaxis_timeformat(self, data_series):
+        """
+        Set the correct format for the xaxis ticks depending on
+        the timespan of the supplied data series
+        """
+        try:
+            minutes = (data_series[-1][0] - data_series[0][0]) /\
+                    (60000)
+        except IndexError:
+            format_string = '%H:%M'
+            tick_interval = None
+        else:
+            for min_minutes, format_string, tick_interval in TICK_INTERVALS:
+                if min_minutes > minutes:
+                    break
+        self.parent.options['axes']['xaxis'].update({
+            'renderer': twc.js_symbol('$.jqplot.DateAxisRenderer'),
+            'tickOptions': { 'formatString': format_string,},
+            'tickInterval': tick_interval * 60,
+        })
+
 
 
 class GraphWidget(JQPlotWidget):
@@ -471,6 +514,7 @@ class GraphWidget(JQPlotWidget):
                         line_idx, rrd_line,
                         row['max'], row['sum'], row['len'],
                         row['values'][-1][1])
+            self.set_xaxis_timeformat(total_row['values'])
             return data
     
 
@@ -525,6 +569,7 @@ class GraphWidget(JQPlotWidget):
                     0, rrd_line,
                     row['max'], row['sum'], row['len'],
                     row['values'][-1][1])
+            self.set_xaxis_timeformat(total_row['values'])
             return data
 
     class stackedareaFormat(linesFormat):
@@ -621,6 +666,7 @@ class GraphWidget(JQPlotWidget):
                         line_idx, rrd_line,
                         row['max'], row['sum'], row['len'],
                         row['values'][-1][1])
+            self.set_xaxis_timeformat(total_row['values'])
             return data
 
     class ufareaFormat(BaseFormat):
@@ -715,6 +761,7 @@ class GraphWidget(JQPlotWidget):
                     'Free', 'Total')
             )
 
+            self.set_xaxis_timeformat(total_row['values'])
             return [used_row['values'],free_row['values'],
                     total_row['values']]
 
@@ -798,6 +845,7 @@ class GraphWidget(JQPlotWidget):
                 2, rrd_line_values[1]['rrd_line'],
                 total_row['max'], total_row['sum'], total_row['len'],
                 total_row['values'][-1])
+            self.set_xaxis_timeformat(total_row['values'])
             return data
 
 
