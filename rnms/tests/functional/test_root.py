@@ -20,9 +20,8 @@ class TestRootController(TestController):
 
     def test_index(self):
         """The front page is working properly"""
-        response = self.app.get('/')
-        msg = 'Overview'
-        assert_true(msg in response)
+        self.check_response_as_admin('/',
+                                     ('Statistics', 'Attribute Status'))
 
     def test_about(self):
         """ About information page is working properly """

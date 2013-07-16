@@ -51,7 +51,7 @@ class jqGridGrid(jqGridWidget):
     pager_options = { "search" : True, "refresh" : True, "edit" : False,
                      "del" : False, "add" : False}
     def __init__(self, action=None):
-        self.url_args = {}
+        #self.url_args = {}
         super(jqGridGrid, self).__init__()
         if action is not None:
             self.options['url'] = action
@@ -327,7 +327,6 @@ class jqGridTableFiller(TableFiller):
         query = self.__provider__.session.query(self.__entity__).filter(
             and_(*conditions))
         query = self._do_search_conditions(query, _search, **kw)
-        print query
         count = query.count()
 
         # sorting

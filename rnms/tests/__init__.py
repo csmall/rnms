@@ -11,7 +11,9 @@ from routes import url_for
 from webtest import TestApp
 from nose.tools import assert_true, eq_
 
+
 from rnms import model
+import warnings
 
 __all__ = ['setup_db', 'teardown_db', 'TestController', 'url_for']
 def setup_db():
@@ -47,6 +49,7 @@ class TestController(object):
     def setUp(self):
         """Method called by nose before running each test"""
         # Loading the application:
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
         conf_dir = config.here
         wsgiapp = loadapp('config:test.ini#%s' % self.application_under_test,
                           relative_to=conf_dir)
@@ -62,9 +65,10 @@ class TestController(object):
         model.DBSession.remove()
         teardown_db()
 
-    def check_json_response(self, url, expected_data):
+    def check_json_response_as_admin(self, url, expected_data):
         """ Get the given url and check the JSON response """
-        response = self.app.get(url)
+        environ = {'REMOTE_USER': 'manager'}
+        response = self.app.get(url, extra_environ=environ, status=200)
         json_data = json.loads(response)
         for k,v in expected_data:
             try:
@@ -73,9 +77,10 @@ class TestController(object):
                 raise AssertionError('Key not found in data:'+k)
             eq_(json_data[k] == v)
 
-    def check_response(self, url, msgs):
+    def check_response_as_admin(self, url, msgs):
         """ Get the given url and check that the msgs appear in reponse """
-        response = self.app.get(url)
+        environ = {'REMOTE_USER': 'manager'}
+        response = self.app.get(url, extra_environ=environ, status=200)
         for msg in  msgs:
             try:
                 assert_true(msg in response)
