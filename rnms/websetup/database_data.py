@@ -256,19 +256,23 @@ attribute_types = (
                 'cisco_envmib','PowerSupply,5.1.2,5.1.3', True, True,
                 u'Cisco Power Supply','', '',
                 'AVERAGE', 103680, True, False,'ent.9',(
+            (u'Description', 'description', True, True, True, False, True, '', '', ''),
             ), (
                 ) ),
         ('Cisco Temperature',
                 'cisco_envmib','Temperature,3.1.2,3.1.6', True, True,
                 u'Cisco Temperature', '', '',
                 'AVERAGE',103680, False, False,'ent.9',(
+            (u'Description', 'description', True, True, True, False, True, '', '', ''),
             ), (
             (u'Temperature', 'temperature', 0,0,100,''),
                 ) ),
         ('Cisco Voltage',
                 'cisco_envmib','Voltage,2.1.2,2.1.7', True, True,
                 u'Cisco Voltage', '', '',
-                'AVERAGE', 103680, False, False, 'ent.9',( ), ( ) ),
+                'AVERAGE', 103680, False, False, 'ent.9',(
+            (u'Description', 'description', True, True, True, False, True, '', '', ''),
+                ), ( ) ),
         ('Cisco SA Agent',
                 'cisco_saagent', '', True, True,
                 u'Cisco SA Agent', '', '',

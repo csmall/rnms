@@ -18,7 +18,7 @@ class TestBGP(AttDiscTest):
     def test_bgp_peer_single(self):
         """ BGP discovery finds one peer """
         values = [{'192.0.2.250': '203.0.113.1'}, {'192.0.2.250': '6'}, {'192.0.2.250': '0.0.0.0'}, {'192.0.2.250': '192.0.2.250'}, {'192.0.2.250': '65531'}]
-        cb_bgp_peers(values, None, **self.test_callback_kwargs)
+        self.callback(cb_bgp_peers, values)
         self.assert_result_count(1)
         self.assert_result_indexes(('192.0.2.250',))
         self.assert_result_display_names(('192.0.2.250',))
@@ -28,9 +28,9 @@ class TestBGP(AttDiscTest):
     def test_bgp_peer_down(self):
         """ BGP discovery finds one down peer """
         values = [{'192.0.2.250': '203.0.113.1'}, {'192.0.2.250': '2'}, {'192.0.2.250': '0.0.0.0'}, {'192.0.2.250': '192.0.2.250'}, {'192.0.2.250': '65531'}]
-        cb_bgp_peers(values, None, **self.test_callback_kwargs)
+        self.callback(cb_bgp_peers, values)
         self.assert_result_count(1)
-        self.assert_oper_state({'192.0.2.250': 2})
+        self.assert_oper_state({'192.0.2.250': 'down'})
 
     def test_discover_bgp_peer(self):
         """ BGP discovery calls snmp correctly """

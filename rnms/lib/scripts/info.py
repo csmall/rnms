@@ -89,7 +89,8 @@ class RnmsInfo(RnmsCommand):
         'Autodiscovery', host.autodiscovery_policy.id, host.autodiscovery_policy.display_name,
         'Created', host.created,
         'Next Discovery', host.next_discover,
-        'Attributes', len(host.attributes), ', '.join([str(a.id) for a in host.attributes])
+        'Attributes', len(host.attributes), ', '.join(
+            [str(a.id)+('','(P)')[a.poll_priority] for a in host.attributes])
         )
 
     def attribute_info(self):
@@ -105,6 +106,7 @@ class RnmsInfo(RnmsCommand):
 {:<20} | {}/{}
 {:<20} | {}: {}
 {:<20} | {}: {} (enabled:{})
+{:<20} | {}
 {:<20} | {}: {}
 {:<20} | {}
 {:<20} | {}
@@ -113,6 +115,7 @@ class RnmsInfo(RnmsCommand):
         'State (admin/oper)', attribute.admin_state_name(), attribute.oper_state_name(),
         'Attribute Type', attribute.attribute_type.id, attribute.attribute_type.display_name,
         'Poller Set', attribute.poller_set.id, attribute.poller_set.display_name, attribute.poll_enabled,
+        'Poll Priority', attribute.poll_priority,
         'SLA', attribute.sla.id, attribute.sla.display_name,
         'Created', attribute.created,
         'Next SLA', attribute.next_sla,

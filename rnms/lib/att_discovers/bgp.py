@@ -40,7 +40,7 @@ def cb_bgp_peers(values, error, host, dobj, att_type):
         new_peer.display_name = remote_addr
         new_peer.index = remote_addr
         if values[1][remote_addr] != '6':
-            new_peer.oper_state = 2
+            new_peer.oper_down()
         new_peer.set_field('local', unicode(values[2][remote_addr]))
         new_peer.set_field('asn', u'AS ' + unicode(values[4][remote_addr]))
         bgp_peers[remote_addr] = new_peer

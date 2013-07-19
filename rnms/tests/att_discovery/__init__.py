@@ -92,6 +92,10 @@ class AttDiscTest(object):
         cb_fun(None, None, **self.test_callback_kwargs)
         self.assert_callback({})
 
+    def callback(self, cb_fun, values):
+        """ Call the callback function in a standard way """
+        cb_fun(values, None, **self.test_callback_kwargs)
+
     def assert_result_count(self, expected_count):
         """ Callback results should have the expected count """
         self.disc_cb.assert_call_count(1)
@@ -123,6 +127,10 @@ class AttDiscTest(object):
             eq_(self.disc_cb.call_args[0][1][idx].admin_state, admin_state)
 
     # Discovery checks
+    def discover(self, disc_fun):
+        """ Call the discover function """
+        eq_(disc_fun(*self.discover_args), True)
+
     def assert_snmp_table_called(self):
         eq_(self.snmp_engine.get_table.called, True)
         # First parameter is host

@@ -24,6 +24,9 @@
 """ Cisco-specific attribute types using SNMP """
 from rnms import model
 
+ENV_MON_STATES = { '1': 'normal', '2': 'warning', '3': 'critical',
+    '4': 'shutdown', '5': 'not present', '6': 'not functioning',
+}
 def discover_cisco_envmib(dobj, att_type, host):
     """
     Walk the ifTable to find any SNMP interfaces
@@ -57,10 +60,9 @@ def cb_cisco_envmib(values, error, host, dobj, name_base, att_type):
         except (KeyError, IndexError):
             pass
         else:
-            if oper != '1':
-                new_att.oper_status = 2
+            new_att.oper_state = ENV_MON_STATES.get(oper, 'unknown')
             if oper == '5':
-                new_att.admin_status = 2
+                new_att.admin_down()
         env_items[idx] = new_att
     dobj.discover_callback(host.id, env_items)
 
@@ -108,11 +110,14 @@ def discover_pix_connections(dobj, att_type, host):
 
 def cb_pix_connections(values, error, host, dobj, att_type):
     conns = {}
-    for key,descr in values[0]:
+    if values is None:
+        dobj.discover_callback(host.id, conns)
+        return
+    for key,descr in values[0].items():
         new_att = model.DiscoveredAttribute(host.id, att_type)
         new_att.display_name = unicode('FW Stat{}'.format(key))
         new_att.index = key
-        new_att.add_field('description', descr)
+        new_att.set_field('description', descr)
         conns[key] = new_att
     dobj.discover_callback(host.id, conns)
 
