@@ -147,3 +147,7 @@ td.columns > select,
 td.operators > select {
     width: 100px;
 }
+
+footer a {
+    color: rgba(128,128,128,0.5);
+}

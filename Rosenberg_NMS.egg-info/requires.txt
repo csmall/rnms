@@ -1,15 +1,13 @@
 TurboGears2 >= 2.2.2
+Babel
 Genshi
 Mako
 zope.sqlalchemy >= 0.4
-repoze.tm2 >= 1.0a5
-sqlalchemy<0.8b1
-sqlalchemy-migrate
+sqlalchemy
+alembic
 repoze.who
-repoze.who-friendlyform >= 1.0.4
-tgext.admin >= 0.5.1
-repoze.who.plugins.sa
 tw2.forms
+tgext.admin >= 0.5.1
 tw2.jqplugins.jqgrid
 tw2.jqplugins.jqplot
 pysnmp

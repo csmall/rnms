@@ -211,6 +211,7 @@ rnms/tests/att_discovery/test_alteon.py
 rnms/tests/att_discovery/test_apache.py
 rnms/tests/att_discovery/test_apc.py
 rnms/tests/att_discovery/test_bgp.py
+rnms/tests/att_discovery/test_cisco.py
 rnms/tests/att_discovery/test_snmp.py
 rnms/tests/engine/__init__.py
 rnms/tests/engine/test_consolidator.py

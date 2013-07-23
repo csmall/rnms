@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Setup the Rosenberg-NMS application"""
 
-import logging
 from tg import config
 import transaction
 
@@ -16,7 +15,7 @@ def setup_schema(command, conf, vars):
     
     # <websetup.websetup.schema.before.metadata.create_all>
     print "Creating tables"
-    model.metadata.create_all(bind=config['pylons.app_globals'].sa_engine)
+    model.metadata.create_all(bind=config['tg.app_globals'].sa_engine)
     # <websetup.websetup.schema.after.metadata.create_all>
     transaction.commit()
     from migrate.versioning.shell import main

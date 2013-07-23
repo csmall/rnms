@@ -37,16 +37,15 @@ class BaseController(TGController):
 
     """
 
-    def __call__(self, environ, start_response):
+    def __call__(self, environ, context):
         """Invoke the Controller"""
         # TGController.__call__ dispatches to the Controller method
-        # the request is routed to. This routing information is
-        # available in environ['pylons.routes_dict']
+        # the request is routed to.
         set_ui_theme_name('start')
 
         request.identity = request.environ.get('repoze.who.identity')
         tmpl_context.identity = request.identity
-        return TGController.__call__(self, environ, start_response)
+        return TGController.__call__(self, environ, context)
 
     def process_form_errors(self, **kw):
         """ Display errors from a form input """
@@ -76,4 +75,5 @@ class BaseGridController(BaseController):
             return dict(errors=form_errors)
         filler = filler_class(DBSession)
         return filler.get_value(**kw)
+
 

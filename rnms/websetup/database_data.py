@@ -727,7 +727,7 @@ pollers = [
         ['backward_jitter','SA Agent Backward Jitter','cisco_saagent','${index}|bwd_jitter'],
         ['rt_latency,forward_packetloss,backward_packetloss','SA Agent Packetloss','cisco_saagent','${index}|packetloss'],
         ['tcp_content_analisis','TCP Content Check','tcp_content',''],
-        ['rtt,pl','Reachability Ping','reach_ping',''],
+        ['rtt,packetloss','Reachability Ping','reach_ping',''],
         ['status','Reachability Status','reach_status',''],
         ['','TCP Port Status','buffer','tcp_status'],
         ['','Host MIB Status','buffer','app_status'],

@@ -23,7 +23,7 @@ import logging
 
 # turbogears imports
 from tg import validate, expose, tmpl_context
-from formencode import validators
+from formencode import validators, ForEach
 
 # project specific imports
 from rnms.lib.base import BaseController
@@ -38,8 +38,16 @@ class GraphController(BaseController):
     #allow_only = predicates.not_anonymous()
 
     @expose('rnms.templates.graph_index')
-    def index(self):
-        return dict(page='graphs', main_menu=MainMenu())
+    @validate(validators={'a':ForEach(validators.Int(min=1))})
+    def index(self, a=None):
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return {}
+        print a
+        if a == []:
+            a=None
+        return dict(page='graphs', attribute_ids=a,
+                    main_menu=MainMenu())
 
     @expose('rnms.templates.widgets.graph_widget')
     @validate(validators={'a':validators.Int(min=2), 'gt':validators.Int(min=1),

@@ -71,19 +71,21 @@ class PollingAttribute(object):
         self.skip_rows = []
         self.poller_values = {}
         self.poller_times = {}
-        self.poll_start_time = 0
-        self.backend_stop_time = 0
+        self.start_time = 0
 
     def start_polling(self):
-        self.poll_start_time = time.time()
+        self.start_time = time.time()
         self.in_poller = True
 
     def stop_polling(self, pos, value):
         self.poller_values[pos] = value
-        self.poller_times[pos] = (time.time() - self.poll_start_time)*1000
+        self.poller_times[pos] = (time.time() - self.start_time)*1000
+
+    def start_backend(self):
+        self.start_time = time.time()
 
     def stop_backend(self):
-        self.backend_stop_time = time.time()
+        self.backend_time = (time.time() - self.start_time)*1000
 
     def save_value(self, value):
         self.poller_values[self.poller_row] = value
@@ -183,6 +185,8 @@ class Poller(RnmsEngine):
             self.logger.info('A:%d -: Poller called back but no poller buffer', attribute_id)
             return
         patt.stop_polling(poller_row.position, poller_value)
+        patt.start_backend()
+        backend_result = 'N/A'
         if poller_value is not None:
             if poller_row.poller.field != '':
                 field_count = len(poller_row.poller.field.split(','))
@@ -195,7 +199,22 @@ class Poller(RnmsEngine):
                         except KeyError:
                             self.logger.warning('A:%d - Field "%s" has no value from poller', attribute_id, fkey)
 
-            patt.stop_backend()
+            #FIXME - backends go here
+            if poller_row.backend.command != '':
+                attribute = model.Attribute.by_id(patt.id)
+                backend_result = poller_row.run_backend(
+                    attribute,
+                    poller_value)
+        patt.stop_backend()
+        self.logger.debug(
+            "A:%d I:%d - %s:%s -> %s:%s (%d:%d)",
+            patt.id, poller_row.position,
+            poller_row.poller.display_name,
+            self._poller_prettyprint(
+                patt.poller_values[poller_row.position]),
+            poller_row.backend.display_name, backend_result,
+            patt.poller_times[poller_row.position],
+            patt.backend_time)
         # Run the next poll row
         patt.in_poller = False
 
@@ -274,7 +293,7 @@ class Poller(RnmsEngine):
                         rrd_client=self.rrd_client)))
         del (self.poller_buffer[patt.id])
         del (self.polling_attributes[patt.id])
-        self._run_backends(patt)
+        #self._run_backends(patt)
         self.logger.info(
             'A:%d - Polling complete - rrds: %s',
             patt.id, ', '.join(updated_rrds))
@@ -341,6 +360,10 @@ class Poller(RnmsEngine):
                 if attribute.host_id not in  hosts_down:
                     hosts_down[attribute.host_id] = attribute.host.main_attributes_down()
                 if hosts_down[attribute.host_id]:
+                    self.logger.debug(
+                        'H:%d A:%d not adding, main attribute(s) down.',
+                        attribute.host_id, attribute.id)
+                    attribute.update_poll_time() # stop bothering the poller
                     continue
             self.attribute_add(attribute)
 

@@ -23,6 +23,7 @@ from sqlalchemy import ForeignKey, Column
 from sqlalchemy.types import Integer, Unicode, SmallInteger, String
 
 from rnms.model import DeclarativeBase, DBSession
+from rnms.lib.parsers import fill_fields
 
 class GraphTypeError(Exception): pass
 class GraphTypeLineError(Exception): pass
@@ -56,6 +57,12 @@ class GraphType(DeclarativeBase):
 
     def __repr__(self):
         return '<GraphType {}>'.format(self.display_name)
+
+    def formatted_title(self, attribute):
+        """ Return the Graph Type title using variables from the given
+        Attribute"""
+        return fill_fields(self.title, attribute=attribute)
+
 
 class GraphTypeLine(DeclarativeBase):
     __tablename__ = 'graph_type_lines'

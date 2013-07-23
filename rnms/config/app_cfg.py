@@ -12,14 +12,14 @@ convert them into boolean, for example, you should use the
     setting = asbool(global_conf.get('the_setting'))
  
 """
-import warnings
-warnings.filterwarnings('ignore', category=DeprecationWarning)
+#import warnings
+#warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 from tg.configuration import AppConfig
 
 import rnms
 from rnms import model
-from rnms.lib import app_globals, helpers 
+#from rnms.lib import app_globals, helpers 
 
 
 base_config = AppConfig()
@@ -33,7 +33,7 @@ base_config.renderers.append('json')
 
 #Enable genshi in expose to have a lingua franca for extensions and pluggable apps
 #you can remove this if you don't plan to use it.
-base_config.renderers.append('genshi')
+#base_config.renderers.append('genshi')
 
 #Set the default renderer
 base_config.default_renderer = 'mako'
@@ -58,6 +58,10 @@ from tg.configuration.auth import TGAuthMetadata
 class ApplicationAuthMetadata(TGAuthMetadata):
     def __init__(self, sa_auth):
         self.sa_auth = sa_auth
+    def authenticate(self, environ, identity):
+        user = self.sa_auth.dbsession.query(self.sa_auth.user_class).filter_by(user_name=identity['login']).first()
+        if user and user.validate_password(identity['password']):
+            return identity['login']
     def get_user(self, identity, userid):
         return self.sa_auth.dbsession.query(self.sa_auth.user_class).filter_by(user_name=userid).first()
     def get_groups(self, identity, userid):
@@ -84,7 +88,7 @@ base_config.sa_auth.authmetadata = ApplicationAuthMetadata(base_config.sa_auth)
 base_config.sa_auth.form_plugin = None
 
 # override this if you are using a different charset for the login form
-base_config.sa_auth.charset = 'utf-8'
+#base_config.sa_auth.charset = 'utf-8'
 
 # You may optionally define a page where you want users to be redirected to
 # on login:

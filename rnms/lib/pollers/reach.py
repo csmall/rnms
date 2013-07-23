@@ -43,7 +43,7 @@ def cb_reach_ping(values, error, pobj, attribute, poller_row, **kw):
 def poll_reach_status(poller_buffer, parsed_params, pobj, attribute, poller_row, **kw):
     """"
     Poller that checks the value of the packet loss
-    Expects 'pl' field from poller buffer which is packetloss percent
+    Expects 'packetloss' field from poller buffer which is packetloss percent
     Attribute Field: threshold which is the percent that triggers and event
     Returns: <state>,<info>
 
@@ -53,7 +53,7 @@ def poll_reach_status(poller_buffer, parsed_params, pobj, attribute, poller_row,
     except (TypeError, ValueError):
         thres = 90
 
-    loss = int(poller_buffer['pl'])
+    loss = int(poller_buffer['packetloss'])
     result = u'reachable'
     if loss > thres:
         result = u'unreachable'

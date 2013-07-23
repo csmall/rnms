@@ -152,7 +152,6 @@ class TCPDispatcher(zmqcore.Dispatcher):
     def _parse_response(self):
         if self.responded == False:
             filtered_buf = ''.join([c for c in self.inbuf if c in string.printable])
-            print self.kwargs
             self.cb_fun((filtered_buf,self.connect_time), self.error, **self.kwargs)
             self.responded = True
 

@@ -134,7 +134,8 @@ class RootController(BaseController):
         if login_counter > 0:
             flash(_('Wrong credentials'), 'warning')
         return dict(page='login', login_counter=str(login_counter),
-                    came_from=came_from)
+                    came_from=came_from,
+                   main_menu=MainMenu)
 
     @expose()
     def post_login(self, came_from=lurl('/')):

@@ -43,6 +43,9 @@
 
 <%def name="footer()">
   <footer class="footer hidden-tablet hidden-phone">
+  <ul class="unstyled">
+    <li><a href="${tg.url('/about/')}">About</a></li>
+  </ul>
   </footer>
 </%def>
 

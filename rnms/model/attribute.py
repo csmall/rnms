@@ -113,7 +113,20 @@ class Attribute(DeclarativeBase):
         Return the attribute that would be the next polled one
         Used for finding how long before we need to rescan again
         """
-        return DBSession.query(cls).order_by(asc(cls.next_poll)).first()
+        down_host_ids = []
+        attributes = DBSession.query(cls).order_by(asc(cls.next_poll))
+        for attribute in attributes:
+            if attribute.poll_priority:
+                return attribute # priority attributes always are used
+            if attribute.host_id in down_host_ids:
+                continue
+            if attribute.host.main_attributes_down():
+                down_host_ids.append(attribute.host_id)
+                continue
+            return attribute
+        return None
+
+
     
     @classmethod
     def next_sla_analysis(cls):

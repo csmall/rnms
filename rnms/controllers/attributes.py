@@ -27,7 +27,7 @@ from tg import expose, url, validate, flash, tmpl_context, predicates, request
 from sqlalchemy import and_
 
 # third party imports
-from formencode import validators
+from formencode import validators, ForEach
 
 # project specific imports
 from rnms.lib import states, structures, permissions
@@ -72,16 +72,16 @@ class AttributesController(BaseGridController):
 
         graph_type = attribute.attribute_type.get_graph_type()
         if graph_type is None:
-            print 'no graph'
             graphbox = None
             more_url = None
         else:
-            gw = GraphWidget()
-            gw.id = 'graph-widget-{}'.format(a)
-            gw.attribute = attribute
-            gw.graph_type = graph_type
+            class MyGraph(GraphWidget):
+                id = 'graph-{}-{}'.format(a,graph_type.id)
+                attribute_id = a
+                graph_type_id = graph_type.id
+            gw=MyGraph()
             graphbox = InfoBox()
-            graphbox.title = graph_type.title(attribute)
+            graphbox.title = graph_type.formatted_title(attribute)
             graphbox.child_widget = gw
 
             more_url = url('/graphs',{'a':a})
@@ -198,21 +198,29 @@ class AttributesController(BaseGridController):
         return dict(widget=w)
 
     @expose('rnms.templates.widgets.select')
-    def option(self, h=None, **kw):
-        conditions = []
-        if not permissions.host_ro:
-            conditions.append(
-                Attribute.user_id == request.identity['user'].user_id
-            )
-        if h is not None:
-            try:
-                conditions.append(Attribute.host_id == 
-                                  validators.Int(min=1).to_python(h))
-            except:
-                pass
-        rows = DBSession.query(
-            Attribute.id, Attribute.attribute_type_id, Host.display_name, Attribute.display_name).\
-                select_from(Attribute).join(Host).\
-                filter(*conditions)
-        atts = [(a[0], ' - '.join(a[2:]),a[1]) for a in rows]
+    @validate(validators={'h': validators.Int(min=1), 'a':
+                          ForEach(validators.Int(min=1))})
+    def option(self, h=None, a=[],**kw):
+        if not tmpl_context.form_errors:
+            conditions = []
+            atts=[]
+            if not permissions.host_ro:
+                conditions.append(
+                    Attribute.user_id == request.identity['user'].user_id
+                )
+            if h is not None:
+                try:
+                    conditions.append(Attribute.host_id == h)
+                except:
+                    pass
+            if a != []:
+                try:
+                    conditions.append(Attribute.id.in_(a))
+                except:
+                    pass
+            rows = DBSession.query(
+                Attribute.id, Attribute.attribute_type_id, Host.display_name, Attribute.display_name).\
+                    select_from(Attribute).join(Host).\
+                    filter(*conditions)
+            atts = [(a[0], ' - '.join(a[2:]),a[1]) for a in rows]
         return dict(data_name='atype', items=atts)

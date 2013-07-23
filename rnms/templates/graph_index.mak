@@ -11,6 +11,7 @@
   <option value="43200">Last Month</option>
 </select>
 <div id="graphChooserPane">
+%if attribute_ids is None:
   <label for="graphChooserControl">Selection Type:</label>
   <select id="graphChooserControl" name="select_type">
     <option value="">-- Choose Selection Type --</option>
@@ -18,16 +19,18 @@
   </select>
   <label for="graph_choose_host">Host:</label>
   <select class="graph_choose_subselect"id="graph_choose_host" name="h" disabled="disabled"></select>
-    <label for="graph_choose_attribute">Attribute:</label>
-    <select id="graph_choose_attribute" name="a" disabled="disabled" multiple="multiple"></select>
-    <label for="graph_choose_graphtype">Graph Type:</label>
-    <select id="graph_choose_graphtype" name="gt" disabled="disabled" multiple="multiple"></select>
-    <button id="start_graph" class="btn btn-primary">Graph</button>
+%endif
+  <label for="graph_choose_attribute">Attribute:</label>
+  <select id="graph_choose_attribute" name="a" disabled="disabled" multiple="multiple"></select>
+  <label for="graph_choose_graphtype">Graph Type:</label>
+  <select id="graph_choose_graphtype" name="gt" disabled="disabled" multiple="multiple"></select>
+  <button id="start_graph" class="btn btn-primary">Graph</button>
 </div>
 <div id="graph_pane">
   <div id="resulting_graphs"></div>
 </div>
 <script type="text/javascript">
+%if attribute_ids is None:
 $('#graphChooserControl').change(
 function(event){
   $('[value=""]',event.target).remove();
@@ -47,6 +50,13 @@ function(event){
     function(){$(this).attr('disabled', false);});
     }
     );
+%else:
+var att_ids = ${attribute_ids};
+$('#graph_choose_attribute').load(
+  "${tg.url('/attributes/option')}",
+  $.param({a:${attribute_ids}},true),
+  function(){$(this).attr('disabled', false);});
+%endif
 $("#graph_choose_attribute").change(
 function(event){
   $('#graph_choose_graphtype').load(

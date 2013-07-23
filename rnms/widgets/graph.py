@@ -295,7 +295,7 @@ class BaseFormat(object):
                     (60000)
         except IndexError:
             format_string = '%H:%M'
-            tick_interval = None
+            tick_interval = 1
         else:
             for min_minutes, format_string, tick_interval in TICK_INTERVALS:
                 if min_minutes > minutes:
@@ -319,7 +319,6 @@ class GraphWidget(JQPlotWidget):
         self.end_time = int(time.time())
         self.start_time = self.end_time - 3600
         super(GraphWidget, self).__init__()
-
 
     def prepare(self):
         if self.attribute_id is None:
@@ -444,7 +443,7 @@ class GraphWidget(JQPlotWidget):
                 'yaxis': {
                     'min': 0,
                     'forceTickAt0': True,
-                    'tickOptions': {'formatter': twc.js_symbol('tickFormatter')},
+                    #'tickOptions': {'formatter': twc.js_symbol('tickFormatter')},
                     'autoscale': True,
                 }
             }
@@ -491,7 +490,7 @@ class GraphWidget(JQPlotWidget):
                     'yaxis': {
                         'min': 0,
                         'forceTickAt0': True,
-                        'tickOptions': {'formatter': twc.js_symbol('tickFormatter')},
+                        #'tickOptions': {'formatter': twc.js_symbol('tickFormatter')},
                         'autoscale': True,
                     }
                 }
@@ -514,7 +513,7 @@ class GraphWidget(JQPlotWidget):
                         line_idx, rrd_line,
                         row['max'], row['sum'], row['len'],
                         row['values'][-1][1])
-            self.set_xaxis_timeformat(total_row['values'])
+            self.set_xaxis_timeformat(row['values'])
             return data
     
 
@@ -547,7 +546,7 @@ class GraphWidget(JQPlotWidget):
                     'yaxis': {
                         'min': 0,
                         'forceTickAt0': True,
-                        'tickOptions': {'formatter': twc.js_symbol('tickFormatter')},
+                        #'tickOptions': {'formatter': twc.js_symbol('tickFormatter')},
                         'autoscale': True,
                     }
                 }
@@ -569,7 +568,7 @@ class GraphWidget(JQPlotWidget):
                     0, rrd_line,
                     row['max'], row['sum'], row['len'],
                     row['values'][-1][1])
-            self.set_xaxis_timeformat(total_row['values'])
+            self.set_xaxis_timeformat(row['values'])
             return data
 
     class stackedareaFormat(linesFormat):
@@ -598,7 +597,7 @@ class GraphWidget(JQPlotWidget):
                     'yaxis': {
                         'min': 0,
                         'forceTickAt0': True,
-                        'tickOptions': {'formatter': twc.js_symbol('tickFormatter')},
+                        #'tickOptions': {'formatter': twc.js_symbol('tickFormatter')},
                         'autoscale': True,
                     }
                 }
@@ -643,7 +642,7 @@ class GraphWidget(JQPlotWidget):
                         'forceTickAt0': True,
                         'autoscale': True,
                         'tickOptions': {
-                            'formatter': twc.js_symbol('tickFormatter')
+                            #'formatter': twc.js_symbol('tickFormatter')
                         },
                     }
                 }
@@ -666,7 +665,7 @@ class GraphWidget(JQPlotWidget):
                         line_idx, rrd_line,
                         row['max'], row['sum'], row['len'],
                         row['values'][-1][1])
-            self.set_xaxis_timeformat(total_row['values'])
+            self.set_xaxis_timeformat(row['values'])
             return data
 
     class ufareaFormat(BaseFormat):
@@ -702,7 +701,7 @@ class GraphWidget(JQPlotWidget):
                     'yaxis': {
                         'min': 0,
                         'forceTickAt0': True,
-                        'tickOptions': {'formatter': twc.js_symbol('tickFormatter')},
+                        #'tickOptions': {'formatter': twc.js_symbol('tickFormatter')},
                         'autoscale': True,
                     }
                 }
@@ -712,12 +711,10 @@ class GraphWidget(JQPlotWidget):
             """ Return used,free and total for the area
             total is calculated
             """
-            data = [[], [], []]
             rrd_lines = []
             used_row = {'max':0, 'sum':0, 'len':0, 'values':[]}
             free_row = {'max':0, 'sum':0, 'len':0, 'values':[]}
             total_row = {'max':0, 'sum':0, 'len':0, 'values':[]}
-            data_len = 0
             for line_idx in (0,1):
                 rrd_line = self.parent.graph_type.lines[line_idx]
                 mult_op,mult_val = self.get_mult(rrd_line)
@@ -792,7 +789,7 @@ class GraphWidget(JQPlotWidget):
                     'rrd_line': rrd_line,
                     'values': row_values,
                 })
-            start_time,end_time, step = rrd_lines[0]['values'][0]
+            start_time,end_time, step = rrd_line_values[0]['values'][0]
             val_time = start_time
             for idx,raw_multiplier in enumerate(rrd_line_values[0]['values'][2]):
                 if raw_multiplier[0] is None:
@@ -830,21 +827,22 @@ class GraphWidget(JQPlotWidget):
                 self.update_row(used_row, val_time, used)
                 self.update_row(free_row, val_time, free)
                 self.update_row(total_row, val_time, total)
+                val_time += step
             data = (used_row['values'],free_row['values'],
                     total_row['values'])
             
             self.set_series_label(
                 0, rrd_line_values[2]['rrd_line'],
                 used_row['max'], used_row['sum'], used_row['len'],
-                used_row['values'][-1])
+                used_row['values'][-1][1])
             self.set_series_label(
                 1, rrd_line_values[0]['rrd_line'],
                 free_row['max'], free_row['sum'], free_row['len'],
-                free_row['values'][-1])
+                free_row['values'][-1][1])
             self.set_series_label(
                 2, rrd_line_values[1]['rrd_line'],
                 total_row['max'], total_row['sum'], total_row['len'],
-                total_row['values'][-1])
+                total_row['values'][-1][1])
             self.set_xaxis_timeformat(total_row['values'])
             return data
 

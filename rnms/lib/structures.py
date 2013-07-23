@@ -57,7 +57,7 @@ class attribute_mini(base_table):
     __omit_fields__ = ('__actions__',)
     __limit_fields__ = ('id', 'attribute_type', 'display_name', 'user')
 
-    def attribute_type(self, obj):
+    def aattribute_type(self, obj):
         return click('attributes',obj.id, obj.attribute_type.display_name)
     def display_name(self,obj):
         return click('attributes',obj.id, obj.display_name)

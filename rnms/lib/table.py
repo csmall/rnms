@@ -41,7 +41,7 @@ class jqGridGrid(jqGridWidget):
               'column_widths', 'default_column_width', 'url_args',]
     options = {
         'datatype': 'json',
-        #'autowidth': True,
+        'autowidth': True,
         'imgpath': 'scripts/jqGrid/themes/green/images',
         'jsonReader' : {
             'repeatitems': False,
