@@ -19,7 +19,7 @@ from tg.configuration import AppConfig
 
 import rnms
 from rnms import model
-#from rnms.lib import app_globals, helpers 
+from rnms.lib import app_globals, helpers 
 
 
 base_config = AppConfig()

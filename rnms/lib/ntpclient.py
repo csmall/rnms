@@ -95,7 +95,7 @@ class NTPDispatcher(zmqcore.Dispatcher):
         self.close()
 
     def handle_read(self):
-        recv_msg, recv_addr =  self.recvfrom(8192)
+        recv_msg, recv_addr =  self.socket.recvfrom(8192)
         #logger.debug("Received message from %s", recv_addr)
         try:
             recv_job = self.sent_jobs[recv_addr]
@@ -115,7 +115,7 @@ class NTPDispatcher(zmqcore.Dispatcher):
         new_job['timeout'] = datetime.datetime.now() + datetime.timedelta(seconds=self.timeout)
         self.sent_jobs[new_job['sockaddr']] = dict(new_job)
         try:
-            self.sendto(new_job['request_packet'].to_data(), new_job['sockaddr'])
+            self.socket.sendto(new_job['request_packet'].to_data(), new_job['sockaddr'])
         except socket.error as errmsg:
             #logger.error("Socket error for sendto %s", new_job['sockaddr'])
             raise NTPClientError(errmsg)

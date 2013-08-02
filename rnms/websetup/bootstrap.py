@@ -67,7 +67,7 @@ def bootstrap(command, conf, vars):
 
     b = BootStrapper()
     b.create()
-    b.validate()
+    #b.validate()
     try:
 
         # SNMP Enterprises
@@ -212,7 +212,13 @@ class BootStrapper(object):
             if gt is None:
                 raise ValueError("Bad default GraphType name \"{}\" for AttributeType {}.".format(at_refs[2], at_name))
             
-            model.DBSession.query(model.AttributeType).filter(model.AttributeType.display_name == at_name).update({'default_poller_set_id': ps.id, 'default_sla_id': sla.id, 'default_graph_type_id': gt.id})
+            model.DBSession.query(model.AttributeType).\
+                    filter(model.AttributeType.display_name == at_name).\
+                    update(
+                        {'default_poller_set_id': ps.id,
+                         'default_sla_id': sla.id,
+                        # 'default_graph_type_id': gt.id
+                        })
 
     def create_autodiscovery(self):
         for row in database_data.autodiscovery_policies:

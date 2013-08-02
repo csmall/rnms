@@ -6,7 +6,7 @@ import mock
 from nose.tools import eq_
 
 from rnms import model
-from rnms.tests import setup_db, teardown_db
+from rnms.tests import load_app, setup_db, teardown_db
 
 from rnms.lib.snmp.engine import SNMPRequest
 from rnms.lib.tcpclient import TCPClient
@@ -14,6 +14,7 @@ from rnms.lib.tcpclient import TCPClient
 # Create an empty database before we start our tests for this module
 def setup():
     """Function called by nose on module load"""
+    load_app()
     setup_db()
 
 # Tear down that database

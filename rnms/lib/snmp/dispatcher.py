@@ -43,7 +43,7 @@ class SNMPDispatcher(zmqcore.Dispatcher):
         pass
 
     def handle_read(self):
-        recv_msg, recv_addr = self.recvfrom(8192)
+        recv_msg, recv_addr = self.socket.recvfrom(8192)
         self.recv_cb(recv_msg, recv_addr, self.address_family)
 
     def writable(self):
@@ -56,7 +56,7 @@ class SNMPDispatcher(zmqcore.Dispatcher):
             return
         #new_request['timeout'] = time.time() + self.timeout
         try:
-            self.sendto(encoder.encode(new_request.msg),
+            self.socket.sendto(encoder.encode(new_request.msg),
                         new_request.sockaddr)
         except socket.error as errmsg:
             logger.error("Socket error for sendto %s: %s",

@@ -10,8 +10,6 @@ Rosenberg_NMS.egg-info/not-zip-safe
 Rosenberg_NMS.egg-info/paster_plugins.txt
 Rosenberg_NMS.egg-info/requires.txt
 Rosenberg_NMS.egg-info/top_level.txt
-migration/__init__.py
-migration/versions/__init__.py
 rnms/__init__.py
 rnms/config/__init__.py
 rnms/config/app_cfg.py

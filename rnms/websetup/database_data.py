@@ -24,27 +24,27 @@ from rnms.lib import states
 
 # Name, description
 permissions = (
-    ('manage', u'Access to Admin screens'),
-    ('UserRO', u'Read-Only Access to User, Group and Permissions'),
-    ('UserRW', u'Read/Write Access to User, Group and Permissions'),
-    ('HostRO', u'Read-Only Access to Host and Attribute'),
-    ('HostRW', u'Read/Write Access to Host and Attribute'),
-    ('AdminRO', u'Read-Only Access to remaining models'),
-    ('AdminRW', u'Read/Write Access to remaining models'),
+    (u'manage', u'Access to Admin screens'),
+    (u'UserRO', u'Read-Only Access to User, Group and Permissions'),
+    (u'UserRW', u'Read/Write Access to User, Group and Permissions'),
+    (u'HostRO', u'Read-Only Access to Host and Attribute'),
+    (u'HostRW', u'Read/Write Access to Host and Attribute'),
+    (u'AdminRO', u'Read-Only Access to remaining models'),
+    (u'AdminRW', u'Read/Write Access to remaining models'),
 )
 groups = (
-    ('User View', 'Users that can view Users',
-     ('manage', 'UserRO',)),
-    ('User Admin', 'Users that can edit Edits',
-     ('manage', 'UserRW',)),
-    ('Host View', 'Users that can view hosts',
-     ('manage', 'HostRO',)),
-    ('Host Admin', 'Uses that can edit Hosts',
-     ('manage', 'HostRW',)),
-    ('System View', 'Users that can view other items',
-    ('manage', 'UserRO', 'HostRO', 'AdminRO')),
-    ('System Admin', 'Users that can edit other items',
-    ('manage', 'UserRW', 'HostRW', 'AdminRW')),
+    (u'User View', u'Users that can view Users',
+     (u'manage', u'UserRO',)),
+    (u'User Admin', u'Users that can edit Edits',
+     (u'manage', u'UserRW',)),
+    (u'Host View', u'Users that can view hosts',
+     (u'manage', u'HostRO',)),
+    (u'Host Admin', u'Users that can edit Hosts',
+     (u'manage', u'HostRW',)),
+    (u'System View', u'Users that can view other items',
+    (u'manage', u'UserRO', u'HostRO', u'AdminRO')),
+    (u'System Admin', u'Users that can edit other items',
+    (u'manage', u'UserRW', u'HostRW', u'AdminRW')),
 )
 
 
