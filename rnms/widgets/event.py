@@ -19,10 +19,6 @@
 #
 #
 """ Events Widgets """
-import tg
-import tw2.core as twc
-from rnms.model import DBSession, Event
-from sqlalchemy import or_
 from tw2.jqplugins.jqgrid import jqGridWidget, SQLAjqGridWidget
 from tw2.jqplugins.jqgrid.base import word_wrap_css
 
@@ -35,103 +31,6 @@ class EventGrid(structures.event, jqGridTableBase):
     __grid_id__ = 'events-grid'
     __caption__ = 'Events'
     
-class oldEventGrid2(jqGridWidget):
-    id = 'events-grid-id'
-    attribute_id = None
-    host_id = None
-    zone_id = None
-
-    pager_options = { "search" : True, "refresh" : True, "add" : False, }
-
-    def __init__(self):
-        self.options = {
-            'pager' : 'events-grid-pager',
-            'loadonce': False,
-            'url' : '/events/griddata',
-            'colNames':[ 'Date', 'State', 'Type', 'Host', 'Attribute', 'Description'],
-            'datatype' : 'json',
-            'colModel' : [
-                {
-                    'name': 'created',
-                    'width': 120,
-                    'align': 'left',
-                },{
-                    'name': 'state',
-                    'width': 120,
-                    'align': 'centre',
-                },{
-                    'name': 'event_type',
-                    'width': 120,
-                    'align': 'left',
-                },{
-                    'name': 'host_display_name',
-                    'width': 120,
-                    'align': 'left',
-                },{
-                    'name': 'attribute',
-                    'width': 120,
-                    'align': 'left',
-                },{
-                    'name': 'event_description',
-                    'width': 500,
-                    'align': 'left',
-                },
-            ],
-            'viewrecords':True,
-            'imgpath': 'scripts/jqGrid/themes/green/images',
-            'height': 'auto',
-            }
-
-        super(EventGrid, self).__init__()
-
-    def prepare(self):
-        url_fields = []
-        if self.attribute_id is not None:
-            url_fields.append('a={}'.format(self.attribute_id))
-        if self.host_id is not None:
-            url_fields.append('h={}'.format(self.host_id))
-        if self.zone_id is not None:
-            url_fields.append('z={}'.format(self.zone_id))
-
-        if url_fields != []:
-            self.options['url'] += '?' + '&'.join(url_fields)
-        super(EventGrid, self).prepare()
-
-class EventsWidget3(twc.Widget):
-    id = 'events-widget'
-    template = 'rnms.templates.eventswidget'
-
-    host = twc.Param('Limit events by this host id')
-    event_type = twc.Param('Limit events by this event_type id')
-
-    def prepare(self):
-        from webhelpers import paginate
-        conditions = []
-        copy_args = {}
-        if hasattr(self, 'host'):
-            host_id = getattr(self, 'host')
-            if type(host_id) <> int:
-                raise ValueError, "Host ID must be an integer"
-            conditions.append(Event.host_id==host_id)
-            copy_args['h']=1
-        else:
-            conditions.append(Event.host_id > 0)
-        condition = or_(*conditions)
-        events = DBSession.query(Event).filter(condition).order_by(Event.id.desc())
-        #events = DBSession.query(Event).order_by(Event.id.desc())
-        count = events.count()
-        page = int(getattr(self, 'page', '1'))
-        span = int(getattr(self, 'span', '20'))
-        self.currentPage = paginate.Page(
-                events, page, item_count=count,
-                items_per_page=span,
-                )
-        #for arg in copy_args:
-        #    self.currentPage.kwargs[arg] = str(kw[arg])
-        
-        self.events = self.currentPage.items
-        self.tgurl = tg.url
-        super(EventWidget, self).prepare
 
 class EventWidget(SQLAjqGridWidget):
     entity = model.Event

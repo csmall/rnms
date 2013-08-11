@@ -310,6 +310,27 @@ class jqGridTableFiller(TableFiller):
         self.__count__ = count
         return count, objs
 
+    def _do_sorting(self, query, sort_idx, sort_desc):
+        """ Set the sorting on the query based upon the sort
+        index (the fieldname) and the sort order """
+        if hasattr(self.__entity__, sort_idx):
+            try:
+                sort_table =\
+                        self.__entity__.__mapper__.relationships[sort_idx]
+                sort_field = sort_table.table.c['display_name']
+                query = query.join(sort_table.table)
+            except KeyError:
+                try:
+                    sort_field =\
+                            self.__entity__.__mapper__.c[sort_idx]
+                except KeyError:
+                    return query
+            if sort_desc:
+                return query.order_by(desc(sort_field))
+            else:
+                return query.order_by(sort_field)
+        return query
+
     def get_value(self, value=None, **kw):
         items = super(jqGridTableFiller, self).get_value(value, **kw)
         total_records = self.__count__
@@ -330,15 +351,9 @@ class jqGridTableFiller(TableFiller):
         count = query.count()
 
         # sorting
-        if sort_idx != '' and hasattr(self.__entity__, sort_idx):
-            if  self.is_relation(sort_idx):
-                pass
-            else:
-                sort_field = self.__entity__.__mapper__.c[sort_idx]
-                if sort_desc:
-                    query = query.order_by(desc(sort_field))
-                else:
-                    query = query.order_by(sort_field)
+        if sort_idx != '':
+            query = self._do_sorting(query, sort_idx, sort_desc)
+
         if offset is not None:
             query = query.offset(offset)
         if limit is not None:

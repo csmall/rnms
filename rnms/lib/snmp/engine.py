@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012,2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -246,8 +246,10 @@ class SNMPEngine():
         for id,request in self.active_requests.items():
             if request.timeout is not None and request.timeout < now:
                 if request.attempt >= self.max_attempts:
-                    self.logger.debug("Request #%d reach maximum attempts",
-                                      request.id)
+                    self.logger.debug(
+			    "Request #%d (%s) reached maximum attempts",
+                            request.id,
+			    request.host.mgmt_address)
                     request.callback_default()
                     self._request_finished(request.id)
                 else:

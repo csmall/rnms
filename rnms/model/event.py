@@ -72,6 +72,7 @@ class Event(DeclarativeBase):
         self.event_type = event_type
         if attribute is not None:
             self.attribute=attribute
+            self.host = attribute.host
             if event_type.generate_alarm == True:
                 self.alarmed = True
                 if event_type.alarm_duration > 0:

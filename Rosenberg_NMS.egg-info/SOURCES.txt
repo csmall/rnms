@@ -80,7 +80,6 @@ rnms/lib/consolidate/attributes.py
 rnms/lib/consolidate/events.py
 rnms/lib/consolidate/logfiles.py
 rnms/lib/consolidate/traps.py
-rnms/lib/importers/__init__.py
 rnms/lib/pollers/__init__.py
 rnms/lib/pollers/apache.py
 rnms/lib/pollers/buffer.py

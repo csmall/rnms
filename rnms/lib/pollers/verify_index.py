@@ -72,7 +72,7 @@ def cb_verify_storage_index(values, error, pobj, attribute, poller_row, **kw):
     """
 
     if values is not None:
-        for (inst, value) in values.items():
+        for (inst, value) in values[0].items():
             value = filter_storage_name(value)
             if value == attribute.display_name:
                 try:
