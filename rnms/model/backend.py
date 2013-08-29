@@ -200,7 +200,7 @@ class Backend(DeclarativeBase):
 
         # Raise an up event if the down event was more that wait_time minutes ago
         if event_state.is_up() and down_event is not None:
-            if datetime.datetime.now() > down_event.start_time + datetime.timedelta(minutes=damp_time):
+            if datetime.datetime.now() > down_event.created + datetime.timedelta(minutes=damp_time):
                 return True
 
         if event_state.is_downtesting():

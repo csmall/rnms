@@ -25,7 +25,7 @@ from sqlalchemy import and_
 from sqlalchemy.orm import joinedload
 
 from rnms import model
-from rnms.model import DBSession, PollerRow, AttributeField
+from rnms.model import DBSession, PollerRow, AttributeField, Attribute
 from rnms.lib.engine import RnmsEngine
 from rnms.lib.snmp import SNMPRequest
 from rnms.lib.pollers.snmp import parse_oid, cb_snmp_counter, split_oid
@@ -63,7 +63,7 @@ class PollingAttribute(object):
         self.attribute_type_id = attribute.attribute_type_id
         self.poller_set_id = attribute.poller_set_id
         self.host_id = attribute.host_id
-        self.host = attribute.host
+#        self.host = attribute.host
         self.index = attribute.index
         self.display_name = attribute.display_name
         self.host = PollingHost(attribute.host)
@@ -92,6 +92,11 @@ class PollingAttribute(object):
 
     def get_field(self, field_tag):
         return AttributeField.field_value(self.id, field_tag)
+
+    def update_poll_time(self):
+	attribute = Attribute.by_id(self.id)
+	if attribute is not None:
+	    attribute.update_poll_time()
 
 class Poller(RnmsEngine):
     """
@@ -291,6 +296,8 @@ class Poller(RnmsEngine):
                         patt.id,
                         self.poller_buffer[patt.id][rrd_field.name],
                         rrd_client=self.rrd_client)))
+	patt.update_poll_time()
+        DBSession.flush()
         del (self.poller_buffer[patt.id])
         del (self.polling_attributes[patt.id])
         #self._run_backends(patt)

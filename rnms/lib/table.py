@@ -51,7 +51,7 @@ class jqGridGrid(jqGridWidget):
     pager_options = { "search" : True, "refresh" : True, "edit" : False,
                      "del" : False, "add" : False}
     def __init__(self, action=None):
-        #self.url_args = {}
+        self.url_args = {}
         super(jqGridGrid, self).__init__()
         if action is not None:
             self.options['url'] = action
