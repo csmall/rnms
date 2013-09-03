@@ -47,7 +47,6 @@ def cb_tcp_status(values, error, pobj, attribute, poller_row, **kwargs):
     """
     Callback for tcp_status. Store the content for later
     """
-    connect_time = values[1]
     if error is None:
         state = u'open'
         tcp_error = None
@@ -55,9 +54,15 @@ def cb_tcp_status(values, error, pobj, attribute, poller_row, **kwargs):
         state = u'closed'
         tcp_error = error[1]
 
-    response = values[0].rstrip()
-    if values[1] is not None:
+    try:
         connect_time = values[1].total_seconds()
+    except (TypeError,AttributeError):
+        connect_time = None
+    
+    try:
+        response = values[0].rstrip()
+    except (TypeError,AttributeError):
+        response = None
 
     pobj.poller_callback(attribute.id, poller_row,(state, response, connect_time, tcp_error))
         
@@ -72,7 +77,7 @@ def poll_snmp_tcp_established(poller_buffer, parsed_params, **kw):
 
 def cb_snmp_tcp_established(values, error, pobj, attribute, poller_row, **kw):
     if values is None:
-        pobj.poller_callback(attribute.id, poller_row, None)
+        pobj.poller_callback(attribute.id, poller_row, kw['default_value'])
         return
 
     port = str(attribute.index)
@@ -93,13 +98,15 @@ def poll_tcp_content(poller_buffer, parsed_params, pobj, attribute, poller_row, 
     """
 
     if attribute.get_field('check_content') != '1':
-        pobj.poller_callback(attribute.id, poller_row, [u'valid', u'not checked'])
+        pobj.poller_callback(attribute.id, poller_row,
+                             (u'valid', u'not checked'))
         return True
 
     try:
         data = poller_buffer['tcp_content']
     except KeyError:
-        pobj.poller_callback(attribute.id, poller_row, [u'invalid', u'missing buffer'])
+        pobj.poller_callback(attribute.id, poller_row,
+                             (u'invalid', u'missing buffer'))
         return True
     if data == '':
         pobj.poller_callback(attribute.id, poller_row, [u'invalid', u'no data'])

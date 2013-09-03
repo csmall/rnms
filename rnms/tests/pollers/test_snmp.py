@@ -55,10 +55,14 @@ class TestSnmpPoller(PollerTest):
     ### snmp_status
     def test_status_poll_empty(self):
         """ snmp_status with no params returns false """
-        eq_(poll_snmp_counter(self.poller_buffer, '', **self.test_kwargs), False)
+        eq_(poll_snmp_status(self.poller_buffer, '', **self.test_kwargs), False)
     def test_status_poll_badparam(self):
         """ snmp_status with bad params returns false """
-        eq_(poll_snmp_counter(self.poller_buffer, 'fooo', **self.test_kwargs), False)
+        eq_(poll_snmp_status(self.poller_buffer, 'fooo', **self.test_kwargs), False)
+    def test_status_poll_badoid(self):
+        """ snmp_status with bad oid returns false """
+        eq_(poll_snmp_status(self.poller_buffer, 'badoid|1=2', **self.test_kwargs), False)
+
     def test_status_poll_full(self):
         """ poll_snmp_status with mapping and default return true """
         eq_(poll_snmp_status(self.poller_buffer, '1.2.3|1=2|3', **self.test_kwargs), True)
@@ -110,7 +114,8 @@ class TestSnmpPoller(PollerTest):
     def test_walkavg_poll(self):
         """ poll_snmp_walk_average """
         eq_(poll_snmp_walk_average(self.poller_buffer, '1.2.3', **self.test_kwargs), True)
-        self.assert_get_table_called(cb_snmp_walk_average)
+        self.assert_get_table_called(cb_snmp_walk_average,
+                                     extra_kwargs={'table_trim':1})
 
     def test_walkavg_none(self):
         """ cb_snmp_walk_average with None returns default """

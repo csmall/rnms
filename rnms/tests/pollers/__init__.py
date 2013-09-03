@@ -138,10 +138,11 @@ class PollerTest(object):
             self.test_kwargs.update(extra_kwargs)
         self.snmp_engine.get_str.assert_called_once_with(self.test_host,oid, cb_func, **self.test_kwargs)
 
-    def assert_get_table_called(self, cb_func, extra_kwargs=None):
+    def assert_get_table_called(self, cb_func, extra_kwargs=None, oid='1.2.3'):
         if extra_kwargs is not None:
             self.test_kwargs.update(extra_kwargs)
-        self.snmp_engine.get_table.assert_called_once_with(self.test_host,'1.2.3', cb_func, table_trim=1, **self.test_kwargs)
+        self.snmp_engine.get_table.assert_called_once_with(
+            self.test_host, oid, cb_func, **self.test_kwargs)
 
     def assert_snmp_set_called(self, oid, cb_func, value, extra_kwargs=None):
         if extra_kwargs is not  None:
