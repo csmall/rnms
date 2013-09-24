@@ -116,7 +116,7 @@ class Backend(DeclarativeBase):
             event_state_name = default_input
 
         event_fields={}
-        if type(poller_result) is list:
+        if type(poller_result) in (list, tuple):
             event_state_name = poller_result[0]
             try:
                 event_fields['info'] = poller_result[1]

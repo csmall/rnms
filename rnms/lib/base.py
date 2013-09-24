@@ -3,8 +3,7 @@
 """The base Controller API."""
 from formencode import validators, Invalid
 
-from tg import TGController, tmpl_context, flash
-from tg import request
+from tg import TGController, tmpl_context, flash, request
 from tw2.jqplugins.ui import set_ui_theme_name
 
 from rnms.model import DBSession
@@ -58,6 +57,9 @@ class BaseGridController(BaseController):
     """ BaseController with griddata methods """
 
     def griddata(self, filler_class, filler_validators, **kw):
+        """ Generic json function for grid data
+        Based upon tgext.crud.controller.get_all
+        """
         form_errors={}
         key_validators = GRID_VALIDATORS.copy()
         key_validators.update(filler_validators)
@@ -73,7 +75,7 @@ class BaseGridController(BaseController):
             kw[key] = form_value
         if form_errors != {}:
             return dict(errors=form_errors)
-        filler = filler_class(DBSession)
-        return filler.get_value(**kw)
+        table_filler = filler_class(DBSession)
+        return dict(value_list=table_filler.get_value(**kw))
 
 

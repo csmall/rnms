@@ -77,7 +77,7 @@ def poll_snmp_tcp_established(poller_buffer, parsed_params, **kw):
 
 def cb_snmp_tcp_established(values, error, pobj, attribute, poller_row, **kw):
     if values is None:
-        pobj.poller_callback(attribute.id, poller_row, kw['default_value'])
+        pobj.poller_callback(attribute.id, poller_row, None)
         return
 
     port = str(attribute.index)

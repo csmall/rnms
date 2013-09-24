@@ -10,7 +10,7 @@ from sqlalchemy.sql.operators import ColumnOperators as coop
 
 from tw2.jqplugins.jqgrid import jqGridWidget
 
-from rnms.model import AttributeType
+from rnms.model import AttributeType, DBSession
 
 COL_OPERATORS = {
     'eq':   (coop.__eq__, False),
@@ -46,6 +46,9 @@ class jqGridGrid(jqGridWidget):
         'jsonReader' : {
             'repeatitems': False,
             'id': 0,
+            'root': 'value_list.entries',
+            'total': 'value_list.total',
+            'page': 'value_list.page',
         },
     }
     pager_options = { "search" : True, "refresh" : True, "edit" : False,
@@ -274,6 +277,7 @@ class jqGridTableFiller(TableFiller):
         return query.filter(op(field, search_string))
 
     def _do_get_provider_count_and_objs(self, _search=False,  **kw):
+        print 'dgpco'
         limit = kw.pop('rows', None)
         page = kw.pop('page', 1)
         sidx = kw.pop('sidx', '')
@@ -289,27 +293,28 @@ class jqGridTableFiller(TableFiller):
                 offset = 0
         # Extra filters
         conditions = []
-        host_id = kw.pop('h', None)
-        if host_id is not None and  hasattr(self.__entity__, 'host_id'):
-            try:
-                conditions.append(self.__entity__.host_id == host_id)
-            except (ValueError, TypeError):
-                pass
-        attribute_id = kw.pop('a', None)
-        if attribute_id is not None and  hasattr(self.__entity__, 'attribute_id'):
-            try:
-                conditions.append(self.__entity__.attribute_id == attribute_id)
-            except (ValueError, TypeError):
-                pass
+        #host_id = kw.pop('h', None)
+        #if host_id is not None and  hasattr(self.__entity__, 'host_id'):
+        #    try:
+        #        conditions.append(self.__entity__.host_id == host_id)
+        #    except (ValueError, TypeError):
+        #        pass
+        #attribute_id = kw.pop('a', None)
+        #if attribute_id is not None and  hasattr(self.__entity__, 'attribute_id'):
+        #    try:
+        #        conditions.append(self.__entity__.attribute_id == attribute_id)
+        #    except (ValueError, TypeError):
+        #        pass
 #        filters = {'host_id': 1}
 #        count, objs = self.__provider__.query(
 #            self.__entity__, limit, offset, self.__limit_fields__,
 #            sidx, desc, filters=filters,
 #            view_fields=self.__possible_field_names__)
-        count,objs = self.query( limit, offset, sidx, sort_desc,
+        count,objs = self._do_query( limit, offset, sidx, sort_desc,
                                 conditions, _search, **kw)
         self.__count__ = count
         return count, objs
+
 
     def _do_sorting(self, query, sort_idx, sort_desc):
         """ Set the sorting on the query based upon the sort
@@ -338,16 +343,32 @@ class jqGridTableFiller(TableFiller):
         current_page, total_pages = self._calculate_pages(total_records, **kw)
         rows = self._get_rows(items)
         return dict(total=total_pages, page=current_page,
-                records=total_records, rows=rows)
+                entries=rows)
 
-    def query(self, limit, offset, sort_idx, sort_desc, conditions, _search,
+    def _get_columns(self):
+        """ Return a list of columns given the entity and the relations """
+        tables = [self.__entity__]
+        columns = []
+        for f in self.__fields__:
+            if f in self.__entity__.__mapper__.c:
+                columns.append(self.__entity__.__mapper__.c[f])
+            else:
+                try:
+                    fkey_table = self.__entity__.__mapper__.relationships[f].table
+                except KeyError:
+                    continue
+                if fkey_table not in tables:
+                    tables.append(fkey_table)
+                columns.append(fkey_table.c['display_name'])
+        return tables,columns
+
+    def _do_query(self, limit, offset, sort_idx, sort_desc, conditions, _search,
              **kw):
         """
         Query the database, this is based upon the sprox sa_provider
         query method but is better as its filtering does a lot more
         """
-        query = self.__provider__.session.query(self.__entity__).filter(
-            and_(*conditions))
+        query = self.__provider__.session.query(self.__entity__)
         query = self._do_search_conditions(query, _search, **kw)
         count = query.count()
 

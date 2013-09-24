@@ -23,11 +23,20 @@
  FillerBase objects, that are used in the admin system.  For objects outside
  the admin system, put them into the structures file.
 """
+import tg
 
 from rnms import model
 from structures import base_table as bt
 
 class base_table(bt):
+    @property
+    def __url__(self):
+        url = tg.request.url
+        if url[-1] == '/':
+            url = url[:-1]
+        return url + '.json'
+
+
     def __actions__(self, obj):
         primary_fields = self.__provider__.get_primary_fields(self.__entity__)
         pklist = '/'.join(map(lambda x: str(getattr(obj, x)), primary_fields))
