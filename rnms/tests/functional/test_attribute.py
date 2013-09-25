@@ -65,6 +65,6 @@ class TestAttributeController(TestController):
         """ Attribute griddata with no ID """
         self.check_response(
             jqgrid_data_url('/attributes/griddata'),
-            (r'{"records": 0, "total": 1, "rows": [], "page": 1}',))
+            (r'{"total": 1, "page": 1, "entries": []}',))
 
 

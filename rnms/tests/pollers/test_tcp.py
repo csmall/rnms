@@ -73,7 +73,8 @@ class TestTCPPoller(PollerTest):
                                     oid=((1, 3, 6, 1, 2, 1, 6, 13, 1, 1),))
     def test_cb_tcp_stabl_none(self):
         """ PollCB tcp_established with no values """
-        self.assert_callback_none(cb_snmp_tcp_established)
+        cb_snmp_tcp_established(None, None, **self.test_kwargs)
+        self.assert_callback(None)
 
     def test_cb_tcp_estab_none(self):
         """ PollCB tcp_established with correct values """
