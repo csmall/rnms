@@ -54,17 +54,6 @@ class RnmsInfo(RnmsCommand):
             help='IDs of object to get information on',
         )
 
-    def _snmp_data(self,community):
-        if community is None:
-            return '(not set)'
-        elif community[0] == '1':
-            return 'SNMPv1 set'
-        elif community[0] == '2':
-            return 'SNMPv2c set'
-        elif community[0] == '3':
-            return 'SNMPv3 set'
-        return 'unknown'
-        
     def host_info(self):
         hosts = self._get_objects(model.Host, 'Hosts')
         if hosts is None:
@@ -77,7 +66,7 @@ class RnmsInfo(RnmsCommand):
             print '''{:<20} | {}: {}
 {:<20} | {}
 {:<20} | {}
-{:<20} | {}
+{:<20} | {} / {}
 {:<20} | {} : {}
 {:<20} | {}
 {:<20} | {}
@@ -85,7 +74,8 @@ class RnmsInfo(RnmsCommand):
         'Zone', host.zone.id, host.zone.display_name,
         'Management IP', host.mgmt_address,
         'System ObjID', host.sysobjid,
-        'SNMP Community', host.snmp_community.display_name,
+        'Community RO/RW', host.ro_community.display_name,
+    host.rw_community.display_name,
         'Autodiscovery', host.autodiscovery_policy.id, host.autodiscovery_policy.display_name,
         'Created', host.created,
         'Next Discovery', host.next_discover,

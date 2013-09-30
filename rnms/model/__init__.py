@@ -69,6 +69,7 @@ from rnms.model.event import Event, EventType, EventField, EventState,\
 from rnms.model.backend import Backend
 from rnms.model.graph_type import GraphType, GraphTypeError, GraphTypeLineError, GraphTypeLine
 #from rnms.model.host import Host, Iface, ConfigTransfer
+from rnms.model.snmp_community import SnmpCommunity
 from rnms.model.host import *
 from rnms.model.logfile import Logfile, LogmatchSet, LogmatchRow, LogmatchField
 from rnms.model.poller import PollerSet, Poller, PollerRow

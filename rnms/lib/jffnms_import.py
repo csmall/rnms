@@ -23,6 +23,7 @@ import datetime
 import transaction
 
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import and_
 
 from rnms import model
 from rnms.lib import states
@@ -218,7 +219,9 @@ def import_host(obj):
         result = obj.dbhandle.execute('SELECT id,ip,name,rocommunity,rwcommunity,zone,tftp,autodiscovery,autodiscovery_default_customer,show_host,poll,creation_date,modification_date,last_poll_date,sysobjectid,config_type FROM hosts WHERE id>1 ORDER by id')
         for row in result:
             host = model.Host(mgmt_address=row[1],display_name=row[2])
-            host.snmp_community_id = import_snmp(row[3],row[4])
+            host.ro_community_id = import_snmp(row[3])
+            host.trap_community_id = host.ro_community_id
+            host.rw_community_id = import_snmp(row[4])
             host.zone_id = obj.zone_id(row[5])
             host.tftp_server = row[6]
             host.autodiscovery_policy_id = row[7]
@@ -292,29 +295,50 @@ def import_interface(obj):
         obj.logger.info('Interfaces: %d added.', add_count)
     return []
 
-def import_snmp(old_ro, old_rw):
-    if old_ro is None:
+def import_snmp(old_comm):
+    if old_comm is None:
         comm = model.SnmpCommunity.by_name(u'None')
         if comm is not None:
             return comm.id
     try:
-        (ver,ro_comm) = old_ro.split(':')
-        comm = DBSession.query(model.SnmpCommunity).filter(
-            model.SnmpCommunity.readonly == [ver[1:],ro_comm]).first()
-        if comm is not None:
-            return comm.id
-        comm = model.SnmpCommunity()
-        comm.display_name = old_ro
-        comm.readonly = [ver[1:],ro_comm]
-        comm.trap = [ver[1:], ro_comm]
-        DBSession.add(comm)
+        (comm_ver,comm_data) = old_comm.split(':')
+    except ValueError:
+        pass
+    else:
+        comm_ver = int(comm_ver[1:])
+        display_name = unicode(old_comm.split('|')[0])
+        comm_fields = comm_data.split('|')
+        comm_name = comm_fields[0]
+        comm_id = DBSession.query(model.SnmpCommunity.id).\
+                select_from(model.SnmpCommunity).\
+                filter(and_(
+                    model.SnmpCommunity.community == comm_name,
+                    model.SnmpCommunity.version == comm_ver)).\
+                scalar()
+        if comm_id is not None:
+            return comm_id
+        new_comm = model.SnmpCommunity()
+        new_comm.display_name = display_name
+        new_comm.version = comm_ver
+        if comm_ver == 3:
+            if comm_fields[1] == 'noAuthNoPriv':
+                new_comm.set_v3auth_none()
+            elif comm_fields[1] in ('authNoPriv', 'authPriv'):
+                if comm_fields[2] == 'md5':
+                    new_comm.set_v3auth_md5(comm_name, comm_fields[3])
+                else:
+                    new_comm.set_v3auth_sha(comm_name, comm_fields[3])
+            if comm_fields[1] != 'authPriv' or comm_fields[5] == '':
+                new_comm.set_v3privacy_none()
+            elif comm_fields[4] == 'des':
+                new_comm.set_v3privacy_des(comm_fields[5])
+            else:
+                new_comm.set_v3privacy_aes(comm_fields[5])
+        else:
+            new_comm.community = comm_name
+        DBSession.add(new_comm)
         DBSession.flush()
-        return comm.id
-
-    except:
-            comm =  model.SnmpCommunity.by_name(u'None')
-            if comm is not None:
-                return comm.id
+        return new_comm.id
     return 1
 
 def import_user(obj):

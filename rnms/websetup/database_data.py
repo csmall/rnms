@@ -1744,9 +1744,9 @@ snmp_enterprises = (
         )
 
 snmp_communities = (
-    (u'None', '', '', ''),
-    (u'v1 Default', ['1', 'public'], '', ['1', 'public']),
-    (u'v2c Default', ['2', 'public'], '', ['2', 'public']),
+    (u'None', 1, ''),
+    (u'v1 Default', 1, 'public'),
+    (u'v2c Default', 2, 'public'),
 )
 trap_matches = (
         (0, 'ifTable Link Down', '1.3.6.1.6.3.1.1.5.3', 'match_index_state', False, '1.3.6.1.2.1.2.2.1.1.5|down', u'Alarm Verify Operational'),

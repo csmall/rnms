@@ -20,10 +20,6 @@
 REQUEST_SINGLE = 0
 REQUEST_TABLE = 1
 
-REQUEST_GET = 0
-REQUEST_GETNEXT = 1
-REQUEST_GETBULK = 2
-
 # Filters
 def filter_int(value):
     """ Coerce this given value into an integer """
@@ -62,26 +58,17 @@ class SNMPRequest(object):
 
     replyall = False
     oid_trim = None
-    req_type = REQUEST_SINGLE
-    snmp_type = REQUEST_GET
 
     id = None
 
-    def __init__(self, host, req_type=None):
+    def __init__(self, host, community):
         self.host = host
         self.oids = []
         self.varbinds = None
         self.table_oids = None
         self.msg = None
-        self.table_trim = None
-        if req_type is not None:
-            self.req_type = req_type
-            if req_type == REQUEST_SINGLE:
-                self.snmp_type = REQUEST_GET
-            elif host.snmp_community.ro_is_snmpv2():
-                self.snmp_type = REQUEST_GETBULK
-            else:
-                self.snmp_type = REQUEST_GETNEXT
+        self.community = community
+        self.request_type = REQUEST_SINGLE
 
     def __repr__(self):
         return "<SNMPRequest Host:{0} #oids:{1}>".format(
@@ -96,6 +83,10 @@ class SNMPRequest(object):
         self.oids.append({'oid': oid, 'callback': callback, 'data': data,
                           'default': default, 'filter': filt,
                           'value': value })
+
+    def set_table(self):
+        self.request_type = REQUEST_TABLE
+        self.reply_all = True
 
     def set_replyall(self, flag):
         """
@@ -113,10 +104,19 @@ class SNMPRequest(object):
         """
         if self.replyall:
             req = self.oids[0]
-            req['callback'](req['default'], error, **(req['data']))
+            print 'req1',req
+            if req['data'] is None:
+                req['callback'](req['default'], error, None)
+            else:
+                req['callback'](req['default'], error, **(req['data']))
         else:
             for req in self.oids:
-                req['callback'](req['default'], error, **(req['data']))
+                print 'req',req
+                if req['data'] is None:
+                    req['callback'](req['default'], error, None)
+                else:
+                    req['callback'](req['default'], error, **(req['data']))
+        print 'done'
 
     def callback_table(self):
         """
@@ -147,13 +147,13 @@ class SNMPRequest(object):
 
     def is_get(self):
         """ Return True if Request is a SNMP get """
-        return (self.snmp_type == REQUEST_GET)
+        return self.request_type == REQUEST_SINGLE
 
     def is_getnext(self):
         """ Return True if Request is a SNMP getnext """
-        return (self.snmp_type == REQUEST_GETNEXT)
+        return self.request_type == REQUEST_TABLE and self.community == 1
 
     def is_getbulk(self):
         """ Return True if Request is a SNMP getbulk """
-        return (self.snmp_type == REQUEST_GETBULK)
+        return self.request_type == REQUEST_TABLE and self.community != 1
 

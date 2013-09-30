@@ -384,7 +384,7 @@ class BootStrapper(object):
     def create_snmp_communities(self):
         for row in database_data.snmp_communities:
             c = model.SnmpCommunity()
-            (c.display_name, c.readonly, c.readwrite, c.trap) = row
+            (c.display_name, c.version, c.community) = row
             model.DBSession.add(c)
 
     def create_triggers(self):

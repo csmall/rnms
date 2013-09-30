@@ -27,7 +27,7 @@ def split_oid(params, host):
     SNMPv1 hosts
     """
     oids = params.split('|')
-    if host.snmp_community.ro_is_snmpv1:
+    if host.ro_community.is_snmpv1:
         try:
             return oids[1]
         except IndexError:
