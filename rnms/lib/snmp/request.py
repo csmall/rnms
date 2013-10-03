@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,8 +17,11 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
+from pysnmp.entity.rfc3413.oneliner import cmdgen
 REQUEST_SINGLE = 0
-REQUEST_TABLE = 1
+REQUEST_LIST = 1
+REQUEST_TABLE = 2
+REQUEST_MANY = 3
 
 # Filters
 def filter_int(value):
@@ -57,7 +60,7 @@ class SNMPRequest(object):
     """
 
     replyall = False
-    oid_trim = None
+    with_oid = None
 
     id = None
 
@@ -82,11 +85,24 @@ class SNMPRequest(object):
         """
         self.oids.append({'oid': oid, 'callback': callback, 'data': data,
                           'default': default, 'filter': filt,
+                          'rawoid': cmdgen.MibVariable(oid),
                           'value': value })
 
     def set_table(self):
         self.request_type = REQUEST_TABLE
-        self.reply_all = True
+        self.replyall = True
+    
+    def set_many(self):
+        self.request_type = REQUEST_MANY
+        self.replyall = True
+
+    def is_table(self):
+        """ Return True if request is table request """
+        return self.request_type == REQUEST_TABLE
+
+    def is_many(self):
+        """ Return True if request is many request """
+        return self.request_type == REQUEST_MANY
 
     def set_replyall(self, flag):
         """
@@ -104,19 +120,18 @@ class SNMPRequest(object):
         """
         if self.replyall:
             req = self.oids[0]
-            print 'req1',req
             if req['data'] is None:
-                req['callback'](req['default'], error, None)
+                req['callback'](req['default'], error, host=self.host)
             else:
-                req['callback'](req['default'], error, **(req['data']))
+                req['callback'](req['default'], error, host=self.host, 
+                                **(req['data']))
         else:
             for req in self.oids:
-                print 'req',req
                 if req['data'] is None:
-                    req['callback'](req['default'], error, None)
+                    req['callback'](req['default'], error, host=self.host)
                 else:
-                    req['callback'](req['default'], error, **(req['data']))
-        print 'done'
+                    req['callback'](req['default'], error, host=self.host,
+                                    **(req['data']))
 
     def callback_table(self):
         """
@@ -124,14 +139,15 @@ class SNMPRequest(object):
         """
         if self.replyall:
             self.oids[0]['callback'](
-                self.varbinds, None, **self.oids[0]['data'])
+                self.varbinds, None, host=self.host,
+                **self.oids[0]['data'])
         else:
             for idx in len(self.oids):
                 self.oids[idx]['callback'](
-                    self.varbinds[idx], None, **self.oids[idx]['data'])
+                    self.varbinds[idx], None, host=self.host,
+                    **self.oids[idx]['data'])
 
-    @classmethod
-    def callback_single(cls, req_oid, value, error=None):
+    def callback_single(self, req_oid, value, error=None):
         """
         Fire off the callack with the given value
         """
@@ -141,9 +157,10 @@ class SNMPRequest(object):
             except KeyError:
                 pass
         if req_oid['data'] is None:
-            req_oid['callback'](value, error)
+            req_oid['callback'](value, error, host=self.host)
         else:
-            req_oid['callback'](value, error, **(req_oid['data']))
+            req_oid['callback'](value, error, host=self.host,
+                                **(req_oid['data']))
 
     def is_get(self):
         """ Return True if Request is a SNMP get """
@@ -151,9 +168,9 @@ class SNMPRequest(object):
 
     def is_getnext(self):
         """ Return True if Request is a SNMP getnext """
-        return self.request_type == REQUEST_TABLE and self.community == 1
+        return self.request_type in (REQUEST_TABLE,REQUEST_MANY) and self.community == 1
 
     def is_getbulk(self):
         """ Return True if Request is a SNMP getbulk """
-        return self.request_type == REQUEST_TABLE and self.community != 1
+        return self.request_type in (REQUEST_TABLE,REQUEST_MANY) and self.community != 1
 

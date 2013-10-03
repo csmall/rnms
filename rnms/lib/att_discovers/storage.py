@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,8 +46,8 @@ def discover_storage(dobj, att_type, host):
             )
 
     return dobj.snmp_engine.get_table(
-        host, oids, cb_storage, table_trim=1,
-        host=host, dobj=dobj, att_type=att_type)
+        host, oids, cb_storage, 
+        dobj=dobj, att_type=att_type)
 
 def cb_storage(values, error, host, dobj, att_type):
     if values is None:
@@ -55,9 +55,9 @@ def cb_storage(values, error, host, dobj, att_type):
         return
     discovered_attributes = {}
 
-    for sidx in values[0]:
+    for row in values:
         try:
-            descr = storage_parse_description(values[2][sidx])
+            descr = storage_parse_description(row[2])
         except IndexError:
             continue
 
@@ -66,22 +66,22 @@ def cb_storage(values, error, host, dobj, att_type):
 
         new_att = model.DiscoveredAttribute(host.id, att_type)
         new_att.display_name = descr
-        new_att.index = sidx
+        new_att.index = row[0]
         try:
-            type_index = values[1][sidx]
+            type_index = row[1]
         except IndexError:
             new_att.set_field('storage_type', u'Other')
         else:
             new_att.set_field('storage_type', storage_get_device_type(type_index))
 
         try:
-            block_size = int(values[3][sidx])
-            block_count = int(values[4][sidx])
+            block_size = int(row[3])
+            block_count = int(row[4])
         except (IndexError, ValueError):
             new_att.set_field('size', 0)
         else:
             new_att.set_field('size', block_size * block_count)
-        discovered_attributes[unicode(sidx)] = new_att
+        discovered_attributes[unicode(row[0])] = new_att
     dobj.discover_callback(host.id, discovered_attributes)
 
 

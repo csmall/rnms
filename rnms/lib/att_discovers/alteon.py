@@ -30,9 +30,9 @@ def discover_alteon_realservers(dobj, att_type, host):
             (1,3,6,1,4,1,1872,2,1,5,2,1,12),
             (1,3,6,1,4,1,1872,2,1,9,2,2,1,7),
             )
-    return dobj.snmp_engine.get_table(
-        host, oids, cb_alteon_realservers, table_trim=1,
-        dobj=dobj, att_type=att_type, host=host)
+    return dobj.snmp_engine.get_many(
+        host, oids, cb_alteon_realservers, with_oid=1,
+        dobj=dobj, att_type=att_type)
 
 
 def cb_alteon_realservers(values, error, host, dobj, att_type):
@@ -76,7 +76,7 @@ def discover_alteon_realservices(dobj, att_type, host):
             )
     return dobj.snmp_engine.get_table(
         host, oids, cb_alteon_realservices,
-        table_trim=1, host=host, dobj=dobj, att_type=att_type)
+        oid_trim=1, dobj=dobj, att_type=att_type)
 
 def cb_alteon_realservices(values, error, host, dobj, att_type):
     rservices = {}
@@ -119,8 +119,8 @@ def discover_alteon_virtualservers(dobj, att_type, host):
             (1,3,6,1,4,1,1872,2,1,5,5,1,8), #hname
             )
     return dobj.snmp_engine.get_table(
-        host, oids, cb_alteon_virtualservers, table_trim=1,
-        host=host, dobj=dobj, att_type=att_type)
+        host, oids, cb_alteon_virtualservers, oid_trim=1,
+        dobj=dobj, att_type=att_type)
 
 
 def cb_alteon_virtualservers(values, error, host, dobj, att_type):

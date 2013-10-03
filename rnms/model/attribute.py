@@ -215,7 +215,7 @@ class Attribute(DeclarativeBase):
         """
         for at_rrd in self.attribute_type.rrds:
             if at_rrd.name == rrd_name:
-                return at_rrd.get_average_value(self, start_time, end_time)
+                return at_rrd.get_average_value(self.id, start_time, end_time)
         raise KeyError('Attribute has no RRD {}'.format(rrd_name))
 
     def description_dict(self):

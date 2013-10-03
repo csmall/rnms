@@ -23,12 +23,6 @@
 # For details on setting ip accounting up see
 # http://www.cisco.com/en/US/tech/tk648/tk362/technologies_configuration_example09186a0080094aa2.shtml
 
-import logging
-
-from rnms.lib import snmp
-
-logger = logging.getLogger('pSAagent')
-
 def poll_cisco_saagent(poller_buffer, parsed_params, **kw):
     """
     Obtain data about the Cisco SA Agent.  
@@ -36,10 +30,10 @@ def poll_cisco_saagent(poller_buffer, parsed_params, **kw):
       <index>: The SA Agent index
       <qtype>: query type, must be one of the keys in the table above
     """
-    oid = (1,3,6,1,4,1,9,9,42,1,5,2,1)
+    base_oid = (1,3,6,1,4,1,9,9,42,1,5,2,1)
     saagent_queries = {
-        'fwd_jitter' : ((8,9,13,14),  cb_fwd_jitter),
-        'bwd_jitter' : ((18,19,23,24), cb_bwd_jitter),
+        'fwd_jitter' : ((8,9,13,14),  cb_jitter),
+        'bwd_jitter' : ((18,19,23,24), cb_jitter),
         'packetloss' : ((1,2,26,27), cb_packetloss),
         }
 
@@ -47,59 +41,38 @@ def poll_cisco_saagent(poller_buffer, parsed_params, **kw):
     try:
         (queries, cb_fun) = saagent_queries[qtype]
     except KeyError:
-        logger.errror('Bad query type %s', qtype)
+        kw['pobj'].logger.errror('Bad query type %s', qtype)
         return False
 
-    req = snmp.SNMPRequest(kw['attribute'].host)
-    req.set_replyall(True)
-    req.oid_trim = 2
-    for query in queries:
-        req.add_oid(oid + (query,int(index)), cb_fun, data=kw)
-    kw['pobj'].snmp_engine.get(req)
-    return True
+    #req.oid_trim = 2
+    oids = [base_oid + (x,int(index)) for x in queries]
+    return kw['pobj'].snmp_engine.get_list(kw['attribute'].host, oids, cb_fun, **kw)
 
-def cb_fwd_jitter(values, error, pobj, attribute, poller_row, **kw):
-    index = str(attribute.index)
-    try:
-        nr = int(values['8.'+index]) + int(values['13.'+index])
-        sum_val = int(values['9.'+index]) + int(values['14.'+index])
-    except KeyError:
+def cb_jitter(values, error, pobj, attribute, poller_row, **kw):
+    if values is None or len(values) != 4:
         pobj.poller_callback(attribute.id, poller_row, None)
-    else:
-        jitter=0
-        if nr > 0:
-            jitter = sum_val / nr
-        pobj.poller_callback(attribute.id, poller_row, jitter)
-
-def cb_bwd_jitter(values, error, pobj, attribute, poller_row, **kw):
-    index = str(attribute.index)
     try:
-        nr = int(values['18.'+index]) + int(values['23.'+index])
-        sum_val = int(values['19.'+index]) + int(values['24.'+index])
-    except KeyError:
-        pobj.poller_callback(attribute.id, poller_row, None)
-    else:
-        jitter=0
-        if nr > 0:
-            jitter = sum_val / nr
-        pobj.poller_callback(attribute.id, poller_row, jitter)
-
+        jitter = (int(values[1]) + int(values[3]))/\
+                (int(values[0]) + int(values[2]))
+    except (ZeroDivisionError,ValueError):
+        jitter = 0
+    pobj.poller_callback(attribute.id, poller_row, jitter)
 
 def cb_packetloss(values, error, pobj, attribute, poller_row, **kw):
-    index = str(attribute.index)
-    try:
-        nr = int(values['1.'+index])
-        rtt_sum = int(values['2.'+index])
-        fwd_pl = int(values['26.'+index])
-        bwd_pl = int(values['27.'+index])
-    except KeyError:
+    if values is None or len(values) != 4:
         pobj.poller_callback(attribute.id, poller_row, None)
-    else:
-        if nr == 0:
-            pobj.poller_callback(attribute.id, poller_row, (0,0,0))
-            return
-        rtt = rtt_sum / nr
-        fwd_pl_pct = fwd_pl / (fwd_pl + nr) * 100
-        bwd_pl_pct = bwd_pl / (bwd_pl + nr) * 100
-        pobj.poller_callback(attribute.id, poller_row, (fwd_pl_pct,bwd_pl_pct,rtt))
+
+    nr = int(values[0])
+    if nr == 0:
+        pobj.poller_callback(attribute.id, poller_row, (0,0,0))
+        return
+    rtt_sum = int(values[1])
+    fwd_pl = int(values[2])
+    bwd_pl = int(values[3])
+
+    pobj.poller_callback(attribute.id, poller_row, (
+        fwd_pl / (fwd_pl + nr) * 100,
+        bwd_pl / (bwd_pl + nr) * 100,
+        rtt_sum / nr
+    ))
 

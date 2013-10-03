@@ -40,8 +40,9 @@ class PollerTest(object):
         self.test_host.id = self.test_host_id
         self.test_host.mgmt_address = self.test_host_ip
         self.test_community = mock.MagicMock(spec_set=model.SnmpCommunity)
-        self.test_community.readonly = ('2', 'public')
-        self.test_host.snmp_community = self.test_community
+        self.test_community.version = 2
+        self.test_community.community = 'public'
+        self.test_host.ro_community = self.test_community
         self.test_att_type = mock.MagicMock(spec_set=model.AttributeType)
         self.test_att_type.id = 1
 

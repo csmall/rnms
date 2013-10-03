@@ -37,7 +37,7 @@ def discover_fc_ports(dobj, att_type, host):
             (1,3,6,1,2,1,75,1,2,2,1,2), # oper status
             )
     return dobj.snmp_engine.get_table(
-        host, oids, cb_fc_ports, table_trim=1,
+        host, oids, cb_fc_ports, oid_trim=1,
         host=host, dobj=dobj, att_type=att_type)
 
 def cb_fc_ports(values, error, host, dobj, att_type):

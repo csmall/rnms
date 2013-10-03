@@ -35,15 +35,16 @@ class TestSNMP(object):
         self.snmp_engine = SNMPEngine(self.zmq_core)
         self.results = []
         self.test_host = mock.MagicMock(spec_set=Host)
-        self.test_host.snmp_community = mock.MagicMock(spec_set=SnmpCommunity)
+        self.test_host.ro_community = mock.MagicMock(spec_set=SnmpCommunity)
         self.test_host.mgmt_address = '127.0.0.1'
 
     def set_host(self,snmpver, snmpcomm):
-        self.test_host.snmp_community.readonly = (snmpver, snmpcomm)
-        self.test_host.snmp_community.ro_is_snmpv1 = mock.Mock(
-            return_value=(snmpver == '1'))
-        self.test_host.snmp_community.ro_is_snmpv2 = mock.Mock(
-            return_value=(snmpver == '2'))
+        self.test_host.ro_community.community = snmpcomm
+        self.test_host.ro_community.version = snmpver
+        self.test_host.ro_community.is_snmpv1 = mock.Mock(
+            return_value=(snmpver == 1))
+        self.test_host.ro_community.is_snmpv2 = mock.Mock(
+            return_value=(snmpver == 2))
 
     def poll(self):
         while (self.snmp_engine.poll()> 0):
@@ -62,7 +63,7 @@ class TestSNMP(object):
 
     def test_v1get(self):
         """ Simple SNMP v1 fetch of SysObjectID """
-        self.set_host('1', 'public')
+        self.set_host(1, 'public')
         assert(self.snmp_engine.get_str(
             self.test_host, self.sysobjid_oid, my_callback1, obj=self ))
         self.poll()
@@ -70,7 +71,7 @@ class TestSNMP(object):
 
     def test_v2get(self):
         """ Simple SNMP v2 fetch of SysObjectID """
-        self.set_host('2', 'public')
+        self.set_host(2, 'public')
         self.snmp_engine.get_str(
             self.test_host, self.sysobjid_oid, my_callback1, obj=self )
         self.poll()
@@ -78,7 +79,7 @@ class TestSNMP(object):
 
     def test_v1_default_bad_comm(self):
         """ Simple SNMP v1 fetch returns default with bad community"""
-        self.set_host('1', 'badcomm')
+        self.set_host(1, 'badcomm')
         self.snmp_engine.set_default_timeout(1)
         self.snmp_engine.get_str(
             self.test_host, self.sysobjid_oid, my_callback1,
@@ -88,7 +89,7 @@ class TestSNMP(object):
 
     def test_v2_default_bad_comm(self):
         """ Simple SNMP v2c fetch returns default with bad community"""
-        self.set_host('2', 'badcomm')
+        self.set_host(2, 'badcomm')
         self.snmp_engine.set_default_timeout(1)
         self.snmp_engine.get_str(
             self.test_host, self.sysobjid_oid, my_callback1,
@@ -98,7 +99,7 @@ class TestSNMP(object):
 
     def test_v1_default_bad_oid(self):
         """ Simple SNMP v1 fetch returns default with bad OID"""
-        self.set_host('1', 'public')
+        self.set_host(1, 'public')
         self.snmp_engine.set_default_timeout(1)
         self.snmp_engine.get_str(
             self.test_host, '1.3.6.42.41.40', my_callback1,
@@ -108,7 +109,7 @@ class TestSNMP(object):
 
     def test_v2_default_bad_oid(self):
         """ Simple SNMP v2c fetch returns default with bad OID"""
-        self.set_host('2', 'public')
+        self.set_host(2, 'public')
         self.snmp_engine.set_default_timeout(1)
         self.snmp_engine.get_str(
             self.test_host, '1.3.6.42.41.40', my_callback1,
@@ -118,7 +119,7 @@ class TestSNMP(object):
 
     def test_v1_table(self):
         """ SNMP v1 table fetch - uses ifTable.ifIndex """
-        self.set_host('1', 'public')
+        self.set_host(1, 'public')
         self.snmp_engine.set_default_timeout(1)
         # Get size of iftable
         self.snmp_engine.get_int(
@@ -138,7 +139,7 @@ class TestSNMP(object):
 
     def test_v2_table(self):
         """ SNMP v2 table fetch - uses ifTable.ifIndex """
-        self.set_host('2', 'public')
+        self.set_host(2, 'public')
         # Get size of iftable
         self.snmp_engine.get_int(
             self.test_host, '1.3.6.1.2.1.2.1.0', my_callback1, obj=self)

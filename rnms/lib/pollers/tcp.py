@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -73,7 +73,9 @@ def poll_snmp_tcp_established(poller_buffer, parsed_params, **kw):
     port
     """
     oid = (1,3,6,1,2,1,6,13,1,1)
-    return kw['pobj'].snmp_engine.get_table(kw['attribute'].host, (oid,), cb_snmp_tcp_established, **kw)
+    return kw['pobj'].snmp_engine.get_table(
+        kw['attribute'].host, (oid,), cb_snmp_tcp_established,
+        with_oid=6, **kw)
 
 def cb_snmp_tcp_established(values, error, pobj, attribute, poller_row, **kw):
     if values is None:
@@ -82,7 +84,8 @@ def cb_snmp_tcp_established(values, error, pobj, attribute, poller_row, **kw):
 
     port = str(attribute.index)
     est_count = 0
-    for oid,val in values[0].items():
+    for row in values:
+        oid,val = row.items()[0]
         if val == '5' and oid.split('.')[-6] == port:
             est_count += 1
 

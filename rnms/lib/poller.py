@@ -50,9 +50,6 @@ class PollingHost(object):
         self.mgmt_address = host.mgmt_address
         self.ro_community  = host.ro_community
         self.rw_community  = host.rw_community
-        #self.ro_is_snmpv1 = host.snmp_community.ro_is_snmpv1()
-        #self.ro_is_snmpv2 = host.snmp_community.ro_is_snmpv2()
-        #self.readonly = host.snmp_community.readonly
 
 class PollingAttribute(object):
     """ A small shadow of the real Attribute that is not connected to
@@ -271,7 +268,7 @@ class Poller(RnmsEngine):
         # Special speed-up for snmp fetch, get it all in one group
         # This does NOT work for SNMP v1, or this implementaiton anyhow
         if poller_row.poller.command == 'snmp_counter' and \
-           not patt.host.ro_community.is_snmpv1 :
+           not patt.host.ro_community.is_snmpv1():
             patt.skip_rows = self._multi_snmp_poll(patt)
             if patt.skip_rows != []:
                 return
@@ -437,11 +434,11 @@ class Poller(RnmsEngine):
         the strict poller order is not maintained
         """
         skip_rows = []
-        #self.logger.debug("A#%d: multi_snmp start",patt['attribute'].id)
+        #self.logger.debug("A#%d: multi_snmp start",patt.id)
         poller_set = self.get_poller_set(patt.poller_set_id)
         if poller_set is None:
             return []
-        req = SNMPRequest(patt.host)
+        req = SNMPRequest(patt.host, patt.host.ro_community)
         for poller_row in poller_set:
             if poller_row.position < patt.poller_row:
                 continue

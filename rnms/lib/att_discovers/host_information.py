@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,14 +24,7 @@
 
 #
 """ Discover host system info via SNMP """
-from rnms.lib import snmp
 from rnms import model
-
-sys_fields = (('1','description'),
-              ('4', 'contact'), 
-              ('5', 'name'),
-              ('6', 'location'),
-              )
 
 def discover_host_information(dobj, att_type, host):
     """
@@ -40,7 +33,7 @@ def discover_host_information(dobj, att_type, host):
     oid = (1,3,6,1,2,1,1,2,0)
     return dobj.snmp_engine.get_str(
         host, oid, cb_match_host,
-        dobj=dobj, att_type=att_type, host=host)
+        dobj=dobj, att_type=att_type)
 
 def cb_match_host(value, error, dobj, att_type, host):
     """
@@ -60,20 +53,14 @@ def cb_match_host(value, error, dobj, att_type, host):
         dobj.discover_callback(host.id, {})
         return
 
-    # Query for processor table and system info
     oids = (
             (1,3,6,1,2,1,1,1,0),
             (1,3,6,1,2,1,1,4,0),
             (1,3,6,1,2,1,1,5,0),
             (1,3,6,1,2,1,1,6,0),
             )
-    req = snmp.SNMPRequest(host)
-    req.set_replyall(True)
-    req.oid_trim = 2
-    for oid in oids:
-        req.add_oid(oid, cb_host_information,
-                    data={'dobj':dobj, 'host':host, 'att_type':att_type})
-    dobj.snmp_engine.get(req)
+    dobj.snmp_engine.get_list(host, oids, cb_host_information, 
+                              dobj=dobj, att_type=att_type)
 
 def cb_host_information(values, error, dobj, host, att_type):
     if values is None:
@@ -82,22 +69,23 @@ def cb_host_information(values, error, dobj, host, att_type):
     new_att = model.DiscoveredAttribute(host.id, att_type)
     new_att.display_name = u'CPU'
     new_att.index = '1'
-    new_att.set_field('contact', values['4.0'])
-    new_att.set_field('name', values['5.0'])
-    new_att.set_field('location', values['6.0'])
+    new_att.set_field('description', values[0])
+    new_att.set_field('contact', values[1])
+    new_att.set_field('name', values[2])
+    new_att.set_field('location', values[3])
+
+    # Walk the device table
+    oid = (1,3,6,1,2,1,25,3,2,1,2)
+    dobj.snmp_engine.get_many(host, (oid,), cb_host_devtable,
+                               dobj=dobj, new_att=new_att)
+
+def cb_host_devtable(values, error, dobj, host, new_att):
+    num_cpu = 0
+    if values is not None and len(values) > 0:
+        for devtype in values[0]:
+            if devtype == '1.3.6.1.2.1.25.3.1.3':
+                num_cpu += 1
+    if num_cpu == 0:
+        num_cpu = 1
+    new_att.set_field('cpu_num', num_cpu)
     dobj.discover_callback(host.id, {'1': new_att})
-
-
-
-def host_count_cpus(hr_device_table):
-    """
-    Count the number of CPU devices found in the device table, or return
-    the default of 1
-    """
-    cpu_count = 0
-    for device in hr_device_table.values():
-        if device.find('25.3.1.3'):
-            cpu_count += 1
-    if cpu_count == 0:
-        cpu_count = 1
-    return cpu_count

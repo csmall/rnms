@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@ def discover_bgp_peers(dobj, att_type, host):
     columns = (1,2,5,7,9)
     oids = tuple([table_oid + (col,) for col in columns])
     return dobj.snmp_engine.get_table(
-        host, oids, cb_bgp_peers, table_trim=4,
-        host=host, dobj=dobj, att_type=att_type)
+        host, oids, cb_bgp_peers,
+        dobj=dobj, att_type=att_type)
 
 def cb_bgp_peers(values, error, host, dobj, att_type):
     bgp_peers = {}
@@ -35,14 +35,15 @@ def cb_bgp_peers(values, error, host, dobj, att_type):
         dobj.discover_callback(host.id, bgp_peers)
         return
 
-    for remote_addr in values[3].values():
+    for value in values:
+        remote_addr = value[3]
         new_peer = model.DiscoveredAttribute(host.id, att_type)
         new_peer.display_name = remote_addr
         new_peer.index = remote_addr
-        if values[1][remote_addr] != '6':
+        if value[1] != '6':
             new_peer.oper_down()
-        new_peer.set_field('local', unicode(values[2][remote_addr]))
-        new_peer.set_field('asn', u'AS ' + unicode(values[4][remote_addr]))
+        new_peer.set_field('local', unicode(value[2]))
+        new_peer.set_field('asn', u'AS ' + unicode(value[4]))
         bgp_peers[remote_addr] = new_peer
     dobj.discover_callback(host.id, bgp_peers)
 

@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,30 +30,26 @@ def discover_cpqmib(dobj, att_type, host):
     except KeyError:
         return False
     return dobj.snmp_engine.get_table(
-        host, mibinfo[1], mibinfo[0], table_trim=1,
-        host=host, att_type=att_type, dobj=dobj)
+        host, mibinfo[1], mibinfo[0], 
+        att_type=att_type, dobj=dobj)
 
 
 def cb_cpqmib_phydrv(values, error, host, dobj, att_type):
     discovered_attributes = {}
     if values is not None:
-        for key,controller in values[0].values():
-            try:
-                drive_index = values[1][key]
-                drive_model = values[2][key]
-                drive_status = values[3][key]
-            except (KeyError, IndexError):
-                pass
-            else:
-                new_att = DiscoveredAttribute(host.id, att_type)
-                new_att.display_name = 'Disk{}/{}'.format(controller, drive_index)
-                new_att.index = '{}.{}'.format(controller, drive_index)
-                new_att.set_field('controller', controller)
-                new_att.set_field('drvindex', drive_index)
-                new_att.set_field('model', drive_model)
-                if drive_status != 2:
-                    new_att.oper_state = 2
-                discovered_attributes[new_att.index] = new_att
+        for row in values:
+            controller = row[0]
+            drive_index = row[1]
+            drive_model = row[2]
+            new_att = DiscoveredAttribute(host.id, att_type)
+            new_att.display_name = 'Disk{}/{}'.format(controller, drive_index)
+            new_att.index = '{}.{}'.format(controller, drive_index)
+            new_att.set_field('controller', controller)
+            new_att.set_field('drvindex', drive_index)
+            new_att.set_field('model', drive_model)
+            if row[3] != 2:
+                new_att.oper_state = 2
+            discovered_attributes[new_att.index] = new_att
     dobj.discover_callback(host.id, discovered_attributes)
 
 def cb_cpqmib_fans(values, error, host, dobj, att_type):
@@ -61,26 +57,20 @@ def cb_cpqmib_fans(values, error, host, dobj, att_type):
 
     discovered_attributes = {}
     if values is not None:
-        for key,chassis in values[0].values():
-            try:
-                index = values[1][key]
-                loc_code = values[2][key]
-                present = values[3][key]
-                status = values[4][key]
-            except (KeyError, IndexError):
-                pass
-            else:
-                new_att = DiscoveredAttribute(host.id, att_type)
-                new_att.display_name = 'Fan{}/{}'.format(chassis, index)
-                new_att.index = '{}.{}'.format(chassis, index)
-                new_att.set_field('chassis', chassis)
-                new_att.set_field('fanindex', index)
-                new_att.set_field('location', cpqmib_locations.get(loc_code, u'Unknown'))
-                if present != 3:
-                    new_att.admin_state = 2
-                if status != 2:
-                    new_att.oper_state = 2
-                discovered_attributes[new_att.index] = new_att
+        for row in values:
+            chassis = row[0]
+            index = row[1]
+            new_att = DiscoveredAttribute(host.id, att_type)
+            new_att.display_name = 'Fan{}/{}'.format(chassis, index)
+            new_att.index = '{}.{}'.format(chassis, index)
+            new_att.set_field('chassis', chassis)
+            new_att.set_field('fanindex', index)
+            new_att.set_field('location', cpqmib_locations.get(row[2], u'Unknown'))
+            if row[3] != 3:
+                new_att.admin_state = 2
+            if row[4] != 2:
+                new_att.oper_state = 2
+            discovered_attributes[new_att.index] = new_att
     dobj.discover_callback(host.id, discovered_attributes)
 
 def cb_cpqmib_ps(values, error, host, dobj, att_type):
@@ -88,24 +78,19 @@ def cb_cpqmib_ps(values, error, host, dobj, att_type):
 
     discovered_attributes = {}
     if values is not None:
-        for key,chassis in values[0].values():
-            try:
-                index = values[1][key]
-                present = values[3][key]
-                status = values[4][key]
-            except (KeyError, IndexError):
-                pass
-            else:
-                new_att = DiscoveredAttribute(host.id, att_type)
-                new_att.display_name = 'Power{}/{}'.format(chassis, index)
-                new_att.index = '{}.{}'.format(chassis, index)
-                new_att.set_field('chassis', chassis)
-                new_att.set_field('bayindex', index)
-                if present != 3:
-                    new_att.admin_state = 2
-                if status != 2:
-                    new_att.oper_state = 2
-                discovered_attributes[new_att.index] = new_att
+        for row in values:
+            chassis = row[0]
+            index = row[1]
+            new_att = DiscoveredAttribute(host.id, att_type)
+            new_att.display_name = 'Power{}/{}'.format(chassis, index)
+            new_att.index = '{}.{}'.format(chassis, index)
+            new_att.set_field('chassis', chassis)
+            new_att.set_field('bayindex', index)
+            if row[3] != 3:
+                new_att.admin_state = 2
+            if row[4] != 2:
+                new_att.oper_state = 2
+            discovered_attributes[new_att.index] = new_att
     dobj.discover_callback(host.id, discovered_attributes)
 
 def cb_cpqmib_temp(values, error, host, dobj, att_type):
@@ -113,23 +98,18 @@ def cb_cpqmib_temp(values, error, host, dobj, att_type):
 
     discovered_attributes = {}
     if values is not None:
-        for key,chassis in values[0].values():
-            try:
-                index = values[1][key]
-                loc_code = values[2][key]
-                status = values[4][key]
-            except (KeyError, IndexError):
-                pass
-            else:
-                new_att = DiscoveredAttribute(host.id, att_type)
-                new_att.display_name = 'Temperature{}/{}'.format(chassis, index)
-                new_att.index = '{}.{}'.format(chassis, index)
-                new_att.set_field('chassis', chassis)
-                new_att.set_field('tempindex', index)
-                new_att.set_field('location', cpqmib_locations.get(loc_code, u'Unknown'))
-                if status != 2:
-                    new_att.oper_state = 2
-                discovered_attributes[new_att.index] = new_att
+        for row in values:
+            chassis = row[0]
+            index = row[1]
+            new_att = DiscoveredAttribute(host.id, att_type)
+            new_att.display_name = 'Temperature{}/{}'.format(chassis, index)
+            new_att.index = '{}.{}'.format(chassis, index)
+            new_att.set_field('chassis', chassis)
+            new_att.set_field('tempindex', index)
+            new_att.set_field('location', cpqmib_locations.get(row[2], u'Unknown'))
+            if row[3] != 2:
+                new_att.oper_state = 2
+            discovered_attributes[new_att.index] = new_att
     dobj.discover_callback(host.id, discovered_attributes)
     
 cqpmib_oids = {

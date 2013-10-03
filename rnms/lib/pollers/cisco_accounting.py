@@ -31,7 +31,7 @@ def poll_cisco_accounting(poller_buffer, parsed_params, **kw):
     Step #1: Get the accounting checkpoint id
     """
     oid = (1,3,6,1,4,1,9,2,4,11,0)
-    if kw['attribute'].host.snmp_community.readwrite is '':
+    if kw['attribute'].host.rw_community.is_empty():
         kw['pobj'].poller_callback(kw['attribute'].id, kw['poller_row'], None)
         return True
 

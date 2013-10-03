@@ -30,7 +30,6 @@ from sqlalchemy.types import Integer, Unicode, Boolean, String, DateTime, Text, 
 
 from rnms.model import DeclarativeBase, DBSession
 from rnms.model.snmp_names import SNMPEnterprise
-from rnms.model.snmp_community import SnmpCommunity
 
 __all__ = ['Host', 'Iface', 'ConfigTransfer', 'HostConfig',
            'DiscoveryHost']
@@ -254,12 +253,12 @@ class DiscoveryHost(object):
         self.start_discovery_row()
         self.ad_engine.snmp_engine.get_str(
             self.obj, (1,3,6,1,2,1,1,2,0), cb_fun,
-            host_id=self.id)
+            )
 
     def need_sysobjid(self):
         """ Do we need to check the sysObjectId ? """
         if (self.obj.sysobjid is not None and self.obj.sysobjid != '') or\
-           self.obj.ro_community is None:
+           self.obj.ro_community.is_empty():
             return False
         return True
 

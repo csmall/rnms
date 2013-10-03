@@ -143,7 +143,7 @@ def poll_snmp_walk_average(poller_buffer, parsed_params, **kw):
     """
     if parsed_params == '':
         return False
-    return kw['pobj'].snmp_engine.get_table(kw['attribute'].host, parsed_params, cb_snmp_walk_average, table_trim=1, **kw)
+    return kw['pobj'].snmp_engine.get_table(kw['attribute'].host, parsed_params, cb_snmp_walk_average, oid_trim=1, **kw)
 
 def cb_snmp_walk_average(values, error, pobj, attribute, poller_row, **kw):
     """

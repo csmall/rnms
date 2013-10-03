@@ -66,7 +66,7 @@ class SnmpCommunity(DeclarativeBase):
     id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(40), nullable=False, unique=True)
     version = Column(SmallInteger, default=1)
-    community = Column(String(40), nullable=False)
+    community = Column(String(40), nullable=False, default='')
     auth_type = Column(SmallInteger, default=AUTH_NONE)
     auth_passwd = Column(String(40))
     priv_type = Column(SmallInteger, default=PRIV_NONE)

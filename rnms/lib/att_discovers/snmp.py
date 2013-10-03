@@ -37,13 +37,13 @@ def discover_snmp_interfaces(dobj, att_type, host):
             (1,3,6,1,2,1,4,20,1,2),
             (1,3,6,1,2,1,4,20,1,3),
             )
-    return dobj.snmp_engine.get_table(
-        host, oids, cb_snmp_interfaces, table_trim=1,
-        host=host, dobj=dobj, att_type=att_type)
+    return dobj.snmp_engine.get_many(
+        host, oids, cb_snmp_interfaces, with_oid=1,
+        dobj=dobj, att_type=att_type)
 
 
 def cb_snmp_interfaces(values, error, host, dobj, att_type):
-    if values is None:
+    if values is None or len(values[0]) == 0:
         dobj.discover_callback(host.id, {})
         return
     discovered_attributes = {}

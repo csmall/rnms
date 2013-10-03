@@ -62,7 +62,7 @@ def cb_storage_index(value, error, **kw):
     if kw['attribute'].display_name == value:
         kw['pobj'].poller_callback(kw['attribute'].id, kw['poller_row'], kw['attribute'].index)
     else:
-        kw['pobj'].snmp_engine.get_table(kw['attribute'].host, (oid,), cb_verify_storage_index, table_trim=1, **kw)
+        kw['pobj'].snmp_engine.get_table(kw['attribute'].host, (oid,), cb_verify_storage_index, oid_trim=1, **kw)
 
 
 def cb_verify_storage_index(values, error, pobj, attribute, poller_row, **kw):
@@ -106,7 +106,7 @@ def cb_interface_index(value, error, **kw):
     if value is not None and kw['attribute'].display_name == value:
         kw['pobj'].poller_callback(kw['attribute'].id, kw['poller_row'], kw['attribute'].index)
     else:
-        kw['pobj'].snmp_engine.get_table(kw['attribute'].host, (oid,), cb_verify_interface_number, table_trim=1, **kw)
+        kw['pobj'].snmp_engine.get_table(kw['attribute'].host, (oid,), cb_verify_interface_number, oid_trim=1, **kw)
 
 def cb_verify_interface_number(values, error, pobj, attribute, poller_row, **kw):
     """
@@ -152,7 +152,7 @@ def cb_sensor_index(value, error, **kw):
     if kw['attribute'].display_name == value:
         kw['pobj'].poller_callback(kw['attribute'].id, kw['poller_row'], kw['attribute'].index)
     else:
-        kw['pobj'].snmp_engine.get_table(kw['attribute'].host, (table_oid,), cb_verify_sensor_index, table_trim=1, **kw)
+        kw['pobj'].snmp_engine.get_table(kw['attribute'].host, (table_oid,), cb_verify_sensor_index, oid_trim=1, **kw)
 
 
 def cb_verify_sensor_index(values, error, pobj, attribute, poller_row, **kw):

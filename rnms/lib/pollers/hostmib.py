@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,22 +21,23 @@
 # and Anders Karlsson <anders.x.karlsson@songnetworks.se>
 
 
-from rnms.lib import snmp
-
 def poll_hostmib_apps(poller_buffer, parsed_params, **kw):
 
     oid = (1,3,6,1,2,1,25,4,2,1,2)
-    kw['pobj'].snmp_engine.get_table(kw['attribute'].host, (oid,), cb_hostmib_apps, table_trim=1, **kw)
+    kw['pobj'].snmp_engine.get_table(
+        kw['attribute'].host, (oid,), cb_hostmib_apps, 
+        with_oid=1, **kw)
     return True
 
 def cb_hostmib_apps(values, error, pobj, attribute, poller_row, **kw):
-    app_count = 0
-    pids = []
     if values is None:
         pobj.poller_callback(attribute.id, poller_row, None)
         return
-    for pid, app in values[0].items():
-        if app == attribute.display_name:
+    app_count = 0
+    pids = []
+    for value in values:
+        pid,app = value.items()[0]
+        if app == str(attribute.display_name):
             app_count += 1
             pids.append(int(pid))
     state = 'not_running'
@@ -49,18 +50,19 @@ def poll_hostmib_perf(poller_buffer, parsed_params, **kw):
     """
     Find the memory used for this process
     """
-    oid = (1,3,6,1,2,1,25,5,1,1,2)
-    req = snmp.SNMPRequest(kw['attribute'].host)
-    req.set_replyall(True)
-    for pid in poller_buffer['pids']:
-        req.add_oid(oid + (pid,), cb_hostmib_perf, kw)
-    kw['pobj'].snmp_engine.get(req)
-    return True
+    base_oid = (1,3,6,1,2,1,25,5,1,1,2)
+    if poller_buffer['pids'] == [] :
+        kw['pobj'].poller_callback(kw['attribute'].id,
+                             kw['poller_row'], 0)
+        return True
+    oids = [base_oid+(pid,) for pid in poller_buffer['pids']]
+    return kw['pobj'].snmp_engine.get_list(
+        kw['attribute'].host, oids, cb_hostmib_perf, default=0, **kw)
 
 def cb_hostmib_perf(values, error, pobj, attribute, poller_row, **kw):
     total_memory = 0
     if values is not None:
-        for pid_mem in values.values():
+        for pid_mem in values:
             if pid_mem is not None:
                 total_memory += int(pid_mem)
     

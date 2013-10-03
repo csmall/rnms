@@ -40,30 +40,23 @@ def discover_cisco_envmib(dobj, att_type, host):
              env_oid + tuple( int (x) for x in params[2].split('.')),)
 
     return dobj.snmp_engine.get_table(
-        host, oids, cb_cisco_envmib, table_trim=1, name_base=name_base,
-        host=host, att_type=att_type, dobj=dobj)
+        host, oids, cb_cisco_envmib, with_oid=1, name_base=name_base,
+        att_type=att_type, dobj=dobj)
 
 
 def cb_cisco_envmib(values, error, host, dobj, name_base, att_type):
     env_items = {}
-
-    if values is None:
-        dobj.discover_callback(host.id, env_items)
-        return
-
-    for idx,name in values[0].items():
-        new_att = model.DiscoveredAttribute(host.id, att_type)
-        new_att.display_name = unicode(name_base + idx)
-        new_att.index = idx
-        try:
-            oper = values[1][idx]
-        except (KeyError, IndexError):
-            pass
-        else:
+    if values is not None:
+        for row in values:
+            idx = row[0]
+            new_att = model.DiscoveredAttribute(host.id, att_type)
+            new_att.display_name = unicode(name_base + idx)
+            new_att.index = idx
+            oper = values[1]
             new_att.oper_state = ENV_MON_STATES.get(oper, 'unknown')
             if oper == '5':
                 new_att.admin_down()
-        env_items[idx] = new_att
+            env_items[idx] = new_att
     dobj.discover_callback(host.id, env_items)
 
 def discover_cisco_saagent(dobj, att_type, host):
@@ -72,28 +65,19 @@ def discover_cisco_saagent(dobj, att_type, host):
     Index is the rtr <num> number
     Description is tag <descr> under the rtr clause
     """
-    oids =  ((1,3,6,1,4,1,9,9,42,1,5,2,1,1),
-             (1,3,6,1,4,1,9,9,42,1,2,1,1,3),)
+    oids =  ( (1,3,6,1,4,1,9,9,42,1,2,1,1,3),)
     return dobj.snmp_engine.get_table(
-        host, oids, cb_cisco_saagent, table_trim=1,
-        host=host, dobj=dobj, att_type=att_type)
+        host, oids, cb_cisco_saagent, with_oid=1,
+        dobj=dobj, att_type=att_type)
 
 def cb_cisco_saagent(values, error, host, dobj, att_type):
     saagents = {}
-
-    if values is None:
-        dobj.discover_callback(host.id, saagents)
-        return
-    for key,val in values[0].items():
-        try:
-            description = values[1][key]
-        except (KeyError, IndexError):
-            description = ''
-
-        new_att = model.DiscoveredAttribute(host.id, att_type)
-        new_att.display_name = unicode('SAA{} {}'.format(key, description))
-        new_att.index = key
-        saagents[key] = new_att
+    if values is not None and values != []:
+        for key,description in values[0].items():
+            new_att = model.DiscoveredAttribute(host.id, att_type)
+            new_att.display_name = unicode('SAA{} {}'.format(key, description))
+            new_att.index = key
+            saagents[key] = new_att
     dobj.discover_callback(host.id, saagents)
 
 def discover_pix_connections(dobj, att_type, host):
@@ -104,20 +88,18 @@ def discover_pix_connections(dobj, att_type, host):
             (1,3,6,1,4,1,9,9,147,1,2,2,2,1,3),
             )
     return dobj.snmp_engine.get_table(
-        host, oids, cb_pix_connections, table_trim=2,
-        host=host, dobj=dobj, att_type=att_type)
+        host, oids, cb_pix_connections, with_oid=2,
+        dobj=dobj, att_type=att_type)
 
 
 def cb_pix_connections(values, error, host, dobj, att_type):
     conns = {}
-    if values is None:
-        dobj.discover_callback(host.id, conns)
-        return
-    for key,descr in values[0].items():
-        new_att = model.DiscoveredAttribute(host.id, att_type)
-        new_att.display_name = unicode('FW Stat{}'.format(key))
-        new_att.index = key
-        new_att.set_field('description', descr)
-        conns[key] = new_att
+    if values is not None and values != []:
+        for key,descr in values[0].items():
+            new_att = model.DiscoveredAttribute(host.id, att_type)
+            new_att.display_name = unicode('FW Stat{}'.format(key))
+            new_att.index = key
+            new_att.set_field('description', descr)
+            conns[key] = new_att
     dobj.discover_callback(host.id, conns)
 

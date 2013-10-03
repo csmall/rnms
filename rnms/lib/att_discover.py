@@ -83,8 +83,8 @@ class BaseDiscover(object):
         except IndexError:
             return None
 
-    def cb_check_sysobjid(self, value, error, host_id):
-        dhost = self.get_dhost(host_id)
+    def cb_check_sysobjid(self, value, error, host):
+        dhost = self.get_dhost(host.id)
         if dhost is not None:
             dhost.cb_check_sysobjid(value)
 
@@ -279,7 +279,7 @@ class AttDiscover(BaseDiscover, RnmsEngine):
         
         hosts = DBSession.query(Host).options(
             joinedload(Host.autodiscovery_policy),
-            joinedload(Host.snmp_community)).filter(
+            joinedload(Host.ro_community)).filter(
                 and_(*conditions))
         for host in hosts:
             self._waiting_hosts.append(DiscoveryHost(self, host))

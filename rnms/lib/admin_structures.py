@@ -100,7 +100,7 @@ class host(base_table):
     __grid_id__ = 'hosts-grid'
     __entity__ = model.Host
     __limit_fields__ = ('id', 'display_name', 'zone', 'mgmt_address',
-                        'snmp_community', )
+                        )
 
 class poller(base_table):
     __grid_id__ = 'pollers-grid'
