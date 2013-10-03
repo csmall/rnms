@@ -20,6 +20,7 @@
 import time
 
 from pysnmp.entity.rfc3413.oneliner import cmdgen
+from pysnmp.proto.rfc1905 import NoSuchObject
 
 from scheduler import SNMPScheduler
 from request import SNMPRequest
@@ -187,6 +188,12 @@ class SNMPEngine(object):
             request.attempt += 1
         request.timeout = time.time() + self.default_timeout
 
+    def _parse_value(self,raw_value):
+        """ Parse the SNMP returned value """
+        if isinstance(raw_value, NoSuchObject):
+            return None
+        return raw_value.prettyPrint()
+
     def _parse_many(self, request, var_binds):
         """ Get the raw var_binds into a list of oids which
         have a list/dict of values """
@@ -200,10 +207,11 @@ class SNMPEngine(object):
             for idx,(oid,val) in enumerate(row):
                 if request.oids[idx]['rawoid'].isPrefixOf(oid):
                     if request.with_oid is None:
-                        request.varbinds[idx].append(val.prettyPrint())
+                        request.varbinds[idx].append(self._parse_value(val))
                     else:
                         this_oid = oid[-request.with_oid:].prettyPrint()
-                        request.varbinds[idx][this_oid] = val.prettyPrint()
+                        request.varbinds[idx][this_oid] =\
+                                self._parse_value(val)
         # See if we need more data
         need_more = False
         for idx,(oid,val) in enumerate(var_binds[-1]):
@@ -222,13 +230,14 @@ class SNMPEngine(object):
                 row_data = []
             else:
                 row_data = {}
-            for idx,(oid,val) in enumerate(row):
+            for idx,(oid,raw_val) in enumerate(row):
+                val = self._parse_value(raw_val)
                 if request.oids[idx]['rawoid'].isPrefixOf(oid):
                     if request.with_oid is None:
-                        row_data.append(val.prettyPrint())
+                        row_data.append(val)
                     else:
                         this_oid = oid[-request.with_oid:].prettyPrint()
-                        row_data[this_oid] = val.prettyPrint()
+                        row_data[this_oid] = val
                 else:
                     return False
             request.varbinds.append(row_data)
@@ -240,7 +249,8 @@ class SNMPEngine(object):
             row_vals = []
         else:
             row_vals = {}
-        for idx,(oid,val) in enumerate(var_binds):
+        for idx,(oid,raw_val) in enumerate(var_binds):
+            val = self._parse_value(raw_val)
             try:
                 req_oid = request.oids[idx]
             except IndexError:
@@ -253,17 +263,16 @@ class SNMPEngine(object):
                 row_oid = oid.prettyPrint()
             else:
                 row_oid = oid[-request.with_oid:].prettyPrint()
-            row_val = val.prettyPrint()
             if request.replyall:
                 if request.with_oid is None:
-                    row_vals.append(row_val)
+                    row_vals.append(val)
                 else:
-                    row_vals[row_oid] = row_val
+                    row_vals[row_oid] = val
             else:
                 if request.with_oid is None:
-                    request.callback_single(req_oid, row_val)
+                    request.callback_single(req_oid, val)
                 else:
-                    request.callback_single(req_oid, {row_oid: row_val})
+                    request.callback_single(req_oid, {row_oid: val})
         if request.replyall:
             request.callback_single(first_req_oid, row_vals)
 

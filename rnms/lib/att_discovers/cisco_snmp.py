@@ -47,7 +47,7 @@ def discover_cisco_envmib(dobj, att_type, host):
 def cb_cisco_envmib(values, error, host, dobj, name_base, att_type):
     env_items = {}
     if values is not None:
-        for row in values:
+        for row in values[0]:
             idx = row[0]
             new_att = model.DiscoveredAttribute(host.id, att_type)
             new_att.display_name = unicode(name_base + idx)

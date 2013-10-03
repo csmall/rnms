@@ -28,24 +28,19 @@ def discover_apc(dobj, att_type, host):
             (1,3,6,1,4,1,318,1,1,1,1,1,2,0),
             (1,3,6,1,4,1,318,1,1,1,2,1,1,0),
             )
-    req = snmp.SNMPRequest(host)
-    req.set_replyall(True)
-    req.oid_trim = 4
-    for oid in oids:
-        req.add_oid(oid, cb_apc,
-                    data={'dobj':dobj,'att_type':att_type,'host':host})
-    return dobj.snmp_engine.get(req)
+    return dobj.snmp_engine.get_list(
+        host, oids, cb_apc,
+        dobj=dobj, att_type=att_type)
 
 def cb_apc(values, error, host, dobj, att_type):
-    if values is None or values['1.1.1.0'] is None:
+    if values is None or values[0] is None:
         dobj.discover_callback(host.id, {})
     else:
         new_att = model.DiscoveredAttribute(host.id, att_type)
-        new_att.display_name = unicode(values['1.1.1.0'])
+        new_att.display_name = unicode(values[0])
         new_att.index = '1'
-        new_att.set_field('description', unicode(values['1.1.2.0']))
-        state = values['2.1.1.0']
-        if state == 1 or state == 3:
+        new_att.set_field('description', unicode(values[1]))
+        if values[2] in ('1', '3'):
             new_att.oper_down()
         dobj.discover_callback(host.id, {'1': new_att})
 

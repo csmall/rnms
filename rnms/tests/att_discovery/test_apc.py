@@ -12,7 +12,7 @@ class TestApcDiscover(AttDiscTest):
     def test_discover_apc(self):
         """ APC discovery calls snmp get correctly """
         eq_(discover_apc(*self.discover_args), True)
-        self.assert_snmp_get_called(oid_count=3)
+        self.assert_snmp_list_called()
 
     def test_cb_none(self):
         """ APC discovery callback with None has no Attributes """
@@ -24,7 +24,7 @@ class TestApcDiscover(AttDiscTest):
 
     def test_cb_single(self):
         """ APC discovery callback finds single item """
-        values = {'1.1.1.0': 'Test Device', '1.1.2.0': 'description', '2.1.1.0': 2}
+        values = ['Test Device', 'description', '2']
         cb_apc(values, None, **self.test_callback_kwargs)
         self.assert_result_count(1)
         self.assert_result_indexes(('1',))
@@ -33,7 +33,7 @@ class TestApcDiscover(AttDiscTest):
     
     def test_cb_single_down1(self):
         """ APC discovery callback finds single item down with state 1 """
-        values = {'1.1.1.0': 'Test Device', '1.1.2.0': 'description', '2.1.1.0': 1}
+        values = ['Test Device', 'description', '1']
         cb_apc(values, None, **self.test_callback_kwargs)
         self.assert_result_count(1)
         self.assert_result_indexes(('1',))
@@ -42,7 +42,7 @@ class TestApcDiscover(AttDiscTest):
     
     def test_cb_single_down3(self):
         """ APC discovery callback finds single item down with state 3 """
-        values = {'1.1.1.0': 'Test Device', '1.1.2.0': 'description', '2.1.1.0': 3}
+        values = ['Test Device', 'description', '3']
         cb_apc(values, None, **self.test_callback_kwargs)
         self.assert_result_count(1)
         self.assert_result_indexes(('1',))

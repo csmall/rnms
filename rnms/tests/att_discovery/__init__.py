@@ -35,8 +35,10 @@ class AttDiscTest(object):
         self.disc_cb = mock.Mock()
         self.dobj.discover_callback = self.disc_cb
         self.snmp_engine = mock.MagicMock()
+        self.snmp_engine.get_single = mock.Mock(return_value=True)
+        self.snmp_engine.get_list = mock.Mock(return_value=True)
         self.snmp_engine.get_table = mock.Mock(return_value=True)
-        self.snmp_engine.get = mock.Mock(return_value=True)
+        self.snmp_engine.get_many = mock.Mock(return_value=True)
         self.dobj.snmp_engine = self.snmp_engine
         self.tcp_client = mock.MagicMock(spec_set=TCPClient)
         self.tcp_client.get_tcp = mock.Mock(return_value=True)
@@ -132,14 +134,29 @@ class AttDiscTest(object):
         """ Call the discover function """
         eq_(disc_fun(*self.discover_args), True)
 
-    def assert_snmp_table_called(self):
-        eq_(self.snmp_engine.get_table.called, True)
+    def _check_snmp_args(self, func):
+        """ Common paramters for snmp_engine.get* """
+        eq_(func.called, True)
         # First parameter is host
-        eq_(self.snmp_engine.get_table.call_args[0][0], self.test_host)
+        eq_(func.call_args[0][0], self.test_host)
         # Second parameter is oids
-        eq_(type(self.snmp_engine.get_table.call_args[0][1]), tuple)
+        eq_(type(func.call_args[0][1]), tuple)
         # Third parameter is a callback function
-        eq_(type(self.snmp_engine.get_table.call_args[0][2]), types.FunctionType)
+        eq_(type(func.call_args[0][2]), types.FunctionType)
+
+    
+    def assert_snmp_single_called(self):
+        self._check_snmp_args(self.snmp_engine.get_single)
+
+    def assert_snmp_list_called(self):
+        self._check_snmp_args(self.snmp_engine.get_list)
+
+    def assert_snmp_table_called(self):
+        self._check_snmp_args(self.snmp_engine.get_table)
+    
+    def assert_snmp_many_called(self):
+        self._check_snmp_args(self.snmp_engine.get_many)
+    
     def assert_snmp_get_called(self, oid_count=None):
         """ Check that the snmp_engine.get() method called correctly
         oid_count is number of oids in the request

@@ -68,7 +68,7 @@ class TestAlteonRealServer(AttDiscTest):
     def test_discover_alteon_rserver(self):
         """ Alteon Real Server calls snmp correctly """
         eq_(discover_alteon_realservers(*self.discover_args), True)
-        self.assert_snmp_table_called()
+        self.assert_snmp_many_called()
 
 
 
