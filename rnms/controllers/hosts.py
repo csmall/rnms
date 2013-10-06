@@ -45,10 +45,19 @@ class HostsController(BaseGridController):
     #allow_only = permissions.host_ro
 
     @expose('rnms.templates.host_index')
-    def index(self):
+    @validate(validators={'z':validators.Int(min=1)})
+    def index(self, *args, **kw):
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return {}
+        if 'z' in kw:
+            griddata = {'z': int(kw['z'])}
+        else:
+            griddata = {}
+
         w = HostGrid()
         return dict(page='host', main_menu=MainMenu,
-                   w=w)
+                   w=w, griddata=griddata)
 
     @expose('json')
     def griddata(self, **kw):

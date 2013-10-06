@@ -233,7 +233,8 @@ class Attribute(DeclarativeBase):
         descriptions = [ self.get_field(id=at_field.id) for at_field in self.attribute_type.fields if at_field.description]
         return " ".join(descriptions)
 
-    def oper_state_name(self):
+    @property
+    def oper_state(self):
         """ Return string representation of operational state"""
         if self.state is None:
             return 'Unknown'

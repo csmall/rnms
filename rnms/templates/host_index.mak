@@ -6,7 +6,7 @@ Rosenberg NMS: Host List
 %if w != UNDEFINED:
 	<div class="row">
 	  <div class="span12">
-	    ${w.display() | n}
+	    ${w.display(postdata=griddata) | n}
 	  </div>
 	</div>
 <script type="text/javascript">

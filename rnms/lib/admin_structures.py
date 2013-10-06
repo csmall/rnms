@@ -50,7 +50,7 @@ class base_table(bt):
             ('<a class="delete-confirm btn btn-mini btn-primary" href="{0}/edit">'+\
              '<i title="Edit" class="icon-pencil icon-white"></i></a>').format(
                  pklist,),
-            ('<a class="delete-confirm btn btn-mini btn-warning href="{0}"'+\
+            ('<a class="delete-confirm btn btn-mini btn-danger href="{0}"'+\
              'onclick="del_confirm({0})">'+\
              '<i title="Delete" class="icon-trash icon-white"></i></a>').format(
             pklist)
@@ -114,12 +114,14 @@ class host(base_table):
                         )
 
     def __actions__(self, obj):
-        buttons = self.action_buttons(obj)[1]
-        buttons.append(
-            ('<a class="btn btn-mini btn-primary" href="{0}">'+\
+        buttons = [
+            ('<a class="btn btn-mini btn-info" href="{0}">'+\
              '<i title="Show Attributes for host" class="icon-list icon-white"></i></a>').\
-            format(tg.url('/admin/attributes/',{'h':obj.id}))
-        )
+            format(tg.url('/admin/attributes/',{'h':obj.id})),
+            ('<a class="btn btn-mini btn-warning" href="{0}">'+\
+             '<i title="Discover Attributes" class="icon-eye-open icon-white"></i></a>').\
+            format(tg.url('/hosts/discover/{0}'.format(obj.id))),
+        ] + self.action_buttons(obj)[1]
         return '<div class="action_buttons">'+\
             ''.join(buttons)+\
                 '</div>'
@@ -142,12 +144,11 @@ class poller_set(base_table):
             'attribute_type': 150}
     
     def __actions__(self, obj):
-        buttons = self.action_buttons(obj)[1]
-        buttons.append(
-            ('<a class="btn btn-mini btn-primary" href="{0}">'+\
+        buttons = [
+            ('<a class="btn btn-mini btn-info" href="{0}">'+\
              '<i title="Show rows for Poller Set" class="icon-list icon-white"></i></a>').\
             format(tg.url('/admin/pollerrows/',{'ps':obj.id}))
-        )
+        ] + self.action_buttons(obj)[1]
         return '<div class="action_buttons">'+\
             ''.join(buttons)+\
                 '</div>'
@@ -180,12 +181,11 @@ class zone(base_table):
     __limit_fields__ = ('id', 'display_name', 'short_name',)
     
     def __actions__(self, obj):
-        buttons = self.action_buttons(obj)[1]
-        buttons.append(
-            ('<a class="btn btn-mini btn-primary" href="{0}">'+\
+        buttons = [
+            ('<a class="btn btn-mini btn-info" href="{0}">'+\
              '<i title="Show Hosts in zone" class="icon-list icon-white"></i></a>').\
             format(tg.url('/admin/hosts/',{'z':obj.id}))
-        )
+        ] + self.action_buttons(obj)[1]
         return '<div class="action_buttons">'+\
             ''.join(buttons)+\
                 '</div>'

@@ -3,7 +3,7 @@ import operator
 
 from sprox.tablebase import TableBase
 from sprox.fillerbase import TableFiller, FillerBase
-from tg import url, tmpl_context
+from tg import url
 from sqlalchemy import and_, desc, not_
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.sql.operators import ColumnOperators as coop
@@ -11,7 +11,7 @@ from sqlalchemy.sql.operators import ColumnOperators as coop
 import tw2.core as twc
 from tw2.jqplugins.jqgrid import jqGridWidget
 
-from rnms.model import AttributeType, DBSession
+from rnms.model import AttributeType
 
 COL_OPERATORS = {
     'eq':   (coop.__eq__, False),
@@ -192,28 +192,11 @@ class jqGridTableBase(TableBase):
     __hide_primary_field__ = False
     __scroll__ = False
     __height__ = 'auto'
-    host_id = None
-    attribute_id = None
-
-    def _do_get_url_args(self):
-        return {}
-        try:
-            if self.attribute_id is not None:
-                return dict(a=self.attribute_id)
-        except AttributeError:
-            pass
-        try:
-            if self.host_id is not None:
-                return dict(h=self.host_id)
-        except AttributeError:
-            pass
-        return {}
 
     def _do_get_widget_args(self):
         args = super(jqGridTableBase, self)._do_get_widget_args()
         if self.__url__ is not None:
             args['url'] = self.__url__
-            #args['url_args'] = self._do_get_url_args()
         if self.__caption__ is not None:
             args['caption'] = self.__caption__
         args['columns'] = self.__fields__
@@ -457,7 +440,7 @@ class DiscoveryFiller(FillerBase):
                                  atype_name, 
                                  idx,
                                  att.display_name,
-                                 att.oper_state_name(),
+                                 att.oper_state,
                                  'desc',
                                      )})
         return {'records': len(rows), 'rows': rows}

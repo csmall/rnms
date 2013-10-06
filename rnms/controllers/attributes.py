@@ -50,10 +50,13 @@ class AttributesController(BaseGridController):
         if tmpl_context.form_errors:
             self.process_form_errors()
             return dict(page='attribute', main_menu=MainMenu)
-        agrid = AttributeGrid()
-        agrid.host_id = h
+        if h is not None:
+            griddata = {'h': h}
+        else:
+            griddata = {}
+        w = AttributeGrid()
         return dict(page='attribute', main_menu=MainMenu,
-                   w=agrid)
+                   w=w, griddata=griddata )
 
     @expose('rnms.templates.attribute_detail')
     @validate(validators={'a':validators.Int(min=1)})
@@ -121,8 +124,7 @@ class AttributesController(BaseGridController):
     @expose('json')
     def griddata(self, *args, **kw):
         class AttFiller(structures.attribute, jqGridTableFiller):
-            def oper_state(self, obj):
-                return 'hello'
+            pass
         return super(AttributesController, self).griddata(
             AttFiller,
             {'h': validators.Int(min=1)}, **kw)
@@ -162,7 +164,7 @@ class AttributesController(BaseGridController):
                             rw.display_name),
                         rw.attribute_type.display_name,
                         rw.description(),
-                        rw.oper_state_name(),
+                        rw.oper_state,
                         rw.admin_state_name()
                     )} for rw in qry]
         return dict(page='attribute', main_menu=MainMenu,

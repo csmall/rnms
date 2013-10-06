@@ -40,7 +40,7 @@ Rosenberg NMS: Attribute ${attribute.display_name}
   <dl class="dl-horizontal">
     <dt>Host</dt><dd><a href="${tg.url('/hosts/{}'.format(attribute.host_id))}">${attribute.host.display_name}</a></dd>
     <dt>Type</dt><dd>${attribute.attribute_type.display_name}</dd>
-    <dt>Oper</dt><dd>${attribute.oper_state_name()}</dd>
+    <dt>Oper</dt><dd>${attribute.oper_state}</dd>
     <dt>Admin</dt><dd>${attribute.admin_state_name()}</dd>
 %for k,v in attribute.description_dict().items():
     <dt>${k}</dt><dd>${v}</dd>

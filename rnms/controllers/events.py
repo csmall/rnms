@@ -52,11 +52,15 @@ class EventsController(BaseGridController):
             self.process_form_errors()
             return dict(page='event', main_menu=MainMenu)
 
+        if a is not None:
+            griddata = {'a': a}
+        elif h is not None:
+            griddata = {'h': h}
+        else:
+            griddata = {}
         w = EventGrid()
-        w.attribute_id = a
-        w.host_id = h
         return dict(page='event', main_menu=MainMenu,
-                    w=w)
+                    w=w, griddata=griddata)
 
     @expose('rnms.templates.severitycss', content_type='text/css')
     def severitycss(self):
