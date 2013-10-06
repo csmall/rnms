@@ -28,8 +28,7 @@ def discover_snmp_interfaces(dobj, att_type, host):
     """
     Walk the ifTable to find any SNMP interfaces
     """
-    oids = ((1,3,6,1,2,1,2,2,1,1),
-            (1,3,6,1,2,1,2,2,1,2),
+    oids = ((1,3,6,1,2,1,2,2,1,2),
             (1,3,6,1,2,1,2,2,1,5),
             (1,3,6,1,2,1,2,2,1,7),
             (1,3,6,1,2,1,2,2,1,8),
@@ -43,6 +42,7 @@ def discover_snmp_interfaces(dobj, att_type, host):
 
 
 def cb_snmp_interfaces(values, error, host, dobj, att_type):
+    print values
     if values is None or len(values[0]) == 0:
         dobj.discover_callback(host.id, {})
         return
@@ -50,11 +50,16 @@ def cb_snmp_interfaces(values, error, host, dobj, att_type):
 
     # Build the ifindex to ipaddr table
     ipaddrs = {}
-    for ipindex, ifindex in values[6].items():
+    table_addrs = dict(values[4])
+    table_masks = dict(values[6])
+    for ipindex, ifindex in values[5]:
         ipaddrs[ifindex] = {}
         try:
-            ipaddrs[ifindex]['address'] = values[5][ipindex]
-            octects = values[5][ipindex].split('.')
+            addr = table_addrs[ipindex]
+        except KeyError:
+            pass
+        else:
+            octects = addr.split('.')
             last_octect = int(octects[3])
             if last_octect % 2:
                 last_octect += 1
@@ -62,17 +67,16 @@ def cb_snmp_interfaces(values, error, host, dobj, att_type):
                 last_octect -= 1
             else:
                 last_octect = 254
+            ipaddrs[ifindex]['address'] = addr
             ipaddrs[ifindex]['peer'] = '.'.join(octects[0:3]+[str(last_octect),])
-        except IndexError:
-            continue
         try:
-            ipaddrs[ifindex]['mask'] = values[7][ipindex]
-        except IndexError:
+            ipaddrs[ifindex]['mask'] = table_masks[ipindex]
+        except KeyError:
             pass
 
-    for ifindex in values[0].values():
+    ifspeeds = dict(values[1])
+    for ifindex,ifdesc in values[0]:
         try:
-            ifdesc = values[1][ifindex]
             new_att = model.DiscoveredAttribute(host.id, att_type)
             new_att.display_name = ifdesc
             new_att.index = ifindex
@@ -80,19 +84,19 @@ def cb_snmp_interfaces(values, error, host, dobj, att_type):
             continue # no name means we dont want it
 
         try:
-            ifspeed = values[2][ifindex]
-        except IndexError:
+            ifspeed = ifspeeds[ifindex]
+        except KeyError:
             ifspeed = 100000000 #default is 100 Mbps
         new_att.set_field('speed', ifspeed)
 
-        try:
-            new_att.admin_state = state_name(values[3][ifindex])
-        except IndexError:
-            new_att.admin_state = 'down'
-        try:
-            new_att.oper_state = state_name(values[4][ifindex])
-        except IndexError:
-            new_att.oper_state = 'down'
+#        try:
+#            new_att.admin_state = state_name(values[3][ifindex])
+#        except IndexError:
+#            new_att.admin_state = 'down'
+#        try:
+##            new_att.oper_state = state_name(values[4][ifindex])
+#        except IndexError:
+#            new_att.oper_state = 'down'
         try:
             ipinfo = ipaddrs[ifindex]
         except KeyError:
@@ -101,7 +105,6 @@ def cb_snmp_interfaces(values, error, host, dobj, att_type):
             for k,v in ipinfo.items():
                 new_att.set_field(k,v)
         discovered_attributes[unicode(ifindex)] = new_att
-
     dobj.discover_callback(host.id, discovered_attributes)
 
 def discover_snmp_simple(dobj, att_type, host):

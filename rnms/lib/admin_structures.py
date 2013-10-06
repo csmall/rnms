@@ -28,28 +28,39 @@ import tg
 from rnms import model
 from structures import base_table as bt
 
+def click(model_name, mod_id, name):
+    return '<a href="{}">{}</a>'.format(
+            tg.url('/admin/{}/{}/edit'.format(model_name, mod_id)),
+            name)
+
 class base_table(bt):
     @property
     def __url__(self):
-        url = tg.request.url
+        url = tg.request.path_url
         if url[-1] == '/':
             url = url[:-1]
         return url + '.json'
 
 
-    def __actions__(self, obj):
+    def action_buttons(self, obj):
+        """ Returns primary fields and default buttons as a list """
         primary_fields = self.__provider__.get_primary_fields(self.__entity__)
         pklist = '/'.join(map(lambda x: str(getattr(obj, x)), primary_fields))
-        value = ('<form class="inline" method="POST" action="{0}">'+\
-                '<a class="btn btn-mini btn-primary" href="{0}/edit">'+\
-                '<input type="hidden" name="_method" value="DELETE" />'\
-                '<i title="Edit" class="icon-pencil icon-white"></i></a>'+\
-                '<button title="Delete" type="submit" value="delete" class="btn btn-mini btn-warning" '+\
-                'onclick="return confirm(\'Are you sure?\');"'+\
-                'value="" type="submit">'+\
-                '<i class="icon-trash"></i></button></form>').\
-                format(pklist,) 
-        return value
+        buttons = [
+            ('<a class="delete-confirm btn btn-mini btn-primary" href="{0}/edit">'+\
+             '<i title="Edit" class="icon-pencil icon-white"></i></a>').format(
+                 pklist,),
+            ('<a class="delete-confirm btn btn-mini btn-warning href="{0}"'+\
+             'onclick="del_confirm({0})">'+\
+             '<i title="Delete" class="icon-trash icon-white"></i></a>').format(
+            pklist)
+        ]
+        return pklist,buttons
+
+    def __actions__(self, obj):
+        return '<div class="action_buttons">'+\
+                ''.join(self.action_buttons(obj)[1])+\
+                '</div>'
 
 class attribute(base_table):
     __grid_id__ = 'attributes-grid'
@@ -102,6 +113,18 @@ class host(base_table):
     __limit_fields__ = ('id', 'display_name', 'zone', 'mgmt_address',
                         )
 
+    def __actions__(self, obj):
+        buttons = self.action_buttons(obj)[1]
+        buttons.append(
+            ('<a class="btn btn-mini btn-primary" href="{0}">'+\
+             '<i title="Show Attributes for host" class="icon-list icon-white"></i></a>').\
+            format(tg.url('/admin/attributes/',{'h':obj.id}))
+        )
+        return '<div class="action_buttons">'+\
+            ''.join(buttons)+\
+                '</div>'
+
+
 class poller(base_table):
     __grid_id__ = 'pollers-grid'
     __entity__ = model.Poller
@@ -117,6 +140,28 @@ class poller_set(base_table):
             'attribute_type': 'Attribute Type'}
     __column_widths__ = {'id': 30, 'display_name': 150,
             'attribute_type': 150}
+    
+    def __actions__(self, obj):
+        buttons = self.action_buttons(obj)[1]
+        buttons.append(
+            ('<a class="btn btn-mini btn-primary" href="{0}">'+\
+             '<i title="Show rows for Poller Set" class="icon-list icon-white"></i></a>').\
+            format(tg.url('/admin/pollerrows/',{'ps':obj.id}))
+        )
+        return '<div class="action_buttons">'+\
+            ''.join(buttons)+\
+                '</div>'
+
+
+class poller_row(base_table):
+    __grid_id__ = 'pollerrows-grid'
+    __entity__ = model.PollerRow
+    __limit_fields__ = ('position', 'poller_set', 'poller', 'backend')
+    
+    def poller_set(self, obj):
+        return click('pollersets', obj.poller_set_id,
+                     obj.poller_set.display_name)
+    
 
 class severity(base_table):
     __grid_id__ = 'severity-grid'
@@ -133,3 +178,14 @@ class zone(base_table):
     __grid_id__ = 'zones-grid'
     __entity__ = model.Zone
     __limit_fields__ = ('id', 'display_name', 'short_name',)
+    
+    def __actions__(self, obj):
+        buttons = self.action_buttons(obj)[1]
+        buttons.append(
+            ('<a class="btn btn-mini btn-primary" href="{0}">'+\
+             '<i title="Show Hosts in zone" class="icon-list icon-white"></i></a>').\
+            format(tg.url('/admin/hosts/',{'z':obj.id}))
+        )
+        return '<div class="action_buttons">'+\
+            ''.join(buttons)+\
+                '</div>'

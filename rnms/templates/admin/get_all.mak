@@ -44,8 +44,42 @@ ${parent.meta()}
       % endif
     </div>
     <div class="crud_table">
-     ${tmpl_context.widget() |n}
+    ${tmpl_context.widget(postdata=griddata) |n}
     </div>
   </div>
   <div style="clear:both;"> &nbsp; </div>
 </div>
+
+<div id="confirm-dialog" title="Confirmation Required">
+  Are you sure about this?
+  </div>
+
+<script>
+$(document).ready(function() {
+  $("#confirm-dialog").dialog({
+    modal: true,
+    bgiframe: true,
+    width: 500,
+    height: 200,
+    autoOpen: false,
+    buttons: {
+      "Yeah do it": function() { $(this).dialog('close'); },
+      Cancel: function() { $(this).dialog('close'); },
+    }
+  });
+
+  $(".delete-confirm").click(function(e) {
+    $('#confirm-dialog').dialog('open');
+  });
+});
+function del_confirm(del_id) {
+  $('#confirm-dialog').dialog({buttons: {
+    'Delete': function() {
+      $.post(del_id, { _method: 'DELETE'});
+      $(this).dialog('close');
+      },
+    Cancel: function() { $(this).dialog('close'); },
+  }}).dialog('open')
+  return false;
+}
+</script>

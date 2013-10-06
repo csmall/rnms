@@ -42,9 +42,10 @@ class SNMPEngine(object):
         get_many(): Requires a list of OIDs and returns a list of lists,
            row is each oid, which is a list of returned values
            Used for different tables
-    If the with_oid option is not set to None (the default) then
-    the OID is returned with that many numbers, 0 means all of the OID
-    Then the inner list will be a dictionary
+    The with_oid option is None by default, meaning no OID is returned
+    with the values. When this option is set, instead of just the values
+    a (oid, value) tuple is returned. The option is a number of digits
+    to return, with 0 meaning the entire OID
     """
            
     zmq_core = None
@@ -188,30 +189,28 @@ class SNMPEngine(object):
             request.attempt += 1
         request.timeout = time.time() + self.default_timeout
 
-    def _parse_value(self,raw_value):
+    @classmethod
+    def _format_value(cls, request, oid, raw_value):
         """ Parse the SNMP returned value """
         if isinstance(raw_value, NoSuchObject):
-            return None
-        return raw_value.prettyPrint()
+            val = None
+        val = raw_value.prettyPrint()
+        if request.with_oid is None:
+            return val
+        else:
+            return (oid[-request.with_oid:].prettyPrint(), val)
 
     def _parse_many(self, request, var_binds):
         """ Get the raw var_binds into a list of oids which
         have a list/dict of values """
         if request.varbinds is None:
-            if request.with_oid is None:
-                request.varbinds = [[] for x in request.oids]
-            else:
-                request.varbinds = [{} for x in request.oids]
+            request.varbinds = [[] for x in request.oids]
         need_more = False
         for row in var_binds:
             for idx,(oid,val) in enumerate(row):
                 if request.oids[idx]['rawoid'].isPrefixOf(oid):
-                    if request.with_oid is None:
-                        request.varbinds[idx].append(self._parse_value(val))
-                    else:
-                        this_oid = oid[-request.with_oid:].prettyPrint()
-                        request.varbinds[idx][this_oid] =\
-                                self._parse_value(val)
+                    request.varbinds[idx].append(
+                        self._format_value(request, oid, val))
         # See if we need more data
         need_more = False
         for idx,(oid,val) in enumerate(var_binds[-1]):
@@ -226,18 +225,10 @@ class SNMPEngine(object):
         if request.varbinds is None:
             request.varbinds = []
         for row in var_binds:
-            if request.with_oid is None:
-                row_data = []
-            else:
-                row_data = {}
-            for idx,(oid,raw_val) in enumerate(row):
-                val = self._parse_value(raw_val)
+            row_data = []
+            for idx,(oid,val) in enumerate(row):
                 if request.oids[idx]['rawoid'].isPrefixOf(oid):
-                    if request.with_oid is None:
-                        row_data.append(val)
-                    else:
-                        this_oid = oid[-request.with_oid:].prettyPrint()
-                        row_data[this_oid] = val
+                    row_data.append(self._format_value(request, oid, val))
                 else:
                     return False
             request.varbinds.append(row_data)
@@ -245,12 +236,8 @@ class SNMPEngine(object):
 
     def _parse_row(self, request, var_binds):
         first_req_oid = None
-        if request.with_oid is None:
-            row_vals = []
-        else:
-            row_vals = {}
-        for idx,(oid,raw_val) in enumerate(var_binds):
-            val = self._parse_value(raw_val)
+        row_vals = []
+        for idx,(oid,val) in enumerate(var_binds):
             try:
                 req_oid = request.oids[idx]
             except IndexError:
@@ -259,20 +246,11 @@ class SNMPEngine(object):
             if first_req_oid is None:
                 first_req_oid = req_oid
 
-            if request.with_oid is None:
-                row_oid = oid.prettyPrint()
-            else:
-                row_oid = oid[-request.with_oid:].prettyPrint()
             if request.replyall:
-                if request.with_oid is None:
-                    row_vals.append(val)
-                else:
-                    row_vals[row_oid] = val
+                row_vals.append(self._format_value(request, oid, val))
             else:
-                if request.with_oid is None:
-                    request.callback_single(req_oid, val)
-                else:
-                    request.callback_single(req_oid, {row_oid: val})
+                request.callback_single(req_oid,
+                                        self._format_value(request, oid, val))
         if request.replyall:
             request.callback_single(first_req_oid, row_vals)
 

@@ -34,7 +34,6 @@ class base_table(object):
         'event_type': 'Event Type',
         'user': 'Owner',
     }
-
     def created(self, obj):
         return obj.created.strftime('%Y-%b-%d %H:%M:%S')
 

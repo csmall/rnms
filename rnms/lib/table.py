@@ -3,11 +3,12 @@ import operator
 
 from sprox.tablebase import TableBase
 from sprox.fillerbase import TableFiller, FillerBase
-from tg import url
+from tg import url, tmpl_context
 from sqlalchemy import and_, desc, not_
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.sql.operators import ColumnOperators as coop
 
+import tw2.core as twc
 from tw2.jqplugins.jqgrid import jqGridWidget
 
 from rnms.model import AttributeType, DBSession
@@ -50,13 +51,20 @@ class jqGridGrid(jqGridWidget):
             'total': 'value_list.total',
             'page': 'value_list.page',
         },
+        'loadComplete': twc.js_symbol('console.debug($(".delete-confirm"))'),
     }
     pager_options = { "search" : True, "refresh" : True, "edit" : False,
                      "del" : False, "add" : False}
-    def __init__(self, action=None):
+    def __init__(self, action=None, postdata=None):
+        if postdata is not None and postdata != {}:
+            self.options['postData'] = postdata
+        else:
+            self.options['postData'] = None
+        
         if self.url_args is None:
             self.url_args = {}
         super(jqGridGrid, self).__init__()
+
         if action is not None:
             self.options['url'] = action
         else:
@@ -69,6 +77,11 @@ class jqGridGrid(jqGridWidget):
             self.options['pager'] = self.id+'-pager'
         self.options['height'] = self.height
 
+        # If we are using actions then ID is second column
+        # otherwise we get <tr id="action stuff"...
+        if self.columns[0] == '__actions__':
+            self.options['jsonReader']['id'] = 1
+
     def _get_colnames(self):
         colnames = []
         for col in self.columns:
@@ -77,7 +90,8 @@ class jqGridGrid(jqGridWidget):
             try:
                 colnames.append(self.headers[col])
             except KeyError:
-                colnames.append(col.capitalize())
+                colnames.append(
+                    ' '.join(w.capitalize() for w in col.split('_')))
         return colnames
 
     def _get_colmodel(self):
@@ -178,8 +192,11 @@ class jqGridTableBase(TableBase):
     __hide_primary_field__ = False
     __scroll__ = False
     __height__ = 'auto'
+    host_id = None
+    attribute_id = None
 
     def _do_get_url_args(self):
+        return {}
         try:
             if self.attribute_id is not None:
                 return dict(a=self.attribute_id)
@@ -196,7 +213,7 @@ class jqGridTableBase(TableBase):
         args = super(jqGridTableBase, self)._do_get_widget_args()
         if self.__url__ is not None:
             args['url'] = self.__url__
-            args['url_args'] = self._do_get_url_args()
+            #args['url_args'] = self._do_get_url_args()
         if self.__caption__ is not None:
             args['caption'] = self.__caption__
         args['columns'] = self.__fields__
@@ -276,8 +293,29 @@ class jqGridTableFiller(TableFiller):
             return query.filter(not_(op(field, search_string)))
         return query.filter(op(field, search_string))
 
+    def _extra_filters(self, **kw):
+        """ Extra filtering due to the url we are passed, generally it 
+        limits the child items (these object) down to a given parent ID
+        """
+        filters = (# get var, db foreign key id
+            ('a', 'attribute_id'),
+            ('h', 'host_id'),
+            ('ps', 'poller_set_id'),
+            ('z', 'zone_id'),
+        )
+        conditions = []
+
+        for id_letter, col_name in filters:
+            try:
+                parent_id = int(kw[id_letter])
+                parent_col = getattr(self.__entity__, col_name)
+            except: # Dont care why we fail, we'll skip it
+                continue
+            else:
+                conditions.append(parent_col == parent_id)
+        return conditions
+
     def _do_get_provider_count_and_objs(self, _search=False,  **kw):
-        print 'dgpco'
         limit = kw.pop('rows', None)
         page = kw.pop('page', 1)
         sidx = kw.pop('sidx', '')
@@ -292,24 +330,8 @@ class jqGridTableFiller(TableFiller):
             except TypeError:
                 offset = 0
         # Extra filters
-        conditions = []
-        #host_id = kw.pop('h', None)
-        #if host_id is not None and  hasattr(self.__entity__, 'host_id'):
-        #    try:
-        #        conditions.append(self.__entity__.host_id == host_id)
-        #    except (ValueError, TypeError):
-        #        pass
-        #attribute_id = kw.pop('a', None)
-        #if attribute_id is not None and  hasattr(self.__entity__, 'attribute_id'):
-        #    try:
-        #        conditions.append(self.__entity__.attribute_id == attribute_id)
-        #    except (ValueError, TypeError):
-        #        pass
-#        filters = {'host_id': 1}
-#        count, objs = self.__provider__.query(
-#            self.__entity__, limit, offset, self.__limit_fields__,
-#            sidx, desc, filters=filters,
-#            view_fields=self.__possible_field_names__)
+        conditions = self._extra_filters(**kw)
+
         count,objs = self._do_query( limit, offset, sidx, sort_desc,
                                 conditions, _search, **kw)
         self.__count__ = count
@@ -368,7 +390,8 @@ class jqGridTableFiller(TableFiller):
         Query the database, this is based upon the sprox sa_provider
         query method but is better as its filtering does a lot more
         """
-        query = self.__provider__.session.query(self.__entity__)
+        query = self.__provider__.session.query(self.__entity__).\
+                filter(and_(*conditions))
         query = self._do_search_conditions(query, _search, **kw)
         count = query.count()
 

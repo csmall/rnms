@@ -1,17 +1,15 @@
 
-form#actions {
+form#iactions {
     margin: 0px;
     width: auto;
 }
 
-.actions {
-    width: auto;
-    font-size: 10px;
-    font-weight: 400;
-    height: 18px;
-    line-height: 18px;
-    padding: 0px;
-    margin: 0 0 0 0;
+div.action_buttons {
+    float: left;
+}
+div.action_buttons a {
+    margin-left: 2px;
+    margin-right: 2px;
 }
 #eventtable {
     border-collapse: collapse;

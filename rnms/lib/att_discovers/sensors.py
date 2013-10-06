@@ -50,7 +50,7 @@ def cb_sensors(values, error, host, dobj, att_type):
     if values is not None:
         for idx, row in enumerate(values):
             sunit, measure, multiplier = sensor_types[idx]
-            for sidx,sensor_name in row.items():
+            for sidx,sensor_name in row:
                 # This is a hack, some lmsesnor code shows the same device
                 # multiple times (current, min, max, alarm, other)
                 # other devices show it once

@@ -47,12 +47,10 @@ def discover_cisco_envmib(dobj, att_type, host):
 def cb_cisco_envmib(values, error, host, dobj, name_base, att_type):
     env_items = {}
     if values is not None:
-        for row in values[0]:
-            idx = row[0]
+        for idx,oper in values:
             new_att = model.DiscoveredAttribute(host.id, att_type)
             new_att.display_name = unicode(name_base + idx)
             new_att.index = idx
-            oper = values[1]
             new_att.oper_state = ENV_MON_STATES.get(oper, 'unknown')
             if oper == '5':
                 new_att.admin_down()
@@ -73,7 +71,7 @@ def discover_cisco_saagent(dobj, att_type, host):
 def cb_cisco_saagent(values, error, host, dobj, att_type):
     saagents = {}
     if values is not None and values != []:
-        for key,description in values[0].items():
+        for key,description in values[0]:
             new_att = model.DiscoveredAttribute(host.id, att_type)
             new_att.display_name = unicode('SAA{} {}'.format(key, description))
             new_att.index = key
@@ -95,7 +93,7 @@ def discover_pix_connections(dobj, att_type, host):
 def cb_pix_connections(values, error, host, dobj, att_type):
     conns = {}
     if values is not None and values != []:
-        for key,descr in values[0].items():
+        for key,descr in values[0]:
             new_att = model.DiscoveredAttribute(host.id, att_type)
             new_att.display_name = unicode('FW Stat{}'.format(key))
             new_att.index = key

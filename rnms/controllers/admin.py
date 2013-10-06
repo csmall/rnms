@@ -24,8 +24,17 @@ class MyCrudRestController(CrudRestController):
         if request.response_type == 'application/json':
             values = self.table_filler.get_value(*args, **kw)
             return dict(value_list=values)
+        postdata = {}
+        for key in ('a','h', 'ps', 'z'):
+            if key in kw:
+                postdata[key] = kw[key]
+
         tmpl_context.widget = self.table
-        return dict(model=self.model.__name__)
+        return dict(model=self.model.__name__, griddata=postdata)
+    @expose()
+    def foof(self, *args, **kw):
+        print 'fffooo'
+        return 'fggfdgfgfdg'
 
 class MyCrudRestControllerConfig(CrudRestControllerConfig):
     defaultCrudRestController = MyCrudRestController
@@ -84,7 +93,7 @@ class MyAdminConfig(AdminConfig):
     class host(MyCrudRestControllerConfig):
         class table_type(st.host, jqGridTableBase):
             __column_widths__ = { 'id': 20,}
-        class table_filler_type(st.attribute, jqGridTableFiller):
+        class table_filler_type(st.host, jqGridTableFiller):
             pass
 
     class poller(MyCrudRestControllerConfig):
@@ -102,6 +111,12 @@ class MyAdminConfig(AdminConfig):
                         url('/admin/attributetypes'),
                         obj.attribute_type_id,
                         obj.attribute_type.display_name)
+
+    class pollerrow(MyCrudRestControllerConfig):
+        class table_type(st.poller_row, jqGridTableBase):
+            pass
+        class table_filler_type(st.poller_row, jqGridTableFiller):
+            pass
 
     class severity(MyCrudRestControllerConfig):
         class table_type(st.severity, jqGridTableBase):
