@@ -102,7 +102,7 @@ class RnmsInfo(RnmsCommand):
 {:<20} | {}
 {:<20} | {}""".format(
         'Host', attribute.host.id, attribute.host.display_name,
-        'State (admin/oper)', attribute.admin_state_name(), attribute.oper_state_name(),
+        'State (admin/oper)', attribute.admin_state_name(), attribute.oper_state,
         'Attribute Type', attribute.attribute_type.id, attribute.attribute_type.display_name,
         'Poller Set', attribute.poller_set.id, attribute.poller_set.display_name, attribute.poll_enabled,
         'Poll Priority', attribute.poll_priority,

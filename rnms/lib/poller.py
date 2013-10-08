@@ -41,15 +41,17 @@ functions for a poller:
       that need to be polled. This stops us from polling one item, sleeping
       sat 2 seconds and hitting the database again
 """
-SCAN_TABLE_SECONDS = 60 
-POLLER_WINDOW_SECONDS = 10 
+SCAN_TABLE_SECONDS = 60
+POLLER_WINDOW_SECONDS = 10
+
 
 class PollingHost(object):
     def __init__(self, host):
         self.id = host.id
         self.mgmt_address = host.mgmt_address
-        self.ro_community  = host.ro_community
-        self.rw_community  = host.rw_community
+        self.ro_community = host.ro_community
+        self.rw_community = host.rw_community
+
 
 class PollingAttribute(object):
     """ A small shadow of the real Attribute that is not connected to
@@ -92,9 +94,10 @@ class PollingAttribute(object):
         return AttributeField.field_value(self.id, field_tag)
 
     def update_poll_time(self):
-	attribute = Attribute.by_id(self.id)
-	if attribute is not None:
-	    attribute.update_poll_time()
+        attribute = Attribute.by_id(self.id)
+        if attribute is not None:
+            attribute.update_poll_time()
+
 
 class Poller(RnmsEngine):
     """
@@ -105,24 +108,25 @@ class Poller(RnmsEngine):
     """
     NEED_CLIENTS = ('ntp', 'ping', 'snmp', 'tcp')
     do_once = True
-    find_attribute_interval = 60 # Scan to find new items every 60secs
+    find_attribute_interval = 60  # Scan to find new items every 60secs
     next_find_attribute = datetime.datetime.min
-    forced_attributes=False
+    forced_attributes = False
     host_ids = None
     poller_buffer = None
     rrd_client = None
 
-    def __init__(self, attribute_ids=None, host_ids=None, zmq_context=None, do_once=True):
+    def __init__(self, attribute_ids=None, host_ids=None, zmq_context=None,
+                 do_once=True):
         super(Poller, self).__init__('poller', zmq_context)
 
         self.rrd_client = RRDClient(self.zmq_context, self.zmq_core)
-        self.polling_attributes = {} # The attributes we are currently polling
+        self.polling_attributes = {}  # The attributes we are currently polling
         self.poller_buffer = {}
-        self.poller_sets = {} # Cache for polling sets
+        self.poller_sets = {}  # Cache for polling sets
 
         if attribute_ids is not None or host_ids is not None:
             self._add_forced_attributes(attribute_ids, host_ids)
-            self.forced_attributes=True
+            self.forced_attributes = True
         self.do_once = do_once
 
     def main_loop(self):
@@ -131,13 +135,14 @@ class Poller(RnmsEngine):
         This will only exit if we have forced attributes and they are
         all polled.
         """
-        self.logger.debug('Poller started, TID:%d',gettid())
+        self.logger.debug('Poller started, TID:%d', gettid())
         while True:
             now = datetime.datetime.now()
             polls_running = False
-            if self.forced_attributes == False and self.next_find_attribute < now:
+            if not self.forced_attributes and self.next_find_attribute < now:
                 self.find_new_attributes()
-                self.next_find_attribute = now + datetime.timedelta(seconds=self.find_attribute_interval)
+                self.next_find_attribute = now +\
+                    datetime.timedelta(seconds=self.find_attribute_interval)
             att_count = len(self.polling_attributes)
             if self.polling_attributes:
                 self.check_polling_attributes()
@@ -151,11 +156,11 @@ class Poller(RnmsEngine):
             att_count -= tcp_jobs
 
             # Ping jobs is the only one that doesn't use zmqcore, bah (yet)
-            ping_jobs =  self.ping_client.poll()
+            ping_jobs = self.ping_client.poll()
             if ping_jobs > 0:
                 att_count -= ping_jobs
 
-            if self.zmq_core.poll(0.0) == False:
+            if not self.zmq_core.poll(0.0):
                 transaction.commit()
                 return
             if not polls_running and (self.polling_attributes == {}):
@@ -163,10 +168,10 @@ class Poller(RnmsEngine):
                 # look for more attributes to poll
                 self.poller_sets = {}
 
-                if self.do_once == True or self.end_thread == True:
+                if self.do_once or self.end_thread:
                     break
                 transaction.commit()
-                if self._sleep_until_next() == False:
+                if self._sleep_until_next() is False:
                     return
         self.wait_for_workers()
         transaction.commit()
@@ -180,12 +185,16 @@ class Poller(RnmsEngine):
         try:
             patt = self.polling_attributes[attribute_id]
         except KeyError:
-            self.logger.info('A:%d - Poller called back but not in polling attributes', attribute_id)
+            self.logger.info(
+                'A:%d - Poller called back but not in polling attributes',
+                attribute_id)
             return
         try:
             poll_buffer = self.poller_buffer[attribute_id]
         except KeyError:
-            self.logger.info('A:%d -: Poller called back but no poller buffer', attribute_id)
+            self.logger.info(
+                'A:%d -: Poller called back but no poller buffer',
+                attribute_id)
             return
         patt.stop_polling(poller_row.position, poller_value)
         patt.start_backend()
@@ -196,11 +205,14 @@ class Poller(RnmsEngine):
                 if field_count == 1:
                     poll_buffer[poller_row.poller.field] = poller_value
                 else:
-                    for ford, fkey in enumerate(poller_row.poller.field.split(',')):
+                    for ford, fkey in enumerate(
+                            poller_row.poller.field.split(',')):
                         try:
                             poll_buffer[fkey] = poller_value[ford]
                         except KeyError:
-                            self.logger.warning('A:%d - Field "%s" has no value from poller', attribute_id, fkey)
+                            self.logger.warning(
+                                'A:%d - Field "%s" has no value from poller',
+                                attribute_id, fkey)
 
             #FIXME - backends go here
             if poller_row.backend.command != '':
@@ -227,7 +239,7 @@ class Poller(RnmsEngine):
         """
         if poller_value is None:
             return 'None'
-        max_len=100
+        max_len = 100
         val_type = type(poller_value)
         if val_type == str or val_type == unicode:
             retval = str(poller_value)
@@ -241,14 +253,13 @@ class Poller(RnmsEngine):
             retval = poller_value
         return retval[:max_len]
 
-
     def check_polling_attributes(self):
         """
         Run through the set of polling_attributes and kick of the next
         queries, when required
         """
-        for att_id,patt in self.polling_attributes.items():
-            if patt.in_poller == True:
+        for att_id, patt in self.polling_attributes.items():
+            if patt.in_poller:
                 continue
             if patt.poller_row == 0:
                 self.poller_buffer[att_id] = {}
@@ -272,7 +283,8 @@ class Poller(RnmsEngine):
             patt.skip_rows = self._multi_snmp_poll(patt)
             if patt.skip_rows != []:
                 return
-        if not poller_row.run_poller(self, patt, self.poller_buffer[patt.id]): # run was successful
+        if not poller_row.run_poller(self, patt, self.poller_buffer[patt.id]):
+            #run was successful
             self.logger.warn('A:%d - row %d Poller run failed', patt.id,
                              patt.poller_row)
             self._finish_polling(patt)
@@ -289,12 +301,13 @@ class Poller(RnmsEngine):
         for rrd_field in rrd_fields:
             if rrd_field.name in self.poller_buffer[patt.id] and \
                self.poller_buffer[patt.id][rrd_field.name] is not None:
-                updated_rrds.append('{0}:{1}'.format(rrd_field.name,
+                updated_rrds.append('{0}:{1}'.format(
+                    rrd_field.name,
                     rrd_field.update(
                         patt.id,
                         self.poller_buffer[patt.id][rrd_field.name],
                         rrd_client=self.rrd_client)))
-	patt.update_poll_time()
+        patt.update_poll_time()
         DBSession.flush()
         del (self.poller_buffer[patt.id])
         del (self.polling_attributes[patt.id])
@@ -333,14 +346,15 @@ class Poller(RnmsEngine):
         Method expects a list of attribute IDs or host_ids
         """
         if attribute_ids is not None:
-            assert(type(attribute_ids) == list )
-            for attribute in model.DBSession.query(model.Attribute).filter(model.Attribute.id.in_(attribute_ids)):
+            assert(type(attribute_ids) == list)
+            for attribute in model.DBSession.query(model.Attribute).\
+                    filter(model.Attribute.id.in_(attribute_ids)):
                 self.attribute_add(attribute)
         if host_ids is not None:
-            assert(type(host_ids) == list )
-            for attribute in model.DBSession.query(model.Attribute).filter(model.Attribute.host_id.in_(host_ids)):
+            assert(type(host_ids) == list)
+            for attribute in model.DBSession.query(model.Attribute).\
+                    filter(model.Attribute.host_id.in_(host_ids)):
                 self.attribute_add(attribute)
-
 
     def find_new_attributes(self):
         """
@@ -348,27 +362,31 @@ class Poller(RnmsEngine):
         """
         hosts_down = {}
         self.logger.debug("Scanning attribute table to find new items to poll")
-        next_poll_limit = datetime.datetime.now() + datetime.timedelta(seconds=POLLER_WINDOW_SECONDS)
+        next_poll_limit = datetime.datetime.now() + datetime.timedelta(
+            seconds=POLLER_WINDOW_SECONDS)
         attributes = model.DBSession.query(model.Attribute).\
-                join(model.Host).filter(and_(
+            join(model.Host).filter(and_(
                 (model.Attribute.next_poll < next_poll_limit),
-                (model.Attribute.poll_enabled == True))).order_by(model.Attribute.next_poll)
+                (model.Attribute.poll_enabled == True))).\
+            order_by(model.Attribute.next_poll)  # noqa
         if self.host_ids is not None:
-            attributes = attributes.filter(model.Attribute.host_id.in_(self.host_ids))
+            attributes = attributes.filter(
+                model.Attribute.host_id.in_(self.host_ids))
         for attribute in attributes:
             # Skip if already polling
             if attribute.id in self.polling_attributes:
                 continue
 
             # Skip if not main attribute and main atts down
-            if attribute.poll_priority == False:
-                if attribute.host_id not in  hosts_down:
-                    hosts_down[attribute.host_id] = attribute.host.main_attributes_down()
+            if not attribute.poll_priority:
+                if attribute.host_id not in hosts_down:
+                    hosts_down[attribute.host_id] =\
+                        attribute.host.main_attributes_down()
                 if hosts_down[attribute.host_id]:
                     self.logger.debug(
                         'H:%d A:%d not adding, main attribute(s) down.',
                         attribute.host_id, attribute.id)
-                    attribute.update_poll_time() # stop bothering the poller
+                    attribute.update_poll_time()  # stop bothering the poller
                     continue
             self.attribute_add(attribute)
 
@@ -386,7 +404,7 @@ class Poller(RnmsEngine):
             if self.cache_poller_set(poller_set_id):
                 return self.poller_sets[poller_set_id]
             else:
-                self.logger.info("PollerSet #%s not found",poller_set_id)
+                self.logger.info("PollerSet #%s not found", poller_set_id)
         return None
 
     def get_poller_row(self, poller_set_id, row_index):
@@ -405,26 +423,27 @@ class Poller(RnmsEngine):
             return None
         return poller_row
 
-
     def cache_poller_set(self, poller_set_id):
         """
         Cache the given PollerSet within the Poller object so each
         attribute using this set has it
         returns true if it is found
         """
-        
+
         if poller_set_id in self.poller_sets:
             return True
 
         poller_rows = DBSession.query(PollerRow).join(
-            PollerRow.poller, PollerRow.backend ).options(
-                joinedload(PollerRow.poller),
-                joinedload(PollerRow.backend)).filter(
+            PollerRow.poller, PollerRow.backend).options(
+            joinedload(PollerRow.poller),
+            joinedload(PollerRow.backend)).filter(
             PollerRow.poller_set_id == poller_set_id).order_by(
-                PollerRow.position)
+            PollerRow.position)
         if poller_rows is None:
             return False
-        self.poller_sets[poller_set_id] = [ poller_row for poller_row in poller_rows]
+        self.poller_sets[poller_set_id] = [
+            poller_row for poller_row in poller_rows
+        ]
         return True
 
     def _multi_snmp_poll(self, patt):
@@ -443,11 +462,12 @@ class Poller(RnmsEngine):
             if poller_row.position < patt.poller_row:
                 continue
             if poller_row.poller.command == 'snmp_counter':
-                oid = parse_oid(split_oid(poller_row.poller.parsed_parameters(patt), patt.host))
+                oid = parse_oid(split_oid(
+                    poller_row.poller.parsed_parameters(patt), patt.host))
                 if oid is not None:
                     data = {'pobj': self, 'poller_row': poller_row,
                             'attribute': patt}
-                    req.add_oid(oid, cb_snmp_counter, data=data)
+                    req.add_oid(oid, cb_snmp_counter, **data)
                     skip_rows.append(poller_row.position)
         if req.oids == []:
             return skip_rows
@@ -464,11 +484,13 @@ class Poller(RnmsEngine):
         if next_attribute is None:
             return self.sleep(self.next_find_attribute)
         else:
-            self.logger.info("Next polled attribute #%d at %s", next_attribute.id, next_attribute.next_poll.ctime())
+            self.logger.info(
+                "Next polled attribute #%d at %s",
+                next_attribute.id,
+                next_attribute.next_poll.ctime())
             if self.next_find_attribute > next_attribute.next_poll:
                 self.next_find_attribute = next_attribute.next_poll
             return self.sleep(self.next_find_attribute)
 
     def have_working_workers(self):
         return self.rrd_client.has_jobs()
-

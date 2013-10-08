@@ -17,11 +17,15 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
+import socket
+
 from pysnmp.entity.rfc3413.oneliner import cmdgen
+
 REQUEST_SINGLE = 0
 REQUEST_LIST = 1
 REQUEST_TABLE = 2
 REQUEST_MANY = 3
+
 
 # Filters
 def filter_int(value):
@@ -36,6 +40,7 @@ def filter_int(value):
         fvalue = 0
     return fvalue
 
+
 def filter_str(value):
     """ Coerce the value into a string """
     if value is None:
@@ -49,16 +54,66 @@ def filter_str(value):
     return fvalue
 
 VALUE_FILTERS = {
-        'int': filter_int,
-        'str': filter_str
-        }
+    'int': filter_int,
+    'str': filter_str
+    }
+
+
+def _get_host_transport(host_addr):
+    """ Return the correct transport target for
+    the given host """
+    try:
+        addrinfo = socket.getaddrinfo(host_addr, 0)[0]
+    except socket.gaierror:
+        return None
+    if addrinfo[0] == socket.AF_INET:
+        return cmdgen.UdpTransportTarget((host_addr, 161))
+    elif addrinfo[0] == socket.AF_INET6:
+        return cmdgen.Udp6TransportTarget((host_addr, 161))
+    raise ValueError('unknown transport type')
+
+
+class RequestOID(object):
+    """ Holds each OID line for the requests """
+    default = None
+    filter_ = None
+    oid = None
+    cb_data = None
+
+    def __init__(self, oid, callback, **kw):
+        self.oid = oid
+        self.raw_oid = cmdgen.MibVariable(oid)
+        self.cb_func = callback
+        self.default = kw.pop('default', None)
+        self.filter_ = kw.pop('filter', None)
+        self.cb_data = kw
+
+    def callback_default(self, host, error=None):
+        """ Fire callback using default values """
+        self.callback(host, self.default, error)
+
+    def callback(self, host, value, error=None):
+        self.cb_func(value, error, host=host, **self.cb_data)
+
+    def callback_single(self, host, value, error=None):
+        if self.filter_ is not None:
+            try:
+                value = VALUE_FILTERS[self.filter_](value)
+            except KeyError:
+                pass
+        self.callback(host, value, error)
+
+    def is_prefix_of(self, other_oid):
+        """ Return True if we are prefix of other_oid """
+        return self.raw_oid.isPrefixOf(other_oid)
+
 
 class SNMPRequest(object):
     """
     Class for filling in SNMP requests.  There may be multiple OIDs
     within the same request, for speed
     """
-
+    transport_target = None
     replyall = False
     with_oid = None
 
@@ -66,6 +121,7 @@ class SNMPRequest(object):
 
     def __init__(self, host, community):
         self.host = host
+        self.transport_target = _get_host_transport(host.mgmt_address)
         self.oids = []
         self.varbinds = None
         self.table_oids = None
@@ -77,21 +133,17 @@ class SNMPRequest(object):
         return "<SNMPRequest Host:{0} #oids:{1}>".format(
             self.host.mgmt_address, len(self.oids))
 
-    def add_oid(self, oid, callback, data=None, default=None, filt=None,
-                value=None):
+    def add_oid(self, oid, callback, **kw):
         """
         Add another OID to this request, there can be multiple queries
         to the same host
         """
-        self.oids.append({'oid': oid, 'callback': callback, 'data': data,
-                          'default': default, 'filter': filt,
-                          'rawoid': cmdgen.MibVariable(oid),
-                          'value': value })
+        self.oids.append(RequestOID(oid, callback, **kw))
 
     def set_table(self):
         self.request_type = REQUEST_TABLE
         self.replyall = True
-    
+
     def set_many(self):
         self.request_type = REQUEST_MANY
         self.replyall = True
@@ -120,47 +172,26 @@ class SNMPRequest(object):
         """
         if self.replyall:
             req = self.oids[0]
-            if req['data'] is None:
-                req['callback'](req['default'], error, host=self.host)
-            else:
-                req['callback'](req['default'], error, host=self.host, 
-                                **(req['data']))
+            req.callback_default(self.host, error)
         else:
             for req in self.oids:
-                if req['data'] is None:
-                    req['callback'](req['default'], error, host=self.host)
-                else:
-                    req['callback'](req['default'], error, host=self.host,
-                                    **(req['data']))
+                req.callback_default(self.host, error)
 
     def callback_table(self):
         """
         Reply back to the caller with a SNMP table
         """
         if self.replyall:
-            self.oids[0]['callback'](
-                self.varbinds, None, host=self.host,
-                **self.oids[0]['data'])
+            self.oids[0].callback(self.host, self.varbinds, None)
         else:
-            for idx in len(self.oids):
-                self.oids[idx]['callback'](
-                    self.varbinds[idx], None, host=self.host,
-                    **self.oids[idx]['data'])
+            for idx, oid in enumerate(self.oids):
+                oid.callback(self.host, self.varbinds[idx], None)
 
     def callback_single(self, req_oid, value, error=None):
         """
         Fire off the callack with the given value
         """
-        if req_oid['filter'] is not None:
-            try:
-                value = VALUE_FILTERS[req_oid['filter']](value)
-            except KeyError:
-                pass
-        if req_oid['data'] is None:
-            req_oid['callback'](value, error, host=self.host)
-        else:
-            req_oid['callback'](value, error, host=self.host,
-                                **(req_oid['data']))
+        req_oid.callback_single(self.host, value, error)
 
     def is_get(self):
         """ Return True if Request is a SNMP get """
@@ -168,9 +199,10 @@ class SNMPRequest(object):
 
     def is_getnext(self):
         """ Return True if Request is a SNMP getnext """
-        return self.request_type in (REQUEST_TABLE,REQUEST_MANY) and self.community == 1
+        return self.request_type in (REQUEST_TABLE, REQUEST_MANY) and\
+            self.community == 1
 
     def is_getbulk(self):
         """ Return True if Request is a SNMP getbulk """
-        return self.request_type in (REQUEST_TABLE,REQUEST_MANY) and self.community != 1
-
+        return self.request_type in (REQUEST_TABLE, REQUEST_MANY) and\
+            self.community != 1

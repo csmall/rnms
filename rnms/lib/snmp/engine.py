@@ -19,12 +19,14 @@
 #
 import time
 
+from pysnmp.carrier.asynsock.dispatch import AsynsockDispatcher
 from pysnmp.entity.rfc3413.oneliner import cmdgen
+from pysnmp.entity import engine
 from pysnmp.proto.rfc1905 import NoSuchObject
 
 from scheduler import SNMPScheduler
 from request import SNMPRequest
-from target import get_transport_target
+
 
 class SNMPEngine(object):
     """
@@ -47,34 +49,39 @@ class SNMPEngine(object):
     a (oid, value) tuple is returned. The option is a number of digits
     to return, with 0 meaning the entire OID
     """
-           
+
     zmq_core = None
     logger = None
     active_requests = {}
-    default_timeout = 3 # number of seconds before item is considered gone
+    default_timeout = 3  # number of seconds before item is considered gone
     max_attempts = 3
 
     def __init__(self, zmq_core, logger):
         self.zmq_core = zmq_core
         self.logger = logger
         self.scheduler = SNMPScheduler(logger=logger)
-        self.cmd_gen = cmdgen.AsynCommandGenerator()
 
+        self.transport_dispatcher = AsynsockDispatcher()
+        self.transport_dispatcher.setSocketMap(zmq_core.socket_map)
+        snmp_engine = engine.SnmpEngine()
+        snmp_engine.registerTransportDispatcher(self.transport_dispatcher)
+        self.cmd_gen = cmdgen.AsynCommandGenerator(snmpEngine=snmp_engine)
 
     def get_int(self, snmphost, oid, cb_func, default=None, **kw):
         """ Return a single integer value """
         return self.get_one(snmphost, oid, cb_func, default=default,
-                            filt='int', **kw)
+                            filter='int', **kw)
 
     def get_str(self, snmphost, oid, cb_func, default=None, **kw):
         """ Return a single string value """
         return self.get_one(snmphost, oid, cb_func, default=default,
-                            filt='str', **kw)
+                            filter='str', **kw)
 
-    def get_one(self, snmphost, oid, cb_func, default=None, filt=None, **kw):
+    def get_one(self, snmphost, oid, cb_func, with_oid=None, **kw):
         """ Return a single value from a single OID """
         req = SNMPRequest(snmphost, snmphost.ro_community)
-        req.add_oid(oid, cb_func, default=default, data=kw, filt=filt)
+        req.with_oid = with_oid
+        req.add_oid(oid, cb_func, **kw)
         return self.get(req)
 
     def get_list(self, snmphost, oids, cb_func, with_oid=None, **kw):
@@ -83,10 +90,10 @@ class SNMPEngine(object):
         req.with_oid = with_oid
         req.set_replyall(True)
         for oid in oids:
-            req.add_oid(oid, cb_func, data=kw)
+            req.add_oid(oid, cb_func, **kw)
         return self.get(req)
 
-    def get_many(self, snmphost, oids, cb_func, with_oid=None, default=None, **kw):
+    def get_many(self, snmphost, oids, cb_func, with_oid=None, **kw):
         """ Return a list of a list. Each primary list maps to
         one of the requested oid, which will return a list of
         values for that oid
@@ -96,18 +103,17 @@ class SNMPEngine(object):
         req.set_many()
         req.set_replyall(True)
         for oid in oids:
-            req.add_oid(oid, cb_func, data=kw)
+            req.add_oid(oid, cb_func, **kw)
         return self.get(req)
 
-    def get_table(self, snmphost, oids, cb_func, default=None,
-                  with_oid=None, **kw):
+    def get_table(self, snmphost, oids, cb_func, with_oid=None, **kw):
         if type(oids) in (str, unicode):
             oids = (oids,)
         req = SNMPRequest(snmphost, snmphost.ro_community)
         req.with_oid = with_oid
         req.set_table()
         for oid in oids:
-            req.add_oid(oid, cb_func, data=kw, default=default)
+            req.add_oid(oid, cb_func, **kw)
         return self.get(req)
 
     def get(self, request):
@@ -116,7 +122,6 @@ class SNMPEngine(object):
             return True
         self.scheduler.request_add(request)
         return True
-            
 
     def poll(self):
         """
@@ -128,8 +133,8 @@ class SNMPEngine(object):
         reqcount = 0
         # check timeouts
         try:
-            if self.cmd_gen.snmpEngine.transportDispatcher.jobsArePending():
-                self.cmd_gen.snmpEngine.transportDispatcher.handleTimerTick(time.time())
+            if self.transport_dispatcher.jobsArePending():
+                self.transport_dispatcher.handleTimerTick(time.time())
         except AttributeError:
             pass
         self._check_waiting_requests()
@@ -141,12 +146,13 @@ class SNMPEngine(object):
         """ Request with given request ID is finished """
         self._del_request(request_id)
         self.scheduler.request_received(request_id)
-    
+
     def _del_request(self, reqid):
         try:
             del(self.active_requests[reqid])
         except KeyError:
             pass
+
     def _check_waiting_requests(self):
         """
         Run a loop asking the scheduler to find all requests we can kick
@@ -158,11 +164,11 @@ class SNMPEngine(object):
             self.send_request(request)
 
     def send_request(self, request, first=True):
-        sending_oids = [x['rawoid'] for x in request.oids]
+        sending_oids = [x.raw_oid for x in request.oids]
         if request.is_getbulk():
             request.id = self.cmd_gen.bulkCmd(
                 request.community.get_auth_data(),
-                get_transport_target(self.zmq_core, request.host.mgmt_address),
+                request.transport_target,
                 0, 5,
                 sending_oids,
                 (self._snmp_callback, request)
@@ -170,14 +176,14 @@ class SNMPEngine(object):
         elif request.is_getnext():
             request.id = self.cmd_gen.nextCmd(
                 request.community.get_auth_data(),
-                get_transport_target(self.zmq_core, request.host.mgmt_address),
+                request.transport_target,
                 sending_oids,
                 (self._snmp_callback, request)
             )
         else:
             request.id = self.cmd_gen.getCmd(
                 request.community.get_auth_data(),
-                get_transport_target(self.zmq_core, request.host.mgmt_address),
+                request.transport_target,
                 sending_oids,
                 (self._snmp_callback, request)
             )
@@ -207,14 +213,14 @@ class SNMPEngine(object):
             request.varbinds = [[] for x in request.oids]
         need_more = False
         for row in var_binds:
-            for idx,(oid,val) in enumerate(row):
-                if request.oids[idx]['rawoid'].isPrefixOf(oid):
+            for idx, (oid, val) in enumerate(row):
+                if request.oids[idx].is_prefix_of(oid):
                     request.varbinds[idx].append(
                         self._format_value(request, oid, val))
         # See if we need more data
         need_more = False
-        for idx,(oid,val) in enumerate(var_binds[-1]):
-            if request.oids[idx]['rawoid'].isPrefixOf(oid):
+        for idx, (oid, val) in enumerate(var_binds[-1]):
+            if request.oids[idx].is_prefix_of(oid):
                 need_more = True
                 break
         return need_more
@@ -226,8 +232,8 @@ class SNMPEngine(object):
             request.varbinds = []
         for row in var_binds:
             row_data = []
-            for idx,(oid,val) in enumerate(row):
-                if request.oids[idx]['rawoid'].isPrefixOf(oid):
+            for idx, (oid, val) in enumerate(row):
+                if request.oids[idx].is_prefix_of(oid):
                     row_data.append(self._format_value(request, oid, val))
                 else:
                     return False
@@ -237,7 +243,7 @@ class SNMPEngine(object):
     def _parse_row(self, request, var_binds):
         first_req_oid = None
         row_vals = []
-        for idx,(oid,val) in enumerate(var_binds):
+        for idx, (oid, val) in enumerate(var_binds):
             try:
                 req_oid = request.oids[idx]
             except IndexError:
@@ -254,41 +260,32 @@ class SNMPEngine(object):
         if request.replyall:
             request.callback_single(first_req_oid, row_vals)
 
+    def _snmp_callback(self, request_id, error_indication, error_status,
+                       error_index, var_binds, request):
 
-    def _snmp_callback(self, request_id, errorIndication, errorStatus,
-                       errorIndex, varBinds, request):
-        #try:
-        #    request = self.active_requests[request_id]
-        #except KeyError:
-        #    self.logger.debug(
-        #        "receive_msg(): Cannot find request id %d",
-        #        request_id)
-        #    return False
-        
-        if errorIndication:
+        if error_indication:
             self.logger.debug(
                 'H: %d Error with SNMP: %s',
-                    request.host.id, errorIndication)
+                request.host.id, error_indication)
             self._request_finished(request.id)
-            request.callback_default(errorIndication)
+            request.callback_default(error_indication)
             return False
-        if errorStatus:
-            print('Errstat %s at %s' % \
-                (errorStatus.prettyPrint(),
-                errorIndex and varBinds[int(errorIndex)-1] or '?')
-            )
+        if error_status:
+            self.logger.debug(
+                'H:%d SNMP Errstat %s at %s',
+                request.host_id, error_status.prettyPrint(),
+                error_index and var_binds[int(error_index)-1] or '?')
             return False
         if request.is_many():
-            if self._parse_many(request, varBinds) == True:
+            if self._parse_many(request, var_binds):
                 return True
 
         elif request.is_table():
-            if self._parse_table(request, varBinds) == True:
+            if self._parse_table(request, var_binds):
                 return True
         else:
-            self._parse_row(request, varBinds)
+            self._parse_row(request, var_binds)
         if request.is_table() or request.is_many():
             request.callback_table()
         self._request_finished(request.id)
         return False
-

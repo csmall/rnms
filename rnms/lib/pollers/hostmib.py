@@ -22,12 +22,12 @@
 
 
 def poll_hostmib_apps(poller_buffer, parsed_params, **kw):
-
-    oid = (1,3,6,1,2,1,25,4,2,1,2)
+    oid = (1, 3, 6, 1, 2, 1, 25, 4, 2, 1, 2)
     kw['pobj'].snmp_engine.get_table(
-        kw['attribute'].host, (oid,), cb_hostmib_apps, 
+        kw['attribute'].host, (oid,), cb_hostmib_apps,
         with_oid=1, **kw)
     return True
+
 
 def cb_hostmib_apps(values, error, pobj, attribute, poller_row, **kw):
     if values is None:
@@ -35,8 +35,7 @@ def cb_hostmib_apps(values, error, pobj, attribute, poller_row, **kw):
         return
     app_count = 0
     pids = []
-    for value in values:
-        pid,app = value.items()[0]
+    for ((pid, app),) in values:
         if app == str(attribute.display_name):
             app_count += 1
             pids.append(int(pid))
@@ -50,14 +49,15 @@ def poll_hostmib_perf(poller_buffer, parsed_params, **kw):
     """
     Find the memory used for this process
     """
-    base_oid = (1,3,6,1,2,1,25,5,1,1,2)
-    if poller_buffer['pids'] == [] :
+    base_oid = (1, 3, 6, 1, 2, 1, 25, 5, 1, 1, 2)
+    if poller_buffer['pids'] == []:
         kw['pobj'].poller_callback(kw['attribute'].id,
-                             kw['poller_row'], 0)
+                                   kw['poller_row'], 0)
         return True
     oids = [base_oid+(pid,) for pid in poller_buffer['pids']]
     return kw['pobj'].snmp_engine.get_list(
         kw['attribute'].host, oids, cb_hostmib_perf, default=0, **kw)
+
 
 def cb_hostmib_perf(values, error, pobj, attribute, poller_row, **kw):
     total_memory = 0
@@ -65,5 +65,5 @@ def cb_hostmib_perf(values, error, pobj, attribute, poller_row, **kw):
         for pid_mem in values:
             if pid_mem is not None:
                 total_memory += int(pid_mem)
-    
+
     pobj.poller_callback(attribute.id, poller_row, total_memory)
