@@ -21,7 +21,7 @@
 """ Hosts controller """
 
 # turbogears imports
-from tg import expose, validate, flash,tmpl_context, url, predicates, request
+from tg import expose, validate, flash, tmpl_context, url, predicates, request
 from tg.decorators import require
 
 # third party imports
@@ -45,25 +45,26 @@ class HostsController(BaseGridController):
     #allow_only = permissions.host_ro
 
     @expose('rnms.templates.host_index')
-    @validate(validators={'z':validators.Int(min=1)})
-    def index(self, *args, **kw):
+    @validate(validators={'z': validators.Int(min=1)})
+    def index(self, z=None, *args, **kw):
         if tmpl_context.form_errors:
             self.process_form_errors()
             return {}
-        if 'z' in kw:
-            griddata = {'z': int(kw['z'])}
+        if z is not None:
+            griddata = {'z': z}
         else:
             griddata = {}
 
         w = HostGrid()
         return dict(page='host', main_menu=MainMenu,
-                   w=w, griddata=griddata)
+                    w=w, griddata=griddata)
 
     @expose('json')
     def griddata(self, **kw):
         class HostFiller(structures.host, jqGridTableFiller):
             pass
         return super(HostsController, self).griddata(HostFiller, {}, **kw)
+
     @expose('json')
     def gridindex(self, **kw):
         class HostFiller(structures.host_list, jqGridTableFiller):
@@ -71,7 +72,7 @@ class HostsController(BaseGridController):
         return super(HostsController, self).griddata(HostFiller, {}, **kw)
 
     @expose('json')
-    @validate(validators={'h':validators.Int(min=1)})
+    @validate(validators={'h': validators.Int(min=1)})
     @require(permissions.host_rw)
     def griddiscover(self, **kw):
         if tmpl_context.form_errors:
@@ -81,7 +82,7 @@ class HostsController(BaseGridController):
         return filler.get_value(**kw)
 
     @expose('rnms.templates.host')
-    @validate(validators={'h':validators.Int(min=1)})
+    @validate(validators={'h': validators.Int(min=1)})
     def _default(self, h):
         if tmpl_context.form_errors:
             self.process_form_errors()
@@ -90,9 +91,9 @@ class HostsController(BaseGridController):
         if host is None:
             flash('Host ID#{} not found'.format(h), 'error')
             return dict(page='host', main_menu=MainMenu)
-        vendor,devmodel = host.snmp_type()
+        vendor, devmodel = host.snmp_type()
         highest_alarm = Event.host_alarm(host.id)
-        if highest_alarm is  None:
+        if highest_alarm is None:
             host_state = 'Up'
         else:
             host_state = highest_alarm.event_state.display_name.capitalize()
@@ -100,21 +101,20 @@ class HostsController(BaseGridController):
         detailsbox = InfoBox()
         detailsbox.title = 'Host Details'
         attributes_grid = MiniAttributeGrid()
-        attributes_grid.host_id = h
         events_grid = EventGrid()
-        events_grid.host_id = h
         return dict(page='host', main_menu=MainMenu,
                     host=host, vendor=vendor, devmodel=devmodel,
                     host_state=host_state,
                     attributes_grid=attributes_grid,
+                    grid_data={'h': h},
                     detailsbox=detailsbox,
                     events_grid=events_grid)
 
     @expose('rnms.templates.host_map')
     @validate(validators={
-        'z':validators.Int(min=1),'events':validators.Bool(),
-                          'alarmed': validators.Bool()})
-    def map(self, z=None, events=False, alarmed=False):
+        'z': validators.Int(min=1), 'events': validators.Bool(),
+        'alarmed': validators.Bool()})
+    def map(self, z=None, events=False, alarmed=False, **kw):
         """ Display a map of the Hosts, optionally filtered by Zone id
         and optionally showing events for those hosts
         """
@@ -126,7 +126,7 @@ class HostsController(BaseGridController):
         hmap_infobox.child_widget = HostMap()
         hmap_infobox.child_widget.zone_id = z
         hmap_infobox.child_widget.alarmed_only = alarmed
-        if events == True:
+        if events:
             events_grid = EventGrid()
             events_grid.zone_id = z
         else:
@@ -135,14 +135,14 @@ class HostsController(BaseGridController):
                     host_map=hmap_infobox, events_grid=events_grid)
 
     @expose('rnms.templates.host_discover')
-    @validate(validators={'h':validators.Int(min=2)})
+    @validate(validators={'h': validators.Int(min=2)})
     def discover(self, h):
         if tmpl_context.form_errors:
             self.process_form_errors()
             return dict(page='host', main_menu=MainMenu)
         w = DiscoveredAttsGrid()
         w.host_id = h
-        edit_url = url('/attributes/add_disc', {'h':h})
+        edit_url = url('/attributes/add_disc', {'h': h})
         return dict(page='host', main_menu=MainMenu,
                     w=w, edit_url=edit_url)
 
@@ -160,5 +160,5 @@ class HostsController(BaseGridController):
                 )
             )
         items = hosts.all()
-        items.insert(0, ('','-- Choose Host --'))
+        items.insert(0, ('', '-- Choose Host --'))
         return dict(items=items)

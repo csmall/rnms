@@ -19,65 +19,12 @@
 #
 #
 """ Events Widgets """
-from tw2.jqplugins.jqgrid import jqGridWidget, SQLAjqGridWidget
-from tw2.jqplugins.jqgrid.base import word_wrap_css
 
-from rnms import model
 from rnms.lib import structures
 from rnms.lib.table import jqGridTableBase
+
 
 class EventGrid(structures.event, jqGridTableBase):
     __url__ = '/events/griddata'
     __grid_id__ = 'events-grid'
     __caption__ = 'Events'
-    
-
-class EventWidget(SQLAjqGridWidget):
-    entity = model.Event
-    options = {
-            'url': '/events/jqgridsqla',
-            'rowNum': 15,
-            'viewrecords': True,
-            'imgpath': 'scripts/jqGrid/themes/green/images',
-            'height': 'auto',
-            'pager': 'event-list-pager'
-            }
-
-    def prepare(self):
-        self.resources.append(word_wrap_css)
-        super(EventWidget, self).prepare()
-
-class EventsWidget2(jqGridWidget):
-    def prepare(self):
-        self.resources.append(word_wrap_css)
-        super(EventsWidget2, self).prepare()
-    options = {
-            'pager': 'event-list-pager2',
-            'url': '/events/jqgrid',
-            'datatype': 'json',
-            'postData' : { 'Foo': 'bar', },
-            'colNames': ['Date', 'Type', 'Host & Zone', 'Description'],
-            'colModel': [
-                {
-                    'name': 'Date',
-                    'width': 100,
-                    'align': 'right',
-                }, {
-                    'name': 'Type',
-                    'width': '50',
-                },{
-                    'name': 'Host & Zone',
-                    'width': 100,
-                },{
-                    'name': 'Description',
-                    'width': 600,
-                    },
-                ],
-            'rowNum': 15,
-            'rowList': [15, 30, 50],
-            'viewrecords': True,
-            'imgpath': 'scripts/jqGrid/themes/green/images',
-            'height': 'auto',
-            }
-    pager_options = { 'search': True, 'refresh': True, 'add': False, }
-    prmFilter = {'stringResult': True, 'searchOnEnter': False }

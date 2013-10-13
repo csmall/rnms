@@ -12,12 +12,16 @@ from rnms.lib.snmp.engine import SNMPRequest
 from rnms.lib.tcpclient import TCPClient
 
 # Create an empty database before we start our tests for this module
+
+
 def setup():
     """Function called by nose on module load"""
     load_app()
     setup_db()
 
 # Tear down that database
+
+
 def teardown():
     """Function called by nose after all tests in this module ran"""
     teardown_db()
@@ -35,7 +39,7 @@ class AttDiscTest(object):
         self.disc_cb = mock.Mock()
         self.dobj.discover_callback = self.disc_cb
         self.snmp_engine = mock.MagicMock()
-        self.snmp_engine.get_single = mock.Mock(return_value=True)
+        self.snmp_engine.get_one = mock.Mock(return_value=True)
         self.snmp_engine.get_list = mock.Mock(return_value=True)
         self.snmp_engine.get_table = mock.Mock(return_value=True)
         self.snmp_engine.get_many = mock.Mock(return_value=True)
@@ -51,14 +55,14 @@ class AttDiscTest(object):
         self.test_att_type.id = 1
         self.test_att_type.ad_parameters = ''
         self.test_callback_kwargs = {
-                'dobj': self.dobj,
-                'host': self.test_host,
-                'att_type': self.test_att_type,
-                }
+            'dobj': self.dobj,
+            'host': self.test_host,
+            'att_type': self.test_att_type,
+            }
         self.discover_kwargs = {
-                'dobj': self.dobj,
-                'att_type': self.test_att_type,
-                }
+            'dobj': self.dobj,
+            'att_type': self.test_att_type,
+            }
         self.discover_args = (
             self.dobj,
             self.test_att_type,
@@ -73,7 +77,7 @@ class AttDiscTest(object):
             if cvalue is not None:
                 values[changes] = cvalue
             else:
-                for k,v in changes:
+                for k, v in changes:
                     values[k] = v
         return values
 
@@ -110,7 +114,8 @@ class AttDiscTest(object):
 
     def assert_result_display_names(self, expected_names):
         """ Check that the display_names are what we expect """
-        got_names = set([ x.display_name for x in self.disc_cb.call_args[0][1].values()])
+        got_names = set([
+            x.display_name for x in self.disc_cb.call_args[0][1].values()])
         eq_(got_names, set(expected_names))
 
     def assert_result_fields(self, field_name, expected_fields):
@@ -118,15 +123,16 @@ class AttDiscTest(object):
         field_name is the name of field, the values are a dictionary
         using the index as a key
         """
-        for idx,exp_value in expected_fields.items():
-            eq_(self.disc_cb.call_args[0][1][idx].get_field(field_name), exp_value)
+        for idx, exp_value in expected_fields.items():
+            eq_(self.disc_cb.call_args[0][1][idx].get_field(field_name),
+                exp_value)
 
     def assert_oper_state(self, expected_states):
-        for idx,oper_state in expected_states.items():
+        for idx, oper_state in expected_states.items():
             eq_(self.disc_cb.call_args[0][1][idx].oper_state, oper_state)
 
     def assert_admin_state(self, expected_states):
-        for idx,admin_state in expected_states.items():
+        for idx, admin_state in expected_states.items():
             eq_(self.disc_cb.call_args[0][1][idx].admin_state, admin_state)
 
     # Discovery checks
@@ -144,19 +150,18 @@ class AttDiscTest(object):
         # Third parameter is a callback function
         eq_(type(func.call_args[0][2]), types.FunctionType)
 
-    
-    def assert_snmp_single_called(self):
-        self._check_snmp_args(self.snmp_engine.get_single)
+    def assert_snmp_one_called(self):
+        self._check_snmp_args(self.snmp_engine.get_one)
 
     def assert_snmp_list_called(self):
         self._check_snmp_args(self.snmp_engine.get_list)
 
     def assert_snmp_table_called(self):
         self._check_snmp_args(self.snmp_engine.get_table)
-    
+
     def assert_snmp_many_called(self):
         self._check_snmp_args(self.snmp_engine.get_many)
-    
+
     def assert_snmp_get_called(self, oid_count=None):
         """ Check that the snmp_engine.get() method called correctly
         oid_count is number of oids in the request
@@ -168,11 +173,8 @@ class AttDiscTest(object):
         if oid_count is not None:
             eq_(len(req.oids), oid_count)
 
-
     def assert_get_tcp_called(self, port, sendstr, maxbytes, cb_fun):
         self.tcp_client.get_tcp.assert_called_once_with(
             self.test_host_ip, port, sendstr, maxbytes, cb_fun,
             dobj=self.dobj, host=self.test_host,
             att_type=self.test_att_type)
-                                                    
-

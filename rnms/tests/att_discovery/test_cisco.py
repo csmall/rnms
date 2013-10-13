@@ -26,23 +26,23 @@ class TestCiscoEnvmib(AttDiscTest):
 
     def test_cb_single(self):
         """ Cisco Env disc callback finds single peer """
-        values = [{'1': 'testdev'}, {'1': '1'}]
+        values = [[('1', 'testdev'), ('1', '1')]]
         self.callback(cb_cisco_envmib, values)
         self.assert_result_count(1)
         self.assert_oper_state({'1': 'normal'})
         self.assert_admin_state({'1': 'up'})
-    
+
     def test_cb_oper_warning(self):
         """ Cisco Env disc callback finds single oper warning peer """
-        values = [{'1': 'testdev'}, {'1': '2'}]
+        values = [[('1', 'testdev'), ('1', '2')]]
         self.callback(cb_cisco_envmib, values)
         self.assert_result_count(1)
         self.assert_oper_state({'1': 'warning'})
         self.assert_admin_state({'1': 'up'})
-    
+
     def test_cb_admin_down(self):
         """ Cisco Env disc callback finds single admin down peer """
-        values = [{'1': 'testdev'}, {'1': '5'}]
+        values = [[('1', 'testdev'), ('1', '5')]]
         self.callback(cb_cisco_envmib, values)
         self.assert_result_count(1)
         self.assert_oper_state({'1': 'not present'})
@@ -52,52 +52,51 @@ class TestCiscoEnvmib(AttDiscTest):
         """ Cisco Env disc calls snmp table correctly """
         self.discover(discover_cisco_envmib)
         self.assert_snmp_table_called()
-        
+
+
 class TestCiscoSAAgent(AttDiscTest):
-    
     def test_cb_none(self):
         """ Cisco SAAgent disc callback with None has no attributes """
         self.check_callback_none(cb_cisco_saagent)
-    
+
     def test_cb_empty(self):
         """ Cisco SAAgent disc callback with empty dict has no attributes """
-        self.check_callback_empty(cb_cisco_saagent, 2)
+        self.check_callback_empty(cb_cisco_saagent, 1)
 
     def test_cb_single(self):
         """ Cisco SAAgent disc callback finds single peer """
-        values = [{'1': '2'}, {'1': 'test'}]
+        values = [[('1', 'test')]]
         self.callback(cb_cisco_saagent, values)
         self.assert_result_count(1)
         self.assert_oper_state({'1': 'up'})
         self.assert_admin_state({'1': 'up'})
         self.assert_result_display_names(('SAA1 test',))
-    
+
     def test_discover(self):
         """ Cisco SAAgent disc calls snmp table correctly """
         self.discover(discover_cisco_saagent)
         self.assert_snmp_table_called()
-        
+
+
 class TestCiscoPIX(AttDiscTest):
-    
     def test_cb_none(self):
         """ Cisco PIX disc callback with None has no attributes """
         self.check_callback_none(cb_pix_connections)
-    
+
     def test_cb_empty(self):
         """ Cisco PIX disc callback with empty dict has no attributes """
-        self.check_callback_empty(cb_pix_connections, 2)
+        self.check_callback_empty(cb_pix_connections, 1)
 
     def test_cb_single(self):
         """ Cisco PIX disc callback finds single peer """
-        values = [{'1': '2'}, {'1': 'test'}]
+        values = [[('1', 'test')]]
         self.callback(cb_pix_connections, values)
         self.assert_result_count(1)
         self.assert_oper_state({'1': 'up'})
         self.assert_admin_state({'1': 'up'})
         self.assert_result_display_names(('FW Stat1',))
-    
+
     def test_discover(self):
         """ Cisco PIX disc calls snmp table correctly """
         self.discover(discover_pix_connections)
         self.assert_snmp_table_called()
-        

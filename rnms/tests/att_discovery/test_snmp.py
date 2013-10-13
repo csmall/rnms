@@ -6,12 +6,13 @@ from rnms.tests.att_discovery import AttDiscTest
 
 from rnms.lib.att_discovers.snmp import discover_snmp_simple, cb_snmp_simple
 
+
 class TestSNMP(AttDiscTest):
     def test_discover_snmp_simple(self):
         """ snmp simple discovery calls snmp correctly """
         self.set_ad_parameters('1.2.3|Item')
         eq_(discover_snmp_simple(*self.discover_args), True)
-        self.assert_snmp_get_called(oid_count=1)
+        self.assert_snmp_one_called()
 
     def test_simple_none(self):
         """ SNMP simple disc callback with None has no peers """

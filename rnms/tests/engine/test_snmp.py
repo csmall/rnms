@@ -24,21 +24,22 @@ def my_callback1(value, error, **kwargs):
         return
     kwargs['obj'].results.append(value)
 
-class TestSNMP(object):
+
+class NoTestSNMP(object):
     """ Base unit for SNMP testing """
-    sysobjid_oid = (1,3,6,1,2,1,1,2,0)
+    sysobjid_oid = (1, 3, 6, 1, 2, 1, 1, 2, 0)
     expected_sysobjid = "1.3.6.1.4.1.8072.3.2.10"
 
     def setUp(self):
         """ Setup the SNMP engine """
         self.zmq_core = zmqcore.ZmqCore()
-        self.snmp_engine = SNMPEngine(self.zmq_core)
+        self.snmp_engine = SNMPEngine(self.zmq_core, mock.Mock())
         self.results = []
         self.test_host = mock.MagicMock(spec_set=Host)
         self.test_host.ro_community = mock.MagicMock(spec_set=SnmpCommunity)
         self.test_host.mgmt_address = '127.0.0.1'
 
-    def set_host(self,snmpver, snmpcomm):
+    def set_host(self, snmpver, snmpcomm):
         self.test_host.ro_community.community = snmpcomm
         self.test_host.ro_community.version = snmpver
         self.test_host.ro_community.is_snmpv1 = mock.Mock(
@@ -47,7 +48,7 @@ class TestSNMP(object):
             return_value=(snmpver == 2))
 
     def poll(self):
-        while (self.snmp_engine.poll()> 0):
+        while (self.snmp_engine.poll() > 0):
             self.zmq_core.poll(0.1)
 
     def test_valid_timeout(self):
@@ -65,17 +66,17 @@ class TestSNMP(object):
         """ Simple SNMP v1 fetch of SysObjectID """
         self.set_host(1, 'public')
         assert(self.snmp_engine.get_str(
-            self.test_host, self.sysobjid_oid, my_callback1, obj=self ))
+            self.test_host, self.sysobjid_oid, my_callback1, obj=self))
         self.poll()
-        eq_(self.results, [self.expected_sysobjid,])
+        eq_(self.results, [self.expected_sysobjid, ])
 
     def test_v2get(self):
         """ Simple SNMP v2 fetch of SysObjectID """
         self.set_host(2, 'public')
         self.snmp_engine.get_str(
-            self.test_host, self.sysobjid_oid, my_callback1, obj=self )
+            self.test_host, self.sysobjid_oid, my_callback1, obj=self)
         self.poll()
-        eq_(self.results, [self.expected_sysobjid,])
+        eq_(self.results, [self.expected_sysobjid, ])
 
     def test_v1_default_bad_comm(self):
         """ Simple SNMP v1 fetch returns default with bad community"""
@@ -83,7 +84,7 @@ class TestSNMP(object):
         self.snmp_engine.set_default_timeout(1)
         self.snmp_engine.get_str(
             self.test_host, self.sysobjid_oid, my_callback1,
-            default="42", obj=self )
+            default="42", obj=self)
         self.poll()
         eq_(self.results, ["42"])
 
@@ -93,7 +94,7 @@ class TestSNMP(object):
         self.snmp_engine.set_default_timeout(1)
         self.snmp_engine.get_str(
             self.test_host, self.sysobjid_oid, my_callback1,
-            default="42", obj=self )
+            default="42", obj=self)
         self.poll()
         eq_(self.results, ["42"])
 
@@ -103,7 +104,7 @@ class TestSNMP(object):
         self.snmp_engine.set_default_timeout(1)
         self.snmp_engine.get_str(
             self.test_host, '1.3.6.42.41.40', my_callback1,
-            default="42", obj=self )
+            default="42", obj=self)
         self.poll()
         eq_(self.results, ["42"])
 
@@ -113,7 +114,7 @@ class TestSNMP(object):
         self.snmp_engine.set_default_timeout(1)
         self.snmp_engine.get_str(
             self.test_host, '1.3.6.42.41.40', my_callback1,
-            default="42", obj=self )
+            default="42", obj=self)
         self.poll()
         eq_(self.results, ["42"])
 
@@ -125,12 +126,12 @@ class TestSNMP(object):
         self.snmp_engine.get_int(
             self.test_host, '1.3.6.1.2.1.2.1.0', my_callback1, obj=self)
         self.poll()
-        eq_(len(self.results),1)
+        eq_(len(self.results), 1)
         table_length = self.results[0]
 
         self.snmp_engine.get_table(
             self.test_host, ('1.3.6.1.2.1.2.2.1.1',), my_callback1,
-            table_trim=1, obj=self )
+            table_trim=1, obj=self)
         self.poll()
         eq_(len(self.results),2)
         eq_(len(self.results[1][0]),table_length)

@@ -27,5 +27,7 @@
         <li class="${('', 'active')[model=='EventType']}"><a href="${tg.url('/admin/eventtypes/')}">Event Types</a></li>
         <li class="${('', 'active')[model=='EventSeverity']}"><a href="${tg.url('/admin/severitys/')}">Severities</a></li>
         <li class="${('', 'active')[model=='EventState']}"><a href="${tg.url('/admin/eventstates/')}">States</a></li>
+        <li class="${('', 'active')[model=='LogFile']}"><a href="${tg.url('/admin/logfiles/')}">Log Files</a></li>
+        <li class="${('', 'active')[model=='LogMatchSet']}"><a href="${tg.url('/admin/logmatchsets/')}">Match Sets</a></li>
       </ul>
     </div>

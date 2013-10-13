@@ -1,3 +1,22 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of the Rosenberg NMS
+#
+# Copyright (C) 2012,2013 Craig Small <csmall@enc.com.au>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>
+#
 
 import operator
 
@@ -25,6 +44,7 @@ COL_OPERATORS = {
 }
 SEARCH_OPTIONS = [x for x in COL_OPERATORS.keys()]
 
+
 class jqGridGrid(jqGridWidget):
     """
     Standard jQuery UI grid for the TableBase
@@ -38,13 +58,13 @@ class jqGridGrid(jqGridWidget):
     scroll = False
     height = None
 
-    params = ['id', 'scroll', 'height', 'caption', 'columns',
-              'column_widths', 'default_column_width', 'url_args',]
+    params = ('id', 'scroll', 'height', 'caption', 'columns',
+              'column_widths', 'default_column_width', 'url_args', )
     options = {
         'datatype': 'json',
         'autowidth': True,
         'imgpath': 'scripts/jqGrid/themes/green/images',
-        'jsonReader' : {
+        'jsonReader': {
             'repeatitems': False,
             'id': 0,
             'root': 'value_list.entries',
@@ -53,14 +73,15 @@ class jqGridGrid(jqGridWidget):
         },
         'loadComplete': twc.js_symbol('console.debug($(".delete-confirm"))'),
     }
-    pager_options = { "search" : True, "refresh" : True, "edit" : False,
-                     "del" : False, "add" : False}
+    pager_options = {"search": True, "refresh": True, "edit": False,
+                     "del": False, "add": False}
+
     def __init__(self, action=None, postdata=None):
         if postdata is not None and postdata != {}:
             self.options['postData'] = postdata
         else:
-            self.options['postData'] = None
-        
+            self.options['postData'] = {}
+
         if self.url_args is None:
             self.url_args = {}
         super(jqGridGrid, self).__init__()
@@ -68,12 +89,12 @@ class jqGridGrid(jqGridWidget):
         if action is not None:
             self.options['url'] = action
         else:
-            self.options['url'] = url(self.url,self.url_args)
+            self.options['url'] = url(self.url, self.url_args)
         self.options['caption'] = self.caption
         self.options['colNames'] = self._get_colnames()
         self.options['colModel'] = self._get_colmodel()
         self.options['scroll'] = self.scroll
-        if self.scroll == False:
+        if not self.scroll:
             self.options['pager'] = self.id+'-pager'
         self.options['height'] = self.height
 
@@ -85,7 +106,7 @@ class jqGridGrid(jqGridWidget):
     def _get_colnames(self):
         colnames = []
         for col in self.columns:
-            if col== self.suppress_id:
+            if col == self.suppress_id:
                 continue
             try:
                 colnames.append(self.headers[col])
@@ -95,8 +116,8 @@ class jqGridGrid(jqGridWidget):
         return colnames
 
     def _get_colmodel(self):
-        colmodel  = []
-        default_width =  self.default_column_width
+        colmodel = []
+        default_width = self.default_column_width
         for colname in self.columns:
             if colname == self.suppress_id:
                 continue
@@ -127,7 +148,7 @@ class jqGridGrid(jqGridWidget):
             }
         if colname == 'host' and 'h' not in self.url_args:
             try:
-                data_url = url('/hosts/option', {'z':self.url_args['z']})
+                data_url = url('/hosts/option', {'z': self.url_args['z']})
             except KeyError:
                 data_url = url('/hosts/option')
             return {
@@ -139,7 +160,7 @@ class jqGridGrid(jqGridWidget):
             }
         if colname == 'attribute' and 'a' not in self.url_args:
             try:
-                data_url = url('/attributes/option', {'h':self.url_args['h']})
+                data_url = url('/attributes/option', {'h': self.url_args['h']})
             except KeyError:
                 data_url = url('/attributes/option')
             return {
@@ -154,7 +175,8 @@ class jqGridGrid(jqGridWidget):
                 'stype': 'text',
                 'searchoptions': {
                     'dataInit':
-                    'function(el){$(el).datepicker().change(function(){$("#grid-id")[0].triggerToolbar();});};',
+                    'function(el){$(el).datepicker().change(function()'
+                    '{$("#grid-id")[0].triggerToolbar();});};',
                     'attr': {'title': 'Select Date'}}
             }
         if colname == 'event_type':
@@ -176,6 +198,7 @@ class jqGridGrid(jqGridWidget):
                 }
             }
         return dict(search=False)
+
 
 class jqGridTableBase(TableBase):
     """ A table widget using jqueryUI
@@ -206,8 +229,9 @@ class jqGridTableBase(TableBase):
         args['height'] = self.__height__
         if self.__hide_primary_field__:
             args['suppress_id'] = \
-                    self.__provider__.get_primary_field(self.__entity__)
+                self.__provider__.get_primary_field(self.__entity__)
         return args
+
 
 class jqGridTableFiller(TableFiller):
     __possible_field_names__ = ['display_name']
@@ -219,7 +243,7 @@ class jqGridTableFiller(TableFiller):
         except:
             limit = None
         current_page = kw.pop('page', 1)
-        if limit  is None or limit < 1:
+        if limit is None or limit < 1:
             total_pages = 1
         else:
             total_pages = total_rows / limit + 1
@@ -228,18 +252,15 @@ class jqGridTableFiller(TableFiller):
     def _get_rows(self, items):
         """ Convert the items into rows that jqGrid understands """
         identifier = self.__provider__.get_primary_field(self.__entity__)
-        if self.__hide_primary_field__ == True:
+        if self.__hide_primary_field__:
             suppress_id = identifier
         else:
             suppress_id = ''
 
-        rows=[]
+        rows = []
         for item in items:
             try:
-#                rows.append( { 'id': item[identifier],
-#                              'cell':[item[f] for f in
-#                                      self.__fields__ if f != suppress_id] , })
-                rows.append({f:item[f] for f  in self.__fields__
+                rows.append({f: item[f] for f in self.__fields__
                              if f != suppress_id})
             except IndexError:
                 pass
@@ -248,7 +269,7 @@ class jqGridTableFiller(TableFiller):
     def _do_search_conditions(self, query, _search, **kw):
         """ Add additional filter objects if we are being called with
         search options """
-        if _search != True:
+        if not _search:
             return query
         try:
             search_field = kw['searchField']
@@ -257,7 +278,7 @@ class jqGridTableFiller(TableFiller):
         except KeyError:
             return query
 
-        op,do_not = self._get_search_op(search_oper)
+        op, do_not = self._get_search_op(search_oper)
         if op is None:
             return query.filter('0=1')
         if self.is_relation(search_field):
@@ -271,16 +292,16 @@ class jqGridTableFiller(TableFiller):
                 field = getattr(self.__entity__, search_field)
             except AttributeError:
                 return query.filter('0=1')
-        
+
         if do_not:
             return query.filter(not_(op(field, search_string)))
         return query.filter(op(field, search_string))
 
     def _extra_filters(self, **kw):
-        """ Extra filtering due to the url we are passed, generally it 
+        """ Extra filtering due to the url we are passed, generally it
         limits the child items (these object) down to a given parent ID
         """
-        filters = (# get var, db foreign key id
+        filters = (  # get var, db foreign key id
             ('a', 'attribute_id'),
             ('h', 'host_id'),
             ('ps', 'poller_set_id'),
@@ -292,7 +313,7 @@ class jqGridTableFiller(TableFiller):
             try:
                 parent_id = int(kw[id_letter])
                 parent_col = getattr(self.__entity__, col_name)
-            except: # Dont care why we fail, we'll skip it
+            except:  # Dont care why we fail, we'll skip it
                 continue
             else:
                 conditions.append(parent_col == parent_id)
@@ -304,7 +325,7 @@ class jqGridTableFiller(TableFiller):
         sidx = kw.pop('sidx', '')
         sord = kw.pop('sord', 'asc')
         kw.pop('nd', False)
-        sort_desc =  (sord == 'desc')
+        sort_desc = (sord == 'desc')
         if limit is None or page < 1:
             offset = 0
         else:
@@ -315,11 +336,10 @@ class jqGridTableFiller(TableFiller):
         # Extra filters
         conditions = self._extra_filters(**kw)
 
-        count,objs = self._do_query( limit, offset, sidx, sort_desc,
-                                conditions, _search, **kw)
+        count, objs = self._do_query(limit, offset, sidx, sort_desc,
+                                     conditions, _search, **kw)
         self.__count__ = count
         return count, objs
-
 
     def _do_sorting(self, query, sort_idx, sort_desc):
         """ Set the sorting on the query based upon the sort
@@ -327,13 +347,13 @@ class jqGridTableFiller(TableFiller):
         if hasattr(self.__entity__, sort_idx):
             try:
                 sort_table =\
-                        self.__entity__.__mapper__.relationships[sort_idx]
+                    self.__entity__.__mapper__.relationships[sort_idx]
                 sort_field = sort_table.table.c['display_name']
                 query = query.join(sort_table.table)
             except KeyError:
                 try:
                     sort_field =\
-                            self.__entity__.__mapper__.c[sort_idx]
+                        self.__entity__.__mapper__.c[sort_idx]
                 except KeyError:
                     return query
             if sort_desc:
@@ -348,7 +368,7 @@ class jqGridTableFiller(TableFiller):
         current_page, total_pages = self._calculate_pages(total_records, **kw)
         rows = self._get_rows(items)
         return dict(total=total_pages, page=current_page,
-                entries=rows)
+                    entries=rows)
 
     def _get_columns(self):
         """ Return a list of columns given the entity and the relations """
@@ -359,22 +379,23 @@ class jqGridTableFiller(TableFiller):
                 columns.append(self.__entity__.__mapper__.c[f])
             else:
                 try:
-                    fkey_table = self.__entity__.__mapper__.relationships[f].table
+                    fkey_table = self.__entity__.__mapper__.\
+                        relationships[f].table
                 except KeyError:
                     continue
                 if fkey_table not in tables:
                     tables.append(fkey_table)
                 columns.append(fkey_table.c['display_name'])
-        return tables,columns
+        return tables, columns
 
-    def _do_query(self, limit, offset, sort_idx, sort_desc, conditions, _search,
-             **kw):
+    def _do_query(self, limit, offset, sort_idx, sort_desc, conditions,
+                  _search, **kw):
         """
         Query the database, this is based upon the sprox sa_provider
         query method but is better as its filtering does a lot more
         """
         query = self.__provider__.session.query(self.__entity__).\
-                filter(and_(*conditions))
+            filter(and_(*conditions))
         query = self._do_search_conditions(query, _search, **kw)
         count = query.count()
 
@@ -403,10 +424,11 @@ class jqGridTableFiller(TableFiller):
         except KeyError:
             pass
         try:
-            return getattr(operator, search_oper),False
+            return getattr(operator, search_oper), False
         except:
             pass
-        return None,False
+        return None, False
+
 
 class DiscoveryFiller(FillerBase):
 
@@ -432,15 +454,15 @@ class DiscoveryFiller(FillerBase):
                     row_id = ''
                 else:
                     action = 'Add'
-                    row_id =  '{}-{}'.format(atype_id,idx)
+                    row_id = '{}-{}'.format(atype_id, idx)
                 rows.append({'id': row_id,
                              'cell': (
                                  row_id,
                                  action,
-                                 atype_name, 
+                                 atype_name,
                                  idx,
                                  att.display_name,
                                  att.oper_state,
                                  'desc',
-                                     )})
+                                 )})
         return {'records': len(rows), 'rows': rows}

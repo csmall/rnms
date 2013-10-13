@@ -23,13 +23,13 @@ Rosenberg NMS: Host ${host.display_name}
     ${detailsbox.display(text=capture(self.host_details)) | n }
   </div>
   <div class="span6">
-    ${attributes_grid.display() | n}
+    ${attributes_grid.display(postdata=grid_data) | n}
   </div>
 </div>
 
 <div class="row">
   <div class="span12">
-  ${events_grid.display() | n}
+  ${events_grid.display(postdata=grid_data) | n}
   </div>
 </div>
 
