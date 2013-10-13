@@ -1,3 +1,7 @@
+<%def name="menu_style()">
+</%def>
+
+<%def name="menu_items()">
     <div class="well" style="padding: 8px 0;">
       <ul class="nav nav-list">
         <li class="nav-header">Users &amp; Groups</li>
@@ -31,3 +35,4 @@
         <li class="${('', 'active')[model=='LogMatchSet']}"><a href="${tg.url('/admin/logmatchsets/')}">Match Sets</a></li>
       </ul>
     </div>
+</%def>
