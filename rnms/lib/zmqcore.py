@@ -30,12 +30,14 @@ from random import randint
 
 from errno import ECONNRESET, ENOTCONN, ESHUTDOWN, EBADF, ECONNABORTED, EPIPE
 
-_DISCONNECTED = frozenset((ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE,
-                           EBADF))
+_DISCONNECTED = frozenset((ECONNRESET, ENOTCONN, ESHUTDOWN,
+                           ECONNABORTED, EPIPE, EBADF))
+
 
 def set_id(zsocket):
     identity = "%04x-%04x" % (randint(0, 0x10000), randint(0, 0x10000))
     zsocket.setsockopt(zmq.IDENTITY, identity)
+
 
 class ZmqCore(object):
 
@@ -45,8 +47,8 @@ class ZmqCore(object):
         self.zmq_poller = zmq.Poller()
 
     def register_zmq(self, sock, read_cb):
-        """ Zero MQ sockets that want to be called back on data that is received
-        using this poller need to register here
+        """ Zero MQ sockets that want to be called back on data that is
+        received using this poller need to register here
         """
         self.zmq_poller.register(sock, zmq.POLLIN)
         self.zmq_map[sock] = read_cb
@@ -74,8 +76,10 @@ class ZmqCore(object):
 
     def poll(self, timeout=0.0):
         """
-        One-shot poller for all of the normal and ZeroMQ sockets, timeout is just like the
-        select timeout.  normal sockets need to use the Dispatcher as found in this module for it to work
+        One-shot poller for all of the normal and ZeroMQ sockets,
+        timeout is just like the select timeout.  normal sockets
+        need to use the Dispatcher as found in this module for it
+        to work
         """
         # ZMQ objects should of already registered here
 
@@ -91,12 +95,11 @@ class ZmqCore(object):
         except KeyboardInterrupt:
             return False
 
-        for sock,event in events.items():
+        for sock, event in events.items():
             if type(sock) == int:
                 try:
-                    obj =  self.socket_map[sock]
+                    obj = self.socket_map[sock]
                 except KeyError:
-                    #print 'Socket {} is not in our socket map, forcing unregister'.format(sock)
                     self.unregister_sock(sock)
                 else:
                     if event & zmq.POLLIN:
@@ -104,7 +107,6 @@ class ZmqCore(object):
                     if event & zmq.POLLOUT:
                         obj.handle_write_event()
                     if event & zmq.POLLERR:
-                        #print 'Socket {} error, closing'format(sock)
                         obj.handle_close()
             else:
                 cb_func = self.zmq_map[sock]
@@ -112,11 +114,12 @@ class ZmqCore(object):
                     cb_func(sock)
         return True
 
-class Dispatcher(asyncore.dispatcher,object):
+
+class Dispatcher(asyncore.dispatcher, object):
 
     def __init__(self, zmq_core):
         self.zmq_core = zmq_core
-        asyncore.dispatcher.__init__(self,map=zmq_core.socket_map)
+        asyncore.dispatcher.__init__(self, map=zmq_core.socket_map)
 
     def close(self):
         if self._fileno is not None:

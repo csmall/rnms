@@ -130,6 +130,8 @@ class Backend(DeclarativeBase):
             event_fields = {k:v for k,v in poller_result.items() if k!='state'}
         else:
             event_state_name = poller_result
+        if event_state_name is None:
+            return "Poller returned None, nothing done"
 
         event_state = EventState.by_name(event_state_name)
         if event_state is None:

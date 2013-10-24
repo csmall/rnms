@@ -50,13 +50,16 @@ def poll_hostmib_perf(poller_buffer, parsed_params, **kw):
     Find the memory used for this process
     """
     base_oid = (1, 3, 6, 1, 2, 1, 25, 5, 1, 1, 2)
-    if poller_buffer['pids'] == []:
-        kw['pobj'].poller_callback(kw['attribute'].id,
-                                   kw['poller_row'], 0)
-        return True
-    oids = [base_oid+(pid,) for pid in poller_buffer['pids']]
-    return kw['pobj'].snmp_engine.get_list(
-        kw['attribute'].host, oids, cb_hostmib_perf, default=0, **kw)
+    try:
+        if poller_buffer['pids'] != []:
+            oids = [base_oid+(pid,) for pid in poller_buffer['pids']]
+            return kw['pobj'].snmp_engine.get_list(
+                    kw['attribute'].host, oids, cb_hostmib_perf,
+                    default=0, **kw)
+    except KeyError:
+        pass
+    kw['pobj'].poller_callback(kw['attribute'].id, kw['poller_row'], 0)
+    return True
 
 
 def cb_hostmib_perf(values, error, pobj, attribute, poller_row, **kw):

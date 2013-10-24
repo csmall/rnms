@@ -123,6 +123,9 @@ class SNMPEngine(object):
         self.scheduler.request_add(request)
         return True
 
+    def set(self, **kw):
+        raise(NotImplemented)
+
     def poll(self):
         """
         This method should be periodically called to gather all pending

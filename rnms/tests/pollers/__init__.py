@@ -135,9 +135,10 @@ class PollerTest(object):
         self.snmp_engine.get_int.assert_called_once_with(self.test_host,oid, cb_func, **self.test_kwargs)
 
     def assert_get_str_called(self, oid, cb_func, extra_kwargs=None):
-        if extra_kwargs is not  None:
+        if extra_kwargs is not None:
             self.test_kwargs.update(extra_kwargs)
-        self.snmp_engine.get_str.assert_called_once_with(self.test_host,oid, cb_func, **self.test_kwargs)
+        self.snmp_engine.get_str.assert_called_once_with(
+            self.test_host, oid, cb_func, **self.test_kwargs)
 
     def assert_get_table_called(self, cb_func, extra_kwargs=None, oid='1.2.3'):
         if extra_kwargs is not None:
@@ -145,8 +146,14 @@ class PollerTest(object):
         self.snmp_engine.get_table.assert_called_once_with(
             self.test_host, oid, cb_func, **self.test_kwargs)
 
+    def assert_get_list_called(self, cb_func, extra_kwargs=None, oid='1.2.3'):
+        if extra_kwargs is not None:
+            self.test_kwargs.update(extra_kwargs)
+        self.snmp_engine.get_list.assert_called_once_with(
+            self.test_host, oid, cb_func, **self.test_kwargs)
+
     def assert_snmp_set_called(self, oid, cb_func, value, extra_kwargs=None):
-        if extra_kwargs is not  None:
+        if extra_kwargs is not None:
             self.test_kwargs.update(extra_kwargs)
         self.snmp_engine.set.assert_called_once()
         called_vars = self.snmp_engine.set.call_args[0]

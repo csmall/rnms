@@ -9,13 +9,14 @@ STATE_ALERT = 5
 STATE_ADMIN_DOWN = 99
 
 STATE_NAMES = {
-        STATE_UP:       'up',
-        STATE_DOWN:     'down',
-        STATE_TESTING:  'testing',
-        STATE_UNKNOWN:  'unknown',
-        STATE_ALERT:    'alert',
-        STATE_ADMIN_DOWN: 'admin down',
-        }
+    STATE_UP:       'up',
+    STATE_DOWN:     'down',
+    STATE_TESTING:  'testing',
+    STATE_UNKNOWN:  'unknown',
+    STATE_ALERT:    'alert',
+    STATE_ADMIN_DOWN: 'admin down',
+    }
+
 
 def state_name(val):
     """ Return the state name for the given value, if known """

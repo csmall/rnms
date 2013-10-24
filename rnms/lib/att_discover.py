@@ -25,12 +25,13 @@ from sqlalchemy import and_
 from sqlalchemy.orm import joinedload
 
 from rnms.model import DBSession, Host, DiscoveryHost, Attribute,\
-        AttributeType, Event
+    AttributeType, Event
 
 from rnms.lib.engine import RnmsEngine
 
-SCAN_TABLE_SECONDS=300
+SCAN_TABLE_SECONDS = 300
 DISCOVERY_TIMEOUT = 20
+
 
 class BaseDiscover(object):
     """ Basic discovery class, used for both backend and frontend """
@@ -47,12 +48,12 @@ class BaseDiscover(object):
         All of the discovery plugins should call this method.
         Generally this is done with kw['dobj'].discover_callback(hid, atts)
 
-        discovered_atts is a dictionary of index:DiscoveredAttribute 
+        discovered_atts is a dictionary of index:DiscoveredAttribute
         items that were discovered for this particular attribute type
         """
         dhost = self.get_dhost(host_id)
         if dhost is not None:
-            if dhost.cb_discovery_row(discovered_atts) == False:
+            if not dhost.cb_discovery_row(discovered_atts):
                 # We got to the end of the line
                 self._finish_discovery(dhost)
 
@@ -65,17 +66,18 @@ class BaseDiscover(object):
         conditions = []
         if limit_atypes is not None:
             conditions.append(AttributeType.id.in_(limit_atypes))
-        if self._force == False:
-            conditions.append(AttributeType.ad_enabled == True)
+        if not self._force:
+            conditions.append(AttributeType.ad_enabled == True)  # noqa
         atypes = DBSession.query(AttributeType).filter(and_(*conditions))
         for atype in atypes:
             self._attribute_types.append(atype)
             found_atypes.append(str(atype.id))
 
-        if self._force == True and limit_atypes is not None:
+        if self._force and limit_atypes is not None:
             missing_atypes = set(limit_atypes).difference(set(found_atypes))
             if missing_atypes != set():
-                print "Missing the following types: {}".format(','.join(missing_atypes))
+                print "Missing the following types: {}".format(
+                    ','.join(missing_atypes))
 
     def get_discovery_row(self, index):
         try:
@@ -96,10 +98,11 @@ class BaseDiscover(object):
         self.tcp_client.poll()
         return self.zmq_core.poll(0.1)
 
+
 class AttDiscover(BaseDiscover, RnmsEngine):
     """
     Attribute Discovery object
-    Can be given a host to scan or will scan all hosts looking for 
+    Can be given a host to scan or will scan all hosts looking for
     new attributes
     """
     _print_only = True
@@ -110,14 +113,11 @@ class AttDiscover(BaseDiscover, RnmsEngine):
     _active_hosts = None
     _waiting_hosts = None
 
-
-
-    def __init__(self, attribute_ids=None, host_ids=None, print_only=True, force=False, zmq_context=None, do_once=True):
+    def __init__(self, attribute_ids=None, host_ids=None, print_only=True,
+                 force=False, zmq_context=None, do_once=True):
         super(AttDiscover, self).__init__('adisc', zmq_context)
-
         self._active_hosts = {}
         self._waiting_hosts = []
-
         self._force = force
         self.do_once = do_once
         self.print_only = print_only
@@ -134,24 +134,24 @@ class AttDiscover(BaseDiscover, RnmsEngine):
             now = datetime.datetime.now()
             if not self.do_once and self.scan_host_table_time < now:
                 self._fill_host_table(limit_hosts)
-                self.scan_host_table_time = now + datetime.timedelta(seconds=SCAN_TABLE_SECONDS)
-
+                self.scan_host_table_time = now +\
+                    datetime.timedelta(seconds=SCAN_TABLE_SECONDS)
             num_active_hosts = len(self._active_hosts)
             if num_active_hosts < self.max_active_hosts:
                 self._activate_hosts(self.max_active_hosts - num_active_hosts)
 
             # Check through all the engines and sockets
             #host_count = len(self._active_hosts)
-            if self.poll() == False:
+            if not self.poll():
                 return
             self._check_active_hosts()
             if self._active_hosts == {} and self._waiting_hosts == []:
                 # No more hosts to check
-                # sleep until we need more things to do 
-                if self.do_once == True or self.end_thread == True:
+                # sleep until we need more things to do
+                if self.do_once or self.end_thread:
                     break
                 transaction.commit()
-                if self._sleep_until_next() == False:
+                if not self._sleep_until_next():
                     return
         # Done, lets get out of here
         transaction.commit()
@@ -160,12 +160,14 @@ class AttDiscover(BaseDiscover, RnmsEngine):
         try:
             return self._active_hosts[host_id]
         except KeyError:
-            self.logger.warning('H:%d Discover called back but host not found in active list.', host_id)
+            self.logger.warning(
+                'H:%d Discover called back but host not found'
+                'in active list.', host_id)
         return None
 
     def _discovery_found(self, host, atype_id, attribute):
         """
-        Autodiscovery has found a new attribute that is not stored in 
+        Autodiscovery has found a new attribute that is not stored in
         the database.
         """
         if host.autodiscovery_policy.can_add(attribute):
@@ -173,8 +175,9 @@ class AttDiscover(BaseDiscover, RnmsEngine):
                               host.id, atype_id, attribute.index)
         if host.autodiscovery_policy.permit_add:
             if self.print_only:
-                self.logger.debug('H:%d AT:%d Added %s',
-                                host.id, atype_id, attribute.index)
+                self.logger.debug(
+                    'H:%d AT:%d Added %s',
+                    host.id, atype_id, attribute.index)
             else:
                 real_att = Attribute.from_discovered(host, attribute)
                 DBSession.add(real_att)
@@ -205,8 +208,9 @@ class AttDiscover(BaseDiscover, RnmsEngine):
             else:
                 event_info = u''
             if host.autodiscovery_policy.alert_delete and not self.print_only:
-                new_event = Event.create_admin(host, attribute,
-                        'Attribute not found in host{0}'.format(event_info))
+                new_event = Event.create_admin(
+                    host, attribute,
+                    'Attribute not found in host{0}'.format(event_info))
                 if new_event is not None:
                     DBSession.add(new_event)
                     new_event.process()
@@ -216,30 +220,39 @@ class AttDiscover(BaseDiscover, RnmsEngine):
         Autodiscovery has found an known Attribute.  If required this
         method will validate the fields to the latest values
         """
-        changed_fields=[]
+        changed_fields = []
         if not known_att.attribute_type.ad_validate:
             return
 
-        if known_att.display_name != disc_att.display_name[:known_att.display_name_len]:
-            changed_fields.append("Display Name to \"{0}\" was \"{1}\"".format(disc_att.display_name, known_att.display_name))
+        if known_att.display_name !=\
+           disc_att.display_name[:known_att.display_name_len]:
+            changed_fields.append(
+                "Display Name to \"{0}\" was \"{1}\"".format(
+                    disc_att.display_name, known_att.display_name))
             if self.print_only:
                 known_att.display_name = disc_att.display_name
 
-        tracked_fields = [ (f.tag,f.display_name)
-                          for f in known_att.attribute_type.fields if f.tracked == True]
-        for tag,fname  in tracked_fields:
+        tracked_fields = [(f.tag, f.display_name)
+                          for f in known_att.attribute_type.fields
+                          if f.tracked]
+        for tag, fname in tracked_fields:
             known_value = known_att.get_field(tag)
             disc_value = disc_att.get_field(tag)
-            if known_value is not None and disc_value is not None and known_value != disc_value:
-                changed_info = "{0} to \"{1}\" was \"{2}\"".format(fname, disc_value, known_value)
-                self.logger.debug("H:%d A:%d Changed Field: %s", known_att.host.id, known_att.id, changed_info)
+            if known_value is not None and disc_value is not None and\
+               known_value != disc_value:
+                changed_info = "{0} to \"{1}\" was \"{2}\"".format(
+                    fname, disc_value, known_value)
+                self.logger.debug("H:%d A:%d Changed Field: %s",
+                                  known_att.host.id, known_att.id,
+                                  changed_info)
                 changed_fields.append(changed_info)
                 if host.autodiscovery_policy.permit_modify and \
                    not self.print_only:
                     known_att.set_field(tag, disc_value)
         if not self.print_only and changed_fields != []:
-            new_event = Event.create_admin(host, known_att, 
-                    'detected modification'+(', '.join(changed_fields)))
+            new_event = Event.create_admin(
+                host, known_att,
+                'detected modification'+(', '.join(changed_fields)))
             if new_event is not None:
                 DBSession.add(new_event)
                 new_event.process()
@@ -250,19 +263,20 @@ class AttDiscover(BaseDiscover, RnmsEngine):
         report if it is not
         """
         if attribute.user_id == 1:
-            pass #FIXME need to fix the customer/client/user stuff in attributes
+            pass
+        # FIXME need to fix the customer/client/user stuff in attributes
 
     def _activate_hosts(self, new_count):
         """
         Move hosts from the waiting queue to the active queue
         """
         waiting_count = len(self._waiting_hosts)
-        while new_count >  0 and waiting_count > 0:
+        while new_count > 0 and waiting_count > 0:
             new_host = self._waiting_hosts.pop()
             self._active_hosts[new_host.id] = new_host
-            new_count =- 1
-            waiting_count =- 1
-            if new_host.start_discovery(self.cb_check_sysobjid) == False:
+            new_count -= 1
+            waiting_count -= 1
+            if not new_host.start_discovery(self.cb_check_sysobjid):
                 self._finish_discovery(new_host)
 
     def _fill_host_table(self, host_ids):
@@ -275,12 +289,12 @@ class AttDiscover(BaseDiscover, RnmsEngine):
             assert(type(host_ids) == list)
             conditions.append(Host.id.in_(host_ids))
         else:
-            conditions.append(Host.pollable == True)
-        
+            conditions.append(Host.pollable == True)  # noqa
+
         hosts = DBSession.query(Host).options(
             joinedload(Host.autodiscovery_policy),
             joinedload(Host.ro_community)).filter(
-                and_(*conditions))
+            and_(*conditions))
         for host in hosts:
             self._waiting_hosts.append(DiscoveryHost(self, host))
 
@@ -291,10 +305,9 @@ class AttDiscover(BaseDiscover, RnmsEngine):
         """
         del (self._active_hosts[dhost.id])
 
-        for atype_id,discovered_attributes in \
-                                              dhost.discovered_attributes.items():
+        for atype_id, discovered_attributes in \
+                dhost.discovered_attributes.items():
             self.check_attributes(dhost.obj, atype_id, discovered_attributes)
-
 
     def check_attributes(self, host, atype_id, discovered_atts):
         """ We have a list of discovered attributes for a particular
@@ -303,13 +316,14 @@ class AttDiscover(BaseDiscover, RnmsEngine):
         known_atts = self._get_host_attributes(host.id, atype_id)
         unique_indexes = list(set(known_atts.keys() + discovered_atts.keys()))
         for idx in unique_indexes:
-            self.logger.debug('H:%d AT:%d index:%s DB:%s HOST:%s',
-                              host.id, atype_id, idx,
-                              (known_atts[idx].display_name
-                               if idx in known_atts else 'Not found'),
-                              (discovered_atts[idx].display_name
-                               if idx in discovered_atts else 'Not found')
-                    )
+            self.logger.debug(
+                'H:%d AT:%d index:%s DB:%s HOST:%s',
+                host.id, atype_id, idx,
+                (known_atts[idx].display_name
+                 if idx in known_atts else 'Not found'),
+                (discovered_atts[idx].display_name
+                 if idx in discovered_atts else 'Not found')
+            )
 
             if idx not in known_atts:
                 self._discovery_found(host, atype_id, discovered_atts[idx])
@@ -317,10 +331,9 @@ class AttDiscover(BaseDiscover, RnmsEngine):
                 self._discovery_lost(host, known_atts[idx])
             else:
                 # We are in both
-                self._discovery_validate(host, known_atts[idx], discovered_atts[idx])
+                self._discovery_validate(host, known_atts[idx],
+                                         discovered_atts[idx])
                 self._check_user(host, known_atts[idx])
-
-
 
     def _get_host_attributes(self, host_id, atype_id):
         """ Return a list of Attributes for the given hosts for a given
@@ -330,19 +343,19 @@ class AttDiscover(BaseDiscover, RnmsEngine):
             Attribute.attribute_type_id == atype_id))
         if atts is None:
             return {}
-        return { att.index:att for att in atts}
+        return {att.index: att for att in atts}
 
     def _check_active_hosts(self):
         """ Go through list of active hosts to see if any have taken too
         long to poll """
         timeout_time = time.time() - DISCOVERY_TIMEOUT
         for host_id, dhost in self._active_hosts.items():
-            if dhost.in_discovery == False:
+            if not dhost.in_discovery:
                 continue
             if dhost.start_time < timeout_time:
                 self.logger.notice('H:%d AT:%d Discovery Timeout',
                                    dhost.id, dhost.attribute_type.id)
-                if dhost.cb_discovery_row(None) == False:
+                if not dhost.cb_discovery_row(None):
                     self._finish_discovery(dhost)
 
     def _sleep_until_next(self):
@@ -351,8 +364,12 @@ class AttDiscover(BaseDiscover, RnmsEngine):
         if next_host is None:
             return self.sleep(self.scan_host_table_time)
         else:
-            self.logger.info('Next atribute discovery #%d at %s', next_host.id, next_host.next_discover.ctime())
-            return self.sleep(min(next_host.next_discover, self.scan_host_table_time))
+            self.logger.info(
+                'Next atribute discovery #%d at %s',
+                next_host.id, next_host.next_discover.ctime())
+            return self.sleep(min(next_host.next_discover,
+                                  self.scan_host_table_time))
+
 
 class SingleDiscover(BaseDiscover, RnmsEngine):
     """ Discover a single host. Used for the web frontend
@@ -366,10 +383,10 @@ class SingleDiscover(BaseDiscover, RnmsEngine):
         self.do_poll = True
         self.fill_attribute_type_table()
         self.dhost = DiscoveryHost(self, host)
-        if self.dhost.start_discovery(self.cb_check_sysobjid) == False:
+        if not self.dhost.start_discovery(self.cb_check_sysobjid):
             self._finish_discovery(self.dhost)
         while self.do_poll:
-            if self.poll() == False:
+            if not self.poll():
                 break
 
     def get_dhost(self, host_id):
@@ -389,8 +406,9 @@ class SingleDiscover(BaseDiscover, RnmsEngine):
         self.combined_atts = {}
         self.do_poll = False
         known_atts = self._get_host_attributes()
-        self.discovered_atts = {k:v for k,v in dhost.discovered_attributes.items()
-                           if v != {}}
+        self.discovered_atts = {k: v for k, v in
+                                dhost.discovered_attributes.items()
+                                if v != {}}
         atype_ids = list(set(known_atts.keys() +
                          self.discovered_atts.keys()))
         atype_ids.sort()
@@ -403,6 +421,3 @@ class SingleDiscover(BaseDiscover, RnmsEngine):
                 self.combined_atts[atype_id].update(known_atts[atype_id])
             except KeyError:
                 pass
-
-
-

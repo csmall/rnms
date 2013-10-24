@@ -9,23 +9,24 @@ from tw2.jqplugins.ui import set_ui_theme_name
 from rnms.model import DBSession
 __all__ = ['BaseController', 'BaseGridController']
 
-VARIABLE_NAMES={
+VARIABLE_NAMES = {
     'a': 'Attribute ID',
     'h': 'Host ID',
     'z': 'Zone ID',
 }
 
 # Common griddata parameters
-GRID_VALIDATORS={ 
-    'page':validators.Int(min=1),
-    'rows':validators.Int(min=1),
-    'sidx':validators.String(),
-    'sord':validators.String(),
-    '_search':validators.StringBool(),
-    'searchOper':validators.String(),
-    'searchField':validators.String(),
-    'searchString':validators.String(),
+GRID_VALIDATORS = {
+    'page': validators.Int(min=1),
+    'rows': validators.Int(min=1),
+    'sidx': validators.String(),
+    'sord': validators.String(),
+    '_search': validators.StringBool(),
+    'searchOper': validators.String(),
+    'searchField': validators.String(),
+    'searchString': validators.String(),
 }
+
 
 class BaseController(TGController):
     """
@@ -48,10 +49,12 @@ class BaseController(TGController):
 
     def process_form_errors(self, **kw):
         """ Display errors from a form input """
-        msgs=[]
-        for val,errmsg in tmpl_context.form_errors.items():
-            msgs.append('{} for {}'.format(errmsg, VARIABLE_NAMES.get(val,val)))
+        msgs = []
+        for val, errmsg in tmpl_context.form_errors.items():
+            msgs.append('{} for {}'.format(
+                errmsg, VARIABLE_NAMES.get(val, val)))
         flash(' '.join(msgs), 'error')
+
 
 class BaseGridController(BaseController):
     """ BaseController with griddata methods """
@@ -60,10 +63,10 @@ class BaseGridController(BaseController):
         """ Generic json function for grid data
         Based upon tgext.crud.controller.get_all
         """
-        form_errors={}
+        form_errors = {}
         key_validators = GRID_VALIDATORS.copy()
         key_validators.update(filler_validators)
-        for key,validator in key_validators.items():
+        for key, validator in key_validators.items():
             try:
                 form_value = kw.pop(key)
             except KeyError:
@@ -77,5 +80,3 @@ class BaseGridController(BaseController):
             return dict(errors=form_errors)
         table_filler = filler_class(DBSession)
         return dict(value_list=table_filler.get_value(**kw))
-
-

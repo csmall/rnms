@@ -22,32 +22,37 @@ import transaction
 from rnms.model import DBSession, Event
 from rnms.model.logfile import Logfile, SyslogMessage
 
+
 def consolidate_logfiles(logger):
     logfiles = DBSession.query(Logfile)
     for logfile in logfiles:
-        if logfile.id == 1: # Magic 1 means internal database
+        if logfile.id == 1:  # Magic 1 means internal database
             _cons_syslog(logger)
         else:
             _cons_logfile(logger, logfile)
     transaction.commit()
+
 
 def _cons_syslog(logger):
     """
     Consolidates syslog messages from database
     """
     logger.info("LOGF: 1 (database)")
-    line_count=0
-    lines = DBSession.query(SyslogMessage).filter(SyslogMessage.consolidated==False)
+    line_count = 0
+    lines = DBSession.query(SyslogMessage).\
+        filter(SyslogMessage.consolidated == False)  # noqa
     for line in lines:
         line_count += 1
-    logger.info("LOGF(1): %d syslog messages processed" % line_count)
+    logger.info("LOGF(1): %d syslog messages processed", line_count)
+
 
 def _cons_logfile(logger, logfile):
 
     logger.info("LOGF(%s): '%s'", logfile.id, logfile.pathname)
     line_count = 0
-    if logfile.is_new() == False:
-        logger.info("LOGF(%s): 0 messages processed ( No new lines).", logfile.id)
+    if not logfile.is_new():
+        logger.info("LOGF(%s): 0 messages processed ( No new lines).",
+                    logfile.id)
         return
     try:
         lfile = open(logfile.pathname, "r")
@@ -61,14 +66,8 @@ def _cons_logfile(logger, logfile):
         if find_data is not None:
             new_event = Event(**find_data)
             DBSession.add(new_event)
-
         line_count += 1
-
-    logger.info("LOGF(%s): %d messages processed" % (logfile.id, line_count))
+    logger.info("LOGF(%s): %d messages processed",
+                logfile.id, line_count)
     logfile.update(lfile.tell())
     lfile.close()
-    DBSession.flush()
-
-
-
-

@@ -104,10 +104,10 @@ rnms/lib/scripts/rnmsd.py
 rnms/lib/scripts/sla_analyzer.py
 rnms/lib/scripts/trapd.py
 rnms/lib/snmp/__init__.py
-rnms/lib/snmp/dispatcher.py
 rnms/lib/snmp/engine.py
 rnms/lib/snmp/request.py
 rnms/lib/snmp/scheduler.py
+rnms/lib/snmp/target.py
 rnms/model/__init__.py
 rnms/model/action.py
 rnms/model/alarm.py
@@ -124,6 +124,7 @@ rnms/model/logfile.py
 rnms/model/poller.py
 rnms/model/rrd.py
 rnms/model/sla.py
+rnms/model/snmp_community.py
 rnms/model/snmp_names.py
 rnms/model/snmptrap.py
 rnms/model/syslog.py
@@ -150,7 +151,6 @@ rnms/templates/__init__.py
 rnms/templates/__init__.pyc
 rnms/templates/about.mak
 rnms/templates/about.mak.old
-rnms/templates/admin_menu.mak
 rnms/templates/admin_top.mak
 rnms/templates/admin_view.mak
 rnms/templates/attribute_detail.mak
@@ -188,6 +188,11 @@ rnms/templates/testindex.mak
 rnms/templates/welcome.mak
 rnms/templates/widget.mak
 rnms/templates/zone_index.mak
+rnms/templates/admin/__init__.py
+rnms/templates/admin/__init__.pyc
+rnms/templates/admin/edit.mak
+rnms/templates/admin/get_all.mak
+rnms/templates/admin/menu_items.mak
 rnms/templates/attribute/__init__.py
 rnms/templates/attribute/__init__.pyc
 rnms/templates/attribute/graph.mak
@@ -243,6 +248,7 @@ rnms/tests/pollers/test_buffer.py
 rnms/tests/pollers/test_cisco_accounting.py
 rnms/tests/pollers/test_reach.py
 rnms/tests/pollers/test_snmp.py
+rnms/tests/pollers/test_tcp.py
 rnms/tests/pollers/test_verify_index.py
 rnms/websetup/__init__.py
 rnms/websetup/bootstrap.py

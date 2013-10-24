@@ -16,6 +16,7 @@ from rnms.lib import admin_structures as st
 
 class MyCrudRestController(CrudRestController):
     pagination_enabled = False
+    title = 'Rosenberg NMS Admin'
 
     @with_trailing_slash
     @expose('mako:rnms.templates.admin.get_all')
@@ -25,12 +26,17 @@ class MyCrudRestController(CrudRestController):
             values = self.table_filler.get_value(*args, **kw)
             return dict(value_list=values)
         postdata = {}
-        for key in ('a', 'h', 'ps', 'z'):
+        for key in ('a', 'at', 'gt', 'h', 'ps', 'z'):
             if key in kw:
                 postdata[key] = kw[key]
 
         tmpl_context.widget = self.table
         return dict(model=self.model.__name__, griddata=postdata)
+
+    @expose(inherit=True)
+    @expose('mako:rnms.templates.admin.edit')
+    def edit(self, *args, **kw):
+        return super(MyCrudRestController, self).edit(*args, **kw)
 
 
 class MyCrudRestControllerConfig(CrudRestControllerConfig):
@@ -59,6 +65,13 @@ class MyAdminConfig(AdminConfig):
                     obj.default_poller_set_id,
                     obj.default_poller_set.display_name)
 
+    class attributetyperrd(MyCrudRestControllerConfig):
+        class table_type(st.attribute_type_rrd, jqGridTableBase):
+            pass
+
+        class table_filler_type(st.attribute_type_rrd, jqGridTableFiller):
+            pass
+
     class autodiscoverypolicy(MyCrudRestControllerConfig):
         class table_type(st.autodiscovery_policy, jqGridTableBase):
             pass
@@ -86,6 +99,20 @@ class MyAdminConfig(AdminConfig):
             __column_widths__ = {'id': 30, 'display_name': 250}
 
         class table_filler_type(st.event_type, jqGridTableFiller):
+            pass
+
+    class graphtype(MyCrudRestControllerConfig):
+        class table_type(st.graph_type, jqGridTableBase):
+            __column_widths__ = {'id': 20, 'display_name': 50}
+
+        class table_filler_type(st.graph_type, jqGridTableFiller):
+            pass
+
+    class graphtypeline(MyCrudRestControllerConfig):
+        class table_type(st.graph_type_line, jqGridTableBase):
+            pass
+
+        class table_filler_type(st.graph_type_line, jqGridTableFiller):
             pass
 
     class group(MyCrudRestControllerConfig):

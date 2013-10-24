@@ -33,17 +33,15 @@ CONTROL_SOCKET = 'inproc://control'
 LOGGER_SOCKET = 'inproc://logger'
 RRDWORKER_SOCKET = 'inproc://rrdworker'
 
-IPC_END     = "\x01" # Sent from main process, the sub-process will die
-INIT        = "\x02" # Child init sent to parent
-CONF        = "\x03" # Parent sending config to child
-READY       = "\x04" # Config/job consumed
-IPC_INFO_REQ    = '\x05' # Info request
-IPC_INFO_REP    = '\x06' # Info reply
+IPC_END = "\x01"  # Sent from main process, the sub-process will die
+INIT = "\x02"  # Child init sent to parent
+CONF = "\x03"  # Parent sending config to child
+READY = "\x04"  # Config/job consumed
+IPC_INFO_REQ = '\x05'  # Info request
+IPC_INFO_REP = '\x06'  # Info reply
 
-
-
-IPC_LOG     = "\x10" # Sent to logger, log this message
-RRD_UPDATE  = "\x11" # Sent to rrdworker - rrd updates
+IPC_LOG = "\x10"  # Sent to logger, log this message
+RRD_UPDATE = "\x11"  # Sent to rrdworker - rrd updates
 
 
 # Common tasks
@@ -57,13 +55,15 @@ def init_and_config(socket):
         return None
     return frames[1]
 
+
 def control_server(context):
     """ Setup the control server socket that the main thread runs to
-    control others 
+    control others
     """
     socket = context.socket(zmq.PUB)
     socket.bind(CONTROL_SOCKET)
     return socket
+
 
 def control_client(context):
     """ Control socket for clients to listen on and be controlled """

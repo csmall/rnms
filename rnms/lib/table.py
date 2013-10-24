@@ -57,9 +57,11 @@ class jqGridGrid(jqGridWidget):
     caption = None
     scroll = False
     height = None
+    default_sort = None
 
     params = ('id', 'scroll', 'height', 'caption', 'columns',
-              'column_widths', 'default_column_width', 'url_args', )
+              'column_widths', 'default_column_width', 'url_args',
+              'default_sort', )
     options = {
         'datatype': 'json',
         'autowidth': True,
@@ -97,6 +99,9 @@ class jqGridGrid(jqGridWidget):
         if not self.scroll:
             self.options['pager'] = self.id+'-pager'
         self.options['height'] = self.height
+
+        if self.default_sort is not None:
+            self.options['sortname'] = self.default_sort
 
         # If we are using actions then ID is second column
         # otherwise we get <tr id="action stuff"...
@@ -215,6 +220,7 @@ class jqGridTableBase(TableBase):
     __hide_primary_field__ = False
     __scroll__ = False
     __height__ = 'auto'
+    __default_sort__ = 'id'
 
     def _do_get_widget_args(self):
         args = super(jqGridTableBase, self)._do_get_widget_args()
@@ -230,6 +236,8 @@ class jqGridTableBase(TableBase):
         if self.__hide_primary_field__:
             args['suppress_id'] = \
                 self.__provider__.get_primary_field(self.__entity__)
+        if self.__default_sort__ is not None:
+            args['default_sort'] = self.__default_sort__
         return args
 
 
@@ -303,6 +311,8 @@ class jqGridTableFiller(TableFiller):
         """
         filters = (  # get var, db foreign key id
             ('a', 'attribute_id'),
+            ('at', 'attribute_type_id'),
+            ('gt', 'graph_type_id'),
             ('h', 'host_id'),
             ('ps', 'poller_set_id'),
             ('z', 'zone_id'),

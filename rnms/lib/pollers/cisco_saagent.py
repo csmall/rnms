@@ -30,14 +30,18 @@ def poll_cisco_saagent(poller_buffer, parsed_params, **kw):
       <index>: The SA Agent index
       <qtype>: query type, must be one of the keys in the table above
     """
-    base_oid = (1,3,6,1,4,1,9,9,42,1,5,2,1)
+    base_oid = (1, 3, 6, 1, 4, 1, 9, 9, 42, 1, 5, 2, 1)
     saagent_queries = {
-        'fwd_jitter' : ((8,9,13,14),  cb_jitter),
-        'bwd_jitter' : ((18,19,23,24), cb_jitter),
-        'packetloss' : ((1,2,26,27), cb_packetloss),
+        'fwd_jitter': ((8, 9, 13, 14),   cb_jitter),
+        'bwd_jitter': ((18, 19, 23, 24),  cb_jitter),
+        'packetloss': ((1, 2, 26, 27),  cb_packetloss),
         }
 
-    index, qtype = parsed_params.split('|')
+    try:
+        index, qtype = parsed_params.split('|')
+    except ValueError:
+        kw['pobj'].logger.error('Need index|qtype')
+        return False
     try:
         (queries, cb_fun) = saagent_queries[qtype]
     except KeyError:
@@ -45,18 +49,21 @@ def poll_cisco_saagent(poller_buffer, parsed_params, **kw):
         return False
 
     #req.oid_trim = 2
-    oids = [base_oid + (x,int(index)) for x in queries]
-    return kw['pobj'].snmp_engine.get_list(kw['attribute'].host, oids, cb_fun, **kw)
+    oids = [base_oid + (x, int(index)) for x in queries]
+    return kw['pobj'].snmp_engine.get_list(kw['attribute'].host, oids,
+                                           cb_fun, **kw)
+
 
 def cb_jitter(values, error, pobj, attribute, poller_row, **kw):
     if values is None or len(values) != 4:
         pobj.poller_callback(attribute.id, poller_row, None)
     try:
-        jitter = (int(values[1]) + int(values[3]))/\
-                (int(values[0]) + int(values[2]))
-    except (ZeroDivisionError,ValueError):
+        jitter = (int(values[1]) + int(values[3])) / \
+            (int(values[0]) + int(values[2]))
+    except (ZeroDivisionError, ValueError):
         jitter = 0
     pobj.poller_callback(attribute.id, poller_row, jitter)
+
 
 def cb_packetloss(values, error, pobj, attribute, poller_row, **kw):
     if values is None or len(values) != 4:

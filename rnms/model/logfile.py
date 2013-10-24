@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,22 +22,22 @@
 
 import datetime
 import os
-import transaction
-import re 
+import re
 import socket
 import logging
 
 from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode, PickleType, DateTime, Boolean, SmallInteger, String
-
-#from sqlalchemy.orm import relation, backref
+from sqlalchemy.types import Integer, Unicode, PickleType, DateTime,\
+    Boolean, SmallInteger, String
 
 from rnms.model import DeclarativeBase, Attribute, EventState, Host
 from rnms.lib.genericset import GenericSet
 
 logger = logging.getLogger('rnms')
-syslog_host_match = re.compile(r'\w{3} [ :0-9]{11} ([._a-z0-9-]+)\s+',re.IGNORECASE)
+syslog_host_match = re.compile(r'\w{3} [ :0-9]{11} ([._a-z0-9-]+)\s+',
+                               re.IGNORECASE)
+
 
 class Logfile(DeclarativeBase):
     """
@@ -45,20 +45,19 @@ class Logfile(DeclarativeBase):
     Row 0 is special as it uses the interal syslog table.
     """
     __tablename__ = 'log_files'
-    
+
     #{ Columns
-    
+
     id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(60), nullable=False, unique=True)
     pathname = Column(Unicode(2000))
     polled = Column(DateTime, nullable=False, default=datetime.datetime.now)
     file_offset = Column(Integer, nullable=False, default=0)
-    file_mtime = Column(Integer, nullable=False, default=0) # stat st_mtime
+    file_mtime = Column(Integer, nullable=False, default=0)  # stat st_mtime
     logmatchset_id = Column(Integer, ForeignKey('logmatch_sets.id'))
     logmatchset = relationship('LogmatchSet')
     #}
 
-    
     def __init__(self, display_name=None, pathname=None):
         if display_name is not None:
             self.display_name = display_name
@@ -72,8 +71,7 @@ class Logfile(DeclarativeBase):
             return False
         if self.file_offset == 0 or self.file_mtime == 0:
             return True
-        if os.access(self.pathname, os.R_OK) == False:
-            #logging.warning("Cannot access file \"%s\" for reading." % self.pathname)
+        if not os.access(self.pathname, os.R_OK):
             return False
         if os.stat(self.pathname).st_mtime > self.file_mtime:
             return True
@@ -83,19 +81,22 @@ class Logfile(DeclarativeBase):
         """
         Update the mtime and (if given) the offset
         """
-        self.file_mtime = os.stat(self.pathname).st_mtime
+        self.polled = datetime.datetime.now()
+        if self.pathname != '':
+            self.file_mtime = os.stat(self.pathname).st_mtime
         if file_offset is not None:
             self.file_offset = file_offset
-        transaction.commit()
 
-class LogmatchSet(DeclarativeBase,GenericSet):
+
+class LogmatchSet(DeclarativeBase, GenericSet):
     __tablename__ = 'logmatch_sets'
     cached_matches = None
-    
+
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(60), nullable=False, unique=True)
-    logmatch_rows = relationship('LogmatchRow', order_by='LogmatchRow.position')
+    logmatch_rows = relationship('LogmatchRow',
+                                 order_by='LogmatchRow.position')
     #}
 
     def __init__(self, display_name=None):
@@ -103,29 +104,28 @@ class LogmatchSet(DeclarativeBase,GenericSet):
         self.rows = self.logmatch_rows
 
     def __repr__(self):
-        return '<LogmatchSet name=%s rows=%d>' % (self.display_name,len(self.logmatch_rows))
+        return '<LogmatchSet name=%s rows=%d>'.format(
+            self.display_name, len(self.logmatch_rows))
 
     def insert(self, new_pos, new_row):
         new_row.logmatch_set = self
-        GenericSet.insert(self,new_pos, new_row)
+        GenericSet.insert(self, new_pos, new_row)
 
     def append(self, new_row):
         new_row.logmatch_set = self
-        GenericSet.append(self,new_row)
+        GenericSet.append(self, new_row)
 
     def prime_cache(self):
         """
         Put all database rows into cached_matches
         """
-        self.cached_matches = [ row for row in self.logmatch_rows]
-
+        self.cached_matches = [row for row in self.logmatch_rows]
 
     def find(self, text, is_syslog=True):
         """
         Try to match "text" with any of the match rows
-        returns None if not found otherwise a dictionary 
+        returns None if not found otherwise a dictionary
         """
-
         syslog_match = syslog_host_match.match(text)
         syslog_host = None
         if is_syslog and syslog_match is None:
@@ -138,11 +138,9 @@ class LogmatchSet(DeclarativeBase,GenericSet):
         for row in self.cached_matches:
             match = row.try_match(syslog_host, text)
             if match is not None:
-                logger.debug("LOGF(%s): Matched \"%s\"", self.id,row.match_text)
+                logger.debug("LOGF(%s): Matched \"%s\"",
+                             self.id, row.match_text)
                 return match
-
-
-
 
 
 class LogmatchRow(DeclarativeBase):
@@ -159,7 +157,8 @@ class LogmatchRow(DeclarativeBase):
 
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
-    logmatch_set_id = Column(Integer, ForeignKey('logmatch_sets.id'), nullable=False)
+    logmatch_set_id = Column(Integer, ForeignKey('logmatch_sets.id'),
+                             nullable=False)
     logmatch_set = relationship('LogmatchSet')
     position = Column(SmallInteger, nullable=False, default=1)
     match_text = Column(Unicode(255), nullable=False)
@@ -168,9 +167,11 @@ class LogmatchRow(DeclarativeBase):
     host_match = Column(Unicode(60))
     attribute_match = Column(Unicode(60))
     state_match = Column(Unicode(60))
-    event_type_id = Column(Integer, ForeignKey('event_types.id'), nullable=False, default=0)
+    event_type_id = Column(Integer, ForeignKey('event_types.id'),
+                           nullable=False, default=0)
     event_type = relationship('EventType')
-    fields = relationship('LogmatchField', backref='logmatch_row', cascade='all, delete, delete-orphan')
+    fields = relationship('LogmatchField', backref='logmatch_row',
+                          cascade='all, delete, delete-orphan')
 
     def matched_host(self, match, syslog_host):
         """
@@ -181,14 +182,15 @@ class LogmatchRow(DeclarativeBase):
 
         if self.host_match is not None:
             try:
-                groupid=int(self.host_match)
+                groupid = int(self.host_match)
                 address = match.group(groupid)
             except:
                 pass
         if address is None:
             return None
         try:
-            for addr in set([ai[4][0] for ai in socket.getaddrinfo(address,0)]):
+            for addr in set([ai[4][0] for ai in
+                             socket.getaddrinfo(address, 0)]):
                 host = Host.by_address(addr)
                 if host is not None:
                     return host
@@ -196,24 +198,21 @@ class LogmatchRow(DeclarativeBase):
             pass
         return None
 
-
-
-    def matched_attribute(self, match,host):
+    def matched_attribute(self, match, host):
         """
         Return the matched attribute
         """
         if self.attribute_match is None:
             return None
         try:
-            groupid=int(self.attribute_match)
+            groupid = int(self.attribute_match)
         except ValueError:
             return None
-
         try:
             display_name = match.group(groupid)
         except IndexError:
             return None
-        return Attribute.by_display_name(host,unicode(display_name))
+        return Attribute.by_display_name(host, unicode(display_name))
 
     def matched_state(self, match):
         """
@@ -222,29 +221,24 @@ class LogmatchRow(DeclarativeBase):
         if self.state_match is None:
             return None
         try:
-            groupid=int(self.state_match)
-        except ValueError:
+            return EventState.by_name(match.group(int(self.state_match)))
+        except (ValueError, IndexError):
             return None
-        try:
-            display_name = match.group(groupid)
-        except IndexError:
-            return None
-        return EventState.by_name(display_name)
 
-    def matched_fields(self,match):
+    def matched_fields(self, match):
         """
         Return a dictionary of tag:value for the fields for this LogmatchRow
         """
-        mfields={}
+        mfields = {}
         for field in self.fields:
             try:
-                groupid=int(field.field_match)
+                groupid = int(field.field_match)
             except ValueError:
-                mfields[field.event_field_tag]=field.field_match
+                mfields[field.event_field_tag] = field.field_match
             try:
-                mfields[field.event_field_tag]=match.group(groupid)
+                mfields[field.event_field_tag] = match.group(groupid)
             except IndexError:
-                mfields[field.event_field_tag]=field.field_match
+                mfields[field.event_field_tag] = field.field_match
         return mfields
 
     def try_match(self, syslog_host, text):
@@ -258,15 +252,16 @@ class LogmatchRow(DeclarativeBase):
         else:
             match = self.match_sre.search(text)
         #match = re.search(row.match_text, text)
-        if match is not None: #we have a match!!
-            host=self.matched_host(match, syslog_host)
+        if match is not None:  # we have a match!!
+            host = self.matched_host(match, syslog_host)
             return dict(
-                    event_type=self.event_type,
-                    host=host,
-                    attribute=self.matched_attribute(match,host),
-                    alarm_state = self.matched_state(match),
-                    field_list = self.matched_fields(match),
-                    )
+                event_type=self.event_type,
+                host=host,
+                attribute=self.matched_attribute(match, host),
+                alarm_state=self.matched_state(match),
+                field_list=self.matched_fields(match),
+                )
+
 
 class LogmatchField(DeclarativeBase):
     """
@@ -277,11 +272,12 @@ class LogmatchField(DeclarativeBase):
     __tablename__ = 'logmatch_fields'
 
     #{ Columns
-    logmatch_row_id = Column(Integer, ForeignKey('logmatch_rows.id'), primary_key=True, nullable=False)
-    event_field_tag = Column(String(20),nullable=False, primary_key=True)
+    logmatch_row_id = Column(Integer, ForeignKey('logmatch_rows.id'),
+                             primary_key=True, nullable=False)
+    event_field_tag = Column(String(20), nullable=False, primary_key=True)
     field_match = Column(Unicode(150), nullable=False)
     #}
-    
+
 
 class SyslogMessage(DeclarativeBase):
     """
@@ -291,7 +287,7 @@ class SyslogMessage(DeclarativeBase):
     """
 
     __tablename__ = 'syslog_messages'
-    
+
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     facility = Column(Integer)
@@ -310,6 +306,4 @@ class SyslogMessage(DeclarativeBase):
             self.message = message
 
     def __repr__(self):
-        return '<SyslogMessage message=%s>' % (self.message)
-
-
+        return '<SyslogMessage message=%s>'.format(self.message)

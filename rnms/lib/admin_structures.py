@@ -85,6 +85,24 @@ class attribute_type(base_table):
         'ad_parameters': 'Discovery Parameters',
         }
 
+    def action_buttons(self, obj):
+        return [
+            ('<a class="btn btn-mini btn-info" href="{0}">'
+             '<i title="Show Graph Types" '
+             'class="icon-picture icon-white"></i></a>').
+            format(tg.url('/admin/graphtypes/', {'at': obj.id})),
+            ('<a class="btn btn-mini btn-info" href="{0}">'
+             '<i title="Show RRDs" '
+             'class="icon-folder-close icon-white"></i></a>').
+            format(tg.url('/admin/attributetyperrds/',
+                          {'at': obj.id})),
+        ] + super(attribute_type, self).action_buttons(obj)
+
+
+class attribute_type_rrd(base_table):
+    __grid_id__ = 'attribute_type_rrds-grid'
+    __entity__ = model.AttributeTypeRRD
+
 
 class autodiscovery_policy(base_table):
     __grid_id__ = 'adpolicies-grid'
@@ -110,6 +128,34 @@ class event_type(base_table):
     __grid_id__ = 'event_type-grid'
     __entity__ = model.EventType
     __limit_fields__ = ('id', 'display_name', 'tag')
+
+
+class graph_type(base_table):
+    __grid_id__ = 'graph_type-grid'
+    __entity__ = model.GraphType
+    __limit_fields__ = ('id', 'display_name', 'attribute_type',
+                        'template')
+
+    def action_buttons(self, obj):
+        return [
+            ('<a class="btn btn-mini btn-info" href="{0}">'
+             '<i title="Show Lines" '
+             'class="icon-list icon-white"></i></a>').
+            format(tg.url('/admin/graphtypelines/', {'gt': obj.id})),
+            ('<a class="btn btn-mini btn-info" href="{0}">'
+             '<i title="Show RRDs" '
+             'class="icon-folder-close icon-white"></i></a>').
+            format(tg.url('/admin/attributetyperrds/',
+                          {'at': obj.attribute_type_id})),
+        ] + super(graph_type, self).action_buttons(obj)
+
+
+class graph_type_line(base_table):
+    __grid_id__ = 'graph_type_line-grid'
+    __entity__ = model.GraphTypeLine
+    __limit_fields__ = ('id', 'position', 'attribute_type_rrd',
+                        'multiplier')
+    __default_sort__ = 'position'
 
 
 class group(base_table):
@@ -161,6 +207,8 @@ class logmatchrow(base_table):
     __entity__ = model.LogmatchRow
     __limit_fields__ = ('id', 'logmatch_set', 'position', 'match_text',
                         'event_type')
+    __column_widths__ = {'__actions__': 50, 'id': 20, 'logmatch_set': 50,
+                         'position': 20, 'event_type': 50}
 
 
 class poller(base_table):
@@ -193,6 +241,7 @@ class poller_row(base_table):
     __grid_id__ = 'pollerrows-grid'
     __entity__ = model.PollerRow
     __limit_fields__ = ('position', 'poller_set', 'poller', 'backend')
+    __default_sort__ = 'position'
 
     def poller_set(self, obj):
         return click('pollersets', obj.poller_set_id,
@@ -229,4 +278,4 @@ class zone(base_table):
              '<i title="Show Hosts in zone"'
              'class="icon-list icon-white"></i></a>').format(
                 tg.url('/admin/hosts/', {'z': obj.id}))
-        ] + self.action_buttons(obj)
+        ] + super(zone, self).action_buttons(obj)

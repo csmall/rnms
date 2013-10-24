@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,8 +30,10 @@ logger = logging.getLogger('TCPClient')
 
 """ TCP Client """
 
+
 class TCPClientError(Exception):
     pass
+
 
 class TCPClient():
     """
@@ -47,10 +49,11 @@ class TCPClient():
     def get_tcp(self, ipaddr, port, send_msg, max_bytes, cb_fun, **kwargs):
         """
         Query a host with the given TCP port and collect the number
-        of bytes. Returns a dictionary to the cb_fun 
+        of bytes. Returns a dictionary to the cb_fun
         """
         new_dispatcher = TCPDispatcher(self.zmq_core)
-        if new_dispatcher.send_message(ipaddr, port, send_msg, max_bytes, cb_fun, **kwargs) == True:
+        if new_dispatcher.send_message(ipaddr, port, send_msg, max_bytes,
+                                       cb_fun, **kwargs) is True:
             self.dispatchers.append(new_dispatcher)
             return True
         return False
@@ -58,12 +61,13 @@ class TCPClient():
     def poll(self):
         # Remove the old ones first
         retval = 0
-        for disp_id,disp in enumerate(self.dispatchers):
+        for disp_id, disp in enumerate(self.dispatchers):
             if not disp.connecting and not disp.connected:
                 del self.dispatchers[disp_id]
             if disp.poll():
                 retval += 1
         return retval
+
 
 class TCPDispatcher(zmqcore.Dispatcher):
     """
@@ -84,14 +88,12 @@ class TCPDispatcher(zmqcore.Dispatcher):
             except (TypeError, ValueError, OverflowError, NameError):
                 try:
                     errmsg = errorcode[err]
-                except (KeyError,NameError):
+                except (KeyError, NameError):
                     errmsg = 'Unknown Error {}'.format(err)
         self.error = (err, errmsg)
 
-
-
-
-    def send_message(self, ipaddr, port, send_msg, max_bytes, cb_fun, **kwargs):
+    def send_message(self, ipaddr, port, send_msg, max_bytes, cb_fun,
+                     **kwargs):
         try:
             addrinfo = socket.getaddrinfo(ipaddr, port)[0]
         except socket.gaierror:
@@ -136,7 +138,8 @@ class TCPDispatcher(zmqcore.Dispatcher):
             self._set_error(err.errno, err.strerror)
             self.handle_close()
         else:
-            if self.max_bytes is not None and self.max_bytes != 0 and len(self.inbuf) > self.max_bytes:
+            if self.max_bytes is not None and self.max_bytes != 0 and\
+                    len(self.inbuf) > self.max_bytes:
                 self.handle_close()
 
     def readable(self):
@@ -150,15 +153,18 @@ class TCPDispatcher(zmqcore.Dispatcher):
         self.outbuf = self.outbuf[sent:]
 
     def _parse_response(self):
-        if self.responded == False:
-            filtered_buf = ''.join([c for c in self.inbuf if c in string.printable])
-            self.cb_fun((filtered_buf,self.connect_time), self.error, **self.kwargs)
+        if not self.responded:
+            filtered_buf = ''.join([c for c in self.inbuf
+                                    if c in string.printable])
+            self.cb_fun((filtered_buf, self.connect_time), self.error,
+                        **self.kwargs)
             self.responded = True
 
     def poll(self):
         now = datetime.datetime.now()
         if self.connecting:
-            if (now - self.start_connect).total_seconds() > self.connect_timeout:
+            if (now - self.start_connect).total_seconds()\
+                    > self.connect_timeout:
                 self._set_error(-1, 'timed out connecting to host')
                 self.handle_close()
                 return False
@@ -168,4 +174,3 @@ class TCPDispatcher(zmqcore.Dispatcher):
                 self.handle_close()
                 return False
         return True
-
