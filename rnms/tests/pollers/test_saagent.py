@@ -5,7 +5,8 @@ from nose.tools import assert_false, assert_true
 #from rnms import model
 from rnms.tests.pollers import PollerTest
 
-from rnms.lib.pollers.cisco_saagent import poll_cisco_saagent, cb_jitter
+from rnms.lib.pollers.cisco_saagent import poll_cisco_saagent, cb_jitter,\
+    cb_packetloss
 
 
 class TestSAAgentPoller(PollerTest):
@@ -30,3 +31,11 @@ class TestSAAgentPoller(PollerTest):
                 (1, 3, 6, 1, 4, 1, 9, 9, 42, 1, 5, 2, 1, 9, 42),
                 (1, 3, 6, 1, 4, 1, 9, 9, 42, 1, 5, 2, 1, 13, 42),
                 (1, 3, 6, 1, 4, 1, 9, 9, 42, 1, 5, 2, 1, 14, 42)],)
+
+    def test_cb_jitter_none(self):
+        """ PollCB jitter with None returned """
+        self.assert_callback_none(cb_jitter)
+
+    def test_cb_packetloss_none(self):
+        """ PollCB packetlos with None returned """
+        self.assert_callback_none(cb_packetloss)

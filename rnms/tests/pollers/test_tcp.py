@@ -20,16 +20,15 @@
 """Test suite for TCP Pollers """
 import datetime
 
-from nose.tools import eq_, assert_true
+from nose.tools import assert_true
 import mock
 
-from rnms import model
 from rnms.tests.pollers import PollerTest
-from rnms.lib import states
 from rnms.lib.tcpclient import TCPClient
 from rnms.lib.pollers.tcp import poll_tcp_status, cb_tcp_status,\
-        poll_snmp_tcp_established, cb_snmp_tcp_established,\
-        poll_tcp_content
+    poll_snmp_tcp_established, cb_snmp_tcp_established,\
+    poll_tcp_content
+
 
 class TestTCPPoller(PollerTest):
 
@@ -46,12 +45,14 @@ class TestTCPPoller(PollerTest):
 
     def test_poll_tcp_ok(self):
         """ Poller tcp_status calls tcp_get correctly """
-        assert_true(poll_tcp_status(self.poller_buffer,'99', **self.test_kwargs))
+        assert_true(poll_tcp_status(self.poller_buffer, '99',
+                    **self.test_kwargs))
         self.assert_get_tcp_called(1, ' ', None, cb_tcp_status)
 
     def test_poll_tcp_badbytes(self):
         """ Poller tcp_status with bad max_bytes """
-        assert_true(poll_tcp_status(self.poller_buffer,'BAD', **self.test_kwargs))
+        assert_true(poll_tcp_status(self.poller_buffer, 'BAD',
+                    **self.test_kwargs))
         self.assert_get_tcp_called(1, ' ', None, cb_tcp_status)
 
     def test_cb_none(self):
@@ -61,16 +62,18 @@ class TestTCPPoller(PollerTest):
 
     def test_cb_ok(self):
         """ PollCB tcp_status with correct values """
-        connect_time = datetime.timedelta(0,123,456000)
+        connect_time = datetime.timedelta(0, 123, 456000)
         cb_tcp_status((u'Hi', connect_time), None, **self.test_kwargs)
         self.assert_callback((u'open', u'Hi', 123.456, None))
 
     def test_poll_tcp_estab(self):
         """ Poller tcp_established calls SNMP engine """
         assert_true(poll_snmp_tcp_established(self.poller_buffer, '',
-                                             **self.test_kwargs))
+                                              **self.test_kwargs))
         self.assert_get_table_called(cb_snmp_tcp_established,
-                                    oid=((1, 3, 6, 1, 2, 1, 6, 13, 1, 1),))
+                                     oid=((1, 3, 6, 1, 2, 1, 6, 13, 1, 1),),
+                                     extra_kwargs={'with_oid': 6})
+
     def test_cb_tcp_stabl_none(self):
         """ PollCB tcp_established with no values """
         cb_snmp_tcp_established(None, None, **self.test_kwargs)
@@ -78,15 +81,15 @@ class TestTCPPoller(PollerTest):
 
     def test_cb_tcp_estab_none(self):
         """ PollCB tcp_established with correct values """
-        values = (({
-            '127.0.0.1.1.11.11.11.11.1100': '5',
-            '127.0.0.1.9.11.11.11.11.1100': '5',
-            '127.0.0.1.1.21.21.21.21.2100': '5',
-            '127.0.0.1.1.31.21.21.21.2100': '2',
-            '127.0.0.1.1.41.21.21.21.2100': '5',
-        }),)
+        values = [[('22.0.0.0.0.0', '2')],
+                 [('23.0.0.0.0.0', '2')],
+                 [('1.0.0.0.0.0', '2')],
+                 [('1.128.0.0.1.55676', '5')],
+                 [('1.129.0.0.1.33001', '5')],
+                 [('6154.0.0.0.0.0', '2')], [('6160.0.0.0.0.0', '2')],
+                  ]
         cb_snmp_tcp_established(values, None, **self.test_kwargs)
-        self.assert_callback(3)
+        self.assert_callback(2)
 
     def test_poll_tcp_content_none(self):
         """ Poller tcp_content with no poller buffer """

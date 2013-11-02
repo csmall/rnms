@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 #
 from rnms.model import AttributeField
 
+
 def poll_reach_ping(poller_buffer, parsed_params, **kw):
     """
     Poller that starts off the ping process
@@ -26,21 +27,26 @@ def poll_reach_ping(poller_buffer, parsed_params, **kw):
     Returns: rtt,pl
     """
     try:
-        num_pings = int(AttributeField.field_value(kw['attribute'].id, 'pings'))
+        num_pings = int(AttributeField.field_value(
+            kw['attribute'].id, 'pings'))
     except (TypeError, ValueError):
         num_pings = 10
     try:
-        interval = int(AttributeField.field_value(kw['attribute'].id, 'interval'))
+        interval = int(AttributeField.field_value(
+            kw['attribute'].id, 'interval'))
     except (TypeError, ValueError):
         interval = 300
     kw['pings'] = num_pings
-    return kw['pobj'].ping_client.ping_host(kw['attribute'].host.mgmt_address, cb_reach_ping, num_pings, interval, **kw)
+    return kw['pobj'].ping_client.ping_host(
+        kw['attribute'].host.mgmt_address, cb_reach_ping,
+        num_pings, interval, **kw)
 
-def cb_reach_ping(values, error, pobj, attribute, poller_row, **kw):
-    pobj.poller_callback(attribute.id, poller_row, values)
+
+def cb_reach_ping(values, error, pobj, attribute, **kw):
+    pobj.poller_callback(attribute.id, values)
 
 
-def poll_reach_status(poller_buffer, parsed_params, pobj, attribute, poller_row, **kw):
+def poll_reach_status(poller_buffer, parsed_params, pobj, attribute, **kw):
     """"
     Poller that checks the value of the packet loss
     Expects 'packetloss' field from poller buffer which is packetloss percent
@@ -57,5 +63,7 @@ def poll_reach_status(poller_buffer, parsed_params, pobj, attribute, poller_row,
     result = u'reachable'
     if loss > thres:
         result = u'unreachable'
-    pobj.poller_callback(attribute.id, poller_row, {'state': result, 'info':u'{0}% Packet loss'.format(loss)})
+    pobj.poller_callback(attribute.id,
+                         {'state': result,
+                          'info': u'{0}% Packet loss'.format(loss)})
     return True

@@ -29,9 +29,9 @@ def poll_hostmib_apps(poller_buffer, parsed_params, **kw):
     return True
 
 
-def cb_hostmib_apps(values, error, pobj, attribute, poller_row, **kw):
+def cb_hostmib_apps(values, error, pobj, attribute, **kw):
     if values is None:
-        pobj.poller_callback(attribute.id, poller_row, None)
+        pobj.poller_callback(attribute.id, None)
         return
     app_count = 0
     pids = []
@@ -42,7 +42,7 @@ def cb_hostmib_apps(values, error, pobj, attribute, poller_row, **kw):
     state = 'not_running'
     if app_count > 0:
         state = 'running'
-    pobj.poller_callback(attribute.id, poller_row, (state, app_count, pids))
+    pobj.poller_callback(attribute.id, (state, app_count, pids))
 
 
 def poll_hostmib_perf(poller_buffer, parsed_params, **kw):
@@ -54,19 +54,19 @@ def poll_hostmib_perf(poller_buffer, parsed_params, **kw):
         if poller_buffer['pids'] != []:
             oids = [base_oid+(pid,) for pid in poller_buffer['pids']]
             return kw['pobj'].snmp_engine.get_list(
-                    kw['attribute'].host, oids, cb_hostmib_perf,
-                    default=0, **kw)
+                kw['attribute'].host, oids, cb_hostmib_perf,
+                default=0, **kw)
     except KeyError:
         pass
-    kw['pobj'].poller_callback(kw['attribute'].id, kw['poller_row'], 0)
+    kw['pobj'].poller_callback(kw['attribute'].id, 0)
     return True
 
 
-def cb_hostmib_perf(values, error, pobj, attribute, poller_row, **kw):
+def cb_hostmib_perf(values, error, pobj, attribute, **kw):
     total_memory = 0
     if values is not None:
         for pid_mem in values:
             if pid_mem is not None:
                 total_memory += int(pid_mem)
 
-    pobj.poller_callback(attribute.id, poller_row, total_memory)
+    pobj.poller_callback(attribute.id, total_memory)

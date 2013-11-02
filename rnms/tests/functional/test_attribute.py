@@ -3,6 +3,7 @@ Functional test suite for the Attribute controller.
 """
 from rnms.tests import TestController, jqgrid_data_url
 
+
 class TestAttributeController(TestController):
 
     def test_index(self):
@@ -14,7 +15,8 @@ class TestAttributeController(TestController):
     def test_index_hostid_ok(self):
         """ Attribute index with good Host ID """
         self.check_response('/attributes?h=1',
-                            ('"url": "/attributes/griddata?h=1"',))
+                            ('"url": "/attributes/griddata"',
+                             '"postData": {"h": 1}'))
 
     def test_index_hostid_neg(self):
         """ Attribute index with negative Host ID """
@@ -66,5 +68,3 @@ class TestAttributeController(TestController):
         self.check_response(
             jqgrid_data_url('/attributes/griddata'),
             (r'{"total": 1, "page": 1, "entries": []}',))
-
-

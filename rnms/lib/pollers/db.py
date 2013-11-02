@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,18 +17,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-def poll_db(poller_buffer, **kwargs):
+
+
+def poll_db(poller_buffer, parsed_params, attribute, pobj, **kwargs):
     """
-    Retrive an item for this attribute
+    Retrieve a value out of the database for this attribute
+    It does this using the parsed parameters feature, so if
+    you have an attribute with a value of speed, setting the
+    parameters to ${speed} will do it
     """
-    cb_db(kwargs['poller_row'].poller.parameter, None, kwargs)
+    pobj.poller_callback(attribute.id, parsed_params)
     return True
-
-def cb_db(value, error, kwargs):
-    """
-    CallBack function for a simple poller. This should kick off
-    the return functions in the PollerRow
-    """
-    kwargs['pobj'].poller_callback(kwargs['attribute'], value)
-
-        

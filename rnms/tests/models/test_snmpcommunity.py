@@ -23,35 +23,47 @@ from nose.tools import eq_, assert_true, assert_false
 from rnms import model
 from rnms.tests.models import ModelTest
 
-# Needed for a zone
-class TestZone(ModelTest):
+
+class TestCommunity(ModelTest):
     klass = model.SnmpCommunity
-    attrs = dict(
-            display_name = (u'Test Community'),
-            )
+    attrs = {'display_name': u'Test Community'}
 
     def test_by_address(self):
         """ Community can correctly be fetched by display_name """
         new_comm = model.SnmpCommunity.by_name(u'Test Community')
         eq_(new_comm, self.obj)
 
-    def test_v1_is_v1(self):
-        """ SNMP v1 community returns True for ro_is_snmpv1 """
-        self.obj.readonly = ('1', 'test')
-        assert_true(self.obj.ro_is_snmpv1())
+    def test_empty_community(self):
+        """ Empty community returns true for is_empty """
+        self.obj.community = ''
+        assert_true(self.obj.is_empty())
 
-    def test_v1_is_not_v2(self):
-        """ SNMP v1 community returns False for ro_is_snmpv2 """
-        self.obj.readonly = ('1', 'test')
-        assert_false(self.obj.ro_is_snmpv2())
+    def test_v1_setup(self):
+        """ SNMP v1 community setup correctly """
+        self.obj.set_v1community('test')
+        eq_(self.obj.version, 1)
+        assert_true(self.obj.is_snmpv1())
+        assert_false(self.obj.is_snmpv2())
 
-    def test_v2_is_not_v1(self):
-        """ SNMP v2 community returns False for ro_is_snmpv1 """
-        self.obj.readonly = ('2', 'test')
-        assert_false(self.obj.ro_is_snmpv1())
+    def test_v2_setup(self):
+        """ SNMP v2 community setup correctly """
+        self.obj.set_v2community('test')
+        eq_(self.obj.version, 2)
+        assert_false(self.obj.is_snmpv1())
+        assert_true(self.obj.is_snmpv2())
 
-    def test_v2_is_v2(self):
-        """ SNMP v2 community returns True for ro_is_snmpv2 """
-        self.obj.readonly = ('2', 'test')
-        assert_true(self.obj.ro_is_snmpv2())
+    def test_v3_auth_none_setup(self):
+        """ SNMP v3 with no auth setup correctly """
+        self.obj.set_v3auth_none()
+        eq_(self.obj.version, 3)
+        assert_false(self.obj.is_snmpv1())
+        assert_false(self.obj.is_snmpv2())
+
+    def test_v3_auth_md5(self):
+        """ SNMP v3 with md5 setup correctly """
+        self.obj.set_v3auth_md5('username', 'password')
+        eq_(self.obj.version, 3)
+        assert_false(self.obj.is_snmpv1())
+        assert_false(self.obj.is_snmpv2())
+        eq_(self.obj.security_name, 'username')
 

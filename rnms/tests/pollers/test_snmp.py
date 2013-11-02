@@ -115,7 +115,7 @@ class TestSnmpPoller(PollerTest):
         """ poll_snmp_walk_average """
         eq_(poll_snmp_walk_average(self.poller_buffer, '1.2.3', **self.test_kwargs), True)
         self.assert_get_table_called(cb_snmp_walk_average,
-                                     extra_kwargs={'table_trim':1})
+                                     extra_kwargs={'with_oid':1})
 
     def test_walkavg_none(self):
         """ cb_snmp_walk_average with None returns default """

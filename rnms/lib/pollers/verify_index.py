@@ -60,19 +60,18 @@ def cb_storage_index(value, error, host, **kw):
     oid = (1, 3, 6, 1, 2, 1, 25, 2, 3, 1, 3)
 
     if value is None:
-        kw['pobj'].poller_callback(kw['attribute'].id, kw['poller_row'], None)
+        kw['pobj'].poller_callback(kw['attribute'].id, None)
         return
     value = filter_storage_name(value)
     if kw['attribute'].display_name == value:
         kw['pobj'].poller_callback(
-            kw['attribute'].id, kw['poller_row'],
-            kw['attribute'].index)
+            kw['attribute'].id, kw['attribute'].index)
     else:
         kw['pobj'].snmp_engine.get_table(host, (oid,), cb_verify_storage_index,
                                          with_oid=1, **kw)
 
 
-def cb_verify_storage_index(values, error, pobj, attribute, poller_row, **kw):
+def cb_verify_storage_index(values, error, pobj, attribute, **kw):
     """
     CallBack function for a snmp table
     the return functions in the PollerRow
@@ -84,11 +83,11 @@ def cb_verify_storage_index(values, error, pobj, attribute, poller_row, **kw):
             if value == attribute.display_name:
                 try:
                     pobj.poller_callback(
-                        attribute.id, poller_row, str(int(inst)))
+                        attribute.id, str(int(inst)))
                     return
                 except ValueError:
                     pass
-    pobj.poller_callback(attribute.id, poller_row, None)
+    pobj.poller_callback(attribute.id, None)
 
 
 def poll_verify_interface_number(poller_buffer, **kw):
@@ -115,14 +114,13 @@ def cb_interface_index(value, error, host, **kw):
 
     if value is not None and kw['attribute'].display_name == value:
         kw['pobj'].poller_callback(
-            kw['attribute'].id, kw['poller_row'], kw['attribute'].index)
+            kw['attribute'].id, kw['attribute'].index)
     else:
         kw['pobj'].snmp_engine.get_table(
             host, (oid,), cb_verify_interface_number, with_oid=1, **kw)
 
 
-def cb_verify_interface_number(values, error, pobj, attribute, poller_row,
-                               **kw):
+def cb_verify_interface_number(values, error, pobj, attribute, **kw):
     """
     CallBack function for a snmp table
     the return functions in the PollerRow
@@ -132,12 +130,11 @@ def cb_verify_interface_number(values, error, pobj, attribute, poller_row,
         for ((inst, value),) in values:
             if value == attribute.display_name:
                 try:
-                    pobj.poller_callback(attribute.id, poller_row,
-                                         str(int(inst)))
+                    pobj.poller_callback(attribute.id, str(int(inst)))
                     return
                 except ValueError:
                     pass
-    pobj.poller_callback(attribute.id, poller_row, None)
+    pobj.poller_callback(attribute.id, None)
 
 
 def poll_verify_sensor_index(poller_buffer, **kw):
@@ -166,18 +163,18 @@ def cb_sensor_index(value, error, host, **kw):
         (int(kw['attribute'].get_field('table_index')), 1, 2)
 
     if value is None:
-        kw['pobj'].poller_callback(kw['attribute'].id, kw['poller_row'], None)
+        kw['pobj'].poller_callback(kw['attribute'].id, None)
         return
     if kw['attribute'].display_name == value:
-        kw['pobj'].poller_callback(kw['attribute'].id, kw['poller_row'],
+        kw['pobj'].poller_callback(kw['attribute'].id,
                                    kw['attribute'].index)
     else:
         kw['pobj'].snmp_engine.get_table(host, (table_oid,),
                                          cb_verify_sensor_index,
-                                         oid_trim=1, **kw)
+                                         with_oid=1, **kw)
 
 
-def cb_verify_sensor_index(values, error, pobj, attribute, poller_row, **kw):
+def cb_verify_sensor_index(values, error, pobj, attribute, **kw):
     """
     CallBack function for a snmp table
     the return functions in the PollerRow
@@ -187,9 +184,9 @@ def cb_verify_sensor_index(values, error, pobj, attribute, poller_row, **kw):
         for ((inst, value),) in values:
             if value == attribute.display_name:
                 try:
-                    pobj.poller_callback(attribute.id, poller_row,
+                    pobj.poller_callback(attribute.id,
                                          str(int(inst)))
                     return
                 except ValueError:
                     pass
-    pobj.poller_callback(attribute.id, poller_row, None)
+    pobj.poller_callback(attribute.id, None)

@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,14 +17,17 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-def poll_simple(poller_buffer, **kwargs):
+
+
+def poll_simple(poller_buffer, parsed_params, **kwargs):
     """
     Simple poller that returns what is in the poller attribute
     Good for showing an example
     Returns True on success, False on error
     """
-    cb_simple(kwargs['poller_row'].poller.parameter, None, kwargs)
+    cb_simple(parsed_params, None, kwargs)
     return True
+
 
 def cb_simple(value, error, kwargs):
     """

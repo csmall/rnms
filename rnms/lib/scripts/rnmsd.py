@@ -18,7 +18,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 """
-Module for the master daemon that runs all the sub-processes for 
+Module for the master daemon that runs all the sub-processes for
 Rosenberg
 """
 import logging
@@ -35,7 +35,8 @@ from rnms.lib.consolidate import Consolidator
 from rnms.lib.sla_analyzer import SLAanalyzer
 from rnms.lib.att_discover import AttDiscover
 from rnms.lib.snmptrapd import SNMPtrapd
-from rnms.lib import zmqmessage 
+from rnms.lib import zmqmessage
+
 
 class Rnmsd(RnmsCommand):
     """
@@ -63,16 +64,22 @@ class Rnmsd(RnmsCommand):
         self.threads['poller'] = threading.Thread(target=self.poller.main_loop)
         self.threads['poller'].start()
 
-        self.consolidator = Consolidator(zmq_context=self.zmq_context, do_once=False)
-        self.threads['consolidator'] = threading.Thread(target=self.consolidator.consolidate, name='consolidator')
+        self.consolidator = Consolidator(zmq_context=self.zmq_context,
+                                         do_once=False)
+        self.threads['consolidator'] = threading.Thread(
+            target=self.consolidator.consolidate, name='consolidator')
         self.threads['consolidator'].start()
 
-        self.sla_analyzer = SLAanalyzer(zmq_context=self.zmq_context, do_once=False)
-        self.threads['sla_analyzer'] = threading.Thread(target=self.sla_analyzer.analyze, name='sla_analyzer')
+        self.sla_analyzer = SLAanalyzer(zmq_context=self.zmq_context,
+                                        do_once=False)
+        self.threads['sla_analyzer'] = threading.Thread(
+            target=self.sla_analyzer.analyze, name='sla_analyzer')
         self.threads['sla_analyzer'].start()
 
-        self.att_discover = AttDiscover(zmq_context=self.zmq_context, do_once=False)
-        #self.threads['att_discover'] = threading.Thread(target=self.att_discover.discover, name='att_discover')
+        self.att_discover = AttDiscover(zmq_context=self.zmq_context,
+                                        do_once=False)
+        #self.threads['att_discover'] = threading.Thread(
+        #target=self.att_discover.discover, name='att_discover')
         #self.threads['att_discover'].start()
 
         # main loop
@@ -82,7 +89,7 @@ class Rnmsd(RnmsCommand):
         while True:
             try:
                 events = dict(self.zmq_poller.poll(10000))
-                for sock,event in events.items():
+                for sock, event in events.items():
                     if sock == self.info_socket:
                         self.handle_info_read()
                         continue
@@ -97,6 +104,7 @@ class Rnmsd(RnmsCommand):
                         self._shutdown()
                         return -1
             except KeyboardInterrupt:
+                self.logger.debug('User Interrupt Pressed, shutting down')
                 self._shutdown()
                 return 0
 
@@ -108,8 +116,8 @@ class Rnmsd(RnmsCommand):
         frames = self.info_socket.recv_multipart()
         if frames[0] == zmqmessage.IPC_INFO_REQ:
             self.info_socket.send(zmqmessage.IPC_INFO_REP, zmq.SNDMORE)
-            self.info_socket.send_json({'tasks':[tname for tname in
-                                                self.threads.keys()]})
+            self.info_socket.send_json(
+                {'tasks': [tname for tname in self.threads.keys()]})
         else:
             self.error('Info socket received invalid command')
 
@@ -122,6 +130,7 @@ class Rnmsd(RnmsCommand):
         self.info_socket = self.zmq_context.socket(zmq.REP)
         self.info_socket.bind('tcp://127.0.0.1:{}'.format(port_num))
         self.zmq_poller.register(self.info_socket, zmq.POLLIN)
+
 
 def main():
     rnmsd = Rnmsd(__name__)

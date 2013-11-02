@@ -46,7 +46,7 @@ def poll_tcp_status(poller_buffer, parsed_params, **kwargs):
         max_bytes, cb_tcp_status, **kwargs)
 
 
-def cb_tcp_status(values, error, pobj, attribute, poller_row, **kwargs):
+def cb_tcp_status(values, error, pobj, attribute, **kwargs):
     """
     Callback for tcp_status. Store the content for later
     """
@@ -67,7 +67,7 @@ def cb_tcp_status(values, error, pobj, attribute, poller_row, **kwargs):
     except (TypeError, AttributeError):
         response = None
 
-    pobj.poller_callback(attribute.id, poller_row,
+    pobj.poller_callback(attribute.id,
                          (state, response, connect_time, tcp_error))
 
 
@@ -83,22 +83,21 @@ def poll_snmp_tcp_established(poller_buffer, parsed_params, **kw):
         with_oid=6, **kw)
 
 
-def cb_snmp_tcp_established(values, error, pobj, attribute, poller_row, **kw):
+def cb_snmp_tcp_established(values, error, pobj, attribute, **kw):
     if values is None:
-        pobj.poller_callback(attribute.id, poller_row, None)
+        pobj.poller_callback(attribute.id, None)
         return
 
     port = str(attribute.index)
     est_count = 0
     for ((oid, val),) in values:
-        if val == '5' and oid.split('.')[-6] == port:
+        if val == '5' and oid.split('.')[0] == port:
             est_count += 1
 
-    pobj.poller_callback(attribute.id, poller_row, est_count)
+    pobj.poller_callback(attribute.id, est_count)
 
 
-def poll_tcp_content(poller_buffer, parsed_params, pobj, attribute,
-                     poller_row, **kw):
+def poll_tcp_content(poller_buffer, parsed_params, pobj, attribute, **kw):
     """
     Check tcp_content poller buffer for matches
     Requires tcp_content from poller buffer as the string matched against
@@ -108,32 +107,32 @@ def poll_tcp_content(poller_buffer, parsed_params, pobj, attribute,
     """
 
     if attribute.get_field('check_content') != '1':
-        pobj.poller_callback(attribute.id, poller_row,
+        pobj.poller_callback(attribute.id,
                              (u'valid', u'not checked'))
         return True
 
     try:
         data = poller_buffer['tcp_content']
     except KeyError:
-        pobj.poller_callback(attribute.id, poller_row,
+        pobj.poller_callback(attribute.id,
                              (u'invalid', u'missing buffer'))
         return True
     if data == '':
-        pobj.poller_callback(attribute.id, poller_row,
+        pobj.poller_callback(attribute.id,
                              [u'invalid', u'no data'])
         return True
 
     try:
         regex = re.compile(attribute.get_field('check_regexp'), re.I)
     except re.error:
-        pobj.poller_callback(attribute.id, poller_row,
-                             [u'invalid', u'bad regexp configured'])
+        pobj.poller_callback(attribute.id,
+                             (u'invalid', u'bad regexp configured'))
         return True
 
     if regex.find(data) is not None:
-        pobj.poller_callback(attribute.id, poller_row,
-                             [u'valid', unicode(data[:40])])
+        pobj.poller_callback(attribute.id,
+                             (u'valid', unicode(data[:40])))
     else:
-        pobj.poller_callback(attribute.id, poller_row, u'invalid')
+        pobj.poller_callback(attribute.id, (u'invalid', u'Not Found'))
 
     return False

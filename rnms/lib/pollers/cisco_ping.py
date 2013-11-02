@@ -52,7 +52,7 @@ def get_ping_status(index, cb_fun, **kw):
 def poll_cisco_snmp_ping_start(poller_buffer, **kwargs):
     """
     """
-    kwargs['pobj'].poller_callback(kwargs['attribute'].id, kwargs['poller_row'],None)
+    kwargs['pobj'].poller_callback(kwargs['attribute'].id, None)
     return True
 
 def poll_cisco_snmp_ping_wait(poller_buffer, **kwargs):

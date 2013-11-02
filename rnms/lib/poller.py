@@ -47,10 +47,22 @@ POLLER_WINDOW_SECONDS = 10
 
 class PollingHost(object):
     def __init__(self, host):
-        self.id = host.id
-        self.mgmt_address = host.mgmt_address
-        self.ro_community = host.ro_community
-        self.rw_community = host.rw_community
+        fields = ('id', 'mgmt_address', 'ro_community_id', 'rw_community_id')
+        for f in fields:
+            setattr(self, f, getattr(host, f))
+
+    @property
+    def ro_community(self):
+        """ Return the read only community """
+        comm = model.SnmpCommunity.by_id(self.ro_community_id)
+        if comm is not None:
+            DBSession.expunge(comm)
+        return comm
+
+    @property
+    def rw_community(self):
+        """ Return the read write community """
+        return model.SnmpCommunity.by_id(self.rw_community_id)
 
 
 class PollingAttribute(object):
@@ -59,7 +71,7 @@ class PollingAttribute(object):
     """
     def __init__(self, attribute):
         self.id = attribute.id
-        self.poller_row = 0
+        self.poller_pos = 0
         self.attribute_type_id = attribute.attribute_type_id
         self.poller_set_id = attribute.poller_set_id
         self.host_id = attribute.host_id
@@ -88,7 +100,7 @@ class PollingAttribute(object):
         self.backend_time = (time.time() - self.start_time)*1000
 
     def save_value(self, value):
-        self.poller_values[self.poller_row] = value
+        self.poller_values[self.poller_pos] = value
 
     def get_field(self, field_tag):
         return AttributeField.field_value(self.id, field_tag)
@@ -109,7 +121,6 @@ class Poller(RnmsEngine):
     NEED_CLIENTS = ('ntp', 'ping', 'snmp', 'tcp')
     do_once = True
     find_attribute_interval = 60  # Scan to find new items every 60secs
-    next_find_attribute = datetime.datetime.min
     forced_attributes = False
     host_ids = None
     poller_buffer = None
@@ -118,11 +129,15 @@ class Poller(RnmsEngine):
     def __init__(self, attribute_ids=None, host_ids=None, zmq_context=None,
                  do_once=True):
         super(Poller, self).__init__('poller', zmq_context)
+        self.next_find_attribute = datetime.datetime.min
 
         self.rrd_client = RRDClient(self.zmq_context, self.zmq_core)
         self.polling_attributes = {}  # The attributes we are currently polling
         self.poller_buffer = {}
-        self.poller_sets = {}  # Cache for polling sets
+        # Cache for polling sets
+        self.poller_sets = {}
+        self.pollers = {}
+        self.backends = {}
 
         if attribute_ids is not None or host_ids is not None:
             self._add_forced_attributes(attribute_ids, host_ids)
@@ -157,10 +172,12 @@ class Poller(RnmsEngine):
 
             # Ping jobs is the only one that doesn't use zmqcore, bah (yet)
             ping_jobs = self.ping_client.poll()
+            timeout = 1.0
             if ping_jobs > 0:
                 att_count -= ping_jobs
+                timeout = 1.0
 
-            if not self.zmq_core.poll(0.0):
+            if not self.zmq_core.poll(timeout):
                 transaction.commit()
                 return
             if not polls_running and (self.polling_attributes == {}):
@@ -176,7 +193,7 @@ class Poller(RnmsEngine):
         self.wait_for_workers()
         transaction.commit()
 
-    def poller_callback(self, attribute_id, poller_row, poller_value):
+    def poller_callback(self, attribute_id, poller_value):
         """
         All real poller callback functions should call this method.
         It is how the real poller lets us know it has come back with
@@ -196,17 +213,24 @@ class Poller(RnmsEngine):
                 'A:%d -: Poller called back but no poller buffer',
                 attribute_id)
             return
-        patt.stop_polling(poller_row.position, poller_value)
+        try:
+            pr_backend = self.backends[patt.poller_row['backend']]
+        except KeyError:
+            self.logger.info(
+                'A:%d -: Poller called back but no backend found',
+                attribute_id)
+            return
+        patt.stop_polling(patt.poller_row['position'], poller_value)
         patt.start_backend()
         backend_result = 'N/A'
         if poller_value is not None:
-            if poller_row.poller.field != '':
-                field_count = len(poller_row.poller.field.split(','))
+            if patt.poller.field != '':
+                field_count = len(patt.poller.field.split(','))
                 if field_count == 1:
-                    poll_buffer[poller_row.poller.field] = poller_value
+                    poll_buffer[patt.poller.field] = poller_value
                 else:
                     for ford, fkey in enumerate(
-                            poller_row.poller.field.split(',')):
+                            patt.poller.field.split(',')):
                         try:
                             poll_buffer[fkey] = poller_value[ford]
                         except KeyError:
@@ -215,20 +239,19 @@ class Poller(RnmsEngine):
                                 attribute_id, fkey)
 
             #FIXME - backends go here
-            if poller_row.backend.command != '':
+            if pr_backend.command != '':
                 attribute = model.Attribute.by_id(patt.id)
-                backend_result = poller_row.run_backend(
-                    attribute,
-                    poller_value)
+                backend_result = pr_backend.run(
+                    patt.poller_row, attribute, poller_value)
         patt.stop_backend()
         self.logger.debug(
             "A:%d I:%d - %s:%s -> %s:%s (%d:%d)",
-            patt.id, poller_row.position,
-            poller_row.poller.display_name,
+            patt.id, patt.poller_pos,
+            patt.poller.display_name,
             self._poller_prettyprint(
-                patt.poller_values[poller_row.position]),
-            poller_row.backend.display_name, backend_result,
-            patt.poller_times[poller_row.position],
+                patt.poller_values[patt.poller_row['position']]),
+            pr_backend.display_name, backend_result,
+            patt.poller_times[patt.poller_row['position']],
             patt.backend_time)
         # Run the next poll row
         patt.in_poller = False
@@ -261,32 +284,44 @@ class Poller(RnmsEngine):
         for att_id, patt in self.polling_attributes.items():
             if patt.in_poller:
                 continue
-            if patt.poller_row == 0:
+            if patt.poller_pos == 0:
                 self.poller_buffer[att_id] = {}
-            if patt.poller_row not in patt.skip_rows:
+            if patt.poller_pos not in patt.skip_rows:
                 self._run_poller(patt)
-            patt.poller_row += 1
+            patt.poller_pos += 1
 
     def _run_poller(self, patt):
         """
         Run the actual poller
         """
         patt.start_polling()
-        poller_row = self.get_poller_row(patt.poller_set_id, patt.poller_row)
-        if poller_row is None:
+        patt.poller_row = self.get_poller_row(
+            patt.poller_set_id, patt.poller_pos)
+        if patt.poller_row is None:
+            #self.logger.error("A:%d - Poller could not get poller row %d:%d",
+            #                  patt.id, patt.poller_set_id,
+            #                  patt.poller_pos)
+            self._finish_polling(patt)
+            return
+        try:
+            patt.poller = self.pollers[patt.poller_row['poller']]
+        except KeyError:
+            self.logger.error("A:%d - Poller could not get poller %d",
+                              patt.id, patt.poller_row['poller'])
             self._finish_polling(patt)
             return
         # Special speed-up for snmp fetch, get it all in one group
         # This does NOT work for SNMP v1, or this implementaiton anyhow
-        if poller_row.poller.command == 'snmp_counter' and \
+        if patt.poller.command == 'snmp_counter' and \
            not patt.host.ro_community.is_snmpv1():
             patt.skip_rows = self._multi_snmp_poll(patt)
             if patt.skip_rows != []:
                 return
-        if not poller_row.run_poller(self, patt, self.poller_buffer[patt.id]):
+        if not patt.poller.run(patt.poller_row, self, patt,
+                               self.poller_buffer[patt.id]):
             #run was successful
             self.logger.warn('A:%d - row %d Poller run failed', patt.id,
-                             patt.poller_row)
+                             patt.poller_pos)
             self._finish_polling(patt)
 
     def _finish_polling(self, patt):
@@ -308,7 +343,8 @@ class Poller(RnmsEngine):
                         self.poller_buffer[patt.id][rrd_field.name],
                         rrd_client=self.rrd_client)))
         patt.update_poll_time()
-        DBSession.flush()
+        #DBSession.flush()
+        transaction.commit()
         del (self.poller_buffer[patt.id])
         del (self.polling_attributes[patt.id])
         #self._run_backends(patt)
@@ -441,9 +477,19 @@ class Poller(RnmsEngine):
             PollerRow.position)
         if poller_rows is None:
             return False
-        self.poller_sets[poller_set_id] = [
-            poller_row for poller_row in poller_rows
-        ]
+        self.poller_sets[poller_set_id] = []
+        for pr in poller_rows:
+            self.poller_sets[poller_set_id].append(
+                {'position': pr.position,
+                 'poller': pr.poller_id,
+                 'backend': pr.backend_id})
+            if pr.poller_id not in self.pollers:
+                self.pollers[pr.poller_id] = pr.poller
+                DBSession.expunge(pr.poller)
+            if pr.backend_id not in self.backends:
+                self.backends[pr.backend_id] = pr.backend
+                DBSession.expunge(pr.backend)
+
         return True
 
     def _multi_snmp_poll(self, patt):
@@ -459,16 +505,21 @@ class Poller(RnmsEngine):
             return []
         req = SNMPRequest(patt.host, patt.host.ro_community)
         for poller_row in poller_set:
-            if poller_row.position < patt.poller_row:
+            if poller_row['position'] < patt.poller_row:
                 continue
-            if poller_row.poller.command == 'snmp_counter':
-                oid = parse_oid(split_oid(
-                    poller_row.poller.parsed_parameters(patt), patt.host))
-                if oid is not None:
-                    data = {'pobj': self, 'poller_row': poller_row,
-                            'attribute': patt}
-                    req.add_oid(oid, cb_snmp_counter, **data)
-                    skip_rows.append(poller_row.position)
+            try:
+                pr_poller = self.pollers[poller_row['poller_id']]
+            except KeyError:
+                pass
+            else:
+                if pr_poller.command == 'snmp_counter':
+                    oid = parse_oid(split_oid(
+                        pr_poller.parsed_parameters(patt), patt.host))
+                    if oid is not None:
+                        data = {'pobj': self, 'poller_row': poller_row,
+                                'attribute': patt}
+                        req.add_oid(oid, cb_snmp_counter, **data)
+                        skip_rows.append(poller_row['position'])
         if req.oids == []:
             return skip_rows
         patt.start_polling()

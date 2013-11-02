@@ -19,7 +19,7 @@
 #
 """ SNMP Community definition model """
 from sqlalchemy import Column
-from sqlalchemy.types import Integer, Unicode, String , SmallInteger
+from sqlalchemy.types import Integer, Unicode, String, SmallInteger
 
 from pysnmp.proto import api
 from pysnmp.entity.rfc3413.oneliner.auth import CommunityData, UsmUserData
@@ -60,6 +60,8 @@ PRIV_PROTOCOLS = {
     PRIV_DES: config.usmDESPrivProtocol,
     PRIV_AES: config.usmAesCfb128Protocol,
 }
+
+
 class SnmpCommunity(DeclarativeBase):
     __tablename__ = 'snmp_communities'
     #{ Columns
@@ -80,14 +82,20 @@ class SnmpCommunity(DeclarativeBase):
         """ Return community with given display_name """
         return DBSession.query(cls).filter(cls.display_name == name).first()
 
+    @classmethod
+    def by_id(cls, comm_id):
+        """ Return community with given id """
+        return DBSession.query(cls).filter(cls.id == comm_id).first()
+
     @property
     def security_name(self):
         """ security name is alias for community for v3 """
         return self.community
+
     @security_name.setter
     def security_name(self, value):
         self.community = value
-    
+
     def is_empty(self):
         """ Returns True if this community is unset """
         return self.community == ''
@@ -104,7 +112,7 @@ class SnmpCommunity(DeclarativeBase):
         """ Return the protocol module for this SNMP version """
         if self.version == 1:
             return api.protoModules[api.protoVersion1]
-        elif self.version in (2,3):
+        elif self.version in (2, 3):
             return api.protoModules[api.protoVersion2c]
         raise ValueError('Bad SNMP version {}'.format(self.version))
 
@@ -116,7 +124,7 @@ class SnmpCommunity(DeclarativeBase):
         self.auth_passwd = None
         self.priv_type = AUTH_NONE
         self.priv_passwd = None
-    
+
     def set_v2community(self, community):
         """ Make this a version 2c community """
         self.set_v1community(community)
@@ -128,7 +136,7 @@ class SnmpCommunity(DeclarativeBase):
         self.community = None
         self.auth_type = AUTH_NONE
         self.auth_passwd = None
-    
+
     def set_v3auth_md5(self, community, password):
         """ Set this to V3 community with MD5 password """
         self.version = 3
@@ -169,4 +177,4 @@ class SnmpCommunity(DeclarativeBase):
                                               AUTH_PROTOCOLS[AUTH_NONE]),
                            PRIV_PROTOCOLS.get(self.priv_type,
                                               PRIV_PROTOCOLS[PRIV_NONE])
-                          )
+                           )

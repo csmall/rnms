@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2011 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,7 +30,8 @@ from rnms.lib import pollers
 from rnms.lib.genericset import GenericSet
 from rnms.lib.parsers import safe_substitute, find_field_keys
 
-__all__ = [ 'PollerSet', 'Poller', 'PollerRow']
+__all__ = ['PollerSet', 'Poller', 'PollerRow']
+
 
 class Poller(DeclarativeBase):
     __tablename__ = 'pollers'
@@ -42,14 +43,17 @@ class Poller(DeclarativeBase):
     field = Column(String(80))
     parameters = Column(String(250), nullable=False, default='')
 
-    def __init__(self,display_name=None, command='none', tag='', parameters=''):
+    def __init__(self, display_name=None, command='none', tag='',
+                 parameters=''):
         self.display_name = display_name
         self.command = command
         self.tag = tag
         self.parameters = parameters
 
     def __repr__(self):
-        return '<Poller name=%s plugin=%s>' % (self.display_name, self.plugin_name)
+        return '<Poller name={} command={}>'.format(
+            self.display_name, self.command)
+
     def __unicode__(self):
         return self.display_name
 
@@ -58,14 +62,15 @@ class Poller(DeclarativeBase):
         """ Return Poller with given display_name """
         if display_name is None:
             return None
-        return DBSession.query(cls).filter(cls.display_name == display_name).first()
+        return DBSession.query(cls).filter(
+            cls.display_name == display_name).first()
 
     def run(self, poller_row, pobj, patt, poller_buf):
-        """ 
+        """
         Run the real poller method "poll_BLAH" based upon the command
         field for this poller.
         """
-        if self.command is None or self.command=='none':
+        if self.command is None or self.command == 'none':
             return None
         try:
             real_poller = getattr(pollers, "poll_"+self.command)
@@ -74,7 +79,7 @@ class Poller(DeclarativeBase):
                 "A:%d - Poller function poll_%s does not exist.",
                 patt.id, self.command)
             return None
-        return real_poller(poller_buf, pobj=pobj, poller_row=poller_row,
+        return real_poller(poller_buf, pobj=pobj,
                            attribute=patt,
                            parsed_params=self.parsed_parameters(patt))
 
@@ -144,17 +149,6 @@ class PollerSet(DeclarativeBase, GenericSet):
         """ Return the PollerSet with the given display name """
         return DBSession.query(cls).filter(cls.display_name == display_name).first()
 
-    def run(self, attribute):
-        """
-        Run all of the PollerRows within this PollerSet for the
-        given attribute.  A buffer is kept between each rows and
-        may contain data out of each poller
-        """
-        poller_buffer={}
-        for row in self.poller_rows:
-            row.run(attribute, poller_buffer)
-
-
 class PollerRow(DeclarativeBase):
     __tablename__ = 'poller_rows'
     
@@ -173,7 +167,7 @@ class PollerRow(DeclarativeBase):
         self.poller = poller
         self.backend = backend
         self.position = position
-    
+
     def __repr__(self):
         if self.poller is not None:
             poller_name = self.poller.display_name
@@ -183,31 +177,5 @@ class PollerRow(DeclarativeBase):
             backend_name = self.backend.display_name
         else:
             backend_name = 'None'
-        return '<PollerRow position=%d poller=%s backend=%s>' % (self.position, poller_name, backend_name)
-
-    def run_poller(self, pobj, patt, poller_buff):
-        """
-        Run the actual polling process for this poller row
-        Requires the attribute that calls the poller
-        Returns True if it worked or False if not
-        """
-        if self.poller is None:
-            pobj.logger.warning('A%d: run_poller called with no poller!',
-                               patt.id)
-            return False
-        if self.poller.id == 1:
-            #self.run_backend(patt, None)
-            return True
-        return self.poller.run(self, pobj, patt, poller_buff)
-
-    def run_backend(self, attribute, value):
-        """
-        Run the actual backend process for this poller row
-        Requires the attribute that calls the poller
-        Returns True if it worked or False if not
-        """
-        if self.backend is None or self.backend.id == 1:
-            return ''
-        return self.backend.run(self, attribute, value)
-
-
+        return '<PollerRow position={} poller={} backend={}>'.format(
+            self.position, poller_name, backend_name)

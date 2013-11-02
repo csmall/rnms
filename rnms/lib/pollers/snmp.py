@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ def split_oid(params, host):
             pass
     return oids[0]
 
+
 def parse_oid(raw_oid):
     if raw_oid == '':
         return None
@@ -41,6 +42,7 @@ def parse_oid(raw_oid):
     if str_oid[0] == '.':
         str_oid = str_oid[1:]
     return pyasn_types.ObjectIdentifier().prettyIn(str_oid)
+
 
 def poll_snmp_counter(poller_buffer, parsed_params, **kw):
     """
@@ -56,8 +58,11 @@ def poll_snmp_counter(poller_buffer, parsed_params, **kw):
         return False
     if oid is None:
         return False
-    kw['pobj'].snmp_engine.get_int(kw['attribute'].host, oid, cb_snmp_counter, **kw)
+    kw['pobj'].snmp_engine.get_int(
+        kw['attribute'].host,
+        oid, cb_snmp_counter, **kw)
     return True
+
 
 def poll_snmp_counter_mul(poller_buffer, parsed_params, **kw):
     """
@@ -73,16 +78,20 @@ def poll_snmp_counter_mul(poller_buffer, parsed_params, **kw):
         return False
     if oid is None:
         return False
-    kw['pobj'].snmp_engine.get_int(kw['attribute'].host, oid, cb_snmp_counter, multiplier=int(params[1]), **kw)
+    kw['pobj'].snmp_engine.get_int(
+        kw['attribute'].host, oid, cb_snmp_counter,
+        multiplier=int(params[1]), **kw)
     return True
 
-def cb_snmp_counter(value, error, pobj, attribute, poller_row, default_value=None, multiplier=None, **kw):
+
+def cb_snmp_counter(value, error, pobj, attribute,
+                    default_value=None, multiplier=None, **kw):
     if value is None or error is not None:
-        pobj.poller_callback(attribute.id, poller_row, default_value)
+        pobj.poller_callback(attribute.id, default_value)
         return
     if multiplier is not None:
         value = int(value) * float(multiplier)
-    pobj.poller_callback(attribute.id, poller_row, value)
+    pobj.poller_callback(attribute.id, value)
 
 
 def poll_snmp_status(poller_buffer, parsed_params, **kw):
@@ -112,11 +121,13 @@ def poll_snmp_status(poller_buffer, parsed_params, **kw):
 
     if oid is None:
         return False
-    return kw['pobj'].snmp_engine.get_str(kw['attribute'].host, oid, cb_snmp_status, **kw)
+    return kw['pobj'].snmp_engine.get_str(kw['attribute'].host,
+                                          oid, cb_snmp_status, **kw)
 
-def cb_snmp_status(value, error, pobj, attribute, poller_row, **kw):
+
+def cb_snmp_status(value, error, pobj, attribute, **kw):
     if value is None or error is not None:
-        pobj.poller_callback(attribute.id, poller_row, kw['default_value'])
+        pobj.poller_callback(attribute.id, kw['default_value'])
         return
     try:
         for item in kw['mapping'].split(","):
@@ -129,11 +140,11 @@ def cb_snmp_status(value, error, pobj, attribute, poller_row, **kw):
             except IndexError:
                 pass
             else:
-                pobj.poller_callback(attribute.id, poller_row, retval)
+                pobj.poller_callback(attribute.id, retval)
                 return
     except KeyError:
         pass
-    pobj.poller_callback(attribute.id, poller_row, kw['default_value'])
+    pobj.poller_callback(attribute.id, kw['default_value'])
 
 
 def poll_snmp_walk_average(poller_buffer, parsed_params, **kw):
@@ -143,18 +154,21 @@ def poll_snmp_walk_average(poller_buffer, parsed_params, **kw):
     """
     if parsed_params == '':
         return False
-    return kw['pobj'].snmp_engine.get_table(kw['attribute'].host, parsed_params, cb_snmp_walk_average, oid_trim=1, **kw)
+    return kw['pobj'].snmp_engine.get_table(
+        kw['attribute'].host,
+        parsed_params, cb_snmp_walk_average, with_oid=1, **kw)
 
-def cb_snmp_walk_average(values, error, pobj, attribute, poller_row, **kw):
+
+def cb_snmp_walk_average(values, error, pobj, attribute, **kw):
     """
     Returns: float average of the returned table
     """
-    if values is None :
-        pobj.poller_callback(attribute.id, poller_row, kw['default_value'])
+    if values is None:
+        pobj.poller_callback(attribute.id, kw['default_value'])
         return
 
-    total=0
-    total_values=0
+    total = 0
+    total_values = 0
     for value in values.values():
         try:
             total += float(value)
@@ -167,4 +181,4 @@ def cb_snmp_walk_average(values, error, pobj, attribute, poller_row, **kw):
         average = kw['default_value']
     else:
         average = total / total_values
-    pobj.poller_callback(attribute.id, poller_row, average)
+    pobj.poller_callback(attribute.id, average)
