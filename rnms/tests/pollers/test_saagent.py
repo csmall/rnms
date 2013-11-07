@@ -34,8 +34,8 @@ class TestSAAgentPoller(PollerTest):
 
     def test_cb_jitter_none(self):
         """ PollCB jitter with None returned """
-        self.assert_callback_none(cb_jitter)
+        self.assert_callback_none_none(cb_jitter)
 
     def test_cb_packetloss_none(self):
         """ PollCB packetlos with None returned """
-        self.assert_callback_none(cb_packetloss)
+        self.assert_callback_none_none(cb_packetloss)

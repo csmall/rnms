@@ -47,8 +47,8 @@ def cb_cpqmib_phydrv(values, error, host, dobj, att_type):
             new_att.set_field('controller', controller)
             new_att.set_field('drvindex', drive_index)
             new_att.set_field('model', drive_model)
-            if row[3] != 2:
-                new_att.oper_state = 2
+            if row[3] != '2':
+                new_att.oper_state = 'down'
             discovered_attributes[new_att.index] = new_att
     dobj.discover_callback(host.id, discovered_attributes)
 
@@ -66,10 +66,10 @@ def cb_cpqmib_fans(values, error, host, dobj, att_type):
             new_att.set_field('chassis', chassis)
             new_att.set_field('fanindex', index)
             new_att.set_field('location', cpqmib_locations.get(row[2], u'Unknown'))
-            if row[3] != 3:
-                new_att.admin_state = 2
-            if row[4] != 2:
-                new_att.oper_state = 2
+            if row[3] != '3':
+                new_att.admin_state = 'down'
+            if row[4] != '2':
+                new_att.oper_state = 'down'
             discovered_attributes[new_att.index] = new_att
     dobj.discover_callback(host.id, discovered_attributes)
 
@@ -86,10 +86,10 @@ def cb_cpqmib_ps(values, error, host, dobj, att_type):
             new_att.index = '{}.{}'.format(chassis, index)
             new_att.set_field('chassis', chassis)
             new_att.set_field('bayindex', index)
-            if row[3] != 3:
-                new_att.admin_state = 2
-            if row[4] != 2:
-                new_att.oper_state = 2
+            if row[3] != '3':
+                new_att.admin_state = 'down'
+            if row[4] != '2':
+                new_att.oper_state = 'down'
             discovered_attributes[new_att.index] = new_att
     dobj.discover_callback(host.id, discovered_attributes)
 
@@ -107,8 +107,8 @@ def cb_cpqmib_temp(values, error, host, dobj, att_type):
             new_att.set_field('chassis', chassis)
             new_att.set_field('tempindex', index)
             new_att.set_field('location', cpqmib_locations.get(row[2], u'Unknown'))
-            if row[3] != 2:
-                new_att.oper_state = 2
+            if row[3] != '2':
+                new_att.oper_state = 'down'
             discovered_attributes[new_att.index] = new_att
     dobj.discover_callback(host.id, discovered_attributes)
     

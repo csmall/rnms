@@ -27,8 +27,9 @@ from argparse import ArgumentParser
 
 from rnms.config.environment import load_environment
 
-LOG_FORMAT="%(asctime)s %(levelname)-5.5s [%(name)s] %(message)s"
+LOG_FORMAT = "%(asctime)s %(levelname)-5.5s [%(name)s] %(message)s"
 log = logging.getLogger(__name__)
+
 
 class RnmsCommand(Command):
     """
@@ -103,13 +104,14 @@ class RnmsCommand(Command):
             return self.return_code
         else:
             return result
+
     def _set_logging(self):
         logging_level = logging.WARNING
-        if self.options.log_quiet == True:
+        if self.options.log_quiet:
             logging_level = logging.CRITICAL
-        elif self.options.log_debug == True:
+        elif self.options.log_debug:
             logging_level = logging.DEBUG
-        elif self.options.log_verbose == True:
+        elif self.options.log_verbose:
             logging_level = logging.INFO
         logging.basicConfig(level=logging_level, format=LOG_FORMAT)
 
@@ -129,5 +131,3 @@ class RnmsCommand(Command):
     def _get_config(self):
         conf = appconfig('config:' + os.path.abspath(self.options.config))
         load_environment(conf.global_conf, conf.local_conf)
-
-

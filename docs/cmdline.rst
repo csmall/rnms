@@ -38,3 +38,32 @@ command line is:
 The info tool can query the following models: attributes, attribute types,
 hosts, poller sets, autodiscovery policies, slas and triggers.  The second
 parameter is the ID of the item you want to query.
+
+For example, to look at attribute #2, you would use the following 
+commands::
+  
+  $ rnms_info attribute 2
+  
+  ============================================================
+  Attribute           | 2: Async5 (index: 5)
+  ------------------------------------------------------------
+  Host                 | 5: Cisco1700
+  State (admin/oper)   | down/down
+  Attribute Type       | 4: Physical Interfaces
+  Poller Set           | 42: SNMP Interface (enabled:True)
+  Poll Priority        | False
+  SLA                  | 1: No SLA
+  Created              | 2012-03-11 10:34:58
+  Next SLA             | 2013-09-30 12:26:29.878441
+  Next Poll            | 2013-10-07 14:58:20.189101
+  ------------------------------------------------------------
+  Fields
+  IP Address           | 192.168.101.1
+  IP Mask              | 255.255.255.252
+  Peer Address         | 192.168.101.2
+  Speed                | 38000
+
+Each type of query will display detailed information about the requested
+object.  There can also be cross references, so to see information about
+the above attributes host, you would query host 5.
+
