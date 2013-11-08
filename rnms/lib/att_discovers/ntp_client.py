@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,23 +20,23 @@
 """ Discover NTP clients """
 from rnms import model
 
+
 def discover_ntp_client(dobj, att_type, host):
     return dobj.ntp_client.get_peers(
         host, cb_ntp_peer_list,
         dobj=dobj, att_type=att_type)
 
 
-def cb_ntp_peer_list(host, ntp_response, dobj, att_type, **kw):
-    if ntp_response is None or ntp_response.peers == []:
+def cb_ntp_peer_list(values, error, host, dobj, att_type):
+    if values is None or len(values) == 0:
         dobj.discover_callback(host.id, {})
         return
     new_att = model.DiscoveredAttribute(host.id, att_type)
     new_att.display_name = u'Time'
     new_att.index = '1'
-    for assoc in ntp_response.peers:
-        if assoc.selection == 6: # found a synchronised
+    for a_id, a_selection in values:
+        if a_selection == 6:  # found a synchronised
             break
     else:
-        new_att.oper_state = 2
+        new_att.oper_state = 'down'
     dobj.discover_callback(host.id, {'1': new_att})
-

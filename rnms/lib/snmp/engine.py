@@ -22,7 +22,7 @@ import time
 from pysnmp.carrier.asynsock.dispatch import AsynsockDispatcher
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.entity import engine
-from pysnmp.proto.rfc1905 import NoSuchObject
+from pysnmp.proto.rfc1905 import NoSuchObject, NoSuchInstance
 
 from scheduler import SNMPScheduler
 from request import SNMPRequest
@@ -201,9 +201,10 @@ class SNMPEngine(object):
     @classmethod
     def _format_value(cls, request, oid, raw_value):
         """ Parse the SNMP returned value """
-        if isinstance(raw_value, NoSuchObject):
+        if isinstance(raw_value, (NoSuchInstance, NoSuchObject)):
             val = None
-        val = raw_value.prettyPrint()
+        else:
+            val = raw_value.prettyPrint()
         if request.with_oid is None:
             return val
         else:

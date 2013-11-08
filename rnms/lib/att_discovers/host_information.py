@@ -19,32 +19,35 @@
 #
 # This attribute discovery module is based upon
 # host_information.php from JFFNMS which was written by
-# Copyright (C) <2002> Robert Bogdon  
-# Copyright (C) <2002-2005> Modifications by Javier Szyszlican <javier@szysz.com>
+# Copyright (C) <2002> Robert Bogdon
+# Copyright (C) <2002-2005> Modifications by
+#        Javier Szyszlican <javier@szysz.com>
 
 #
 """ Discover host system info via SNMP """
 from rnms import model
 
+
 def discover_host_information(dobj, att_type, host):
     """
     First find the sysObjectId to see if it is one we want
     """
-    oid = (1,3,6,1,2,1,1,2,0)
+    oid = (1, 3, 6, 1, 2, 1, 1, 2, 0)
     return dobj.snmp_engine.get_str(
         host, oid, cb_match_host,
         dobj=dobj, att_type=att_type)
 
+
 def cb_match_host(value, error, dobj, att_type, host):
     """
-    Given the returned sysObjectId, is it one we want and if so 
+    Given the returned sysObjectId, is it one we want and if so
     set of another round of queries
     """
     if value is None:
         dobj.discover_callback(host.id, {})
         return
     match_sysobjs = att_type.ad_parameters.split(',')
-    enterprise = unicode(value.replace('1.3.6.1.4.1.','',1))
+    enterprise = unicode(value.replace('1.3.6.1.4.1.', '', 1))
     for match in match_sysobjs:
         if enterprise.find(match) == 0:
             break
@@ -54,17 +57,19 @@ def cb_match_host(value, error, dobj, att_type, host):
         return
 
     oids = (
-            (1,3,6,1,2,1,1,1,0),
-            (1,3,6,1,2,1,1,4,0),
-            (1,3,6,1,2,1,1,5,0),
-            (1,3,6,1,2,1,1,6,0),
-            )
-    dobj.snmp_engine.get_list(host, oids, cb_host_information, 
+        (1, 3, 6, 1, 2, 1, 1, 1, 0),
+        (1, 3, 6, 1, 2, 1, 1, 4, 0),
+        (1, 3, 6, 1, 2, 1, 1, 5, 0),
+        (1, 3, 6, 1, 2, 1, 1, 6, 0),
+        )
+    dobj.snmp_engine.get_list(host, oids, cb_host_information,
                               dobj=dobj, att_type=att_type)
 
+
 def cb_host_information(values, error, dobj, host, att_type):
-    if values is None:
+    if values is None or values[0] is None:
         dobj.discover_callback(host.id, {})
+        return
 
     new_att = model.DiscoveredAttribute(host.id, att_type)
     new_att.display_name = u'CPU'
@@ -75,9 +80,10 @@ def cb_host_information(values, error, dobj, host, att_type):
     new_att.set_field('location', values[3])
 
     # Walk the device table
-    oid = (1,3,6,1,2,1,25,3,2,1,2)
+    oid = (1, 3, 6, 1, 2, 1, 25, 3, 2, 1, 2)
     dobj.snmp_engine.get_many(host, (oid,), cb_host_devtable,
-                               dobj=dobj, new_att=new_att)
+                              dobj=dobj, new_att=new_att)
+
 
 def cb_host_devtable(values, error, dobj, host, new_att):
     num_cpu = 0

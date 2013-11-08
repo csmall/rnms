@@ -11,27 +11,34 @@ from nose.tools import assert_true, nottest, eq_
 from rnms.lib.ntpclient import NTPClient, NTPControl
 from rnms.lib import zmqcore
 
+
 class DummyHost(object):
     mgmt_address = ''
     community_ro = {}
+
     def __init__(self, ip):
         self.mgmt_address = ip
 
-def my_cb_peer_by_id(host, response_packet, **kwargs):
+
+def my_cb_peer_by_id(response_packet, error, host, **kwargs):
     if response_packet.assoc_data == {}:
         kwargs['obj'].results['noid'] = response_packet.assoc_id
     else:
         kwargs['obj'].results = response_packet.assoc_data
     return response_packet.more == 1
 
-def my_cb_peers(host, response_packet, **kwargs):
-    if len(response_packet.peers) == 0:
-        kwargs['obj'].results['none']= True
+
+def my_cb_peers(response_packet, error, host, **kwargs):
+    if len(response_packet) == 0:
+        kwargs['obj'].results['none'] = True
         return
-    for assoc in response_packet.peers:
-        if assoc.selection == 6:
-            kwargs['obj'].ntp_client.get_peer_by_id(host, assoc.assoc_id, my_cb_peer_by_id,**kwargs)
-    return response_packet.more == 1
+    for a_id, a_selection in response_packet:
+        if a_selection == 6:
+            kwargs['obj'].ntp_client.get_peer_by_id(host,
+                                                    a_id, my_cb_peer_by_id,
+                                                    **kwargs)
+    return False
+
 
 class TestNTP(object):
     """ Base unti for NTP client testing """

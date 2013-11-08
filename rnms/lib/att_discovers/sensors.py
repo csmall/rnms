@@ -24,25 +24,27 @@ from rnms import model
 # reply_row, snmp_table, unit
 # snmp_table is third last row of the oids defined below
 sensor_types = (
-        ('degC', 'Temperature', '0.001'),
-        ('RPM', 'Fan Speed', '1'),
-        ('V', 'Voltage', '0.001'),
-        ('V', 'Voltage', '0.001'),
-        )
+    ('degC', 'Temperature', '0.001'),
+    ('RPM', 'Fan Speed', '1'),
+    ('V', 'Voltage', '0.001'),
+    ('V', 'Voltage', '0.001'),
+    )
+
 
 def discover_sensors(dobj, att_type, host):
     """
     Run snmpwalk on the lm-sensors table
     """
     oids = (
-             (1,3,6,1,4,1,2021,13,16,2,1,2), #temperature
-             (1,3,6,1,4,1,2021,13,16,3,1,2), # fan
-             (1,3,6,1,4,1,2021,13,16,4,1,2), # volt
-             (1,3,6,1,4,1,2021,13,16,5,1,2), # misc
-             )
+        (1, 3, 6, 1, 4, 1, 2021, 13, 16, 2, 1, 2),  # temperature
+        (1, 3, 6, 1, 4, 1, 2021, 13, 16, 3, 1, 2),  # fan
+        (1, 3, 6, 1, 4, 1, 2021, 13, 16, 4, 1, 2),  # volt
+        (1, 3, 6, 1, 4, 1, 2021, 13, 16, 5, 1, 2),  # misc
+        )
     return dobj.snmp_engine.get_many(
         host, oids, cb_sensors, with_oid=4,
         dobj=dobj, att_type=att_type)
+
 
 def cb_sensors(values, error, host, dobj, att_type):
     sensors = {}
@@ -50,7 +52,7 @@ def cb_sensors(values, error, host, dobj, att_type):
     if values is not None:
         for idx, row in enumerate(values):
             sunit, measure, multiplier = sensor_types[idx]
-            for sidx,sensor_name in row:
+            for sidx, sensor_name in row:
                 # This is a hack, some lmsesnor code shows the same device
                 # multiple times (current, min, max, alarm, other)
                 # other devices show it once

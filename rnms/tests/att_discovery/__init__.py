@@ -33,6 +33,7 @@ class AttDiscTest(object):
     atts = {}
     test_host_id = 123
     test_host_ip = '127.0.0.2'
+    __ad_parameters__ = ''
 
     def setUp(self):
         self.dobj = mock.MagicMock()
@@ -40,6 +41,8 @@ class AttDiscTest(object):
         self.dobj.discover_callback = self.disc_cb
         self.snmp_engine = mock.MagicMock()
         self.snmp_engine.get_one = mock.Mock(return_value=True)
+        self.snmp_engine.get_str = mock.Mock(return_value=True)
+        self.snmp_engine.get_int = mock.Mock(return_value=True)
         self.snmp_engine.get_list = mock.Mock(return_value=True)
         self.snmp_engine.get_table = mock.Mock(return_value=True)
         self.snmp_engine.get_many = mock.Mock(return_value=True)
@@ -53,7 +56,12 @@ class AttDiscTest(object):
         self.test_host.mgmt_address = self.test_host_ip
         self.test_att_type = mock.MagicMock(spec=model.AttributeType)
         self.test_att_type.id = 1
-        self.test_att_type.ad_parameters = ''
+        self.test_att_type.ad_parameters = self.__ad_parameters__
+
+        self.discovered_attribute =\
+            mock.MagicMock(spec_set=model.DiscoveredAttribute)
+        self.discovered_attribute.set_field = mock.Mock()
+
         self.test_callback_kwargs = {
             'dobj': self.dobj,
             'host': self.test_host,
@@ -97,6 +105,18 @@ class AttDiscTest(object):
     def check_callback_empty(self, cb_fun, rows):
         """ Check discovery callback that has been returned empty rows """
         cb_fun(None, None, **self.test_callback_kwargs)
+        self.assert_callback({})
+
+    def check_callback_empty_list(self, cb_fun, cols):
+        """ Check discovery callback that has been returned empty cols """
+        values = [None] * cols
+        cb_fun(values, None, **self.test_callback_kwargs)
+        self.assert_callback({})
+
+    def check_callback_empty_many(self, cb_fun, cols):
+        """ Check discovery callback that has been returned empty cols """
+        values = [[] for i in range(cols)]  # [ [], [], []] is right
+        cb_fun(values, None, **self.test_callback_kwargs)
         self.assert_callback({})
 
     def callback(self, cb_fun, values):
@@ -152,6 +172,12 @@ class AttDiscTest(object):
 
     def assert_snmp_one_called(self):
         self._check_snmp_args(self.snmp_engine.get_one)
+
+    def assert_snmp_str_called(self):
+        self._check_snmp_args(self.snmp_engine.get_str)
+
+    def assert_snmp_int_called(self):
+        self._check_snmp_args(self.snmp_engine.get_int)
 
     def assert_snmp_list_called(self):
         self._check_snmp_args(self.snmp_engine.get_list)

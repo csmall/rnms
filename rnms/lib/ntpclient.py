@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,8 +26,10 @@ from rnms.lib import zmqcore
 
 """ NTP Client """
 
+
 class NTPClientError(Exception):
     pass
+
 
 class NTPClient():
     """
@@ -35,15 +37,17 @@ class NTPClient():
     Uses two dispatchers, one for each address family
     """
     logger = None
-    address_families = [ socket.AF_INET, socket.AF_INET6 ]
+    address_families = [socket.AF_INET, socket.AF_INET6]
 
     def __init__(self, zmq_core, logger):
         self.logger = logger
-        self.dispatchers = { af : NTPDispatcher(zmq_core, af) for af in self.address_families}
+        self.dispatchers = {af: NTPDispatcher(zmq_core, af)
+                            for af in self.address_families}
 
     def get_peers(self, ntp_host, cb_fun, **kwargs):
         """
         Returns a list of peers to the callback function
+        ('id1', 'sel1', 'id2', 'sel2',..)
         Returns true on success
         """
         query_packet = NTPControl()
@@ -63,17 +67,20 @@ class NTPClient():
             return False
         addr_family, sockaddr = addrinfo[0], addrinfo[4]
         try:
-            return self.dispatchers[addr_family].send_message(ntp_host,request_packet,cb_fun, **kwargs)
+            return self.dispatchers[addr_family].send_message(
+                ntp_host, request_packet, cb_fun, **kwargs)
         except KeyError:
-            self.logger.error('Cannot find dispatcher for address family {0}',addr_family)
+            self.logger.error('Cannot find dispatcher for address family {0}',
+                              addr_family)
             return False
 
     def poll(self):
         retval = False
         for dispatcher in self.dispatchers.values():
-            if dispatcher.poll() == True:
+            if dispatcher.poll():
                 retval = True
         return retval
+
 
 class NTPDispatcher(zmqcore.Dispatcher):
     """
@@ -95,12 +102,12 @@ class NTPDispatcher(zmqcore.Dispatcher):
         self.close()
 
     def handle_read(self):
-        recv_msg, recv_addr =  self.socket.recvfrom(8192)
+        recv_msg, recv_addr = self.socket.recvfrom(8192)
         #logger.debug("Received message from %s", recv_addr)
         try:
             recv_job = self.sent_jobs[recv_addr]
         except KeyError:
-            pass #logger.warning("No job for %s", recv_addr)
+            pass  # logger.warning("No job for %s", recv_addr)
         else:
             self._parse_response(recv_job, recv_msg, recv_addr)
 
@@ -112,10 +119,12 @@ class NTPDispatcher(zmqcore.Dispatcher):
             new_job = self.waiting_jobs.pop()
         except IndexError:
             return
-        new_job['timeout'] = datetime.datetime.now() + datetime.timedelta(seconds=self.timeout)
+        new_job['timeout'] = datetime.datetime.now() +\
+            datetime.timedelta(seconds=self.timeout)
         self.sent_jobs[new_job['sockaddr']] = dict(new_job)
         try:
-            self.socket.sendto(new_job['request_packet'].to_data(), new_job['sockaddr'])
+            self.socket.sendto(new_job['request_packet'].to_data(),
+                               new_job['sockaddr'])
         except socket.error as errmsg:
             #logger.error("Socket error for sendto %s", new_job['sockaddr'])
             raise NTPClientError(errmsg)
@@ -125,6 +134,11 @@ class NTPDispatcher(zmqcore.Dispatcher):
         self.next_sequence += 1
         return next_seq
 
+    def _reply_get_peers(self, recv_job, response_packet):
+        """ Reply to get_peers request """
+        peers = [(p.assoc_id, p.selection) for p in response_packet.peers]
+        recv_job['cb_fun'](peers, None, recv_job['host'], **recv_job['kwargs'])
+
     def _parse_response(self, recv_job, recv_msg, recv_addr):
         """
         Calls the given callback with message and delets from sent queue
@@ -133,7 +147,11 @@ class NTPDispatcher(zmqcore.Dispatcher):
         if recv_msg is not None:
             response_packet.from_data(recv_msg)
         if response_packet.more == 0:
-            recv_job['cb_fun'](recv_job['host'], response_packet, **recv_job['kwargs'])
+            if recv_job['response_packet'].is_get_peers():
+                self._reply_get_peers(recv_job, response_packet)
+            else:
+                recv_job['cb_fun'](response_packet, None, recv_job['host'],
+                                   **recv_job['kwargs'])
             del(self.sent_jobs[recv_addr])
 
     def send_message(self, ntp_host, request_packet, cb_fun, **kwargs):
@@ -153,7 +171,7 @@ class NTPDispatcher(zmqcore.Dispatcher):
             'cb_fun': cb_fun,
             'kwargs': kwargs})
         return True
-    
+
     def poll(self):
         """
         Check pending and waiting jobs
@@ -189,6 +207,7 @@ class NTPAssoc():
         self.event_counter = unpacked[2] >> 4 & 0xf
         self.event_code = unpacked[2] & 0xf
 
+
 class NTPControl():
     leap = 0
     version = 2
@@ -215,12 +234,19 @@ class NTPControl():
         self.assoc_data = {}
 
     def __repr__(self):
-        return '<NTPControl seq={2} assoc_id={0} opcode={1}>'.format(self.assoc_id, self.opcode, self.sequence)
+        return '<NTPControl seq={2} assoc_id={0} opcode={1}>'.format(
+            self.assoc_id, self.opcode, self.sequence)
+
+    def is_get_peers(self):
+        """ Return true if request is a get_peers """
+        return self.opcode == 1
 
     def to_data(self):
-        packed = struct.pack(self.__PACKET_FORMAT,
+        packed = struct.pack(
+            self.__PACKET_FORMAT,
             (self.leap << 6 | self.version << 3 | self.mode),
-            (self.response << 7 | self.error << 6 | self.more << 5 | self.opcode ),
+            (self.response << 7 | self.error << 6 | self.more << 5 |
+                self.opcode),
             self.sequence,
             0,
             self.assoc_id,
@@ -230,7 +256,9 @@ class NTPControl():
 
     def from_data(self, data):
         header_len = struct.calcsize(self.__PACKET_FORMAT)
-        flags1, flags2, self.sequence, status, self.assoc_id, self.offset, self.count = struct.unpack(self.__PACKET_FORMAT, data[0:header_len])
+        flags1, flags2, self.sequence, status, self.assoc_id, self.offset,\
+            self.count =\
+            struct.unpack(self.__PACKET_FORMAT, data[0:header_len])
         self.leap = flags1 >> 6 & 0x3
         self.version = flags1 >> 3 & 0x7
         self.mode = flags1 & 0x7
@@ -247,9 +275,12 @@ class NTPControl():
         if self.opcode == 1:
             for assoc_count in range(0, (self.count)/4):
                 assoc = NTPAssoc()
-                assoc.from_data(data[header_len+assoc_count*4:header_len+(assoc_count+1)*4])
+                assoc.from_data(data[header_len+assoc_count*4:
+                                header_len+(assoc_count+1)*4])
                 self.peers.append(assoc)
         elif self.opcode == 2:
             #assoc_data = data[header_len:].split(",")
-            self.assoc_data.update(dict([tuple(ad.strip().split("=")) for ad in data[header_len:].split(",") if ad.find("=") > -1]))
-
+            self.assoc_data.update(dict(
+                [tuple(ad.strip().split("="))
+                    for ad in data[header_len:].split(",")
+                    if ad.find("=") > -1]))

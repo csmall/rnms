@@ -93,7 +93,7 @@ class RequestOID(object):
         self.callback(host, self.default, error)
 
     def callback(self, host, value, error=None):
-        self.cb_func(value, error, host=host, **self.cb_data)
+        self.cb_func(value, error, host, **self.cb_data)
 
     def callback_single(self, host, value, error=None):
         if self.filter_ is not None:

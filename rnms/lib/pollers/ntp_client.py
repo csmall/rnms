@@ -38,12 +38,12 @@ def poll_ntp_client(poller_buffer, **kwargs):
                                                cb_ntp_peer_list, **kwargs)
 
 
-def cb_ntp_peer_list(host, response_packet, **kw):
+def cb_ntp_peer_list(values, error, host, **kw):
     """
     First callback with the list of peers """
-    for assoc in response_packet.peers:
-        if assoc.selection == 6:  # system peer found
-            kw['pobj'].ntp_client.get_peer_by_id(host, assoc.assoc_id,
+    for a_id, a_selection in values:
+        if a_selection == 6:  # system peer found
+            kw['pobj'].ntp_client.get_peer_by_id(host, a_id,
                                                  cb_peer_details, **kw)
             return
     ntp_reply(kw['pobj'], kw['attribute'].id, False, 'no peer list returned')
