@@ -13,6 +13,7 @@ Contents:
   
    intro
    install
+   atypes
    events
    traps
    cmdline
