@@ -14,6 +14,7 @@ Contents:
    intro
    install
    atypes
+   users
    events
    traps
    cmdline
