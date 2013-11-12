@@ -67,14 +67,14 @@ class SNMPEngine(object):
         snmp_engine.registerTransportDispatcher(self.transport_dispatcher)
         self.cmd_gen = cmdgen.AsynCommandGenerator(snmpEngine=snmp_engine)
 
-    def get_int(self, snmphost, oid, cb_func, default=None, **kw):
+    def get_int(self, snmphost, oid, cb_func, **kw):
         """ Return a single integer value """
-        return self.get_one(snmphost, oid, cb_func, default=default,
+        return self.get_one(snmphost, oid, cb_func,
                             filter='int', **kw)
 
-    def get_str(self, snmphost, oid, cb_func, default=None, **kw):
+    def get_str(self, snmphost, oid, cb_func, **kw):
         """ Return a single string value """
-        return self.get_one(snmphost, oid, cb_func, default=default,
+        return self.get_one(snmphost, oid, cb_func,
                             filter='str', **kw)
 
     def get_one(self, snmphost, oid, cb_func, with_oid=None, **kw):
@@ -118,7 +118,7 @@ class SNMPEngine(object):
 
     def get(self, request):
         if request.community.community == '':
-            request.callback_default()
+            request.callback_none()
             return True
         self.scheduler.request_add(request)
         return True
@@ -272,7 +272,7 @@ class SNMPEngine(object):
                 'H: %d Error with SNMP: %s',
                 request.host.id, error_indication)
             self._request_finished(request.id)
-            request.callback_default(error_indication)
+            request.callback_none(error_indication)
             return False
         if error_status:
             self.logger.debug(

@@ -17,7 +17,6 @@ class PollerTest(object):
     test_host_id = 123
     test_host_ip = '127.0.0.2'
     test_attribute_id = 456
-    test_default_value = 789
     test_attribute_fields = None
     use_tcpclient = False
 
@@ -60,7 +59,6 @@ class PollerTest(object):
         self.test_kwargs = {
             'pobj': self.pobj,
             'attribute': self.test_attribute,
-            'default_value': self.test_default_value,
             }
 
         if self.use_tcpclient:
@@ -104,12 +102,12 @@ class PollerTest(object):
 
     def assert_callback_default(self):
         self.poller_cb.assert_called_once_with(
-            self.test_attribute_id, self.test_default_value)
+            self.test_attribute_id, None)
 
     def assert_callback_none(self, cb_fun):
         """ Poller with None returned should callback with default value """
         cb_fun(None, None, **self.test_kwargs)
-        self.assert_callback(self.test_default_value)
+        self.assert_callback(None)
 
     def assert_callback_none_none(self, cb_fun):
         """ Poller with None returned should callback with none """
@@ -118,15 +116,15 @@ class PollerTest(object):
 
     def assert_callback_empty(self, cb_fun):
         """ Poller with empty list returned should callback with
-        default value """
+        None """
         cb_fun([], None, **self.test_kwargs)
-        self.assert_callback(self.test_default_value)
+        self.assert_callback(None)
 
     def assert_callback_empty_dict(self, cb_fun):
         """ Poller with empty dict returned should callback
-        with default value """
+        with None """
         cb_fun({}, None, **self.test_kwargs)
-        self.assert_callback(self.test_default_value)
+        self.assert_callback(None)
 
     def assert_callback_value(self, cb_fun, cb_value, expected_value):
         cb_fun(cb_value, None, **self.test_kwargs)

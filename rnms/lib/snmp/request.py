@@ -75,7 +75,6 @@ def _get_host_transport(host_addr):
 
 class RequestOID(object):
     """ Holds each OID line for the requests """
-    default = None
     filter_ = None
     oid = None
     cb_data = None
@@ -84,16 +83,15 @@ class RequestOID(object):
         self.oid = oid
         self.raw_oid = cmdgen.MibVariable(oid)
         self.cb_func = callback
-        self.default = kw.pop('default', None)
         self.filter_ = kw.pop('filter', None)
         self.cb_data = kw
 
-    def callback_default(self, host, error=None):
-        """ Fire callback using default values """
-        self.callback(host, self.default, error)
+    def callback_none(self, host, error=None):
+        """ Fire callback returning None """
+        self.callback(host, None, error)
 
     def callback(self, host, value, error=None):
-        self.cb_func(value, error, host, **self.cb_data)
+        self.cb_func(value, error, host=host, **self.cb_data)
 
     def callback_single(self, host, value, error=None):
         if self.filter_ is not None:
@@ -166,16 +164,14 @@ class SNMPRequest(object):
         """
         self.replyall = flag
 
-    def callback_default(self, error=None):
-        """
-        Fire off all the callbacks with the default value
-        """
+    def callback_none(self, error=None):
+        """ Fire off all the callbacks with None """
         if self.replyall:
             req = self.oids[0]
-            req.callback_default(self.host, error)
+            req.callback_none(self.host, error)
         else:
             for req in self.oids:
-                req.callback_default(self.host, error)
+                req.callback_none(self.host, error)
 
     def callback_table(self):
         """

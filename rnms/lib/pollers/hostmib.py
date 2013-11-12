@@ -55,7 +55,7 @@ def poll_hostmib_perf(poller_buffer, parsed_params, **kw):
             oids = [base_oid+(pid,) for pid in poller_buffer['pids']]
             return kw['pobj'].snmp_engine.get_list(
                 kw['attribute'].host, oids, cb_hostmib_perf,
-                default=0, **kw)
+                **kw)
     except KeyError:
         pass
     kw['pobj'].poller_callback(kw['attribute'].id, 0)

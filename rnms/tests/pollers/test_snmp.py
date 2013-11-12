@@ -66,12 +66,14 @@ class TestSnmpPoller(PollerTest):
     def test_status_poll_full(self):
         """ poll_snmp_status with mapping and default return true """
         eq_(poll_snmp_status(self.poller_buffer, '1.2.3|1=2|3', **self.test_kwargs), True)
-        self.assert_get_str_called((1,2,3), cb_snmp_status, {'mapping':'1=2', 'default_value': '3'})
+        self.assert_get_str_called((1,2,3), cb_snmp_status, {'mapping':'1=2',
+            'default_state': '3'})
     
     def test_status_poll_no_default(self):
         """ poll_snmp_status with mapping return true """
         eq_(poll_snmp_status(self.poller_buffer, '1.2.3|1=2', **self.test_kwargs), True)
-        self.assert_get_str_called((1,2,3), cb_snmp_status, {'mapping':'1=2', 'default_value': None})
+        self.assert_get_str_called((1,2,3), cb_snmp_status, {'mapping':'1=2',
+            'default_state': None})
 
     def test_status_poll_no_mapping(self):
         """ poll_snmp_status with no mapping return False """
@@ -79,31 +81,37 @@ class TestSnmpPoller(PollerTest):
 
     def test_status_none(self):
         """ cb_snmp_status with None returns default """
-        self.assert_callback_none(cb_snmp_status)
+        cb_snmp_status(None, None, default_state=None, **self.test_kwargs)
+        self.assert_callback_default()
 
     def test_status_no_mapping(self):
-        """ cb_snmp_status with no mapping gives default """
-        cb_snmp_status('100', None, **self.test_kwargs)
+        """ cb_snmp_status with no mapping gives None """
+        cb_snmp_status('100', None, default_state=None, **self.test_kwargs)
         self.assert_callback_default()
 
     def test_status_bad_mapping(self):
-        """ cb_snmp_status with bad mapping returns default """
-        cb_snmp_status('100', None, mapping='foo', **self.test_kwargs)
+        """ cb_snmp_status with bad mapping returns None """
+        cb_snmp_status('100', None, mapping='foo', default_state=None,
+                       **self.test_kwargs)
         self.assert_callback_default()
-    
+
     def test_status_bad_mapping_miss(self):
-        """ cb_snmp_status with bad mapping on missed item returns correctly """
-        cb_snmp_status('100', None, mapping='foo,100=up', **self.test_kwargs)
+        """ cb_snmp_status with bad mapping on missed item returns
+        correctly """
+        cb_snmp_status('100', None, mapping='foo,100=up', default_state=None,
+                       **self.test_kwargs)
         self.assert_callback('up')
 
     def test_status_miss_mapping(self):
-        """ cb_snmp_status with no match on mapping returns default """
-        cb_snmp_status('100', None, mapping='1=up,2=do', **self.test_kwargs)
+        """ cb_snmp_status with no match on mapping returns None """
+        cb_snmp_status('100', None, mapping='1=up,2=do', default_state=None,
+                       **self.test_kwargs)
         self.assert_callback_default()
 
     def test_status_mapping(self):
         """ cb_snmp_status with match returns result """
-        cb_snmp_status('2', None, mapping='1=up,2=do', **self.test_kwargs)
+        cb_snmp_status('2', None, mapping='1=up,2=do', default_state=None,
+                       **self.test_kwargs)
         self.assert_callback('do')
 
     # snmp_alk_average

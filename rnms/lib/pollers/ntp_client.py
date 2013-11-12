@@ -49,7 +49,7 @@ def cb_ntp_peer_list(values, error, host, **kw):
     ntp_reply(kw['pobj'], kw['attribute'].id, False, 'no peer list returned')
 
 
-def cb_peer_details(host, response_packet, pobj, attribute, **kw):
+def cb_peer_details(response_packet, error, host, pobj, attribute, **kw):
     if response_packet.assoc_data == {}:
         ntp_reply(pobj, attribute.id, False, 'no details returned')
         return
