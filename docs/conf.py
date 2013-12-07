@@ -214,8 +214,10 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'rosenbergnms', u'Rosenberg NMS Documentation',
-     [u'Craig Small'], 1)
+    ('rnmsd', 'rnmsd', u'Rosenberg NMS Documentation',
+     [u'Craig Small'], 1),
+    ('rnms_info', 'rnms_info', u'Rosenberg NMS Documentation',
+     [u'Craig Small'], 1),
 ]
 
 # If true, show URL addresses after external links.

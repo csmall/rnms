@@ -29,6 +29,7 @@ from traps import consolidate_traps
 from rnms.lib.engine import RnmsEngine
 from rnms.lib.gettid import gettid
 
+
 class Consolidator(RnmsEngine):
     """
     Consolidator process, may have some sub-processes under it.
@@ -44,37 +45,38 @@ class Consolidator(RnmsEngine):
         super(Consolidator, self).__init__('cons', zmq_context)
 
     def _poll(self):
-        if self.zmq_core.poll(0.0) == False:
+        if not self.zmq_core.poll(0.0):
             return False
-        return self.end_thread == False
+        return not self.end_thread
 
     def consolidate(self):
-        self.logger.debug('Consolidator started TID:%d',gettid())
+        self.logger.debug('Consolidator started TID:%d', gettid())
         if not self.do_once:
             check_all_attributes_state(self.logger)
 
         while True:
-            next_cons_time = datetime.datetime.now() + datetime.timedelta(seconds=self.consolidate_interval)
+            next_cons_time = datetime.datetime.now() +\
+                datetime.timedelta(seconds=self.consolidate_interval)
             consolidate_logfiles(self.logger)
-            if self._poll() == False:
+            if not self._poll():
                 return
             consolidate_traps(self.logger)
-            if self._poll() == False:
+            if not self._poll():
                 return
             changed_attributes = process_events(self.logger)
-            if self._poll() == False:
+            if not self._poll():
                 return
             changed_attributes.union(check_event_stop_time(self.logger))
-            if self._poll() == False:
+            if not self._poll():
                 return
             check_attribute_state(changed_attributes, self.logger)
-            if self._poll() == False:
+            if not self._poll():
                 return
 
-            sleep_time = int((next_cons_time - datetime.datetime.now()).total_seconds())
+            sleep_time = int((next_cons_time -
+                              datetime.datetime.now()).total_seconds())
             self.logger.debug("Next consolidation in %d secs", sleep_time)
             if self.do_once:
                 return
-            if self.sleep(next_cons_time) == False:
+            if not self.sleep(next_cons_time):
                 return
-

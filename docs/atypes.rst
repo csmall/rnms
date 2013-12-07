@@ -1,17 +1,25 @@
+.. _attribute types:
+
 Attribute Types
 ===============
 The types of Attributes that can be discovered and polled is setup in the
 configuration. RNMS comes out with a variety of Attribute Types and you
 can add your own.
 
+.. _at-apache:
+
 Apache
 ------
 Polls the server status for an Apache webserver. Rnms displays the statistics
 that this feature exposes, such as number of workers or accesses.
 
+.. _at-apc:
+
 APC
 ---
 Polls the APC UPS devices that have SNMP enabled.
+
+.. _at-alteon:
 
 Alteon Load Balancers
 ---------------------
@@ -21,16 +29,19 @@ like CPU loads and memory usage, the Real and Virtual Servers and Services
 are tracked for their utilisation and response times.  The state of these
 elements is also tracked and can send alarms.
 
+.. _at-applications:
+
 Applications
 ------------
 
+.. _at-bgp:
 
 BGP Neighbors
 -------------
 These Attribute Types are the BGP (Border Gateway Protocol) peers.  The
 number of advertised and received routes, as well as messages in and out
 are tracked.  The state of the Attribute follows the state of the peer.
-Information comes via SNMP using the BGP peer MIB based on RFC1269.
+Information comes via SNMP using the BGP peer MIB based on :rfc:`1269`.
 
 Brocade FC Ports
 ----------------
@@ -82,6 +93,8 @@ IIS Webserver Information
 Linux/Unix System Info
 ----------------------
 
+.. _at-ntp:
+
 NTP
 ---
 The poller checks the status of NTP servers on the host by using NTP standard
@@ -102,9 +115,10 @@ the addresses are applied to the interface.
 The usual statistics such as octect and packet counts as well as errors are
 polled and the attribute follows the ifOper column of the ifTable for status.
 
+.. _at-reachability:
 
-Reachable
----------
+Reachablity
+-----------
 All devices that have an IP address are assumed to be reachable. The Reachable
 Attribute Type requires fping and/or fping6 to be installed.  Round trip
 time (RTT) and packetloss are graphed for these Attribute Types.
@@ -122,6 +136,8 @@ This table considers storage to be mainly disk drives as well as memory as
 "storage". The graphs for these types show the total and used amount for
 the device. There is no state tracked.
 
+.. _at-tcpports:
+
 TCP Ports
 ---------
 Systems can be port scanned to find open TCP ports. These ports then have
@@ -134,7 +150,7 @@ installed.
 
 UPS and Lines
 -------------
-Queries for either a standard RFC1628 or a Mitsubishi UPS using SNMP. Both
+Queries for either a standard :rfc:`1628` or a Mitsubishi UPS using SNMP. Both
 the device status (such as load or on-battery) and the input and output
 lines can be tracked.
 

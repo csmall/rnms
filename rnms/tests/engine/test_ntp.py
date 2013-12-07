@@ -3,12 +3,11 @@
 Functional test suite for the NTP client
 
 """
-import socket
 import mock
 
-from nose.tools import assert_true, nottest, eq_
+from nose.tools import eq_
 
-from rnms.lib.ntpclient import NTPClient, NTPControl
+from rnms.lib.ntpclient import NTPClient
 from rnms.lib import zmqcore
 
 
@@ -53,10 +52,11 @@ class TestNTP(object):
             self.zmq_core.poll(0.2)
 
     def test_timeout(self):
-        """ NTP query to non-existent host should timeout and give empty response back """
+        """ NTP query to non-existent host should timeout and give
+        empty response back """
         host = DummyHost('10.10.0.254')
         self.ntp_client.get_peers(host, my_cb_peers, obj=self)
-        query_packet = NTPControl()
+        self.ntp_client.get_peers(host, my_cb_peers, obj=self)
         self.poll()
         eq_(self.results['none'], True)
 
@@ -66,7 +66,7 @@ class TestNTP(object):
         self.ntp_client.get_peers(host, my_cb_peers, obj=self)
         self.poll()
         assert('srcadr' in self.results)
-        assert('filtdelay' in self.results) # in second packet
+        assert('filtdelay' in self.results)  # in second packet
 
     def test_ipv6(self):
         """ Query using ipv6 """
@@ -74,14 +74,14 @@ class TestNTP(object):
         self.ntp_client.get_peers(host, my_cb_peers, obj=self)
         self.poll()
         assert('srcadr' in self.results)
-        assert('filtdelay' in self.results) # in second packet
-
+        assert('filtdelay' in self.results)  # in second packet
 
     def test_no_assoc(self):
         """ Query for non-exist assoc details should return empty """
-        fake_assoc_id = 65535 # hopefully anyhow
+        fake_assoc_id = 65535  # hopefully anyhow
         host = DummyHost('127.0.0.1')
-        self.ntp_client.get_peer_by_id(host, fake_assoc_id, my_cb_peer_by_id, obj=self)
+        self.ntp_client.get_peer_by_id(host, fake_assoc_id,
+                                       my_cb_peer_by_id, obj=self)
         self.poll()
         assert('noid' in self.results)
         eq_(self.results['noid'], fake_assoc_id)

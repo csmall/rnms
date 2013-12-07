@@ -5,6 +5,7 @@ SNMP traps are messages that are sent from SNMP Agents, such as routers or
 servers to a SNMP Manager, such as Rosenberg NMS.
 
 For the purposes of how they are handled, a trap has the following fields:
+
 * Source IP address
 * Trap OID
 * One or more VarBinds which are OID value keypairs, similair to a python dictionary.
@@ -27,7 +28,8 @@ is discarded.
 Secondly the trap is checked against duplicates. Essentially if the trap
 from the same source IP address with the same trap OID is seen within 5
 seconds of another trap with the same properties, it is discarded. A lot
-of implementations send several traps for the same event and this ensures there is only one forwarded.  The disadvantage is that if there is a down trap and
+of implementations send several traps for the same event and this ensures
+there is only one forwarded.  The disadvantage is that if there is a down trap and
 then very soon after an up trap and they use the same OID the second
 one won't be processed.
 

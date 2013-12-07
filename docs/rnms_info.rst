@@ -1,44 +1,38 @@
-Console Scripts
-===============
-While most of the time both administrators and users will use the web GUI
-to interact with Rosenberg, the back-end console scripts are essential
-for the running of the program.
-
-Logging
--------
-The utilities have a standard set of command line options for logging
-levels. These levels are converted into standard python logging levels.
-With no options, the default logging level is Warning. From loudest to
-quietest, the options are:
-
--d or --debug
-  Set logging level to Debug
--v or --verbose
-  Set logging level to Info
-Nothing
-  The default is here at Warning
--q or --quiet
-  Set logging level to Critical
- 
-rnmsd
------
-All of the required engines can be run in a single program called rnmsd.
-This program has a small master thread which launches and monitors all the 
-sub-threads such as pollers and trap daemons. For most installations, 
-starting this program is all that is required.
-
+=========
 rnms_info
----------
-While administrators can directly interrogate the database, the 
-rnms\_info tool can do simple queries against the database.  The
-command line is:
+=========
 
-  rnms\_info _query\_type_ _ids_
+SYNOPSYS
+========
+  **rnms_info** [**-dhqv**] [**-c** *config*] [**-p** *pidfile*] *qtype* *id*...
+
+DESCRIPTION
+===========
+**rnms_info** is a tool to query the database on various models that Rosenberg NMS
+contains.  These queries are meant to assist administrators in troubleshooting,
+for example working out what Host a particular Attribute belongs to.
 
 The info tool can query the following models: attributes, attribute types,
 hosts, poller sets, autodiscovery policies, slas and triggers.  The second
 parameter is the ID of the item you want to query.
 
+
+OPTIONS
+=======
+
+-c file, --config file    Read configuration settings from *file*
+-d, --debug            Turn on debugging
+-h, --help             Show help message and exit
+-p file, --pidfile file  Write process PID to *file*
+-q, --quiet            Log critical messages only
+-v, --verbose          Increase verbosity of logging
+
+ID                    ID of the items you want information about
+
+QTYPE                 Type of query (model) to perform, see `DESCRIPTION`_ for list
+
+EXAMPLE
+=======
 For example, to look at attribute #2, you would use the following 
 commands::
   
@@ -67,3 +61,9 @@ Each type of query will display detailed information about the requested
 object.  There can also be cross references, so to see information about
 the above attributes host, you would query host 5.
 
+
+SEE ALSO
+========
+* `Rosenberg NMS Documentation <http://rosenberg-nms.readthedocs.org/en/latest/>`_
+* **rnms_poller** (1)
+* **rnmsd** (1)

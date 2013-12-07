@@ -180,6 +180,8 @@ class Poller(RnmsEngine):
             if not self.zmq_core.poll(timeout):
                 transaction.commit()
                 return
+            if self.end_thread:
+                break
             if not polls_running and (self.polling_attributes == {}):
                 # If there are no pollers, we can sleep until we need to
                 # look for more attributes to poll

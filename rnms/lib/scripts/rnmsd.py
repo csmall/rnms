@@ -20,10 +20,13 @@
 """
 Module for the master daemon that runs all the sub-processes for
 Rosenberg
+Daemonizing code comes from
+http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 """
 import logging
 import threading
 import sys
+import os
 
 import zmq
 
@@ -47,6 +50,7 @@ class Rnmsd(RnmsCommand):
     enable_consolidator = True
     args = None
     threads = None
+    __set_pidfile__ = False
 
     def __init__(self, name):
         super(Rnmsd, self).__init__(name)
@@ -54,9 +58,64 @@ class Rnmsd(RnmsCommand):
         self.zmq_poller = zmq.Poller()
         self.control_socket = zmqmessage.control_server(self.zmq_context)
         self.threads = {}
+        self.end_threads = False
+        self.timeout = 10
+
+
+    def daemonize(self):
+        """ Daemonize the process """
+        try:
+            pid = os.fork()
+            if pid > 0:
+                # exit first parent
+                sys.exit(0)
+        except OSError, e:
+            sys.syserr.write("fork #1 failed: {} ({})\n".
+                             format(e.errno, e.strerror))
+
+        #  Decouple from parent environment
+        os.chdir("/")
+        os.setsid()
+        os.umask(0)
+
+        # Do second fork
+        try:
+            pid = os.fork()
+            if pid > 0:
+                # Exit from the second parent
+                sys.exit(0)
+        except OSError, e:
+            sys.stderr.write("fork #2 failed: {} ({})\n".format(
+                e.errno, e.strerror))
+
+        # redirect standard file descriptors
+        sys.stdout.flush()
+        sys.stderr.flush()
+        si = file("/dev/null", "r")
+        so = file("/dev/null", "a+")
+        se = file("/dev/null", "a+")
+        os.dup2(si.fileno(), sys.stdin.fileno())
+        os.dup2(so.fileno(), sys.stdout.fileno())
+        os.dup2(se.fileno(), sys.stderr.fileno())
 
     def real_command(self):
         """ The entry point for the RNMS daemon """
+        try:
+            pf = file(self.options.pidfile)
+            pid = int(pf.read().strip())
+            pf.close()
+        except IOError:
+            pid = None
+
+        if pid:
+            sys.stderr.write("pidfile {} already exists for process {}.\n".
+                             format(self.options.pidfile, pid))
+            sys.exit(1)
+
+        if not self.options.log_debug:
+            self.daemonize()
+        self.create_pidfile()
+
         self.logger = logging.getLogger('rnms')
         self._create_info_socket()
 
@@ -88,29 +147,54 @@ class Rnmsd(RnmsCommand):
         self.threads['snmptrapd'].start()
         while True:
             try:
-                events = dict(self.zmq_poller.poll(10000))
-                for sock, event in events.items():
-                    if sock == self.info_socket:
-                        self.handle_info_read()
-                        continue
-                    # Unhandled socket?!
-                    self.logger.critical('Unhandled event from zmq poller')
-                    self._shutdown()
+                if not self._poll():
                     return -1
-
-                for tname, tobj in self.threads.items():
-                    if not tobj.is_alive():
-                        self.logger.critical('Thread %s has died.', tname)
-                        self._shutdown()
-                        return -1
+                ret_val = self._check_threads()
+                if ret_val is not None:
+                    return ret_val
             except KeyboardInterrupt:
                 self.logger.debug('User Interrupt Pressed, shutting down')
                 self._shutdown()
-                return 0
 
     def _shutdown(self):
         """ Method that is called to shutdown the daemon """
         self.control_socket.send(zmqmessage.IPC_END)
+        self.end_threads = True
+        self.timeout = 1
+
+    def _poll(self):
+        """ Poll the ZMQ socket and handle any requests """
+        events = dict(self.zmq_poller.poll(self.timeout*1000))
+        for sock, event in events.items():
+            if sock == self.info_socket:
+                self.handle_info_read()
+                continue
+            # Unhandled socket?!
+            self.logger.critical('Unhandled event from zmq poller')
+            self._shutdown()
+            return False
+        return True
+
+    def _check_threads(self):
+        """ Check the status of all sub-threads. Return None if
+        all is good, otherwise the return value """
+        waiting_threads = []
+        for tname, tobj in self.threads.items():
+            if tobj.is_alive():
+                if self.end_threads:
+                    waiting_threads.append(tname)
+            elif not self.end_threads:
+                self.logger.critical('Thread %s has died.', tname)
+                self._shutdown()
+                return -1
+        if self.end_threads:
+            if waiting_threads == []:
+                self.logger.debug('All threads finished, exiting')
+                return 0
+            else:
+                self.logger.debug('Waiting for threads {}'.
+                                  format(', '.join(waiting_threads)))
+        return None
 
     def handle_info_read(self):
         frames = self.info_socket.recv_multipart()

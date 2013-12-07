@@ -20,6 +20,7 @@
 import os
 import sys
 import logging
+from logging.config import fileConfig
 
 from paste.script.command import Command
 from paste.deploy import appconfig
@@ -37,6 +38,7 @@ class RnmsCommand(Command):
     line arguments
     """
     summary = ''
+    __set_pidfile__ = True
 
     def __init__(self, name):
         super(RnmsCommand, self).__init__(name)
@@ -45,13 +47,13 @@ class RnmsCommand(Command):
 
     def command(self):
         self._set_logging()
-        pidfile = self._create_pid()
+        if self.__set_pidfile__:
+            self.create_pidfile()
         try:
             self.real_command()
         finally:
-            if pidfile:
-                pidfile.close()
-                os.remove(self.options.pidfile)
+            if self.__set_pidfile__:
+                self.del_pidfile()
 
     def real_command(self):
         """ Command that is actually run by the object that inherits this
@@ -115,7 +117,7 @@ class RnmsCommand(Command):
             logging_level = logging.INFO
         logging.basicConfig(level=logging_level, format=LOG_FORMAT)
 
-    def _create_pid(self):
+    def create_pidfile(self):
         """ Create and check for PID file """
         if self.options.pidfile != '':
             if os.path.exists(self.options.pidfile):
@@ -123,11 +125,17 @@ class RnmsCommand(Command):
                           self.options.pidfile)
                 sys.exit(1)
                 return
-            pidfile = open(self.options.pidfile, 'w')
-            pidfile.write(str(os.getpid()))
-            pidfile.flush()
-            return pidfile
+            pidfile = open(self.options.pidfile, 'w+')
+            pidfile.write("{}\n".format(os.getpid()))
+
+    def del_pidfile(self):
+        """ Delete our pidfile """
+        if self.options.pidfile != "":
+            os.remove(self.options.pidfile)
 
     def _get_config(self):
-        conf = appconfig('config:' + os.path.abspath(self.options.config))
+        config_file = os.path.abspath(self.options.config)
+        conf = appconfig('config:' + config_file)
         load_environment(conf.global_conf, conf.local_conf)
+        fileConfig(config_file, dict(__file__=config_file,
+                                     here=os.path.dirname(config_file)))

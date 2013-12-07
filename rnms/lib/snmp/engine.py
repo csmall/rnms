@@ -23,6 +23,7 @@ from pysnmp.carrier.asynsock.dispatch import AsynsockDispatcher
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.entity import engine
 from pysnmp.proto.rfc1905 import NoSuchObject, NoSuchInstance
+from pysnmp.error import PySnmpError
 
 from scheduler import SNMPScheduler
 from request import SNMPRequest
@@ -140,6 +141,8 @@ class SNMPEngine(object):
                 self.transport_dispatcher.handleTimerTick(time.time())
         except AttributeError:
             pass
+        except PySnmpError as errmsg:
+            self.logger.error('Problem with SNMP: %s', errmsg)
         self._check_waiting_requests()
         reqcount += len(self.scheduler.waiting_requests)
         reqcount += len(self.active_requests)
@@ -277,7 +280,7 @@ class SNMPEngine(object):
         if error_status:
             self.logger.debug(
                 'H:%d SNMP Errstat %s at %s',
-                request.host_id, error_status.prettyPrint(),
+                request.host.id, error_status.prettyPrint(),
                 error_index and var_binds[int(error_index)-1] or '?')
             return False
         if request.is_many():

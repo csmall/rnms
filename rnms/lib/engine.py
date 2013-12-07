@@ -32,6 +32,7 @@ from rnms.lib.pingclient import PingClient
 from rnms.lib.snmp import SNMPEngine
 from rnms.lib.tcpclient import TCPClient
 
+
 class RnmsEngine(object):
     """
     Base class for engines such as pollers and discovers
@@ -39,7 +40,7 @@ class RnmsEngine(object):
     of strings:
        ntp, ping, snmp, tcp
     """
-    worker_wait_seconds = 30 
+    worker_wait_seconds = 30
 
     zmq_context = None
     zmq_core = None
@@ -60,7 +61,8 @@ class RnmsEngine(object):
         if context is not None:
             self.zmq_context = context
             self.control_socket = zmqmessage.control_client(self.zmq_context)
-            self.zmq_core.register_zmq(self.control_socket, self.control_callback)
+            self.zmq_core.register_zmq(
+                self.control_socket, self.control_callback)
         else:
             self.zmq_context = zmq.Context()
 
@@ -77,16 +79,18 @@ class RnmsEngine(object):
             if 'ping' in required_clients:
                 self.ping_client = PingClient()
             if 'snmp' in required_clients:
-                self.snmp_engine = SNMPEngine(self.zmq_core, logger=self.logger)
+                self.snmp_engine = SNMPEngine(self.zmq_core,
+                                              logger=self.logger)
             if 'tcp' in required_clients:
                 self.tcp_client = TCPClient(self.zmq_core)
-    
+
     def control_callback(self, socket):
         """
         Callback method for the control socket
         """
         frames = socket.recv_multipart()
         if frames[0] == zmqmessage.IPC_END:
+            self.logger.debug("Shutting down")
             self.end_thread = True
 
     def have_working_workers(self):
@@ -103,13 +107,13 @@ class RnmsEngine(object):
         return False if we hit a break
         """
         sleep_seconds = (wake_time - datetime.datetime.now()).total_seconds()
-        while self.end_thread == False and sleep_seconds > 0.0:
+        while not self.end_thread and sleep_seconds > 0.0:
             #self.logger.debug('sleep secs %d',sleep_seconds)
             if not self.zmq_core.poll(sleep_seconds):
                 return False
-            sleep_seconds = (wake_time - datetime.datetime.now()).total_seconds()
-        return self.end_thread == False
-        
+            sleep_seconds = (wake_time -
+                             datetime.datetime.now()).total_seconds()
+        return not self.end_thread
 
     def wait_for_workers(self):
         """
@@ -117,10 +121,12 @@ class RnmsEngine(object):
         to finish their work. We will wait a maximum amount of time for it
         """
         wait_seconds = self.worker_wait_seconds
-        finish_wait = datetime.datetime.now() + datetime.timedelta(seconds=self.worker_wait_seconds)
+        finish_wait = datetime.datetime.now() +\
+            datetime.timedelta(seconds=self.worker_wait_seconds)
         while wait_seconds > 0:
             if not self.have_working_workers():
                 return
-            if self.zmq_core.poll(wait_seconds) == False:
+            if not self.zmq_core.poll(wait_seconds):
                 return
-            wait_seconds = (finish_wait - datetime.datetime.now()).total_seconds()
+            wait_seconds = (finish_wait -
+                            datetime.datetime.now()).total_seconds()

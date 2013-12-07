@@ -13,11 +13,13 @@ Contents:
   
    intro
    install
+   hosts
    atypes
    users
    events
    traps
-   cmdline
+   rnmsd
+   rnms_info
 
 Indices and tables
 ==================
