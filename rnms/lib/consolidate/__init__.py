@@ -23,7 +23,7 @@ import datetime
 #from alarms import check_alarm_stop_time, check_alarm_triggers
 from attributes import check_attribute_state, check_all_attributes_state
 from events import process_events, check_event_stop_time
-from logfiles import consolidate_logfiles
+from logfiles import LogfileConsolidator
 from traps import consolidate_traps
 
 from rnms.lib.engine import RnmsEngine
@@ -43,11 +43,16 @@ class Consolidator(RnmsEngine):
     def __init__(self, zmq_context=None, do_once=True):
         self.do_once = do_once
         super(Consolidator, self).__init__('cons', zmq_context)
+        self.logfile_consolidator = LogfileConsolidator(self.logger)
 
     def _poll(self):
         if not self.zmq_core.poll(0.0):
             return False
         return not self.end_thread
+
+    def sighup_handler(self):
+        """ Handle HUP signal by reloading config """
+        self.logfile_consolidator.load_config()
 
     def consolidate(self):
         self.logger.debug('Consolidator started TID:%d', gettid())
@@ -57,7 +62,7 @@ class Consolidator(RnmsEngine):
         while True:
             next_cons_time = datetime.datetime.now() +\
                 datetime.timedelta(seconds=self.consolidate_interval)
-            consolidate_logfiles(self.logger)
+            self.logfile_consolidator.consolidate()
             if not self._poll():
                 return
             consolidate_traps(self.logger)

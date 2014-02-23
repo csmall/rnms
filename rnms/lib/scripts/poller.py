@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ import transaction
 from rnms.lib.cmdline import RnmsCommand
 from rnms.lib.poller import Poller
 
+
 class RnmsPollCmd(RnmsCommand):
 
     def real_command(self):
@@ -34,10 +35,10 @@ class RnmsPollCmd(RnmsCommand):
         if self.options.attributes is not None:
             att_ids = self.options.attributes.split(',')
 
-        poller = Poller(attribute_ids=att_ids,host_ids=host_ids)
+        poller = Poller(attribute_ids=att_ids, host_ids=host_ids)
         poller.main_loop()
         transaction.commit()
-    
+
     def standard_options(self):
         super(RnmsPollCmd, self).standard_options()
         self.parser.add_argument(
@@ -56,6 +57,7 @@ class RnmsPollCmd(RnmsCommand):
             help='Limit polling to given Attribute IDs',
             metavar='AID,...'
         )
+
 
 def main():
     pollc = RnmsPollCmd('att_disc')

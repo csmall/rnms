@@ -5,7 +5,7 @@ from nose.tools import assert_false, assert_true
 #from rnms import model
 from rnms.tests.pollers import PollerTest
 
-from rnms.lib.pollers.cisco_saagent import poll_cisco_saagent, cb_jitter,\
+from rnms.lib.poller.plugins.cisco_saagent import poll_cisco_saagent, cb_jitter,\
     cb_packetloss
 
 

@@ -1,5 +1,5 @@
 <%inherit file="local:templates.master"/>
-<%namespace name="menu_items" file="local:templates.admin.menu_items"/>
+<%namespace name="admin_menu" file="local:templates.admin.menu_items"/>
 
 <%def name="title()">
 ${tmpl_context.title} - ${model} Listing
@@ -8,7 +8,7 @@ ${tmpl_context.title} - ${model} Listing
 <%def name="body_class()">tundra</%def>
 <div class="row">
   <div class="span2">
-<%include file="local:templates.admin_menu"/>
+${admin_menu.menu_items()}
   </div>
   <div class="span10">
 <%def name="meta()">

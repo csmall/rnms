@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ from rnms.model import DeclarativeBase, DBSession, Attribute
 
 OID_RE = re.compile('^(?:\d+\.)\d+$')
 
+
 class SnmpTrap(DeclarativeBase):
     """
     A raw SNMP trap that has been created by snmptrapd along
@@ -40,7 +41,9 @@ class SnmpTrap(DeclarativeBase):
 
     #{ Columns
     id = Column(Integer, primary_key=True)
-    host_id = Column(Integer, ForeignKey('hosts.id', ondelete="CASCADE", onupdate="CASCADE"))
+    host_id = Column(Integer,
+                     ForeignKey('hosts.id', ondelete="CASCADE",
+                                onupdate="CASCADE"))
     varbinds = relationship('SnmpTrapVarbind', backref='trap')
     trap_oid = Column(String(250), nullable=False)
     processed = Column(Boolean, nullable=False, default=False)
@@ -57,29 +60,39 @@ class SnmpTrap(DeclarativeBase):
             host_id = self.host.id
         else:
             host_id = 'none'
-        return '<SNMP Trap host={} varbinds={}>'.format(host_id, len(self.varbinds))
+        return '<SNMP Trap host={} varbinds={}>'.\
+            format(host_id, len(self.varbinds))
+
     def set_varbind(self, name, value):
         """ Add a varbind to this trap """
-        new_varbind = SnmpTrapVarbind(self, name,value)
-        self.varbinds.append(new_varbind)
+        self.varbinds.append(SnmpTrapVarbind(name, value))
+
+    def get_varbind(self, oid, default=None):
+        """ Return the value of the given OID for the VarBind """
+        for varbind in self.varbinds:
+            if varbind.oid == oid:
+                return varbind.value
+        return default
+
 
 class SnmpTrapVarbind(DeclarativeBase):
     __tablename__ = 'snmp_trap_varbinds'
 
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
-    trap_id = Column(Integer, ForeignKey('snmp_traps.id', ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
+    trap_id = Column(Integer,
+                     ForeignKey('snmp_traps.id', ondelete="CASCADE",
+                                onupdate="CASCADE"), nullable=False)
     oid = Column(String(250), nullable=False)
     value = Column(String(250), nullable=False)
     #}
 
-    def __init__(self, trap=None, oid=None, value=None):
-        if trap is not None:
-            self.trap = trap
+    def __init__(self, oid=None, value=None):
         if oid is not None:
             self.oid = oid
         if value is not None:
             self.value = value
+
 
 class TrapMatches(DeclarativeBase):
     __tablename__ = 'trap_matches'

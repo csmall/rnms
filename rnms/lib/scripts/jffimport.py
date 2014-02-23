@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 import sys
+import os
 import logging
 
 import sqlalchemy
@@ -27,6 +28,7 @@ from rnms.lib.cmdline import RnmsCommand
 from rnms.lib.jffnms_config import JffnmsConfig
 from rnms.lib import jffnms_import as jimport
 
+
 class JffnmsImporter(RnmsCommand):
     dbhandle = None
     translate = {}
@@ -34,21 +36,26 @@ class JffnmsImporter(RnmsCommand):
     def real_command(self):
         self.logger = logging.getLogger('rnms')
         self.jconf = JffnmsConfig()
+        if not os.path.isdir(self.options.jffnms_conf):
+            sys.stderr.write(
+                "\"{}\" is not a directory, check your --jffnms_conf setting\n".
+                format(self.options.jffnms_conf))
+            sys.exit(1)
+
         self.jconf.parse(self.options.jffnms_conf)
         self.open_jffnms_db()
         # FIXME check for delete
         jimport.do_delete(self)
 
         for importer in ('zone', 'user', 'host', 'interface', 'attribute',
-                         'event' ):
+                         'event'):
             imp_func = getattr(jimport, 'import_'+importer)
             ret = imp_func(self)
             if ret is None:
                 return 1
             self.translate[importer] = ret
-        if self.options.dry_run == False:
+        if not self.options.dry_run:
             transaction.commit()
-
 
         self.print_conf_shell()
         self.close_jffnms_db()
@@ -66,18 +73,18 @@ class JffnmsImporter(RnmsCommand):
             action='store',
             dest='jffnms_conf',
             help='Directory where JFFNMS configuration file is',
-            default='/home/wwwroot/jffnms/conf',
+            default='/etc/jffnms/',
             metavar='DIR'
         )
-    
+
     def open_jffnms_db(self):
         """ Create the JFFNMS Database handler """
         jffnms_db_engine = sqlalchemy.create_engine(sqlalchemy.engine.url.URL(
             self.jconf.get('db_type'),
-            username = self.jconf.get('dbuser'),
-            password = self.jconf.get('dbpass'),
-            host = self.jconf.get('dbhost'),
-            database = self.jconf.get('db'),
+            username=self.jconf.get('dbuser'),
+            password=self.jconf.get('dbpass'),
+            host=self.jconf.get('dbhost'),
+            database=self.jconf.get('db'),
         ))
         self.logger.debug('Connecting to JFFNMS database.')
         self.dbhandle = jffnms_db_engine.connect()
@@ -87,18 +94,21 @@ class JffnmsImporter(RnmsCommand):
         self.dbhandle.close()
         self.dbhandle = None
 
+    def host_id(self, jffnms_id):
+        return self.translate['host'].get(jffnms_id, 1)
 
-    def host_id(self,jffnms_id):
-        return self.translate['host'].get(jffnms_id,1)
-    def user_id(self,jffnms_id):
-        return self.translate['user'].get(jffnms_id,1)
-    def zone_id(self,jffnms_id):
-        return self.translate['zone'].get(jffnms_id,1)
+    def user_id(self, jffnms_id):
+        return self.translate['user'].get(jffnms_id, 1)
+
+    def zone_id(self, jffnms_id):
+        return self.translate['zone'].get(jffnms_id, 1)
 
     def print_conf_shell(self):
         print "JFFNMS_PATH="+self.jconf.get('rrd_real_path')
         print "IDS='"+' '.join(
-            [str(x)+':'+str(y) for x,y in self.translate['attribute'].items()])+"'"
+            [str(x)+':'+str(y) for x, y in
+                self.translate['attribute'].items()])+"'"
+
 
 def main():
     imp = JffnmsImporter('info')

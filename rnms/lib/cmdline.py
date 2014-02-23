@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 import os
 import sys
 import logging
+import signal
 from logging.config import fileConfig
 
 from paste.script.command import Command
@@ -38,7 +39,7 @@ class RnmsCommand(Command):
     line arguments
     """
     summary = ''
-    __set_pidfile__ = True
+    __sighup_handlers = []
 
     def __init__(self, name):
         super(RnmsCommand, self).__init__(name)
@@ -47,13 +48,47 @@ class RnmsCommand(Command):
 
     def command(self):
         self._set_logging()
-        if self.__set_pidfile__:
-            self.create_pidfile()
+        self.create_pidfile()
         try:
             self.real_command()
         finally:
-            if self.__set_pidfile__:
-                self.del_pidfile()
+            self.del_pidfile()
+
+    def daemonize(self):
+        """ Daemonize the process """
+        try:
+            pid = os.fork()
+            if pid > 0:
+                # exit first parent
+                sys.exit(0)
+        except OSError, e:
+            sys.syserr.write("fork #1 failed: {} ({})\n".
+                             format(e.errno, e.strerror))
+
+        #  Decouple from parent environment
+        os.chdir("/")
+        os.setsid()
+        os.umask(0)
+
+        # Do second fork
+        try:
+            pid = os.fork()
+            if pid > 0:
+                # Exit from the second parent
+                sys.exit(0)
+        except OSError, e:
+            sys.stderr.write("fork #2 failed: {} ({})\n".format(
+                e.errno, e.strerror))
+
+        # redirect standard file descriptors
+        sys.stdout.flush()
+        sys.stderr.flush()
+        si = file("/dev/null", "r")
+        so = file("/dev/null", "a+")
+        se = file("/dev/null", "a+")
+        os.dup2(si.fileno(), sys.stdin.fileno())
+        os.dup2(so.fileno(), sys.stdout.fileno())
+        os.dup2(se.fileno(), sys.stderr.fileno())
 
     def real_command(self):
         """ Command that is actually run by the object that inherits this
@@ -75,6 +110,13 @@ class RnmsCommand(Command):
             dest='log_debug',
             default=False,
             help='Turn on debugging',
+        )
+        self.parser.add_argument(
+            '-D', '--no-daemon',
+            action='store_true',
+            dest='no_daemon',
+            default=False,
+            help='Do not detach and become a daemon',
         )
         self.parser.add_argument(
             '-p', '--pidfile',
@@ -101,6 +143,7 @@ class RnmsCommand(Command):
     def run(self):
         self.options = self.parser.parse_args()
         self._get_config()
+        signal.signal(signal.SIGHUP, self._sighup_handler)
         result = self.command()
         if result is None:
             return self.return_code
@@ -119,14 +162,28 @@ class RnmsCommand(Command):
 
     def create_pidfile(self):
         """ Create and check for PID file """
-        if self.options.pidfile != '':
-            if os.path.exists(self.options.pidfile):
-                log.error('Exiting, pidfile %s exists',
-                          self.options.pidfile)
-                sys.exit(1)
-                return
-            pidfile = open(self.options.pidfile, 'w+')
-            pidfile.write("{}\n".format(os.getpid()))
+        if self.options.pidfile == '':
+            return
+
+        try:
+            pf = file(self.options.pidfile)
+            pid = int(pf.read().strip())
+            pf.close()
+        except IOError:
+            pid = None
+
+        if pid:
+            log.error('Exiting, pidfile {} already exists for process {}',
+                      self.options.pidfile, pid)
+            sys.exit(1)
+            return
+
+        try:
+            pf = open(self.options.pidfile, 'w+')
+            pf.write("{}\n".format(os.getpid()))
+        except IOError as err:
+            log.error("Unable to write pidfile {}: {}\n".format(
+                self.options.pidfile, err))
 
     def del_pidfile(self):
         """ Delete our pidfile """
@@ -135,7 +192,24 @@ class RnmsCommand(Command):
 
     def _get_config(self):
         config_file = os.path.abspath(self.options.config)
-        conf = appconfig('config:' + config_file)
+        try:
+            conf = appconfig('config:' + config_file)
+        except IOError as err:
+            sys.stderr.write(
+                "Error setting up config file \"{}\": {}\n".format(
+                    err.filename, err.strerror))
+            sys.exit(1)
         load_environment(conf.global_conf, conf.local_conf)
         fileConfig(config_file, dict(__file__=config_file,
                                      here=os.path.dirname(config_file)))
+
+    # Signal handling
+    def _sighup_handler(self, sig_num, stack_frame):
+        """ Run when device gets a HUP """
+        self.logger.debug("Received HUP\n")
+        for hdl in self.__sighup_handlers:
+            hdl()
+
+    def add_sighup_handler(self, handler):
+        """ Add another signal HUP handler """
+        self.__sighup_handlers.append(handler)

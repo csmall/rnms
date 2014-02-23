@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ from rnms.tests.pollers import PollerTest
 from rnms.lib import states
 
 from rnms.lib.pingclient import PingClient
-from rnms.lib.pollers.reach import poll_reach_ping, cb_reach_ping
+from rnms.lib.poller.plugins.reach import poll_reach_ping, cb_reach_ping
 
 field_values = {}
 def field_value(att_id, fname):

@@ -30,7 +30,7 @@ import plugins
 
 class CachePoller(object):
     __copy_attrs__ = (
-        'command', 'field', 'parameters')
+        'display_name', 'command', 'field', 'parameters')
     poller_function = None
 
     def __init__(self, db_poller):
@@ -38,19 +38,18 @@ class CachePoller(object):
             setattr(self, copy_attr, getattr(db_poller, copy_attr))
 
         # Load the actual function
-        if self.command is not None and self.command != 'none':
+        if self.command is not None and self.command != 'no_poller':
             try:
                 self.poller_function = getattr(plugins, "poll_"+self.command)
             except AttributeError:
-                raise ValueError("Poller Plugin \"{}\" not found.".format(
-                    self.command))
+                raise ValueError("Poller Plugin \"{}\" not found for {}.".
+                                 format(self.command, db_poller.display_name))
 
     def run(self, poller_row, pobj, patt, poller_buf):
         """
         Run the real poller method "poll_BLAH" based upon the command
         field for this poller.
         """
-        print self.poller_function
         return self.poller_function(
             poller_buf, pobj=pobj,
             attribute=patt,
@@ -113,9 +112,11 @@ class CacheAttribute(object):
     the database
     """
     __copy_attrs__ = (
-        'id', 'host_id', 'attribute_type_id', 'poller_set_id',
+        'id', 'host_id', 'attribute_type_id',
         'index', 'display_name',
         )
+    poller_set = None
+    poller_row = None
 
     def __init__(self, attribute):
         for copy_attr in self.__copy_attrs__:
@@ -160,3 +161,11 @@ class CacheAttribute(object):
         attribute = Attribute.by_id(self.id)
         if attribute is not None:
             attribute.update_poll_time()
+
+    def get_poller_row(self):
+        if self.poller_set is None:
+            return None
+        try:
+            return self.poller_set[self.poller_pos]
+        except IndexError:
+            return None

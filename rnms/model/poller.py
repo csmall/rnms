@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2011-2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,9 +26,7 @@ from sqlalchemy.types import Integer, Unicode, String, SmallInteger
 #from sqlalchemy.orm import relation, backref
 
 from rnms.model import DeclarativeBase, DBSession
-from rnms.lib import pollers
 from rnms.lib.genericset import GenericSet
-from rnms.lib.parsers import safe_substitute, find_field_keys
 
 __all__ = ['PollerSet', 'Poller', 'PollerRow']
 
@@ -64,50 +62,6 @@ class Poller(DeclarativeBase):
             return None
         return DBSession.query(cls).filter(
             cls.display_name == display_name).first()
-
-    def run(self, poller_row, pobj, patt, poller_buf):
-        """
-        Run the real poller method "poll_BLAH" based upon the command
-        field for this poller.
-        """
-        if self.command is None or self.command == 'none':
-            return None
-        try:
-            real_poller = getattr(pollers, "poll_"+self.command)
-        except AttributeError:
-            pobj.logger.error(
-                "A:%d - Poller function poll_%s does not exist.",
-                patt.id, self.command)
-            return None
-        return real_poller(poller_buf, pobj=pobj,
-                           attribute=patt,
-                           parsed_params=self.parsed_parameters(patt))
-
-    def parsed_parameters(self, patt):
-        """
-        Poller.parameters may have certain fields that need to be parsed
-        by filling in <item> with some value from the attribute
-        """
-        from rnms.model import AttributeField
-        if self.parameters == '':
-            return ''
-        field_keys = find_field_keys(self.parameters)
-        if field_keys == []:
-            return self.parameters
-
-        # Put in the easy ones
-        field_values = {
-            'attribute_id': patt.id,
-            'host_id': patt.host_id,
-            'index': patt.index,
-        }
-        for field_key in field_keys:
-            if field_key in field_values:
-                continue
-            field_value = AttributeField.field_value(patt.id, field_key)
-            if field_value is not None:
-                field_values[field_key] = field_value
-        return safe_substitute(self.parameters, field_values)
 
 
 class PollerSet(DeclarativeBase, GenericSet):

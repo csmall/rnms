@@ -722,7 +722,6 @@ pollers = [
         ['cisco_temperature_status','Cisco Temperature Status','snmp_status','1.3.6.1.4.1.9.9.13.1.3.1.6.${index}|1=up|down'],
         ['cisco_voltage_status','Cisco Voltage Status','snmp_status','1.3.6.1.4.1.9.9.13.1.2.1.7.${index}|1=up|down'],
         ['temperature','Cisco Temperature','snmp_counter','1.3.6.1.4.1.9.9.13.1.3.1.3.${index}'],
-        ['sa_agent_verify','Verify SA Agent Operation','cisco_saagent_verify',''],
         ['forward_jitter','SA Agent Forward Jitter','cisco_saagent','${index}|fwd_jitter'],
         ['backward_jitter','SA Agent Backward Jitter','cisco_saagent','${index}|bwd_jitter'],
         ['rt_latency,forward_packetloss,backward_packetloss','SA Agent Packetloss','cisco_saagent','${index}|packetloss'],

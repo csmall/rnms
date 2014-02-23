@@ -6,7 +6,7 @@ from rnms import model
 from rnms.tests.pollers import PollerTest
 from rnms.lib import states
 
-from rnms.lib.pollers.buffer import poll_buffer
+from rnms.lib.poller.plugins.buffer import poll_buffer
 
 class TestBufferPoller(PollerTest):
 

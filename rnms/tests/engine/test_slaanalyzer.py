@@ -5,10 +5,24 @@ Testing of the SLAanalyzer object
 import mock
 from nose.tools import eq_
 
+from rnms.tests import load_app
+from rnms.tests import setup_db, teardown_db
 from rnms import model
 from rnms.lib.sla_analyzer import SLAanalyzer
 
-class TestSlaAnalyzer(object):
+
+def setup():
+    """Setup test fixture for all model tests."""
+    load_app()
+    setup_db()
+
+
+def teardown():
+    """Tear down test fixture for all model tests."""
+    teardown_db()
+
+
+class NoTestSlaAnalyzer(object):
 
     def setUp(self):
         self.obj = SLAanalyzer()
@@ -16,8 +30,11 @@ class TestSlaAnalyzer(object):
         self.test_attribute, self.test_sla = self.make_att_sla(42)
         self.test_analyze_attribute = mock.Mock()
 
+    def tearDown(self):
+        """Tear down test fixture for each model test method."""
+        model.DBSession.rollback()
 
-    def make_att_sla(self,att_id):
+    def make_att_sla(self, att_id):
         test_sla = mock.MagicMock(spec_set=model.Sla)
 
         test_attribute = mock.MagicMock(spec_sec=model.Attribute)
@@ -26,14 +43,14 @@ class TestSlaAnalyzer(object):
         test_attribute.display_name = 'Test Att #{}'.format(att_id)
         return (test_attribute, test_sla)
 
+# Needed for a zone
     def run_mock_analyzer(self, attributes):
         self.obj.analyze_attribute = self.test_analyze_attribute
         model.Attribute.have_sla = mock.Mock(return_value=attributes)
-        self.obj.analyze()#self.test_sla, attributes)
+        self.obj.analyze()  # self.test_sla, attributes)
 
     def assert_mock_analyzer(self, attributes):
         self.obj.analyze_attribute.assert_called_once_with(attributes)
-
 
     def test_no_attributes(self):
         """ Analyzer works with no attributes """
@@ -43,23 +60,21 @@ class TestSlaAnalyzer(object):
     def test_one_att(self):
         """ Single Attribute is analyzed """
         self.test_attribute.is_down = mock.Mock(return_value=False)
-        self.run_mock_analyzer([self.test_attribute,])
+        self.run_mock_analyzer([self.test_attribute, ])
         self.assert_mock_analyzer(self.test_attribute)
 
     def test_called_two(self):
         """ Analyzer is called for both attributes """
         self.test_attribute.is_down = mock.Mock(return_value=False)
-        second_att,second_sla = self.make_att_sla(43)
+        second_att, second_sla = self.make_att_sla(43)
         second_att.is_down = mock.Mock(return_value=False)
         self.run_mock_analyzer((self.test_attribute, second_att))
-        eq_(self.obj.analyze_attribute.call_args_list[0][0], (self.test_attribute,))
-        eq_(self.obj.analyze_attribute.call_args_list[1][0], (second_att,))
+        eq_(self.obj.analyze_attribute.call_args_list[0][0],
+            (self.test_attribute, ))
+        eq_(self.obj.analyze_attribute.call_args_list[1][0], (second_att, ))
 
     def test_skip_down(self):
         """ Analyzer not run over a down attribute """
         self.test_attribute.is_down = mock.Mock(return_value=True)
         self.run_mock_analyzer([self.test_attribute])
         eq_(self.obj.analyze_attribute.called, False)
-
-
-

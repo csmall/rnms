@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2011,2012,2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,22 +24,25 @@ import random
 
 from sqlalchemy.orm import relationship, subqueryload
 from sqlalchemy import ForeignKey, Column, and_, asc
-from sqlalchemy.types import Integer, Unicode, String, Boolean, SmallInteger, DateTime
+from sqlalchemy.types import Integer, Unicode, String, Boolean,\
+    SmallInteger, DateTime
 #from sqlalchemy.orm import relation, backref
 
 from rnms.model import DeclarativeBase, DBSession
 from rnms.lib import states
 from rnms.lib.parsers import fill_fields
 
-__all__ = ['Attribute', 'AttributeField', 'AttributeType', 'AttributeTypeField', 'DiscoveredAttribute']
+__all__ = ['Attribute', 'AttributeField', 'AttributeType',
+           'AttributeTypeField', 'DiscoveredAttribute']
 logger = logging.getLogger('rnms')
 
-MINDATE=datetime.date(1900,1,1)
-POLL_VARIANCE_MINUTES = 1 # +- 30 seconds for next poll
+MINDATE = datetime.date(1900, 1, 1)
+POLL_VARIANCE_MINUTES = 1  # +- 30 seconds for next poll
 
 # Check the SLAs every 30 minuts += 2 minutes
 SLA_INTERVAL_MINUTES = 30
 SLA_VARIANCE_MINUTES = 2
+
 
 class Attribute(DeclarativeBase):
     __tablename__ = 'attributes'
@@ -47,38 +50,44 @@ class Attribute(DeclarativeBase):
     display_name_len = 40
 
     #{ Columns
-    id = Column(Integer, autoincrement=True,primary_key=True)
+    id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(display_name_len))
-    admin_state = Column(SmallInteger, nullable=False) #IF-MIB
+    admin_state = Column(SmallInteger, nullable=False)  # IF-MIB
     state_id = Column(Integer, ForeignKey('event_states.id'))
     state = relationship('EventState')
     attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'))
-    attribute_type=relationship('AttributeType',backref='attributes')
-    host_id = Column(Integer, ForeignKey('hosts.id', ondelete="CASCADE", onupdate="CASCADE"))
+    attribute_type = relationship('AttributeType', backref='attributes')
+    host_id = Column(Integer, ForeignKey('hosts.id', ondelete="CASCADE",
+                                         onupdate="CASCADE"))
     use_iface = Column(Boolean, nullable=False)
-    user_id = Column(Integer, ForeignKey('tg_user.user_id'),nullable=False)
+    user_id = Column(Integer, ForeignKey('tg_user.user_id'), nullable=False)
     user = relationship('User', backref='attributes')
-    sla_id = Column(Integer, ForeignKey('slas.id', use_alter=True, name='fk_sla'),nullable=False, default=1)
-    sla = relationship('Sla', primaryjoin='Attribute.sla_id==Sla.id', post_update=True)
-    index = Column(String(40), nullable=False) # Unique for host
-    make_sound = Column(Boolean,nullable=False)
-    poll_interval = Column(SmallInteger,nullable=False, default=0)
+    sla_id = Column(Integer,
+                    ForeignKey('slas.id', use_alter=True, name='fk_sla'),
+                    nullable=False, default=1)
+    sla = relationship('Sla', primaryjoin='Attribute.sla_id==Sla.id',
+                       post_update=True)
+    index = Column(String(40), nullable=False)  # Unique for host
+    make_sound = Column(Boolean, nullable=False)
+    poll_interval = Column(SmallInteger, nullable=False, default=0)
     poll_enabled = Column(Boolean, nullable=False, default=True)
-    check_status = Column(Boolean,nullable=False)
-    poll_priority = Column(Boolean,nullable=False) #DMII
+    check_status = Column(Boolean, nullable=False)
+    poll_priority = Column(Boolean, nullable=False)  # DMII
     poller_set_id = Column(Integer, ForeignKey('poller_sets.id'))
     poller_set = relationship('PollerSet')
     created = Column(DateTime, nullable=False, default=datetime.datetime.now)
     updated = Column(DateTime, nullable=False, default=datetime.datetime.now)
     next_poll = Column(DateTime, nullable=False, default=datetime.datetime.now)
     next_sla = Column(DateTime, nullable=False, default=datetime.datetime.now)
-    fields = relationship('AttributeField', backref='attribute', cascade='all, delete, delete-orphan')
+    fields = relationship('AttributeField', backref='attribute',
+                          cascade='all, delete, delete-orphan')
     #}
 
-    def __init__(self, host=None, attribute_type=None, display_name=None, index=''):
-        self.host=host
-        self.attribute_type=attribute_type
-        self.display_name=display_name
+    def __init__(self, host=None, attribute_type=None,
+                 display_name=None, index=''):
+        self.host = host
+        self.attribute_type = attribute_type
+        self.display_name = display_name
         self.index = index
         self.admin_state = states.STATE_UNKNOWN
         self.use_iface = False
@@ -97,7 +106,7 @@ class Attribute(DeclarativeBase):
     def by_id(cls, attribute_id):
         """ Return the attribute with given id"""
         return DBSession.query(cls).filter(
-                cls.id == attribute_id).first()
+            cls.id == attribute_id).first()
 
     @classmethod
     def by_display_name(cls, host, display_name):
@@ -105,7 +114,7 @@ class Attribute(DeclarativeBase):
         if host is None or display_name is None:
             return None
         return DBSession.query(cls).filter(
-                cls.host == host).filter(cls.display_name == display_name).first()
+            cls.host == host).filter(cls.display_name == display_name).first()
 
     @classmethod
     def next_polled(cls):
@@ -117,7 +126,7 @@ class Attribute(DeclarativeBase):
         attributes = DBSession.query(cls).order_by(asc(cls.next_poll))
         for attribute in attributes:
             if attribute.poll_priority:
-                return attribute # priority attributes always are used
+                return attribute  # priority attributes always are used
             if attribute.host_id in down_host_ids:
                 continue
             if attribute.host.main_attributes_down():
@@ -126,15 +135,15 @@ class Attribute(DeclarativeBase):
             return attribute
         return None
 
-
-    
     @classmethod
     def next_sla_analysis(cls):
         """
         Return the attribute that would be the next one for SLA
         Used for finding how long before we need to rescan again
         """
-        return DBSession.query(cls).filter(and_(cls.sla_id > 1, cls.poller_set_id > 1)).order_by(asc(cls.next_sla)).first()
+        return DBSession.query(cls).\
+            filter(and_(cls.sla_id > 1, cls.poller_set_id > 1)).\
+            order_by(asc(cls.next_sla)).first()
 
     @classmethod
     def from_discovered(cls, host, discovered_attribute):
@@ -154,10 +163,11 @@ class Attribute(DeclarativeBase):
         # SLA default needed
         a.state = EventState.get_up()
 
-        for tag,value in discovered_attribute.fields.items():
-            a.set_field(tag,value)
+        for tag, value in discovered_attribute.fields.items():
+            a.set_field(tag, value)
 
-        if host.autodiscovery_policy.set_poller and a.attribute_type.default_poller_set_id is not None:
+        if host.autodiscovery_policy.set_poller and\
+                a.attribute_type.default_poller_set_id is not None:
             a.poller_set_id = a.attribute_type.default_poller_set_id
         return a
 
@@ -171,7 +181,8 @@ class Attribute(DeclarativeBase):
             conditions.append(cls.id.in_(attribute_ids))
         if host_ids is not None:
             conditions.append(cls.host_id.in_(host_ids))
-        return DBSession.query(cls).options(subqueryload('sla')).filter(and_(*conditions))
+        return DBSession.query(cls).options(subqueryload('sla')).\
+            filter(and_(*conditions))
 
     def set_field(self, tag, value):
         """ Add a new field that has ''tag'' with the value ''value''"""
@@ -184,14 +195,14 @@ class Attribute(DeclarativeBase):
                 if field.value != value:
                     field.value = value
         else:
-            new_field = AttributeField(self,type_field)
+            new_field = AttributeField(self, type_field)
             new_field.value = value
 
     def get_fields(self):
         """ Return a dictionary of all fields for this attribute"""
-        fields={}
+        fields = {}
         for at_field in self.attribute_type.fields:
-            fields[at_field.tag]=self.get_field(id=at_field.id)
+            fields[at_field.tag] = self.get_field(id=at_field.id)
         return fields
 
     def get_field(self, tag=None, id=None):
@@ -224,13 +235,18 @@ class Attribute(DeclarativeBase):
         """
         if self.attribute_type is None:
             return {}
-        return { at_field.display_name: self.get_field(id=at_field.id) for at_field in self.attribute_type.fields if at_field.description}
+        return {at_field.display_name: self.get_field(id=at_field.id)
+                for at_field in self.attribute_type.fields
+                if at_field.description}
 
     def description(self):
         """ Returns a string of all joined description fields """
         if self.attribute_type is None:
             return ''
-        descriptions = [ self.get_field(id=at_field.id) for at_field in self.attribute_type.fields if at_field.description]
+        descriptions = [
+            self.get_field(id=at_field.id)
+            for at_field in self.attribute_type.fields
+            if at_field.description]
         return " ".join(descriptions)
 
     @property
@@ -250,7 +266,7 @@ class Attribute(DeclarativeBase):
 
     def set_admin_state(self, state_name):
         """ Set the admin_state based upon a state_name """
-        for state,name in states.STATE_NAMES.items():
+        for state, name in states.STATE_NAMES.items():
             if state_name == name:
                 self.admin_state = state
                 return True
@@ -258,25 +274,30 @@ class Attribute(DeclarativeBase):
 
     def is_down(self):
         """ Return true if this attribute is down. """
-        return self.state is None or self.state.internal_state == states.STATE_DOWN
+        return self.state is None or\
+            self.state.internal_state == states.STATE_DOWN
 
     def update_poll_time(self):
         """
-        Update the next poll time 
+        Update the next poll time
         """
         now = datetime.datetime.now()
-        next_poll_variance = datetime.timedelta(minutes=(random.random() - 0.5) * POLL_VARIANCE_MINUTES * 2)
+        next_poll_variance = datetime.timedelta(
+            minutes=(random.random() - 0.5) * POLL_VARIANCE_MINUTES * 2)
         if self.poll_interval < 1:
-            self.next_poll = now + datetime.timedelta(minutes=self.default_poll_interval) + next_poll_variance
+            self.next_poll = now + datetime.timedelta(
+                minutes=self.default_poll_interval) + next_poll_variance
         else:
-            self.next_poll = now + datetime.timedelta(minutes=self.poll_interval) + next_poll_variance
-    
+            self.next_poll = now + datetime.timedelta(
+                minutes=self.poll_interval) + next_poll_variance
+
     def update_sla_time(self):
         """
         Update the next time we run the SLA analysis for this attribute
         """
-        self.next_sla = datetime.datetime.now() + datetime.timedelta(minutes=(
-            SLA_INTERVAL_MINUTES + (random.random()-0.5) * SLA_VARIANCE_MINUTES * 2))
+        self.next_sla = datetime.datetime.now() + datetime.timedelta(
+            minutes=(SLA_INTERVAL_MINUTES + (random.random()-0.5)
+                     * SLA_VARIANCE_MINUTES * 2))
 
     def set_disabled(self):
         """
@@ -312,16 +333,19 @@ class AttributeField(DeclarativeBase):
     __tablename__ = 'attribute_fields'
 
     #{ Columns
-    id = Column(Integer, autoincrement=True,primary_key=True)
-    attribute_id = Column(Integer, ForeignKey('attributes.id'),nullable=False)
-    attribute_type_field_id = Column(Integer, ForeignKey('attribute_type_fields.id'),nullable=False)
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    attribute_id = Column(Integer,
+                          ForeignKey('attributes.id'), nullable=False)
+    attribute_type_field_id =\
+        Column(Integer, ForeignKey('attribute_type_fields.id'),
+               nullable=False)
     attribute_type_field = relationship('AttributeTypeField')
     value = Column(String(250))
 
     def __init__(self, attribute=None, attribute_type_field=None):
         self.attribute = attribute
         self.attribute_type_field = attribute_type_field
-        self.value=''
+        self.value = ''
 
     @classmethod
     def field_value(cls, attribute_id, field_tag):
@@ -329,9 +353,9 @@ class AttributeField(DeclarativeBase):
         matches the tag
         """
         ftag = DBSession.query(AttributeTypeField).\
-                join(AttributeType,Attribute).filter(
-            Attribute.id == attribute_id,
-            AttributeTypeField.tag == field_tag).first()
+            join(AttributeType, Attribute).filter(
+                Attribute.id == attribute_id,
+                AttributeTypeField.tag == field_tag).first()
         if ftag is None:
             return None
         fval = DBSession.query(cls.value).filter(
@@ -351,54 +375,80 @@ class AttributeField(DeclarativeBase):
             return None
         return self.attribute_type_field.tag
 
+
 class AttributeType(DeclarativeBase):
     __tablename__ = 'attribute_types'
 
     #{ Columns
-    id = Column(Integer, autoincrement=True,primary_key=True)
-    display_name = Column(Unicode(50),unique=True,nullable=False)
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    display_name = Column(Unicode(50), unique=True, nullable=False)
     ad_validate = Column(Boolean, nullable=False)
     ad_enabled = Column(Boolean, nullable=False)
-    ad_command = Column(String(50),nullable=False)
+    ad_command = Column(String(50), nullable=False)
     ad_parameters = Column(String(200))
-    default_poller_set_id = Column(Integer, ForeignKey('poller_sets.id', use_alter=True, name='fk_atype_pollerset'))
-    default_poller_set = relationship('PollerSet', primaryjoin='PollerSet.id == AttributeType.default_poller_set_id')
+    default_poller_set_id = Column(
+        Integer,
+        ForeignKey('poller_sets.id', use_alter=True,
+                   name='fk_atype_pollerset'))
+    default_poller_set = relationship(
+        'PollerSet',
+        primaryjoin='PollerSet.id == AttributeType.default_poller_set_id')
     ds_heartbeat = Column(Integer, nullable=False, default=600)
     rra_cf = Column(String(10), nullable=False, default='AVERAGE')
     rra_rows = Column(Integer, nullable=False, default=103680)
-    default_graph_id = Column(Integer, ForeignKey('graph_types.id', use_alter=True, name='fk_atype_graph'))
-    default_graph = relationship('GraphType', primaryjoin='GraphType.id== AttributeType.default_graph_id')
-    graph_types = relationship('GraphType', primaryjoin='AttributeType.id == GraphType.attribute_type_id', backref='attribute_type')
+    default_graph_id = Column(
+        Integer,
+        ForeignKey('graph_types.id', use_alter=True, name='fk_atype_graph'))
+    default_graph = relationship(
+        'GraphType',
+        primaryjoin='GraphType.id== AttributeType.default_graph_id')
+    graph_types = relationship(
+        'GraphType',
+        primaryjoin='AttributeType.id == GraphType.attribute_type_id',
+        backref='attribute_type')
     break_by_card = Column(Boolean, nullable=False, default=False)
     permit_manual_add = Column(Boolean, nullable=False, default=False)
     required_sysobjid = Column(String(250), nullable=False)
-    default_sla_id = Column(Integer, ForeignKey('slas.id', use_alter=True, name='fk_default_sla'))
-    default_sla = relationship('Sla', primaryjoin='AttributeType.default_sla_id==Sla.id', post_update=True)
-    slas = relationship('Sla', order_by='Sla.id', backref='attribute_type',
-            primaryjoin='AttributeType.id==Sla.attribute_type_id')
-    fields = relationship('AttributeTypeField', order_by='AttributeTypeField.position', backref='attribute_type', cascade='all, delete, delete-orphan')
-    rrds = relationship('AttributeTypeRRD', order_by='AttributeTypeRRD.position', backref='attribute_type', cascade='all, delete, delete-orphan')
+    default_sla_id = Column(
+        Integer,
+        ForeignKey('slas.id', use_alter=True, name='fk_default_sla'))
+    default_sla = relationship(
+        'Sla',
+        primaryjoin='AttributeType.default_sla_id==Sla.id', post_update=True)
+    slas = relationship(
+        'Sla', order_by='Sla.id', backref='attribute_type',
+        primaryjoin='AttributeType.id==Sla.attribute_type_id')
+    fields = relationship(
+        'AttributeTypeField',
+        order_by='AttributeTypeField.position',
+        backref='attribute_type', cascade='all, delete, delete-orphan')
+    rrds = relationship(
+        'AttributeTypeRRD',
+        order_by='AttributeTypeRRD.position',
+        backref='attribute_type', cascade='all, delete, delete-orphan')
     #}
+
     def __init__(self, display_name=None, ad_command='none', ad_parameters=''):
-        self.display_name=display_name
-        self.ad_enabled=False
+        self.display_name = display_name
+        self.ad_enabled = False
         self.ad_validate = False
         self.ad_command = ad_command
-        self.ad_parameters= ad_parameters
-        self.required_sysobjid=''
+        self.ad_parameters = ad_parameters
+        self.required_sysobjid = ''
 
     @classmethod
     def by_display_name(cls, display_name):
         """" Return the AttributeType matching display_name """
         if display_name is None:
             return None
-        return DBSession.query(cls).filter(cls.display_name == display_name).first()
+        return DBSession.query(cls).\
+            filter(cls.display_name == display_name).first()
 
     @classmethod
     def name_by_id(cls, atype_id):
         """ Return AttributeType name for given ID """
         return DBSession.query(cls.display_name).select_from(cls).\
-                filter(cls.id == atype_id).scalar()
+            filter(cls.id == atype_id).scalar()
 
     def autodiscover(self, dobj, host, force):
         """
@@ -412,18 +462,23 @@ class AttributeType(DeclarativeBase):
         """
         if self.ad_command is None or self.ad_command == 'none':
             return False
-        
-        dobj.logger.debug('H:%d AT:%d Autodiscovering %s', host.id, self.id, self.display_name)
-        if force == False and self.ad_enabled == False:
+
+        dobj.logger.debug(
+            'H:%d AT:%d Autodiscovering %s',
+            host.id, self.id, self.display_name)
+        if not force and self.ad_enabled is False:
             return False
-        if self._match_sysobjid(host) == False:
+        if self._match_sysobjid(host) is False:
             return False
 
         from rnms.lib import att_discovers
         try:
             real_discover = getattr(att_discovers, 'discover_'+self.ad_command)
         except AttributeError:
-            dobj.logger.error('H:%d AT:%d Attribute Discovery function "discover_%s" does not exist.', host.id, self.id, self.ad_command)
+            dobj.logger.error(
+                'H:%d AT:%d Attribute Discovery function'
+                '"discover_%s" does not exist.',
+                host.id, self.id, self.ad_command)
             return False
         return real_discover(dobj, self, host)
         return True
@@ -438,16 +493,21 @@ class AttributeType(DeclarativeBase):
         if self.required_sysobjid == '':
             return True
         if host.sysobjid is None or host.sysobjid == '':
-            logger.debug('H:%d AT:%d Skipping due to missing sysObjectId', host.id, self.id)
+            logger.debug(
+                'H:%d AT:%d Skipping due to missing sysObjectId',
+                host.id, self.id)
             return False
         if self.required_sysobjid == '.' and host.sysobjid != '':
             return True
-        if host.sysobjid[len(self.required_sysobjid):] == self.required_sysobjid:
+        if host.sysobjid[len(self.required_sysobjid):] ==\
+                self.required_sysobjid:
             return True
-        sysid = self.required_sysobjid.replace('1.3.6.1.4.1.','ent.', 1)
+        sysid = self.required_sysobjid.replace('1.3.6.1.4.1.', 'ent.', 1)
         if host.sysobjid[:len(sysid)] == sysid:
             return True
-        logger.debug('H:%d AT:%d Skipping due to sysObjectId (%s != %s)', host.id, self.id, host.sysobjid[:len(sysid)], sysid)
+        logger.debug(
+            'H:%d AT:%d Skipping due to sysObjectId (%s != %s)',
+            host.id, self.id, host.sysobjid[:len(sysid)], sysid)
         return False
 
     def field_by_tag(self, tag):
@@ -472,15 +532,16 @@ class AttributeTypeField(DeclarativeBase):
 
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
-    attribute_type_id = Column(Integer, ForeignKey("attribute_types.id"),nullable=False)
-    display_name = Column(Unicode(40),nullable=False)
+    attribute_type_id = Column(
+        Integer, ForeignKey("attribute_types.id"), nullable=False)
+    display_name = Column(Unicode(40), nullable=False)
     tag = Column(String(40))
-    position = Column(SmallInteger,nullable=False,default=10)
-    description = Column(Boolean,nullable=False,default=False)
-    showable_edit = Column(Boolean,nullable=False,default=True)
-    showable_discovery = Column(Boolean,nullable=False,default=True)
-    overwritable = Column(Boolean,nullable=False,default=True)
-    tracked = Column(Boolean,nullable=False,default=False)
+    position = Column(SmallInteger, nullable=False, default=10)
+    description = Column(Boolean, nullable=False, default=False)
+    showable_edit = Column(Boolean, nullable=False, default=True)
+    showable_discovery = Column(Boolean, nullable=False, default=True)
+    overwritable = Column(Boolean, nullable=False, default=True)
+    tracked = Column(Boolean, nullable=False, default=False)
     default_value = Column(String(250))
     parameters = Column(String(250))
     backend = Column(String(40))
@@ -488,17 +549,18 @@ class AttributeTypeField(DeclarativeBase):
 
     @classmethod
     def by_tag(cls, attribute_type, tag):
-        """ Return the field for attribute type with id that has tag ''tag''."""
+        """
+        Return the field for attribute type with id that has tag ''tag''."""
         return DBSession.query(cls).filter(and_(
-                cls.attribute_type == attribute_type,
-                cls.tag==tag)).first()
+            cls.attribute_type == attribute_type,
+            cls.tag == tag)).first()
 
     @classmethod
     def by_id(cls, id):
         """ Return the field with given id"""
-        return DBSession.query(cls).filter(cls.id==id).first()
+        return DBSession.query(cls).filter(cls.id == id).first()
 
-# Discovered Attributes do not have and database backend
+
 class DiscoveredAttribute(object):
     """
     Attributes that are disocvered through the autodisovery process
@@ -508,11 +570,11 @@ class DiscoveredAttribute(object):
     """
 
     def __init__(self, host_id=1, attribute_type=None):
-        self.host_id=host_id
+        self.host_id = host_id
         self.display_name = ''
         self.admin_state = 'up'
         self.oper_state = 'up'
-        self.attribute_type=attribute_type
+        self.attribute_type = attribute_type
         self.index = ''
         self.fields = {}
 

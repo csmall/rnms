@@ -7,7 +7,7 @@ from nose.tools import eq_
 from rnms import model
 from rnms.model.attribute import AttributeField
 from rnms.lib.snmp.engine import SNMPRequest, SNMPEngine
-from rnms.lib.poller import Poller, PollingHost, PollingAttribute
+from rnms.lib.poller import Poller, CacheAttribute, CacheHost
 
 
 class PollerTest(object):
@@ -36,7 +36,7 @@ class PollerTest(object):
         self.snmp_engine.set = mock.Mock(return_value=True)
         self.pobj.snmp_engine = self.snmp_engine
 
-        self.test_host = mock.MagicMock(spec=PollingHost, name='testhost')
+        self.test_host = mock.MagicMock(spec=CacheHost, name='testhost')
         self.test_host.id = self.test_host_id
         self.test_host.mgmt_address = self.test_host_ip
         self.test_community = mock.MagicMock(spec_set=model.SnmpCommunity)
@@ -46,7 +46,9 @@ class PollerTest(object):
         self.test_att_type = mock.MagicMock(spec_set=model.AttributeType)
         self.test_att_type.id = 1
 
-        self.test_attribute = mock.MagicMock(spec=PollingAttribute)
+        testdb_attribute = mock.MagicMock(spec=model.Attribute)
+        testdb_attribute.host = mock.MagicMock(spec_set=model.Host)
+        self.test_attribute = CacheAttribute(testdb_attribute)
         self.test_attribute.id = self.test_attribute_id
         self.test_attribute.host_id = self.test_host_id
         self.test_attribute.host = self.test_host

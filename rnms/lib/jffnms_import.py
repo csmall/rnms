@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2011,2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,9 +34,13 @@ from rnms.model import DBSession
 #            newid += 1
 
 
-
 def get_interface_index(obj,int_id):
-    result = obj.dbhandle.execute('SELECT interfaces_values.value from interfaces_values,interface_types_fields where interface=%d and interfaces_values.field=interface_types_fields.id AND interface_types_fields.ftype=3'%int_id)
+    result = obj.dbhandle.execute(
+        'SELECT interfaces_values.value '
+        'FROM interfaces_values, interface_types_fields '
+        'WHERE interface={} '
+        'AND interfaces_values.field=interface_types_fields.id '
+        'AND interface_types_fields.ftype=3'.format(int_id))
     for row in result:
         return row[0]
     return ''

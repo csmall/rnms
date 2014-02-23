@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ import mock
 
 from rnms.tests.pollers import PollerTest
 from rnms.lib.tcpclient import TCPClient
-from rnms.lib.pollers.tcp import poll_tcp_status, cb_tcp_status,\
+from rnms.lib.poller.plugins.tcp import poll_tcp_status, cb_tcp_status,\
     poll_snmp_tcp_established, cb_snmp_tcp_established,\
     poll_tcp_content
 

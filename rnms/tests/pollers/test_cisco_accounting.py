@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ from rnms import model
 from rnms.tests.pollers import PollerTest
 from rnms.lib import states
 
-from rnms.lib.pollers.cisco_accounting import poll_cisco_accounting, set_acct_checkpoint, get_acct_table
+from rnms.lib.poller.plugins.cisco_accounting import poll_cisco_accounting, set_acct_checkpoint, get_acct_table
 
 class NOTestCiscoAcctPoller(PollerTest):
 

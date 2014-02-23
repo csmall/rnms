@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,11 +20,10 @@
 """Test suite for Apache Pollers """
 from nose.tools import eq_
 
-from rnms import model
 from rnms.tests.pollers import PollerTest
-from rnms.lib import states
 
-from rnms.lib.pollers.apache import poll_apache, cb_apache
+from rnms.lib.poller.plugins.apache import poll_apache, cb_apache
+
 
 class TestApachePoller(PollerTest):
     use_tcpclient = True

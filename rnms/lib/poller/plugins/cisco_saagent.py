@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@
 # http://www.cisco.com/en/US/tech/tk648/tk362/
 #     technologies_configuration_example09186a0080094aa2.shtml
 
+SAAGENT_BASE = (1, 3, 6, 1, 4, 1, 9, 9, 42, 1, 5, 2, 1)
+
 
 def poll_cisco_saagent(poller_buffer, parsed_params, **kw):
     """
@@ -32,7 +34,6 @@ def poll_cisco_saagent(poller_buffer, parsed_params, **kw):
       <index>: The SA Agent index
       <qtype>: query type, must be one of the keys in the table above
     """
-    base_oid = (1, 3, 6, 1, 4, 1, 9, 9, 42, 1, 5, 2, 1)
     saagent_queries = {
         'fwd_jitter': ((8, 9, 13, 14),   cb_jitter),
         'bwd_jitter': ((18, 19, 23, 24),  cb_jitter),
@@ -51,7 +52,7 @@ def poll_cisco_saagent(poller_buffer, parsed_params, **kw):
         return False
 
     #req.oid_trim = 2
-    oids = [base_oid + (x, int(index)) for x in queries]
+    oids = [SAAGENT_BASE + (x, int(index)) for x in queries]
     return kw['pobj'].snmp_engine.get_list(kw['attribute'].host, oids,
                                            cb_fun, **kw)
 

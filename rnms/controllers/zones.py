@@ -54,6 +54,7 @@ class ZonesController(BaseGridController):
 
     @expose('rnms.templates.widgets.select')
     def option(self):
-        zones = DBSession.query(Zone.id, Zone.display_name)
+        zones = DBSession.query(Zone.id, Zone.display_name).all()
+        zones.insert(0, ('', '-- Choose Zone --'))
         return dict(items=zones)
 

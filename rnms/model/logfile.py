@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012-2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 import datetime
 import os
 import re
-import socket
 import logging
 
 from sqlalchemy.orm import relationship
@@ -31,7 +30,7 @@ from sqlalchemy import ForeignKey, Column
 from sqlalchemy.types import Integer, Unicode, PickleType, DateTime,\
     Boolean, SmallInteger, String
 
-from rnms.model import DeclarativeBase, Attribute, EventState, Host
+from rnms.model import DeclarativeBase
 from rnms.lib.genericset import GenericSet
 
 logger = logging.getLogger('rnms')
@@ -115,33 +114,6 @@ class LogmatchSet(DeclarativeBase, GenericSet):
         new_row.logmatch_set = self
         GenericSet.append(self, new_row)
 
-    def prime_cache(self):
-        """
-        Put all database rows into cached_matches
-        """
-        self.cached_matches = [row for row in self.logmatch_rows]
-
-    def find(self, text, is_syslog=True):
-        """
-        Try to match "text" with any of the match rows
-        returns None if not found otherwise a dictionary
-        """
-        syslog_match = syslog_host_match.match(text)
-        syslog_host = None
-        if is_syslog and syslog_match is None:
-            return None
-        syslog_host = syslog_match.group(1)
-
-        if self.cached_matches is None:
-            self.prime_cache()
-
-        for row in self.cached_matches:
-            match = row.try_match(syslog_host, text)
-            if match is not None:
-                logger.debug("LOGF(%s): Matched \"%s\"",
-                             self.id, row.match_text)
-                return match
-
 
 class LogmatchRow(DeclarativeBase):
     """
@@ -172,95 +144,6 @@ class LogmatchRow(DeclarativeBase):
     event_type = relationship('EventType')
     fields = relationship('LogmatchField', backref='logmatch_row',
                           cascade='all, delete, delete-orphan')
-
-    def matched_host(self, match, syslog_host):
-        """
-        Return the matched host
-        """
-        if syslog_host is not None:
-            address = syslog_host
-
-        if self.host_match is not None:
-            try:
-                groupid = int(self.host_match)
-                address = match.group(groupid)
-            except:
-                pass
-        if address is None:
-            return None
-        try:
-            for addr in set([ai[4][0] for ai in
-                             socket.getaddrinfo(address, 0)]):
-                host = Host.by_address(addr)
-                if host is not None:
-                    return host
-        except:
-            pass
-        return None
-
-    def matched_attribute(self, match, host):
-        """
-        Return the matched attribute
-        """
-        if self.attribute_match is None:
-            return None
-        try:
-            groupid = int(self.attribute_match)
-        except ValueError:
-            return None
-        try:
-            display_name = match.group(groupid)
-        except IndexError:
-            return None
-        return Attribute.by_display_name(host, unicode(display_name))
-
-    def matched_state(self, match):
-        """
-        Return the matched state
-        """
-        if self.state_match is None:
-            return None
-        try:
-            return EventState.by_name(match.group(int(self.state_match)))
-        except (ValueError, IndexError):
-            return None
-
-    def matched_fields(self, match):
-        """
-        Return a dictionary of tag:value for the fields for this LogmatchRow
-        """
-        mfields = {}
-        for field in self.fields:
-            try:
-                groupid = int(field.field_match)
-            except ValueError:
-                mfields[field.event_field_tag] = field.field_match
-            try:
-                mfields[field.event_field_tag] = match.group(groupid)
-            except IndexError:
-                mfields[field.event_field_tag] = field.field_match
-        return mfields
-
-    def try_match(self, syslog_host, text):
-        """
-        Attempt to match this row against the given text.
-        If we have a match then return a dictionary of items
-        that can be used in an event, otherwise return None
-        """
-        if self.match_start:
-            match = self.match_sre.match(text)
-        else:
-            match = self.match_sre.search(text)
-        #match = re.search(row.match_text, text)
-        if match is not None:  # we have a match!!
-            host = self.matched_host(match, syslog_host)
-            return dict(
-                event_type=self.event_type,
-                host=host,
-                attribute=self.matched_attribute(match, host),
-                alarm_state=self.matched_state(match),
-                field_list=self.matched_fields(match),
-                )
 
 
 class LogmatchField(DeclarativeBase):

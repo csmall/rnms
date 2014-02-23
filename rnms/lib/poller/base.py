@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012,2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,16 +22,18 @@ import time
 import transaction
 
 from sqlalchemy import and_
-from sqlalchemy.orm import joinedload
 
 from rnms import model
-from rnms.model import DBSession, PollerRow, AttributeField, Attribute
+from rnms.model import DBSession
 from rnms.lib.engine import RnmsEngine
 from rnms.lib.snmp import SNMPRequest
-from rnms.lib.pollers.snmp import parse_oid, cb_snmp_counter, split_oid
+from plugins.snmp import parse_oid, cb_snmp_counter, split_oid
 from rnms.lib.rrdworker import RRDClient
 from rnms.lib.gettid import gettid
+from rnms.lib.backend import CacheBackend
 
+#from poller_model import CachePoller, CacheHost, CacheAttribute
+from poller_model import CacheAttribute, CachePoller
 """
 There are multiple timers that are used to work out when to do various
 functions for a poller:
@@ -43,72 +45,6 @@ functions for a poller:
 """
 SCAN_TABLE_SECONDS = 60
 POLLER_WINDOW_SECONDS = 10
-
-
-class PollingHost(object):
-    def __init__(self, host):
-        fields = ('id', 'mgmt_address', 'ro_community_id', 'rw_community_id')
-        for f in fields:
-            setattr(self, f, getattr(host, f))
-
-    @property
-    def ro_community(self):
-        """ Return the read only community """
-        comm = model.SnmpCommunity.by_id(self.ro_community_id)
-        if comm is not None:
-            DBSession.expunge(comm)
-        return comm
-
-    @property
-    def rw_community(self):
-        """ Return the read write community """
-        return model.SnmpCommunity.by_id(self.rw_community_id)
-
-
-class PollingAttribute(object):
-    """ A small shadow of the real Attribute that is not connected to
-    the database
-    """
-    def __init__(self, attribute):
-        self.id = attribute.id
-        self.poller_pos = 0
-        self.attribute_type_id = attribute.attribute_type_id
-        self.poller_set_id = attribute.poller_set_id
-        self.host_id = attribute.host_id
-#        self.host = attribute.host
-        self.index = attribute.index
-        self.display_name = attribute.display_name
-        self.host = PollingHost(attribute.host)
-        self.in_poller = False
-        self.skip_rows = []
-        self.poller_values = {}
-        self.poller_times = {}
-        self.start_time = 0
-
-    def start_polling(self):
-        self.start_time = time.time()
-        self.in_poller = True
-
-    def stop_polling(self, pos, value):
-        self.poller_values[pos] = value
-        self.poller_times[pos] = (time.time() - self.start_time)*1000
-
-    def start_backend(self):
-        self.start_time = time.time()
-
-    def stop_backend(self):
-        self.backend_time = (time.time() - self.start_time)*1000
-
-    def save_value(self, value):
-        self.poller_values[self.poller_pos] = value
-
-    def get_field(self, field_tag):
-        return AttributeField.field_value(self.id, field_tag)
-
-    def update_poll_time(self):
-        attribute = Attribute.by_id(self.id)
-        if attribute is not None:
-            attribute.update_poll_time()
 
 
 class Poller(RnmsEngine):
@@ -134,15 +70,32 @@ class Poller(RnmsEngine):
         self.rrd_client = RRDClient(self.zmq_context, self.zmq_core)
         self.polling_attributes = {}  # The attributes we are currently polling
         self.poller_buffer = {}
-        # Cache for polling sets
-        self.poller_sets = {}
-        self.pollers = {}
         self.backends = {}
+        self.load_config()
 
         if attribute_ids is not None or host_ids is not None:
             self._add_forced_attributes(attribute_ids, host_ids)
             self.forced_attributes = True
         self.do_once = do_once
+
+    def load_config(self):
+        """ Load the configuration from the Database """
+        self.pollers = {
+            p.id: CachePoller(p) for p in
+            model.DBSession.query(model.Poller)}
+
+        self.backends = {
+            b.id: CacheBackend(b) for b in
+            model.DBSession.query(model.Backend)}
+        self.poller_sets = {}
+        for poller_set in DBSession.query(model.PollerSet):
+            self.poller_sets[poller_set.id] = [
+                {'position': pr.position,
+                 'poller': pr.poller.id,
+                 'backend': pr.backend_id}
+                for pr in poller_set.poller_rows]
+        self.logger.debug(
+            "Poller loaded %d Poller Sets.\n", len(self.poller_sets))
 
     def main_loop(self):
         """
@@ -297,8 +250,7 @@ class Poller(RnmsEngine):
         Run the actual poller
         """
         patt.start_polling()
-        patt.poller_row = self.get_poller_row(
-            patt.poller_set_id, patt.poller_pos)
+        patt.poller_row = patt.get_poller_row()
         if patt.poller_row is None:
             #self.logger.error("A:%d - Poller could not get poller row %d:%d",
             #                  patt.id, patt.poller_set_id,
@@ -356,9 +308,8 @@ class Poller(RnmsEngine):
 
     def _run_backends(self, patt):
         """ Run all the backends for this polling attribute """
-        poller_set = self.get_poller_set(patt.poller_set_id)
         attribute = model.Attribute.by_id(patt.id)
-        for poller_row in poller_set:
+        for poller_row in patt.poller_set:
             start_time = time.time()
             if poller_row.backend.command == '':
                 backend_result = ''
@@ -433,66 +384,9 @@ class Poller(RnmsEngine):
         Add the given attribute to the polled_attributes list the poller
         keeps. Also resets the pointers to first poller_set row
         """
-        self.polling_attributes[attribute.id] = PollingAttribute(attribute)
-
-    def get_poller_set(self, poller_set_id):
-        try:
-            return self.poller_sets[poller_set_id]
-        except KeyError:
-            if self.cache_poller_set(poller_set_id):
-                return self.poller_sets[poller_set_id]
-            else:
-                self.logger.info("PollerSet #%s not found", poller_set_id)
-        return None
-
-    def get_poller_row(self, poller_set_id, row_index):
-        """
-        Return the row specified in the index from the poller_set
-        If not already cached then update cache with it
-        If there is no such poller set OR row from set return None
-        """
-        poller_set = self.get_poller_set(poller_set_id)
-        if poller_set is None:
-            return None
-
-        try:
-            poller_row = poller_set[row_index]
-        except IndexError:
-            return None
-        return poller_row
-
-    def cache_poller_set(self, poller_set_id):
-        """
-        Cache the given PollerSet within the Poller object so each
-        attribute using this set has it
-        returns true if it is found
-        """
-
-        if poller_set_id in self.poller_sets:
-            return True
-
-        poller_rows = DBSession.query(PollerRow).join(
-            PollerRow.poller, PollerRow.backend).options(
-            joinedload(PollerRow.poller),
-            joinedload(PollerRow.backend)).filter(
-            PollerRow.poller_set_id == poller_set_id).order_by(
-            PollerRow.position)
-        if poller_rows is None:
-            return False
-        self.poller_sets[poller_set_id] = []
-        for pr in poller_rows:
-            self.poller_sets[poller_set_id].append(
-                {'position': pr.position,
-                 'poller': pr.poller_id,
-                 'backend': pr.backend_id})
-            if pr.poller_id not in self.pollers:
-                self.pollers[pr.poller_id] = pr.poller
-                DBSession.expunge(pr.poller)
-            if pr.backend_id not in self.backends:
-                self.backends[pr.backend_id] = pr.backend
-                DBSession.expunge(pr.backend)
-
-        return True
+        cache_att = CacheAttribute(attribute)
+        cache_att.poller_set = self.poller_sets[attribute.poller_set_id]
+        self.polling_attributes[attribute.id] = cache_att
 
     def _multi_snmp_poll(self, patt):
         """
@@ -502,11 +396,8 @@ class Poller(RnmsEngine):
         """
         skip_rows = []
         #self.logger.debug("A#%d: multi_snmp start",patt.id)
-        poller_set = self.get_poller_set(patt.poller_set_id)
-        if poller_set is None:
-            return []
         req = SNMPRequest(patt.host, patt.host.ro_community)
-        for poller_row in poller_set:
+        for poller_row in patt.poller_set:
             if poller_row['position'] < patt.poller_row:
                 continue
             try:

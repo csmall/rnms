@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 import logging
 import threading
 import sys
-import os
 
 import zmq
 
@@ -61,62 +60,14 @@ class Rnmsd(RnmsCommand):
         self.end_threads = False
         self.timeout = 10
 
-
-    def daemonize(self):
-        """ Daemonize the process """
-        try:
-            pid = os.fork()
-            if pid > 0:
-                # exit first parent
-                sys.exit(0)
-        except OSError, e:
-            sys.syserr.write("fork #1 failed: {} ({})\n".
-                             format(e.errno, e.strerror))
-
-        #  Decouple from parent environment
-        os.chdir("/")
-        os.setsid()
-        os.umask(0)
-
-        # Do second fork
-        try:
-            pid = os.fork()
-            if pid > 0:
-                # Exit from the second parent
-                sys.exit(0)
-        except OSError, e:
-            sys.stderr.write("fork #2 failed: {} ({})\n".format(
-                e.errno, e.strerror))
-
-        # redirect standard file descriptors
-        sys.stdout.flush()
-        sys.stderr.flush()
-        si = file("/dev/null", "r")
-        so = file("/dev/null", "a+")
-        se = file("/dev/null", "a+")
-        os.dup2(si.fileno(), sys.stdin.fileno())
-        os.dup2(so.fileno(), sys.stdout.fileno())
-        os.dup2(se.fileno(), sys.stderr.fileno())
-
     def real_command(self):
         """ The entry point for the RNMS daemon """
-        try:
-            pf = file(self.options.pidfile)
-            pid = int(pf.read().strip())
-            pf.close()
-        except IOError:
-            pid = None
+        self.logger = logging.getLogger('rnms')
 
-        if pid:
-            sys.stderr.write("pidfile {} already exists for process {}.\n".
-                             format(self.options.pidfile, pid))
-            sys.exit(1)
-
-        if not self.options.log_debug:
+        if not self.options.log_debug and not self.options.no_daemon:
             self.daemonize()
         self.create_pidfile()
 
-        self.logger = logging.getLogger('rnms')
         self._create_info_socket()
 
         self.poller = Poller(zmq_context=self.zmq_context, do_once=False)
@@ -164,7 +115,12 @@ class Rnmsd(RnmsCommand):
 
     def _poll(self):
         """ Poll the ZMQ socket and handle any requests """
-        events = dict(self.zmq_poller.poll(self.timeout*1000))
+        try:
+            events = dict(self.zmq_poller.poll(self.timeout*1000))
+        except zmq.error.ZMQError as err:
+            self.logger.info("ZMQ Error: {}\n".format(
+                err.message))
+            return True
         for sock, event in events.items():
             if sock == self.info_socket:
                 self.handle_info_read()
