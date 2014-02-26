@@ -138,8 +138,6 @@ class Poller(RnmsEngine):
             if not polls_running and (self.polling_attributes == {}):
                 # If there are no pollers, we can sleep until we need to
                 # look for more attributes to poll
-                self.poller_sets = {}
-
                 if self.do_once or self.end_thread:
                     break
                 transaction.commit()
@@ -385,7 +383,15 @@ class Poller(RnmsEngine):
         keeps. Also resets the pointers to first poller_set row
         """
         cache_att = CacheAttribute(attribute)
-        cache_att.poller_set = self.poller_sets[attribute.poller_set_id]
+        try:
+            cache_att.poller_set = self.poller_sets[attribute.poller_set_id]
+        except KeyError:
+            self.logger.error(
+                "A:{} Cannot find PollerSet #{}".format(
+                    attribute.id, attribute.poller_set_id))
+            self.logger.error("IDs: {}".format(
+                ",".join([str(k) for k in self.poller_sets.keys()])))
+            raise
         self.polling_attributes[attribute.id] = cache_att
 
     def _multi_snmp_poll(self, patt):

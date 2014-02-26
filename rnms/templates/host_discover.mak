@@ -4,9 +4,9 @@
 Rosenberg NMS: Discovered Attributes
 </%def>
 %if w != UNDEFINED:
-	<div class="row">
+	<div class="row vert-space">
 	  <div class="span12">
-	    ${w.display() | n}
+	    ${w.display(postdata=grid_data) | n}
 	  </div>
 	</div>
 <div class="row">
@@ -17,7 +17,7 @@ Rosenberg NMS: Discovered Attributes
 <script>
 jQuery("#add-rows").click( function() {
    var s;
-   s = jQuery("#discovered-atts-grid").jqGrid('getGridParam','selarrrow')
+   s = $("#discovered-atts-grid").jqGrid('getGridParam','selarrrow')
    url = "${edit_url}&" + s
    alert(url);
 });

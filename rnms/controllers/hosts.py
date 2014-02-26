@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012,2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -141,10 +141,10 @@ class HostsController(BaseGridController):
             self.process_form_errors()
             return dict(page='host', main_menu=MainMenu)
         w = DiscoveredAttsGrid()
-        w.host_id = h
         edit_url = url('/attributes/add_disc', {'h': h})
         return dict(page='host', main_menu=MainMenu,
-                    w=w, edit_url=edit_url)
+                    w=w, edit_url=edit_url,
+                    griddata={'h': h})
 
     @expose('rnms.templates.widgets.select')
     def option(self):
