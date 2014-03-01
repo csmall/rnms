@@ -44,7 +44,7 @@ class HostsController(BaseGridController):
     allow_only = predicates.not_anonymous()
     #allow_only = permissions.host_ro
 
-    @expose('rnms.templates.host_index')
+    @expose('rnms.templates.host.index')
     @validate(validators={'z': validators.Int(min=1)})
     def index(self, z=None, *args, **kw):
         if tmpl_context.form_errors:
@@ -81,7 +81,7 @@ class HostsController(BaseGridController):
         filler = DiscoveryFiller()
         return filler.get_value(**kw)
 
-    @expose('rnms.templates.host')
+    @expose('rnms.templates.host.detail')
     @validate(validators={'h': validators.Int(min=1)})
     def _default(self, h):
         if tmpl_context.form_errors:
@@ -110,7 +110,7 @@ class HostsController(BaseGridController):
                     detailsbox=detailsbox,
                     events_grid=events_grid)
 
-    @expose('rnms.templates.host_map')
+    @expose('rnms.templates.map.host')
     @validate(validators={
         'z': validators.Int(min=1), 'events': validators.Bool(),
         'alarmed': validators.Bool()})
@@ -134,7 +134,7 @@ class HostsController(BaseGridController):
         return dict(page='hosts', main_menu=MainMenu,
                     host_map=hmap_infobox, events_grid=events_grid)
 
-    @expose('rnms.templates.host_discover')
+    @expose('rnms.templates.host.discover')
     @validate(validators={'h': validators.Int(min=2)})
     def discover(self, h):
         if tmpl_context.form_errors:

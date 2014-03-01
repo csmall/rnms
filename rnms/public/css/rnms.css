@@ -99,6 +99,18 @@ span#span_control {
 .statrow label { float: left; width: 10em; }
 .statrow .field { display: block; margin-left: 10em; }
 
+/* Information Boxes */
+.infobox-titlebar {
+    border-left: 0 none;
+    border-right: 0 none;
+    border-top: 0 none;
+    padding: 0.3em 0.2em 0.2em 0.3em;
+    position: relative;
+}
+.infobox-title {
+    float: left;
+    margin: 0.1em 0 0.2em;
+}
 .infobox {
 	border-radius: 4px 4px 4px 4px;
 	min-height: 50px;

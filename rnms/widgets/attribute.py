@@ -22,8 +22,6 @@ from tg import url, flash
 from sqlalchemy import and_, asc, func
 
 from tw2.jqplugins.jqgrid import jqGridWidget
-from tw2.jqplugins.jqplot import JQPlotWidget
-from tw2.jqplugins.jqplot.base import pieRenderer_js
 import tw2.core as twc
 
 from rnms.model import Attribute, DBSession, Host, EventState, Event
@@ -31,6 +29,24 @@ from rnms.lib import states, structures
 from rnms.lib.table import jqGridTableBase
 
 from rnms.widgets.base import MapWidget
+from status_pie import StatusPie
+
+
+class AttributeStatusPie(StatusPie):
+    id = 'attribute-status-pie'
+
+    def prepare(self):
+        self.state_data = {}
+        down_attributes = DBSession.query(Attribute).\
+            filter(Attribute.admin_state == states.STATE_DOWN)
+        self.state_data[states.STATE_ADMIN_DOWN] = down_attributes.count()
+
+        attributes = DBSession.query(
+            func.count(Attribute.admin_state), Attribute.admin_state).\
+            group_by(Attribute.admin_state)
+        for attribute in attributes:
+            self.state_data[attribute[1]] = attribute[0]
+        super(AttributeStatusPie, self).prepare()
 
 
 class AttributeMap(MapWidget):
@@ -236,51 +252,3 @@ class AttributeStatusBar(AttributeSummary):
 
     id = 'attribute-statusbar'
     template = 'rnms.templates.widgets.attribute_statusbar'
-
-
-class AttributeStatusPie(JQPlotWidget):
-    """
-    Pie Chart of the Attributes' Status """
-    id = 'attribute-status-pie'
-    width = "100%"
-
-    resources = JQPlotWidget.resources + [pieRenderer_js]
-
-    options = {
-        'seriesColors': ["#468847", "#F89406", "#B94A48", "#999999",
-                         "#3887AD", "#222222"],
-        'seriesDefaults': {
-            'renderer': twc.js_symbol('$.jqplot.PieRenderer'),
-            'rendererOptions': {
-                'showDataLabels': True,
-                'dataLabels': 'value',
-                },
-            },
-        'legend': {
-            'show': True,
-            'location': 'e',
-            },
-        'grid': {
-            'background': '#ffffff',
-            'borderColor': '#ffffff',
-            'shadow': False,
-            },
-        }
-
-    def __init__(self, **kwargs):
-        super(AttributeStatusPie, self).__init__(**kwargs)
-        self.state_list = (states.STATE_UP, states.STATE_ALERT,
-                           states.STATE_DOWN, states.STATE_ADMIN_DOWN,
-                           states.STATE_TESTING, states.STATE_UNKNOWN)
-
-    def prepare(self):
-        series = []
-        if self.state_data is not None:
-            for state in self.state_list:
-                try:
-                    series.append((states.STATE_NAMES[state].capitalize(),
-                                   self.state_data[state]))
-                except KeyError:
-                    series.append((states.STATE_NAMES[state].capitalize(), 0))
-        self.data = [series]
-        super(AttributeStatusPie, self).prepare()

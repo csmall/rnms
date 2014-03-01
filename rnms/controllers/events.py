@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012,2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,20 +33,20 @@ from tg.predicates import has_permission
 
 # project specific imports
 from rnms.lib.base import BaseGridController
-from rnms.model import DBSession, Severity,EventType
+from rnms.model import DBSession, Severity, EventType
 from rnms.widgets import EventGrid, MainMenu
 from rnms.lib.table import jqGridTableFiller
 from rnms.lib import structures
+
 
 class EventsController(BaseGridController):
     allow_only = has_permission('manage')
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = authorize.not_anonymous()
 
-
-    @expose('rnms.templates.event_index')
-    @validate(validators={'a':validators.Int(min=1),
-                          'h':validators.Int(min=1)})
+    @expose('rnms.templates.event.index')
+    @validate(validators={'a': validators.Int(min=1),
+                          'h': validators.Int(min=1)})
     def index(self, a=None, h=None):
         if tmpl_context.form_errors:
             self.process_form_errors()
@@ -62,18 +62,19 @@ class EventsController(BaseGridController):
         return dict(page='event', main_menu=MainMenu,
                     w=w, griddata=griddata)
 
-    @expose('rnms.templates.severitycss', content_type='text/css')
+    @expose('rnms.templates.event.severitycss', content_type='text/css')
     def severitycss(self):
         severities = DBSession.query(Severity)
-        return {'severities':severities}
+        return {'severities': severities}
 
-    @expose('rnms.templates.mapseveritycss', content_type='text/css')
+    @expose('rnms.templates.map.severitycss', content_type='text/css')
     def mapseveritycss(self):
         severities = DBSession.query(Severity)
         return dict(
-                severities=[(s.id, s.bgcolor, '%.6x'%(int(s.bgcolor,16) & 0xfefefe >> 1)) for s in severities],
-                )
-
+            severities=[
+                (s.id, s.bgcolor,
+                    '%.6x' % (int(s.bgcolor, 16) & 0xfefefe >> 1))
+                for s in severities],)
 
     @expose('json')
     def griddata(self, **kw):

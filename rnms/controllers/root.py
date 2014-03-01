@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """Main Controller"""
-from sqlalchemy import func
 
 from tg import expose, flash, require, lurl, request, redirect, \
-        tmpl_context, config, predicates
+    tmpl_context, config, predicates
 from tg.i18n import ugettext as _, lazy_ugettext as l_
 from rnms import model
 from rnms.controllers.secure import SecureController
@@ -11,13 +10,12 @@ from rnms.controllers.secure import SecureController
 from tgext.admin.controller import AdminController
 from tw2.jqplugins.ui import set_ui_theme_name
 
-from rnms.controllers.admin import MyAdminConfig#, AdminController2
+from rnms.controllers.admin import MyAdminConfig
 from rnms.widgets.attribute import AttributeStatusPie, AttributeStatusBar
 from rnms.widgets import MainMenu
 from rnms.widgets.base import InfoBox
-from rnms.model import DBSession, Attribute
+from rnms.model import DBSession
 
-from rnms.lib import states
 from rnms.lib.base import BaseController
 from rnms.lib.statistics import get_overall_statistics
 from rnms.controllers.error import ErrorController
@@ -30,21 +28,6 @@ from rnms.controllers.zones import ZonesController
 set_ui_theme_name(config['ui_theme'])
 __all__ = ['RootController']
 
-def get_attribute_pie():
-
-    state_data = {}
-
-    down_attributes = DBSession.query(Attribute).filter(Attribute.admin_state == states.STATE_DOWN)
-    state_data[states.STATE_ADMIN_DOWN] = down_attributes.count()
-
-    attributes = DBSession.query(func.count(Attribute.admin_state), Attribute.admin_state).group_by(Attribute.admin_state)
-    for attribute in attributes:
-        state_data[attribute[1]] = attribute[0]
-    piebox = InfoBox()
-    piebox.title = 'Attribute Status'
-    piebox.child_widget = AttributeStatusPie()
-    piebox.child_widget.state_data = state_data
-    return piebox
 
 class RootController(BaseController):
     """
@@ -73,25 +56,18 @@ class RootController(BaseController):
     hosts = HostsController()
     zones = ZonesController()
 
-
     def _before(self, *args, **kw):
         tmpl_context.project_name = "rnms"
         set_ui_theme_name(config['ui_theme'])
 
-    @expose('rnms.templates.test')
-    def test1(self):
-        from tw2.jquery import jquery_js
-
-        #mm = MainMenu(page='host')
-        return {'text': 'texttext', 'jjs': jquery_js, 'mm': MainMenu,
-                'page':'hosts'}
-            
     @expose('rnms.templates.index')
     @require(predicates.not_anonymous())
     def index(self):
         """Handle the front-page."""
         statrows = get_overall_statistics()
-        piebox = get_attribute_pie()
+        piebox = InfoBox()
+        piebox.title = 'Attribute Status'
+        piebox.child_widget = AttributeStatusPie()
         statsbox = InfoBox()
         statsbox.title = 'Statistics'
         status_bar = AttributeStatusBar()
@@ -108,12 +84,6 @@ class RootController(BaseController):
     def environ(self):
         """This method showcases TG's access to the wsgi environment."""
         return dict(page='environ', environment=request.environ)
-
-    @expose('json')
-    #@expose('rnms.templates.data')
-    def data(self, **kw):
-        """This method showcases how you can use the same controller for a data page and a display page"""
-        return dict(page='data', params=kw)
 
     @expose('rnms.templates.index')
     #@require(predicates.has_permission('manage', msg=l_('Only for managers')))
@@ -135,7 +105,7 @@ class RootController(BaseController):
             flash(_('Wrong credentials'), 'warning')
         return dict(page='login', login_counter=str(login_counter),
                     came_from=came_from,
-                   main_menu=MainMenu)
+                    main_menu=MainMenu)
 
     @expose()
     def post_login(self, came_from=lurl('/')):
@@ -147,7 +117,7 @@ class RootController(BaseController):
         if not request.identity:
             login_counter = request.environ.get('repoze.who.logins', 0) + 1
             redirect('/login',
-                params=dict(came_from=came_from, __logins=login_counter))
+                     params=dict(came_from=came_from, __logins=login_counter))
         userid = request.identity['repoze.who.userid']
         flash(_('Welcome back, %s!') % userid)
         if predicates.has_permission('manage'):

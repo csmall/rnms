@@ -45,7 +45,7 @@ class AttributesController(BaseGridController):
     #Uncomment this line if your controller requires an authenticated user
     allow_only = predicates.not_anonymous()
 
-    @expose('rnms.templates.attribute_index')
+    @expose('rnms.templates.attribute.index')
     @validate(validators={'h': validators.Int(min=1)})
     def index(self, h=None, *args, **kw):
         if tmpl_context.form_errors:
@@ -59,7 +59,7 @@ class AttributesController(BaseGridController):
         return dict(page='attribute', main_menu=MainMenu,
                     w=w, griddata=griddata)
 
-    @expose('rnms.templates.attribute_detail')
+    @expose('rnms.templates.attribute.detail')
     @validate(validators={'a': validators.Int(min=1)})
     def _default(self, a):
         if tmpl_context.form_errors:
@@ -96,7 +96,7 @@ class AttributesController(BaseGridController):
                     more_url=more_url,
                     graphbox=graphbox)
 
-    @expose('rnms.templates.attribute_map')
+    @expose('rnms.templates.map.attribute')
     @validate(validators={
         'h': validators.Int(min=1),
         'events': validators.Bool(),

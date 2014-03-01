@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ RRDs: used, free
 mtuarea
 -------
 Graph showing two areas that are stacked.
-The first area is green and shows free value, the second is 
+The first area is green and shows free value, the second is
 orange and shows used.
 RRDs: multipler, total and used in that order
 Free = (total-used) * multiplier
@@ -66,13 +66,19 @@ from tw2 import forms as twf
 import tw2.core as twc
 from tw2.jqplugins.jqplot import JQPlotWidget
 from tw2.jqplugins.jqplot.base import dateAxisRenderer_js, barRenderer_js,\
-        enhancedLegendRenderer_js
+    enhancedLegendRenderer_js
 from sqlalchemy import distinct
 
 from rnms.model import DBSession, GraphType, Attribute
 from rnms.lib.parsers import fill_fields
 
-SI_UNITS = (('T', 1e12),('G',1e9), ('M',1e6),('k',1e3),('',1),('m',0.001))
+SI_UNITS = (
+    ('T', 1e12),
+    ('G', 1e9),
+    ('M', 1e6),
+    ('k', 1e3),
+    ('', 1),
+    ('m', 0.001))
 
 # Measured in minutes
 # max timespan, label, labelinterval
@@ -95,6 +101,8 @@ TICK_INTERVALS = (
     (1892160,   '%b',       3*30*24*60),
     (5184000,   '%y',       12*30*24*60),
 )
+
+
 class GraphDatePicker(twf.CalendarDatePicker):
     date_format = '%Y/%m/%d %H:%M'
     picker_shows_time = True
@@ -110,64 +118,65 @@ class GraphDatePresetWidget(twf.SingleSelectField):
     """
     Selection Widget for pre-set times used for graphing
     """
-    picker_shows_time=True
+    picker_shows_time = True
     date_format = '%Y/%m/%d %H:%M'
     value = 3600
 
-    def __init__(self,**kw):
+    def __init__(self, **kw):
         hour = 3600
         day = 24*3600
         self.options = (
-                (0,          u'No Preset'),
-                (600,        u'10 Minutes'),
-                (1800,       u'Half Hour'),
-                (hour,       u'Hour'),
-                (hour*6,     u'6 Hours'),
-                (day,        u'Day'),
-                (day*2,      u'2 Days'),
-                (day*7,      u'Week'),
-                (day*30,     u'Month'),
-                (day*365,    u'Year'),
-                )
+            (0,          u'No Preset'),
+            (600,        u'10 Minutes'),
+            (1800,       u'Half Hour'),
+            (hour,       u'Hour'),
+            (hour*6,     u'6 Hours'),
+            (day,        u'Day'),
+            (day*2,      u'2 Days'),
+            (day*7,      u'Week'),
+            (day*30,     u'Month'),
+            (day*365,    u'Year'),
+            )
         super(GraphDatePresetWidget, self).__init__()
 
     def prepare(self):
         try:
             self.value = int(tmpl_context.form_values['preset_time'])
-        except (KeyError,TypeError):
+        except (KeyError, TypeError):
             pass
         super(GraphDatePresetWidget, self).prepare()
+
 
 class GraphTypeSelector(twf.MultipleSelectField):
     """
     Select the graph type based upon the attribute type
     """
-    name='gt'
+    name = 'gt'
     #id='graph-type'
-    graph_type_id=None
+    graph_type_id = None
 
     def prepare(self):
         self.options = ()
 
         try:
-            att_ids = [ int(x) for x in
+            att_ids = [int(x) for x in
                        tmpl_context.form_values['a'].split(',')]
         except (KeyError, ValueError):
             pass
         else:
             graph_types = DBSession.query(
                 distinct(GraphType.id), GraphType.display_name).\
-                    filter(GraphType.attribute_type_id.in_(
-                           DBSession.query(
-                               distinct(Attribute.attribute_type_id)).filter(
-                                   Attribute.id.in_(att_ids))
-                          ))
+                filter(GraphType.attribute_type_id.in_(
+                    DBSession.query(
+                        distinct(Attribute.attribute_type_id)).filter(
+                        Attribute.id.in_(att_ids))))
             self.options = tuple(gt for gt in graph_types)
             try:
                 self.value = tmpl_context.form_values['gt']
             except KeyError:
                 pass
         super(GraphTypeSelector, self).prepare()
+
 
 class BaseFormat(object):
     """
@@ -176,7 +185,7 @@ class BaseFormat(object):
     """
     parent = None
 
-    def __init__(self,parent):
+    def __init__(self, parent):
         self.parent = parent
 
     def get_options(self):
@@ -192,8 +201,8 @@ class BaseFormat(object):
         the rrd_line, else return None,None
         """
         if rrd_line.multiplier == '':
-            return None,None
-        multiplier_val,mop_name = fill_fields(
+            return None, None
+        multiplier_val, mop_name = fill_fields(
             rrd_line.multiplier,
             attribute=self.parent.attribute).split(',')
         multiplier_val = float(multiplier_val)
@@ -204,7 +213,7 @@ class BaseFormat(object):
             multiplier_op = operator.div
         else:
             raise ValueError
-        return multiplier_op,multiplier_val
+        return multiplier_op, multiplier_val
 
     def row_values(self, rrd_values, mult_op, mult_val):
         """ Scan the raw rrd_value list fresh from rrdfetch and
@@ -221,35 +230,39 @@ class BaseFormat(object):
                 if mult_op is None:
                     value = val[0]
                 else:
-                    value = mult_op(val[0],mult_val)
+                    value = mult_op(val[0], mult_val)
                 if row_max is None or row_max < value:
                     row_max = value
                 row_sum += value
                 row_len += 1
-                rowval.append((val_time*1000,value))
+                rowval.append((val_time*1000, value))
             val_time += step
-        return dict(max=row_max,sum=row_sum,len=row_len,values=rowval)
+        return dict(max=row_max, sum=row_sum, len=row_len, values=rowval)
 
     def update_row(self, row_data, data_time, value):
         if row_data['max'] < value:
             row_data['max'] = value
         row_data['sum'] += value
         row_data['len'] += 1
-        row_data['values'].append((data_time*1000,value))
+        row_data['values'].append((data_time*1000, value))
 
     def set_series_label(self, idx, rrd_line, row_max, row_sum, row_len,
                          row_last, legend=None):
         if legend is None:
             legend = rrd_line.legend
+        if row_len == 0:
+            average = 'Nan'
+        else:
+            average = self.format_value(rrd_line.legend_unit,
+                                        row_sum/float(row_len))
+
         label = {
             'label': '{} - Max: {} Average: {} Last: {}'.format(
                 legend,
                 self.format_value(
                     rrd_line.legend_unit,
                     row_max),
-                self.format_value(
-                    rrd_line.legend_unit,
-                    row_sum/float(row_len)),
+                average,
                 self.format_value(
                     rrd_line.legend_unit,
                     row_last)
@@ -259,7 +272,7 @@ class BaseFormat(object):
             self.parent.options['series'][idx].update(label)
         except IndexError:
             self.parent.options['series'].append(label)
-    
+
     def format_value(self, fmt, value):
         if value is None:
             return 0.0
@@ -268,22 +281,22 @@ class BaseFormat(object):
         mult_pos = fmt.find('%s')
         if mult_pos > -1:
             si_unit, divisor = self.get_si_unit(value)
-            fmt = fmt.replace('%s',si_unit)
+            fmt = fmt.replace('%s', si_unit)
             value = value/float(divisor)
         else:
             mult_pos = fmt.find('%S')
             if mult_pos > -1:
                 si_unit, divisor = self.get_si_unit(value)
-                fmt = fmt.replace('%S',si_unit)
+                fmt = fmt.replace('%S', si_unit)
                 value = value/float(divisor)
         return fmt % value
 
     def get_si_unit(self, value):
         """ Return unit,divisor tuple for SI unit eg 2000 = k,1000 """
-        for unit,divisor in SI_UNITS:
+        for unit, divisor in SI_UNITS:
             if value >= divisor:
-                return unit,divisor
-        return unit,divisor
+                return unit, divisor
+        return unit, divisor
 
     def set_xaxis_timeformat(self, data_series):
         """
@@ -292,7 +305,7 @@ class BaseFormat(object):
         """
         try:
             minutes = (data_series[-1][0] - data_series[0][0]) /\
-                    (60000)
+                (60000)
         except IndexError:
             format_string = '%H:%M'
             tick_interval = 1
@@ -302,14 +315,13 @@ class BaseFormat(object):
                     break
         self.parent.options['axes']['xaxis'].update({
             'renderer': twc.js_symbol('$.jqplot.DateAxisRenderer'),
-            'tickOptions': { 'formatString': format_string,},
+            'tickOptions': {'formatString': format_string},
             'tickInterval': tick_interval * 60,
         })
 
 
-
 class GraphWidget(JQPlotWidget):
-    id='graph-widget'
+    id = 'graph-widget'
     attribute_id = None
     graph_type_id = None
     preset_time = None
@@ -351,7 +363,7 @@ class GraphWidget(JQPlotWidget):
         <name>Format
         """
         try:
-            fmt =  getattr(self, self.graph_type.template+'Format')
+            fmt = getattr(self, self.graph_type.template+'Format')
         except AttributeError:
             return None
         else:
@@ -364,86 +376,30 @@ class GraphWidget(JQPlotWidget):
             self.attribute.display_name,
             self.graph_type.display_name,
         )
-    #def get_data(self):
-    #    data = []
-    #    multiplier_row = []
-    #    for line_idx,rrd_line in enumerate(self.graph_type.lines):
-    #        rrd = rrd_line.attribute_type_rrd
-    #        if rrd_line.multiplier == '':
-    #            multiplier_op = None
-    #        else:
-    #            multiplier_val,mop_name = fill_fields(rrd_line.multiplier,
-    #                                                  attribute=self.attribute).split(',')
-    #            multiplier_val = float(multiplier_val)
-    #            # FIXME = make this more generic
-    #            if mop_name == '*':
-    #                multiplier_op = operator.mul
-    #            elif mop_name == '/':
-    #                multiplier_op = operator.div
-    #            else:
-    #                raise ValueError
-#
-#            rrd_values = rrd.fetch(self.attribute_id, self.start_time,
-#                                   self.end_time)
-#            if self.graph_type.template == 'multotarea':
-#                # The first series is the multiplier
-#                if multiplier_row == []:
-#                    multiplier_row = rrd_values[2]
-#                    continue
-#            start_time, end_time, step = rrd_values[0]
-#            val_time = start_time
-#            rowval = []
-#            row_max = None
-#            row_sum = 0.0
-#            row_len = 0.0
-#            for idx,val in enumerate(rrd_values[2]):
-#                if val[0] is not None:
-#                    if multiplier_op is None:
-#                        value = val[0]
-#                    else:
-#                        value = multiplier_op(val[0],multiplier_val)
-#                    if self.graph_type.template == 'multotarea':
-#                        mul = multiplier_row[idx][0]
-#                        if mul is not None:
-#                            value *=  mul
-#                    if row_max is None or row_max < value:
-#                        row_max = value
-#                    row_sum += value
-#                    row_len += 1
-#                    rowval.append((val_time*1000,value))
-#                val_time += step
-#            if row_len > 0:
-#                data.append(rowval)
-#                self.set_series_label(line_idx, rrd_line,
-#                                      row_max, row_sum, row_len,
-#                                      rowval[-1][1])
-#        return data
 
     def prepare_graph_template(self):
         """ Setup the graph template specific options """
         # First the common options
         self.options = {
-            'seriesDefaults':{
-#                'renderer': twc.js_symbol('$.jqplot.BarRenderer'),
-                'rendererOptions': { 'fillToZero': True},
+            'seriesDefaults': {
+                'rendererOptions': {'fillToZero': True},
                 'showMarker': False,
             },
             'series': [],
-            'legend':{
+            'legend': {
                 'show': True,
                 'location': 's',
                 'placement': 'outsideGrid',
             },
-            'axes':{
+            'axes': {
                 'xaxis': {
                     'renderer': twc.js_symbol('$.jqplot.DateAxisRenderer'),
-                    'tickOptions': { 'formatString': '%H:%M'},
+                    'tickOptions': {'formatString': '%H:%M'},
                     'pad': 0,
                 },
                 'yaxis': {
                     'min': 0,
                     'forceTickAt0': True,
-                    #'tickOptions': {'formatter': twc.js_symbol('tickFormatter')},
                     'autoscale': True,
                 }
             }
@@ -452,14 +408,16 @@ class GraphWidget(JQPlotWidget):
         if self.graph_type.template == 'totalarea':
             self.options['stackSeries'] = True
             #self.options['seriesColors'] = ( '#ff8800', '#00cc00')
-            self.options['seriesDefaults'].update({'fill':True,'fillAndStroke':False})
+            self.options['seriesDefaults'].update(
+                {'fill': True, 'fillAndStroke': False})
         elif self.graph_type.template == 'stackedarea':
             self.options['stackSeries'] = True
-            self.options['seriesDefaults'].update({'fill':True,'fillAndStroke':True})
-            self.options['axes']['yaxis'].update({'max':100})
+            self.options['seriesDefaults'].update(
+                {'fill': True, 'fillAndStroke': True})
+            self.options['axes']['yaxis'].update({'max': 100})
         elif self.graph_type.template == 'multotarea':
-            self.options['seriesColors'] = ( '#ade7ad', '#ff8800' )
-            self.options['seriesDefaults'].update({'fill':True})
+            self.options['seriesColors'] = ('#ade7ad', '#ff8800')
+            self.options['seriesDefaults'].update({'fill': True})
 
     ################################################
     # Graph templates
@@ -471,42 +429,42 @@ class GraphWidget(JQPlotWidget):
         def get_options(self):
             return {
                 'seriesDefaults': {
-                    'rendererOptions': { 'fillToZero': True},
+                    'rendererOptions': {'fillToZero': True},
                     'showMarker': False,
                 },
 
-                'legend':{
+                'legend': {
                     'show': True,
                     'location': 's',
                     'placement': 'outsideGrid',
                 },
                 'series': [],
-                'axes':{
+                'axes': {
                     'xaxis': {
                         'renderer': twc.js_symbol('$.jqplot.DateAxisRenderer'),
-                        'tickOptions': { 'formatString': '%H:%M'},
+                        'tickOptions': {'formatString': '%H:%M'},
                         'pad': 0,
                     },
                     'yaxis': {
                         'min': 0,
                         'forceTickAt0': True,
-                        #'tickOptions': {'formatter': twc.js_symbol('tickFormatter')},
                         'autoscale': True,
                     }
                 }
             }
+
         def get_data(self):
             """ Return the data for all the lines """
             data = []
-            for line_idx,rrd_line in enumerate(
-                self.parent.graph_type.lines):
+            for line_idx, rrd_line in enumerate(
+                    self.parent.graph_type.lines):
 
-                mult_op,mult_val = self.get_mult(rrd_line)
+                mult_op, mult_val = self.get_mult(rrd_line)
                 rrd = rrd_line.attribute_type_rrd
                 rrd_values = rrd.fetch(self.parent.attribute_id,
-                                   self.parent.start_time,
-                                   self.parent.end_time)
-                row = self.row_values(rrd_values,mult_op,mult_val)
+                                       self.parent.start_time,
+                                       self.parent.end_time)
+                row = self.row_values(rrd_values, mult_op, mult_val)
                 if row['len'] > 0:
                     data.append(row['values'])
                     self.set_series_label(
@@ -515,7 +473,6 @@ class GraphWidget(JQPlotWidget):
                         row['values'][-1][1])
             self.set_xaxis_timeformat(row['values'])
             return data
-    
 
     class areaFormat(BaseFormat):
         """
@@ -524,7 +481,7 @@ class GraphWidget(JQPlotWidget):
         def get_options(self):
             return {
                 'seriesDefaults': {
-                    'rendererOptions': { 'fillToZero': True},
+                    'rendererOptions': {'fillToZero': True},
                     'showMarker': False,
                     'fill': True,
                     'fillAndStroke': True,
@@ -532,21 +489,20 @@ class GraphWidget(JQPlotWidget):
                     #FIXME ? fill alpha?
                 },
                 'series': [],
-                'legend':{
+                'legend': {
                     'show': True,
                     'location': 's',
                     'placement': 'outsideGrid',
                 },
-                'axes':{
+                'axes': {
                     'xaxis': {
                         'renderer': twc.js_symbol('$.jqplot.DateAxisRenderer'),
-                        'tickOptions': { 'formatString': '%H:%M'},
+                        'tickOptions': {'formatString': '%H:%M'},
                         'pad': 0,
                     },
                     'yaxis': {
                         'min': 0,
                         'forceTickAt0': True,
-                        #'tickOptions': {'formatter': twc.js_symbol('tickFormatter')},
                         'autoscale': True,
                     }
                 }
@@ -556,12 +512,12 @@ class GraphWidget(JQPlotWidget):
             """ Return single line of data for the area """
             data = []
             rrd_line = self.parent.graph_type.lines[0]
-            mult_op,mult_val = self.get_mult(rrd_line)
+            mult_op, mult_val = self.get_mult(rrd_line)
             rrd = rrd_line.attribute_type_rrd
             rrd_values = rrd.fetch(self.parent.attribute_id,
-                               self.parent.start_time,
-                               self.parent.end_time)
-            row = self.row_values(rrd_values,mult_op,mult_val)
+                                   self.parent.start_time,
+                                   self.parent.end_time)
+            row = self.row_values(rrd_values, mult_op, mult_val)
             if row['len'] > 0:
                 data.append(row['values'])
                 self.set_series_label(
@@ -582,22 +538,21 @@ class GraphWidget(JQPlotWidget):
                     'fill': True,
                 },
 
-                'legend':{
+                'legend': {
                     'show': True,
                     'location': 's',
                     'placement': 'outsideGrid',
                 },
                 'series': [],
-                'axes':{
+                'axes': {
                     'xaxis': {
                         'renderer': twc.js_symbol('$.jqplot.DateAxisRenderer'),
-                        'tickOptions': { 'formatString': '%H:%M'},
+                        'tickOptions': {'formatString': '%H:%M'},
                         'pad': 0,
                     },
                     'yaxis': {
                         'min': 0,
                         'forceTickAt0': True,
-                        #'tickOptions': {'formatter': twc.js_symbol('tickFormatter')},
                         'autoscale': True,
                     }
                 }
@@ -611,30 +566,30 @@ class GraphWidget(JQPlotWidget):
         """
         def get_options(self):
             return {
-                'seriesDefaults':{
-                    'rendererOptions': { 'fillToZero': True},
+                'seriesDefaults': {
+                    'rendererOptions': {'fillToZero': True},
                     'showMarker': False,
                 },
                 'series': [
                     {
                         'color': '#00cc00',
-                        'fill':True,
+                        'fill': True,
                         'fillAndStroke': True,
                         'fillAlpha': 0.4,
-                    },{
+                    }, {
                         'fill': False,
                         'color': '#0000ff',
                     }
                 ],
-                'legend':{
+                'legend': {
                     'show': True,
                     'location': 's',
                     'placement': 'outsideGrid',
                 },
-                'axes':{
+                'axes': {
                     'xaxis': {
                         'renderer': twc.js_symbol('$.jqplot.DateAxisRenderer'),
-                        'tickOptions': { 'formatString': '%H:%M'},
+                        'tickOptions': {'formatString': '%H:%M'},
                         'pad': 0,
                     },
                     'yaxis': {
@@ -651,14 +606,14 @@ class GraphWidget(JQPlotWidget):
         def get_data(self):
             """ Return the data for inout graph - 2 lines """
             data = []
-            for line_idx in (0,1):
+            for line_idx in (0, 1):
                 rrd_line = self.parent.graph_type.lines[line_idx]
-                mult_op,mult_val = self.get_mult(rrd_line)
+                mult_op, mult_val = self.get_mult(rrd_line)
                 rrd = rrd_line.attribute_type_rrd
                 rrd_values = rrd.fetch(self.parent.attribute_id,
-                                   self.parent.start_time,
-                                   self.parent.end_time)
-                row = self.row_values(rrd_values,mult_op,mult_val)
+                                       self.parent.start_time,
+                                       self.parent.end_time)
+                row = self.row_values(rrd_values, mult_op, mult_val)
                 if row['len'] > 0:
                     data.append(row['values'])
                     self.set_series_label(
@@ -672,36 +627,33 @@ class GraphWidget(JQPlotWidget):
         """ Stacked area of used and free, total is calculated """
         def get_options(self):
             return {
-                'seriesColors': ( '#ff8800', '#00cc00', '#ff0000'),
+                'seriesColors': ('#ff8800', '#00cc00', '#ff0000'),
                 'stackSeries': True,
                 'seriesDefaults': {
-                    'rendererOptions': { 'fillToZero': True},
+                    'rendererOptions': {'fillToZero': True},
                     'showMarker': False,
                     'fill': True,
                     'fillAndStroke': False,
                     'shadow': False,
                 },
 
-                'legend':{
+                'legend': {
                     'show': True,
                     'location': 's',
                     'placement': 'outsideGrid',
                 },
-                'series': [ {},{},
-                           {'fill': False,
-                            'disableStack': True,
-                           },
-                          ],
-                'axes':{
+                'series': [{}, {}, {
+                    'fill': False,
+                    'disableStack': True, }, ],
+                'axes': {
                     'xaxis': {
                         'renderer': twc.js_symbol('$.jqplot.DateAxisRenderer'),
-                        'tickOptions': { 'formatString': '%H:%M'},
+                        'tickOptions': {'formatString': '%H:%M'},
                         'pad': 0,
                     },
                     'yaxis': {
                         'min': 0,
                         'forceTickAt0': True,
-                        #'tickOptions': {'formatter': twc.js_symbol('tickFormatter')},
                         'autoscale': True,
                     }
                 }
@@ -712,25 +664,25 @@ class GraphWidget(JQPlotWidget):
             total is calculated
             """
             rrd_lines = []
-            used_row = {'max':0, 'sum':0, 'len':0, 'values':[]}
-            free_row = {'max':0, 'sum':0, 'len':0, 'values':[]}
-            total_row = {'max':0, 'sum':0, 'len':0, 'values':[]}
-            for line_idx in (0,1):
+            used_row = {'max': 0, 'sum': 0, 'len': 0, 'values': []}
+            free_row = {'max': 0, 'sum': 0, 'len': 0, 'values': []}
+            total_row = {'max': 0, 'sum': 0, 'len': 0, 'values': []}
+            for line_idx in (0, 1):
                 rrd_line = self.parent.graph_type.lines[line_idx]
-                mult_op,mult_val = self.get_mult(rrd_line)
-                rrd_lines.append( {
+                mult_op, mult_val = self.get_mult(rrd_line)
+                rrd_lines.append({
                     'rrd_line': rrd_line,
                     'mult_op': mult_op,
                     'mult_val': mult_val,
-                    'values': rrd_line.attribute_type_rrd.\
+                    'values': rrd_line.attribute_type_rrd.
                     fetch(self.parent.attribute_id,
                           self.parent.start_time,
                           self.parent.end_time),
                 })
 
-            start_time,end_time, step = rrd_lines[0]['values'][0]
+            start_time, end_time, step = rrd_lines[0]['values'][0]
             val_time = start_time
-            for idx,used_values in enumerate(rrd_lines[0]['values'][2]):
+            for idx, used_values in enumerate(rrd_lines[0]['values'][2]):
                 try:
                     free_values = rrd_lines[1]['values'][2][idx]
                 except IndexError:
@@ -759,9 +711,8 @@ class GraphWidget(JQPlotWidget):
             )
 
             self.set_xaxis_timeformat(total_row['values'])
-            return [used_row['values'],free_row['values'],
+            return [used_row['values'], free_row['values'],
                     total_row['values']]
-
 
     class mtuareaFormat(ufareaFormat):
         """
@@ -772,35 +723,36 @@ class GraphWidget(JQPlotWidget):
         def get_data(self):
             """ Return two data rows of data for the area """
             rrd_line_values = []
-            used_row = {'max':0, 'sum':0, 'len':0, 'values':[]}
-            free_row = {'max':0, 'sum':0, 'len':0, 'values':[]}
-            total_row = {'max':0, 'sum':0, 'len':0, 'values':[]}
-            for line_idx in (0,1,2):
+            used_row = {'max': 0, 'sum': 0, 'len': 0, 'values': []}
+            free_row = {'max': 0, 'sum': 0, 'len': 0, 'values': []}
+            total_row = {'max': 0, 'sum': 0, 'len': 0, 'values': []}
+            for line_idx in (0, 1, 2):
                 rrd_line = self.parent.graph_type.lines[line_idx]
-                mult_op,mult_val = self.get_mult(rrd_line)
+                mult_op, mult_val = self.get_mult(rrd_line)
                 rrd = rrd_line.attribute_type_rrd
                 row_values = rrd.fetch(
                     self.parent.attribute_id,
                     self.parent.start_time,
                     self.parent.end_time)
-                rrd_line_values.append( {
+                rrd_line_values.append({
                     'mult_op': mult_op,
                     'mult_val': mult_val,
                     'rrd_line': rrd_line,
                     'values': row_values,
                 })
-            start_time,end_time, step = rrd_line_values[0]['values'][0]
+            start_time, end_time, step = rrd_line_values[0]['values'][0]
             val_time = start_time
-            for idx,raw_multiplier in enumerate(rrd_line_values[0]['values'][2]):
+            for idx, raw_multiplier in enumerate(
+                    rrd_line_values[0]['values'][2]):
                 if raw_multiplier[0] is None:
                     continue
                 try:
                     raw_total = rrd_line_values[1]['values'][2][idx][0]
                     raw_used = rrd_line_values[2]['values'][2][idx][0]
                 except IndexError:
-                    continue # skip this one
+                    continue  # skip this one
 
-                if  rrd_line_values[0]['mult_op'] is None:
+                if rrd_line_values[0]['mult_op'] is None:
                     multiplier = raw_multiplier[0]
                 else:
                     multiplier = rrd_line_values[0]['mult_op'](
@@ -813,37 +765,36 @@ class GraphWidget(JQPlotWidget):
                     total = rrd_line_values[1]['mult_op'](
                         raw_total,
                         rrd_line_values[1]['mult_val']) *\
-                            multiplier
-                
+                        multiplier
+
                 if rrd_line_values[2]['mult_op'] is None:
                     used = raw_used * multiplier
                 else:
                     used = rrd_line_values[2]['mult_op'](
                         raw_used,
                         rrd_line_values[2]['mult_val']) *\
-                            multiplier
+                        multiplier
 
-                free = max(total - used,0.0)
+                free = max(total - used, 0.0)
                 self.update_row(used_row, val_time, used)
                 self.update_row(free_row, val_time, free)
                 self.update_row(total_row, val_time, total)
                 val_time += step
-            data = (used_row['values'],free_row['values'],
+            data = (used_row['values'], free_row['values'],
                     total_row['values'])
-            
-            self.set_series_label(
-                0, rrd_line_values[2]['rrd_line'],
-                used_row['max'], used_row['sum'], used_row['len'],
-                used_row['values'][-1][1])
-            self.set_series_label(
-                1, rrd_line_values[0]['rrd_line'],
-                free_row['max'], free_row['sum'], free_row['len'],
-                free_row['values'][-1][1])
-            self.set_series_label(
-                2, rrd_line_values[1]['rrd_line'],
-                total_row['max'], total_row['sum'], total_row['len'],
-                total_row['values'][-1][1])
+
+            rows = (
+                (0, 2, used_row),
+                (1, 0, free_row),
+                (2, 1, total_row))
+            for idx, lvn, row in rows:
+                try:
+                    last_value = row[-1][1]
+                except KeyError:
+                    last_value = None
+                self.set_series_label(
+                    idx, rrd_line_values[lvn]['rrd_line'],
+                    row['max'], row['sum'], row['len'],
+                    last_value)
             self.set_xaxis_timeformat(total_row['values'])
             return data
-
-
