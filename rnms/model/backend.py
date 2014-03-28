@@ -56,7 +56,7 @@ class Backend(DeclarativeBase):
         self.parameters = parameters
 
     def __repr__(self):
-        return '<Backend name=%s command=%s>'.format(
+        return '<Backend name={} command={}>'.format(
             self.display_name, self.command)
 
     @classmethod

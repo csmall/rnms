@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,27 +17,51 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
+from collections import defaultdict
 import transaction
 
 from rnms.model import DBSession, SnmpTrap, TrapMatches
+from match_trap import MatchTrap
 
 
-def consolidate_traps(logger):
+class TrapConsolidator(object):
+    trap_matches = {}
 
-    traps = DBSession.query(SnmpTrap).\
-        filter(SnmpTrap.processed == False)  # noqa
-    logger.info('%d SNMP Traps to process', traps.count())
-    if traps.count() == 0:
-        return
+    def __init__(self, logger):
+        self.logger = logger
+        self.load_config()
 
-    for trap in traps:
-        trap_matches = TrapMatches.by_oid(trap.trap_oid)
-        if trap_matches is not None:
+    def load_config(self):
+        """ Load configuration from Database """
+        self.trap_matches = defaultdict(list)
+        trap_match_count = 0
+        for trap_match in DBSession.query(TrapMatches).\
+                order_by(TrapMatches.position):
+            trap_match_count += 1
+            self.trap_matches[trap_match.trap_oid].append(
+                MatchTrap(trap_match))
+        self.logger.debug("Trap Consolidator loaded %d trap rules.",
+                          trap_match_count)
+
+    def consolidate(self):
+        """ Run the consolidator for SNMP traps """
+        traps = DBSession.query(SnmpTrap).\
+            filter(SnmpTrap.processed == False)  # noqa
+        self.logger.info('%d SNMP Traps to process', traps.count())
+        if traps.count() == 0:
+            return
+
+        for trap in traps:
+            trap.processed = True
+            try:
+                trap_matches = self.trap_matches[trap.trap_oid]
+            except KeyError:
+                continue
             for trap_match in trap_matches:
                 (attribute, trap_value, error) = \
                     trap_match.run(trap.host, trap)
                 if error is not None:
-                    logger.warn(
+                    self.logger.warn(
                         'TrapMatch %s error: %s',
                         trap_match.display_name, error)
                     continue
@@ -45,7 +69,7 @@ def consolidate_traps(logger):
                     # We have matched to this trap
                     backend_result = \
                         trap_match.backend.run(None, attribute, trap_value)
-                    logger.debug(
+                    self.logger.debug(
                         "A:%d %s:%s -> %s:%s",
                         attribute.id, trap_match.display_name,
                         str(trap_value)[:100],
@@ -53,7 +77,4 @@ def consolidate_traps(logger):
                         backend_result)
                     if trap_match.stop_if_match is True:
                         break
-
-        trap.processed = True
-
-    transaction.commit()
+        transaction.commit()

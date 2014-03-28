@@ -36,29 +36,40 @@ from rnms.model import DBSession, EventType, Event, EventState
 
 
 class CacheBackend(object):
-    command = None
+    backend_function = None
     parameters = None
     display_name = None
 
     def __init__(self, db_backend):
         self.display_name = db_backend.display_name
         self.parameters = db_backend.parameters.split(',')
-        if db_backend.command != "":
+        self.set_command(db_backend.command)
+
+    def enabled(self):
+        """ Return true if backend is enabled, ie there is something to do """
+        return self.backend_function is not None
+
+    def set_command(self, command):
+        """ Set the command used for backend """
+        if command is None or command in ('none', ''):
+            self.backend_function = None
+        else:
             try:
-                self.command = getattr(self, "_run_"+db_backend.command)
+                self.backend_function = \
+                    getattr(self, "_run_"+command)
             except AttributeError:
-                raise ValueError("Backend Plugin \"{}\" not found for {}/".
-                                 format(db_backend.command,
-                                        db_backend.display_name))
+                raise ValueError("Backend Plugin \"{}\" not found for {}".
+                                 format(command,
+                                        self.display_name))
 
     def run(self, poller_row, attribute, poller_result):
         """
         Run the real backend method "_run_BLAH" based upon the command
         used
         """
-        if self.command is None:
+        if self.backend_function is None:
             return ''
-        return self.command(poller_row, attribute, poller_result)
+        return self.backend_function(poller_row, attribute, poller_result)
 
     def _run_event(self, poller_row, attribute, poller_result, always=False):
         """

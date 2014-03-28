@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2011,2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,8 @@ import time
 
 from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey, Column
-from sqlalchemy.types import Integer, Unicode, Boolean, String, DateTime, Text, SmallInteger, BigInteger
+from sqlalchemy.types import Integer, Unicode, Boolean, String, DateTime,\
+    Text, SmallInteger, BigInteger
 
 from rnms.model import DeclarativeBase, DBSession
 from rnms.model.snmp_names import SNMPEnterprise
@@ -34,9 +35,12 @@ from rnms.model.snmp_names import SNMPEnterprise
 __all__ = ['Host', 'Iface', 'ConfigTransfer', 'HostConfig',
            'DiscoveryHost']
 
-MINDATE=datetime.date(1900,1,1)
-discover_interval = 30.0 # 30 min
-discover_variance = 10.0 # +- 5 minutes next discovery
+MINDATE = datetime.date(1900, 1, 1)
+discover_interval = 30.0  # 30 min
+discover_variance = 10.0  # +- 5 minutes next discovery
+
+SYSOBJECTID_OID = (1, 3, 6, 1, 2, 1, 1, 2, 0)
+
 
 class Host(DeclarativeBase):
     __tablename__ = 'hosts'
@@ -55,32 +59,39 @@ class Host(DeclarativeBase):
                                 foreign_keys=[ro_community_id])
     trap_community_id = Column(Integer, ForeignKey("snmp_communities.id"))
     trap_community = relationship('SnmpCommunity',
-                                foreign_keys=[ro_community_id])
-    autodiscovery_policy_id = Column(Integer, ForeignKey("autodiscovery_policies.id") )
+                                  foreign_keys=[ro_community_id])
+    autodiscovery_policy_id = Column(Integer,
+                                     ForeignKey("autodiscovery_policies.id"))
     autodiscovery_policy = relationship('AutodiscoveryPolicy', backref='hosts')
     config_transfer_id = Column(Integer, ForeignKey('config_transfers.id'))
     config_transfer = relationship('ConfigTransfer')
     default_user_id = Column(Integer, ForeignKey('tg_user.user_id'))
     default_user = relationship('User')
-    attributes = relationship('Attribute', backref='host', cascade='all,delete,delete-orphan')
+    attributes = relationship('Attribute', backref='host',
+                              cascade='all,delete,delete-orphan')
     ifaces = relationship('Iface', backref='host', order_by='Iface.id')
-    configs = relationship('HostConfig', backref='host', order_by='HostConfig.id', cascade='all, delete, delete-orphan')
+    configs = relationship('HostConfig', backref='host',
+                           order_by='HostConfig.id',
+                           cascade='all, delete, delete-orphan')
     traps = relationship('SnmpTrap', backref='host')
     show_host = Column(Boolean, default=True)
     pollable = Column(Boolean, default=True)
     created = Column(DateTime, nullable=False, default=datetime.datetime.now)
     updated = Column(DateTime, nullable=False, default=datetime.datetime.now)
-    next_discover = Column(DateTime, nullable=False, default=datetime.datetime.now)
+    next_discover = Column(DateTime, nullable=False,
+                           default=datetime.datetime.now)
     sysobjid = Column(String(250))
     #}
 
-    def __init__(self,mgmt_address=None,display_name=None):
-        if mgmt_address is not None: self.mgmt_address = mgmt_address
-        if display_name is not None: self.display_name = display_name
-        #self.zone = zone.Zone.default()
+    def __init__(self, mgmt_address=None, display_name=None):
+        if mgmt_address is not None:
+            self.mgmt_address = mgmt_address
+        if display_name is not None:
+            self.display_name = display_name
 
     def __repr__(self):
-        return '<Host: name=%s Address=%s>' % (self.display_name, self.mgmt_address)
+        return '<Host: name={} Address={}>'.format(
+            self.display_name, self.mgmt_address)
 
     def __unicode__(self):
         return self.display_name
@@ -88,14 +99,12 @@ class Host(DeclarativeBase):
     @classmethod
     def by_id(cls, hostid):
         """ Return the host whose id is hostid """
-        return DBSession.query(cls).filter(cls.id==hostid).first()
+        return DBSession.query(cls).filter(cls.id == hostid).first()
 
     @classmethod
     def by_address(cls, address):
         """ Return the host whose management addres is ``address''."""
-        if address[:7] == '::ffff:':
-            return DBSession.query(cls).filter(cls.mgmt_address==address[7:]).first()
-        return DBSession.query(cls).filter(cls.mgmt_address==address).first()
+        return DBSession.query(cls).filter(cls.mgmt_address == address).first()
 
     def attrib_by_index(self, index):
         """ Return a host's attribute that has the given ''index''."""
@@ -113,10 +122,11 @@ class Host(DeclarativeBase):
         if specified.
         """
         if self.attributes is not None:
-            if atype == None:
-                return [ attrib.index for attrib in self.attributes]
+            if atype is None:
+                return [attrib.index for attrib in self.attributes]
             else:
-                return [ attrib.index for attrib in self.attributes if attrib.attribute_type_id == atype]
+                return [attrib.index for attrib in self.attributes
+                        if attrib.attribute_type_id == atype]
         return []
 
     def snmp_type(self):
@@ -143,21 +153,24 @@ class Host(DeclarativeBase):
         on this host.
         """
         self.next_discover = datetime.datetime.now() + datetime.timedelta(
-                seconds = (discover_interval + (random.random() - 0.5) * discover_variance) * 60.0)
+            seconds=(discover_interval + (random.random() - 0.5)
+                     * discover_variance) * 60.0)
         transaction.commit()
+
 
 class Iface(DeclarativeBase):
     __tablename__ = 'interfaces'
-    
+
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     host_id = Column(Integer, ForeignKey("hosts.id"), nullable=False)
-    ifindex = Column(Integer, nullable=False) #ifIndex
-    display_name = Column(Unicode(30)) #ifDescr or idXName
-    iftype = Column(Integer, nullable=False,default=1) # other
+    ifindex = Column(Integer, nullable=False)  # ifIndex
+    display_name = Column(Unicode(30))  # ifDescr or idXName
+    iftype = Column(Integer, nullable=False, default=1)  # other
     speed = Column(BigInteger)
-    physaddr = Column(String(30)) #MAC address usually
-    stacklower = Column(Integer, nullable=False,default=0) # ifStackLowerLayer
+    physaddr = Column(String(30))  # MAC address usually
+    stacklower = Column(Integer, nullable=False, default=0)
+    # ifStackLowerLayer
     ip4addr = Column(String(16))
     ip4bits = Column(SmallInteger)
     ip6addr = Column(String(40))
@@ -170,30 +183,34 @@ class Iface(DeclarativeBase):
         self.display_name = display_name
         self.iftype = iftype
 
+
 class ConfigTransfer(DeclarativeBase):
     __tablename__ = 'config_transfers'
-    
-    def __init__(self, display_name=False, plugin_name=False):
-        self.display_name = display_name
-        self.plugin_name = plugin_name
+
     #{ Columns
     id = Column(Integer, primary_key=True)
     display_name = Column(Unicode(40), nullable=False, unique=True)
     plugin_name = Column(String(40), nullable=False, unique=True)
     #}
 
+    def __init__(self, display_name=False, plugin_name=False):
+        self.display_name = display_name
+        self.plugin_name = plugin_name
+
+
 class HostConfig(DeclarativeBase):
     __tablename__ = 'host_configs'
-    
+
     #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     created = Column(DateTime, nullable=False, default=datetime.datetime.now)
     host_id = Column(Integer, ForeignKey('hosts.id'), nullable=False)
     config = Column(Text)
 
-    def __init__(self,host=None, config=None):
+    def __init__(self, host=None, config=None):
         self.host = host
         self.config = config
+
 
 class DiscoveryHost(object):
     """ Host object used for autodiscovering attributes """
@@ -221,7 +238,7 @@ class DiscoveryHost(object):
     def cb_check_sysobjid(self, value):
         """ Callback for when queried host for its sysObjectID """
         if value is not None:
-            new_sysobjid = value.replace('1.3.6.1.4.1','ent')
+            new_sysobjid = value.replace('1.3.6.1.4.1', 'ent')
             self.obj.sysobjid = new_sysobjid
         self.cb_discovery_row()
 
@@ -232,17 +249,17 @@ class DiscoveryHost(object):
         """
         if self.attribute_type is not None and discovered_atts is not None:
             self.discovered_attributes[self.attribute_type.id] =\
-                    discovered_atts
+                discovered_atts
         self.start_time = time.time()
         while True:
             self.discovery_index += 1
             self.attribute_type =\
-                    self.ad_engine.get_discovery_row(self.discovery_index)
+                self.ad_engine.get_discovery_row(self.discovery_index)
             if self.attribute_type is None:
                 # Got the the end of the line
                 break
             if self.attribute_type.autodiscover(
-                self.ad_engine, self.obj, self.ad_engine._force) == True:
+                    self.ad_engine, self.obj, self.ad_engine._force):
                 return True
 
         self.in_discovery = False
@@ -252,7 +269,7 @@ class DiscoveryHost(object):
         """ Check the host's system object id using SNMP """
         self.start_discovery_row()
         self.ad_engine.snmp_engine.get_str(
-            self.obj, (1,3,6,1,2,1,1,2,0), cb_fun,
+            self.obj, SYSOBJECTID_OID, cb_fun,
             )
 
     def need_sysobjid(self):
@@ -261,4 +278,3 @@ class DiscoveryHost(object):
            self.obj.ro_community.is_empty():
             return False
         return True
-

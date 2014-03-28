@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,31 +32,11 @@ from rnms.lib.engine import RnmsEngine
 from rnms.lib.gettid import gettid
 from rnms.model import DBSession, Host, SnmpTrap
 
-SNMP_TRAP_OID = pyasn_types.ObjectIdentifier().prettyIn('1.3.6.1.6.3.1.1.4.1.0')
-SNMP_UPTIME = '1.3.6.1.2.1.1.3.0'
-SNMP_UPTIME_OID = pyasn_types.ObjectIdentifier().prettyIn(SNMP_UPTIME)
+SNMP_TRAP_OID = \
+    pyasn_types.ObjectIdentifier().prettyIn('1.3.6.1.6.3.1.1.4.1.0')
 
 CACHE_SECONDS = 60
 TRAP_DUPLICATE_SECONDS = 5
-
-def _get_trapv1_oid(pmod, req_pdu):
-    """
-    Convert SNMP v1 Trap details into a SNMP v2 Trap OID.
-    This is specified in RFC 1907
-    """
-    generic_trap = pmod.apiTrapPDU.getGenericTrap(req_pdu)
-    if generic_trap == 6:
-        # Enterprise trap <enterprise>.0.<specific>
-        return '{}.0.{}'.format(
-                pmod.apiTrapPDU.getEnterprise(req_pdu).prettyPrint(),
-                pmod.apiTrapPDU.getSpecificTrap(req_pdu)
-                )
-    try:
-        generic_trap_int = int(generic_trap) + 1
-    except ValueError:
-        return None
-    else:
-        return '1.3.6.1.6.3.1.1.5.{}'.format(generic_trap_int)
 
 
 class SNMPtrap_dispatcher(zmqcore.Dispatcher):
@@ -66,7 +46,7 @@ class SNMPtrap_dispatcher(zmqcore.Dispatcher):
         super(SNMPtrap_dispatcher, self).__init__(zmq_core)
         self.create_socket(address_family, socket.SOCK_DGRAM)
         try:
-            self.bind(('',port))
+            self.bind(('', port))
         except socket.error as errmsg:
             print 'Cannot bind to socket {}: {}'.format(
                 port, errmsg)
@@ -74,10 +54,9 @@ class SNMPtrap_dispatcher(zmqcore.Dispatcher):
         #self.listen(5)
         self.cb_fun = cb_fun
 
-
     def handle_read(self):
         try:
-            recv_msg, recv_addr =  self.recvfrom(65535)
+            recv_msg, recv_addr = self.recvfrom(65535)
             if not recv_msg:
                 self.handle_close()
                 return
@@ -90,9 +69,10 @@ class SNMPtrap_dispatcher(zmqcore.Dispatcher):
     def writable(self):
         return False
 
+
 class SNMPtrapd(RnmsEngine):
     zmq_core = None
-    address_families = ( socket.AF_INET6, )
+    address_families = (socket.AF_INET6, )
     host_cache = None
     trap_cache = None
 
@@ -103,11 +83,13 @@ class SNMPtrapd(RnmsEngine):
         self.host_cache = {}
         self.trap_cache = {}
 
+    def load_config(self):
+        """ Load the configuration from the Database """
+
     def run(self):
-        self.logger.info('SNMP trap daemon started TID:%s',gettid())
+        self.logger.info('SNMP trap daemon started TID:%s', gettid())
         cache_clean_time = time.time() + CACHE_SECONDS
         while True:
-            self.logger.debug('run')
             now = time.time()
             if now > cache_clean_time:
                 self.clean_host_cache()
@@ -119,62 +101,75 @@ class SNMPtrapd(RnmsEngine):
                 return
 
     def recv_trap(self, recv_addr, recv_msg):
-        host_id = self._get_host_id(recv_addr[0])
+        # Fix the IPv4 mapped addresses
+        if recv_addr[0][:7] == '::ffff:':
+            host_ip = recv_addr[0][7:]
+        else:
+            host_ip = recv_addr[0]
+        host_id = self._get_host_id(host_ip)
         if host_id is None:
-            self.logger.debug('Notification message from unknown host %s', recv_addr)
+            self.logger.debug(
+                'Notification message from unknown host %s', host_ip)
             return
         while recv_msg:
             msg_ver = int(api.decodeMessageVersion(recv_msg))
             if msg_ver in api.protoModules:
                 pmod = api.protoModules[msg_ver]
             else:
-                self.logger.info('H:%d - Unsupported SNMP version {} from {}'.format(host_id, msg_ver, recv_addr))
+                self.logger.info(
+                    'H:%d - Unsupported SNMP version %s from %s',
+                    host_id, msg_ver, host_ip)
                 return
 
             req_msg, recv_msg = decoder.decode(
-                    recv_msg, asn1Spec=pmod.Message(),)
-
+                recv_msg, asn1Spec=pmod.Message(),)
 
             req_pdu = pmod.apiMessage.getPDU(req_msg)
             if req_pdu.isSameTypeWith(pmod.TrapPDU()):
                 trap_oid = None
 
                 if msg_ver == api.protoVersion1:
-                    trap_oid = _get_trapv1_oid(pmod, req_pdu)
+                    trap_oid = self._get_trapv1_oid(pmod, req_pdu)
                     if trap_oid is None:
                         return
                     new_trap = SnmpTrap(host_id, trap_oid)
-                    new_trap.set_varbind(SNMP_UPTIME, pmod.apiTrapPDU.getTimeStamp(req_pdu).prettyPrint())
+                    new_trap.set_uptime(
+                        pmod.apiTrapPDU.getTimeStamp(req_pdu).prettyPrint())
                     var_binds = pmod.apiTrapPDU.getVarBindList(req_pdu)
                 else:
-                    new_trap = SnmpTrap(host_id,None)
+                    new_trap = SnmpTrap(host_id, None)
                     var_binds = pmod.apiPDU.getVarBindList(req_pdu)
 
                 for var_bind in var_binds:
-                    oid,val =  pmod.apiVarBind.getOIDVal(var_bind)
+                    oid, val = pmod.apiVarBind.getOIDVal(var_bind)
                     if oid == SNMP_TRAP_OID:
                         new_trap.trap_oid = val.prettyPrint()
                     else:
-                        new_trap.set_varbind(oid.prettyPrint(), val.prettyPrint())
+                        new_trap.set_varbind(oid.prettyPrint(),
+                                             val.prettyPrint())
                 if new_trap.trap_oid is None:
                     self.logger.info('H:%d Trap with no trap_oid?')
                 else:
                     if self._duplicate_trap(host_id, new_trap.trap_oid):
-                        self.logger.debug('H:%d Duplicate Trap,not added OID:%s',host_id, new_trap.trap_oid)
+                        self.logger.debug(
+                            'H:%d Duplicate Trap,not added OID:%s',
+                            host_id, new_trap.trap_oid)
                     else:
-                        self.logger.debug('H:%d New Trap OID:%s',host_id, new_trap.trap_oid)
+                        self.logger.debug(
+                            'H:%d New Trap OID:%s',
+                            host_id, new_trap.trap_oid)
                         DBSession.add(new_trap)
                         transaction.commit()
 
     def clean_host_cache(self):
         clean_time = time.time() - CACHE_SECONDS
-        for key,cache in self.host_cache.items():
+        for key, cache in self.host_cache.items():
             if cache[1] < clean_time:
                 self.logger.debug('delete cache {}'.format(cache[0]))
                 del (self.host_cache[key])
 
         clean_time = time.time() - TRAP_DUPLICATE_SECONDS
-        for key,last_seen in self.trap_cache.items():
+        for key, last_seen in self.trap_cache.items():
             if last_seen < clean_time:
                 del (self.trap_cache[key])
 
@@ -186,7 +181,7 @@ class SNMPtrapd(RnmsEngine):
         except KeyError:
             pass
         now = time.time()
-        host  = Host.by_address(address)
+        host = Host.by_address(address)
         if host is None:
             self.host_cache[address] = (None, now)
         else:
@@ -211,3 +206,22 @@ class SNMPtrapd(RnmsEngine):
         trap_time = now
         return True
 
+    @classmethod
+    def _get_trapv1_oid(self, pmod, req_pdu):
+        """
+        Convert SNMP v1 Trap details into a SNMP v2 Trap OID.
+        This is specified in RFC 1907
+        """
+        generic_trap = pmod.apiTrapPDU.getGenericTrap(req_pdu)
+        if generic_trap == 6:
+            # Enterprise trap <enterprise>.0.<specific>
+            return '{}.0.{}'.format(
+                pmod.apiTrapPDU.getEnterprise(req_pdu).prettyPrint(),
+                pmod.apiTrapPDU.getSpecificTrap(req_pdu)
+                )
+        try:
+            generic_trap_int = int(generic_trap) + 1
+        except ValueError:
+            return None
+        else:
+            return '1.3.6.1.6.3.1.1.5.{}'.format(generic_trap_int)

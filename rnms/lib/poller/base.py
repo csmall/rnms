@@ -191,8 +191,7 @@ class Poller(RnmsEngine):
                                 'A:%d - Field "%s" has no value from poller',
                                 attribute_id, fkey)
 
-            #FIXME - backends go here
-            if pr_backend.command != '':
+            if pr_backend.enabled():
                 attribute = model.Attribute.by_id(patt.id)
                 backend_result = pr_backend.run(
                     patt.poller_row, attribute, poller_value)

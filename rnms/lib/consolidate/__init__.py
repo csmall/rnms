@@ -24,7 +24,7 @@ import datetime
 from attributes import check_attribute_state, check_all_attributes_state
 from events import process_events, check_event_stop_time
 from logfiles import LogfileConsolidator
-from traps import consolidate_traps
+from traps import TrapConsolidator
 
 from rnms.lib.engine import RnmsEngine
 from rnms.lib.gettid import gettid
@@ -44,6 +44,7 @@ class Consolidator(RnmsEngine):
         self.do_once = do_once
         super(Consolidator, self).__init__('cons', zmq_context)
         self.logfile_consolidator = LogfileConsolidator(self.logger)
+        self.trap_consolidator = TrapConsolidator(self.logger)
 
     def _poll(self):
         if not self.zmq_core.poll(0.0):
@@ -53,6 +54,7 @@ class Consolidator(RnmsEngine):
     def sighup_handler(self):
         """ Handle HUP signal by reloading config """
         self.logfile_consolidator.load_config()
+        self.trap_consolidator.load_config()
 
     def consolidate(self):
         self.logger.debug('Consolidator started TID:%d', gettid())
@@ -65,7 +67,7 @@ class Consolidator(RnmsEngine):
             self.logfile_consolidator.consolidate()
             if not self._poll():
                 return
-            consolidate_traps(self.logger)
+            self.trap_consolidator.consolidate()
             if not self._poll():
                 return
             changed_attributes = process_events(self.logger)
