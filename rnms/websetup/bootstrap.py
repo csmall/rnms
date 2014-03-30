@@ -186,9 +186,13 @@ class BootStrapper(object):
             field_position = 0
             for field in fields:
                 f = model.AttributeTypeField()
-                (f.display_name, f.tag, f.description, f.showable_edit,
-                    f.showable_discovery, f.overwritable, f.tracked,
-                    f.default_value, f.parameters, f.backend) = field
+                try:
+                    (f.display_name, f.tag, f.description, f.showable_edit,
+                        f.showable_discovery, f.overwritable, f.tracked,
+                        f.default_value, f.parameters, f.backend) = field
+                except ValueError as err:
+                    raise ValueError("Cannot create Attibutefield {}: {}".
+                                     format(field[0], str(err)))
                 f.position = field_position
                 field_position += 1
                 at.fields.append(f)
