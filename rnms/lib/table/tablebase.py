@@ -42,10 +42,11 @@ class jqGridGrid(jqGridWidget):
     scroll = False
     height = None
     default_sort = None
+    default_sort_order = None
 
     params = ('id', 'scroll', 'height', 'caption', 'columns',
               'column_widths', 'default_column_width', 'url_args',
-              'default_sort', )
+              'default_sort', 'default_sort_order')
     options = {
         'datatype': 'json',
         'autowidth': True,
@@ -86,6 +87,8 @@ class jqGridGrid(jqGridWidget):
 
         if self.default_sort is not None:
             self.options['sortname'] = self.default_sort
+        if self.default_sort_order is not None:
+            self.options['sortorder'] = self.default_sort_order
 
         # If we are using actions then ID is second column
         # otherwise we get <tr id="action stuff"...
@@ -205,6 +208,7 @@ class jqGridTableBase(TableBase):
     __scroll__ = False
     __height__ = 'auto'
     __default_sort__ = 'id'
+    __default_sort_order__ = 'asc'
 
     def _do_get_widget_args(self):
         args = super(jqGridTableBase, self)._do_get_widget_args()
@@ -222,4 +226,6 @@ class jqGridTableBase(TableBase):
                 self.__provider__.get_primary_field(self.__entity__)
         if self.__default_sort__ is not None:
             args['default_sort'] = self.__default_sort__
+        if self.__default_sort_order__ is not None:
+            args['default_sort_order'] = self.__default_sort_order__
         return args

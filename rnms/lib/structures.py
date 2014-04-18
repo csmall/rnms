@@ -101,7 +101,8 @@ class event(base_table):
     __omit_fields__ = ('__actions__',)
     __limit_fields__ = ('id', 'created', 'host', 'attribute',
                         'event_type', 'description')
-    __column_widths__ = {'created': 140, 'event_type': 80, 'description': 500}
+    __column_widths__ = {'created': 140, 'event_type': 100, 'description': 500}
+    __default_sort_order__ = 'desc'
 
     def host(self, obj):
         if obj.host is None:
@@ -119,11 +120,15 @@ class event(base_table):
 
     def event_type(self, obj):
         try:
-            return '<div class="severity{} event_type_td">{}</div>'.format(
-                obj.event_state.severity_id,
-                obj.event_type.display_name)
+            event_type = obj.event_type.display_name
         except AttributeError:
             return ''
+        try:
+            return '<div class="severity{} event_type_td">{}</div>'.format(
+                obj.event_state.severity_id,
+                event_type)
+        except AttributeError:
+            return event_type
 
     def description(self, obj):
         return obj.text()

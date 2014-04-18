@@ -43,6 +43,7 @@ def poll_reach_ping(poller_buffer, parsed_params, **kw):
 
 
 def cb_reach_ping(values, error, pobj, attribute, **kw):
+    print values
     pobj.poller_callback(attribute.id, values)
 
 
@@ -59,7 +60,10 @@ def poll_reach_status(poller_buffer, parsed_params, pobj, attribute, **kw):
     except (TypeError, ValueError):
         thres = 90
 
-    loss = int(poller_buffer['packetloss'])
+    try:
+        loss = int(poller_buffer['packetloss'])
+    except (KeyError, ValueError):
+        loss = 0
     result = u'reachable'
     if loss > thres:
         result = u'unreachable'

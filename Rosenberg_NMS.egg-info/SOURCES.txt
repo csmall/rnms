@@ -72,6 +72,13 @@ rnms/lib/att_discovers/snmp_fcport.py
 rnms/lib/att_discovers/snmp_ups.py
 rnms/lib/att_discovers/storage.py
 rnms/lib/att_discovers/tcp_ports.py
+rnms/lib/config_backup/__init__.py
+rnms/lib/config_backup/backup_model.py
+rnms/lib/config_backup/engine.py
+rnms/lib/config_backup/plugins/__init__.py
+rnms/lib/config_backup/plugins/alteon.py
+rnms/lib/config_backup/plugins/base.py
+rnms/lib/config_backup/plugins/cisco.py
 rnms/lib/consolidate/__init__.py
 rnms/lib/consolidate/alarms.py
 rnms/lib/consolidate/attributes.py
@@ -99,6 +106,7 @@ rnms/lib/poller/plugins/tcp.py
 rnms/lib/poller/plugins/verify_index.py
 rnms/lib/scripts/__init__.py
 rnms/lib/scripts/att_discovery.py
+rnms/lib/scripts/config_backup.py
 rnms/lib/scripts/consolidate.py
 rnms/lib/scripts/info.py
 rnms/lib/scripts/jffimport.py

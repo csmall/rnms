@@ -26,7 +26,8 @@ from pysnmp.proto.rfc1905 import NoSuchObject, NoSuchInstance
 from pysnmp.error import PySnmpError
 
 from scheduler import SNMPScheduler
-from request import SNMPRequest
+from request import SNMPRequest, SNMPGetTableRequest, SNMPGetRequest,\
+    SNMPGetListRequest
 
 
 class SNMPEngine(object):
@@ -80,18 +81,18 @@ class SNMPEngine(object):
 
     def get_one(self, snmphost, oid, cb_func, with_oid=None, **kw):
         """ Return a single value from a single OID """
-        req = SNMPRequest(snmphost, snmphost.ro_community)
+        req = SNMPGetRequest(snmphost, snmphost.ro_community)
         req.with_oid = with_oid
-        req.add_oid(oid, cb_func, **kw)
+        req.add_oid(oid, callback=cb_func, **kw)
         return self.get(req)
 
     def get_list(self, snmphost, oids, cb_func, with_oid=None, **kw):
         """ Return a list of one value per given OID """
-        req = SNMPRequest(snmphost, snmphost.ro_community)
+        req = SNMPGetListRequest(snmphost, snmphost.ro_community,
+                                 cb_func, **kw)
         req.with_oid = with_oid
-        req.set_replyall(True)
         for oid in oids:
-            req.add_oid(oid, cb_func, **kw)
+            req.add_oid(oid)
         return self.get(req)
 
     def get_many(self, snmphost, oids, cb_func, with_oid=None, **kw):
@@ -110,11 +111,11 @@ class SNMPEngine(object):
     def get_table(self, snmphost, oids, cb_func, with_oid=None, **kw):
         if type(oids) in (str, unicode):
             oids = (oids,)
-        req = SNMPRequest(snmphost, snmphost.ro_community)
+        req = SNMPGetTableRequest(snmphost, snmphost.ro_community,
+                                  cb_func, **kw)
         req.with_oid = with_oid
-        req.set_table()
         for oid in oids:
-            req.add_oid(oid, cb_func, **kw)
+            req.add_oid(oid)
         return self.get(req)
 
     def get(self, request):
@@ -124,8 +125,11 @@ class SNMPEngine(object):
         self.scheduler.request_add(request)
         return True
 
-    def set(self, **kw):
-        raise(NotImplemented)
+    def set(self, request):
+        if request.community.community == '':
+            request.callback_none()
+            return True
+        self.scheduler.request_add(request)
 
     def poll(self):
         """
@@ -170,29 +174,7 @@ class SNMPEngine(object):
             self.send_request(request)
 
     def send_request(self, request, first=True):
-        sending_oids = [x.raw_oid for x in request.oids]
-        if request.is_getbulk():
-            request.id = self.cmd_gen.bulkCmd(
-                request.community.get_auth_data(),
-                request.transport_target,
-                0, 5,
-                sending_oids,
-                (self._snmp_callback, request)
-            )
-        elif request.is_getnext():
-            request.id = self.cmd_gen.nextCmd(
-                request.community.get_auth_data(),
-                request.transport_target,
-                sending_oids,
-                (self._snmp_callback, request)
-            )
-        else:
-            request.id = self.cmd_gen.getCmd(
-                request.community.get_auth_data(),
-                request.transport_target,
-                sending_oids,
-                (self._snmp_callback, request)
-            )
+        request.prepare(self.cmd_gen, self._snmp_callback)
         if first:
             self.scheduler.request_sent(request.id)
             self.active_requests[request.id] = request
@@ -259,13 +241,14 @@ class SNMPEngine(object):
             if first_req_oid is None:
                 first_req_oid = req_oid
 
-            if request.replyall:
+            if request.is_replyall():
                 row_vals.append(self._format_value(request, oid, val))
             else:
                 request.callback_single(req_oid,
                                         self._format_value(request, oid, val))
-        if request.replyall:
-            request.callback_single(first_req_oid, row_vals)
+        if request.is_replyall():
+            request.varbinds = row_vals
+            request.callback_table()
 
     def _snmp_callback(self, request_id, error_indication, error_status,
                        error_index, var_binds, request):
@@ -282,6 +265,8 @@ class SNMPEngine(object):
                 'H:%d SNMP Errstat %s at %s',
                 request.host.id, error_status.prettyPrint(),
                 error_index and var_binds[int(error_index)-1] or '?')
+            self._request_finished(request.id)
+            request.callback_none(error_status)
             return False
         if request.is_many():
             if self._parse_many(request, var_binds):

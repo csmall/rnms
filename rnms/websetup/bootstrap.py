@@ -92,7 +92,7 @@ def bootstrap(command, conf, vars):
 class BootStrapper(object):
     models = (
         'defaults', 'autodiscovery', 'severities', 'event_states',
-        'config_transfers', 'event_types',
+        'config_backup_methods', 'event_types',
         'logmatches', 'snmp_communities',
         'attribute_types', 'graph_types', 'slas',
         'pollers', 'backends', 'poller_sets',
@@ -151,9 +151,6 @@ class BootStrapper(object):
         gt = model.GraphType()
         gt.display_name = u'No Graph'
         model.DBSession.add(gt)
-
-        ct = model.ConfigTransfer(display_name=u'No Transfer')
-        model.DBSession.add(ct)
 
     def create_event_states(self):
         for row in database_data.event_states:
@@ -259,10 +256,10 @@ class BootStrapper(object):
                 self.used_event_types.append(event_type.id)
             model.DBSession.add(be)
 
-    def create_config_transfers(self):
-        for row in database_data.config_transfers:
-            ct = model.ConfigTransfer(row[0], row[1])
-            model.DBSession.add(ct)
+    def create_config_backup_methods(self):
+        for row in database_data.config_backup_methods:
+            cbm = model.ConfigBackupMethod(row[0], row[1])
+            model.DBSession.add(cbm)
 
     def create_event_types(self):
         for row in database_data.event_types:

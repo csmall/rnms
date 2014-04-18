@@ -25,6 +25,7 @@ instead of the core one.
 """
 import zmq
 import asyncore
+import time
 
 from random import randint
 
@@ -82,6 +83,12 @@ class ZmqCore(object):
         to work
         """
         # ZMQ objects should of already registered here
+        if self.zmq_map == {} and self.socket_map == {}:
+            try:
+                time.sleep(timeout)
+            except KeyboardInterrupt:
+                return False
+            return True
 
         for fd, obj in self.socket_map.items():
             flags = 0

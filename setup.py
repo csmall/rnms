@@ -89,6 +89,7 @@ setup(
             'rnms_info = rnms.lib.scripts.info:main',
             'rnms_jffimport = rnms.lib.scripts.jffimport:main',
             'rnms_poller = rnms.lib.scripts.poller:main',
+            'rnms_cbackup = rnms.lib.scripts.config_backup:main',
             'rnms_trapd = rnms.lib.scripts.trapd:main',
             'rnms_sla = rnms.lib.scripts.sla_analyzer:main',
         ]

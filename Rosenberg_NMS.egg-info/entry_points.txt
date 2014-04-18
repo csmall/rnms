@@ -12,5 +12,6 @@ rnms_trapd = rnms.lib.scripts.trapd:main
 rnms_info = rnms.lib.scripts.info:main
 rnms_jffimport = rnms.lib.scripts.jffimport:main
 rnmsd = rnms.lib.scripts.rnmsd:main
+rnms_cbackup = rnms.lib.scripts.config_backup:main
 rnms_adisc = rnms.lib.scripts.att_discovery:main
 

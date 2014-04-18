@@ -32,7 +32,7 @@ from sqlalchemy.types import Integer, Unicode, Boolean, String, DateTime,\
 from rnms.model import DeclarativeBase, DBSession
 from rnms.model.snmp_names import SNMPEnterprise
 
-__all__ = ['Host', 'Iface', 'ConfigTransfer', 'HostConfig',
+__all__ = ['Host', 'Iface', 'ConfigBackupMethod', 'HostConfig',
            'DiscoveryHost']
 
 MINDATE = datetime.date(1900, 1, 1)
@@ -63,8 +63,10 @@ class Host(DeclarativeBase):
     autodiscovery_policy_id = Column(Integer,
                                      ForeignKey("autodiscovery_policies.id"))
     autodiscovery_policy = relationship('AutodiscoveryPolicy', backref='hosts')
-    config_transfer_id = Column(Integer, ForeignKey('config_transfers.id'))
-    config_transfer = relationship('ConfigTransfer')
+    config_backup_method_id = Column(
+        Integer, ForeignKey('config_backup_methods.id'), nullable=False,
+        default=1)
+    config_backup_method = relationship('ConfigBackupMethod')
     default_user_id = Column(Integer, ForeignKey('tg_user.user_id'))
     default_user = relationship('User')
     attributes = relationship('Attribute', backref='host',
@@ -184,8 +186,8 @@ class Iface(DeclarativeBase):
         self.iftype = iftype
 
 
-class ConfigTransfer(DeclarativeBase):
-    __tablename__ = 'config_transfers'
+class ConfigBackupMethod(DeclarativeBase):
+    __tablename__ = 'config_backup_methods'
 
     #{ Columns
     id = Column(Integer, primary_key=True)
@@ -193,9 +195,15 @@ class ConfigTransfer(DeclarativeBase):
     plugin_name = Column(String(40), nullable=False, unique=True)
     #}
 
-    def __init__(self, display_name=False, plugin_name=False):
+    def __init__(self, display_name=None, plugin_name=''):
         self.display_name = display_name
         self.plugin_name = plugin_name
+
+    @classmethod
+    def default(cls):
+        """ Return the type for none """
+        return DBSession.query(cls).filter(
+            cls.plugin_name == '').first()
 
 
 class HostConfig(DeclarativeBase):

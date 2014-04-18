@@ -23,29 +23,33 @@ from nose.tools import eq_
 from rnms import model
 from rnms.tests.models import ModelTest
 
+
 # Needed for a zone
 class TestZone(ModelTest):
     klass = model.Zone
     attrs = dict(
-            display_name = (u'Test Zone'),
-            short_name = (u'test')
-            )
+        display_name=u'Test Zone',
+        short_name=u'test'
+        )
+
 
 class TestHost(ModelTest):
     klass = model.Host
     attrs = dict(
-            mgmt_address = '127.0.0.1',
-            display_name = 'localhost',
-            )
+        mgmt_address='127.0.0.1',
+        display_name='localhost',
+        )
+
     def test_host_by_address(self):
         """Host can correctly be fetched by management address"""
         new_host = model.Host.by_address('127.0.0.1')
-        eq_(new_host, self.obj) 
+        eq_(new_host, self.obj)
 
     def test_host_blank_attribute(self):
         """Host returns none for blank attribute"""
         attrib = self.obj.attrib_by_index('blank')
         eq_(attrib, None)
+
 
 class TestIface(ModelTest):
     klass = model.Iface
@@ -67,18 +71,18 @@ class TestIface(ModelTest):
         """Iface init sets display_name correctly"""
         eq_(self.obj.display_name,u'lo0') 
 
-class TestConfigTransfer(ModelTest):
-    klass = model.ConfigTransfer
+class TestConfigBackupMethod(ModelTest):
+    klass = model.ConfigBackupMethod
     attrs = dict(
-            display_name = u'Test ConfigTransfer',
+            display_name = u'Test ConfigBackupMethod',
             plugin_name = 'testct'
             )
     def test_ct_init_display_name(self):
-        """ConfigTransfer init sets display_name correctly"""
-        eq_(self.obj.display_name, u'Test ConfigTransfer')
+        """ConfigBackupMethod init sets display_name correctly"""
+        eq_(self.obj.display_name, u'Test ConfigBackupMethod')
 
     def test_ct_init_plugin_name(self):
-        """ConfigTransfer init sets plugin_name correctly"""
+        """ConfigBackupMethod init sets plugin_name correctly"""
         eq_(self.obj.plugin_name,'testct') 
 
 class TestHostConfig(ModelTest):

@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,13 +24,16 @@ import os
 
 """ ping Client """
 
+
 class PingClient():
     """
     Base client to send and receive pings using fping
     """
-    fping_bin='/usr/bin/fping'
-    fping6_bin='/usr/bin/fping6'
-    fping_re = re.compile(r'\S+ : xmt\/rcv\/%loss = [0-9]+\/[0-9]+\/([0-9.]+)%(?:, min\/avg\/max = [0-9.]+\/([0-9.]+)\/[0-9]+)?')
+    fping_bin = '/usr/bin/fping'
+    fping6_bin = '/usr/bin/fping6'
+    fping_re = re.compile(
+        r'\S+ : xmt\/rcv\/%loss = [0-9]+\/[0-9]+\/([0-9.]+)%'
+        '(?:, min\/avg\/max = [0-9.]+\/([0-9.]+)\/[0-9]+)?')
 
     def __init__(self):
         self.active_pings = {}
@@ -56,7 +59,6 @@ class PingClient():
             return fping
         return None
 
-
     def ping_host(self, ipaddr, cb_fun, num_pings, interval, **kw):
         """
         Start the ping, return the popen object on success or None on error
@@ -66,15 +68,18 @@ class PingClient():
             return False
 
         try:
-            p = subprocess.Popen([fping_bin, '-c', str(num_pings), '-p', str(interval), '-q', ipaddr], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p = subprocess.Popen(
+                [fping_bin, '-c', str(num_pings), '-p',
+                    str(interval), '-q', ipaddr],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except OSError:
             return False
         self.active_pings[ipaddr] = {
-                'popen': p,
-                'ipaddr': ipaddr,
-                'cb_fun': cb_fun,
-                'data' : kw,
-                }
+            'popen': p,
+            'ipaddr': ipaddr,
+            'cb_fun': cb_fun,
+            'data': kw,
+            }
         return True
 
     def return_value(self, ping):
@@ -93,7 +98,7 @@ class PingClient():
                 rtt = float(match.group(2))
             except TypeError:
                 rtt = None
-            ping['cb_fun']((rtt,pl), None, **ping['data'])
+            ping['cb_fun']((rtt, pl), None, **ping['data'])
         else:
             ping['cb_fun'](None, None, **ping['data'])
         del(self.active_pings[ping['ipaddr']])
@@ -110,7 +115,3 @@ class PingClient():
             else:
                 ping_count += 1
         return ping_count
-
-
-
-

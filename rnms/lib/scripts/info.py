@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ import sys
 
 from rnms import model
 from rnms.lib.cmdline import RnmsCommand
+
 
 class RnmsInfo(RnmsCommand):
     """
@@ -42,8 +43,9 @@ class RnmsInfo(RnmsCommand):
             dest='qtype',
             type=str,
             choices=('attribute', 'atype', 'host', 'pollerset',
-                     'autodiscovery','sla','trigger'),
-            help='Choose attribute, atype, autodiscovery, host or pollerset,sla,trigger',
+                     'autodiscovery', 'sla', 'trigger'),
+            help='Choose attribute, atype, autodiscovery, host or '
+            'pollerset,sla,trigger',
             metavar='<query_type>')
         self.parser.add_argument(
             action='store',
@@ -70,18 +72,22 @@ class RnmsInfo(RnmsCommand):
 {:<20} | {} : {}
 {:<20} | {}
 {:<20} | {}
+{:<20} | {}
 {:<20} | ({}) {}'''.format(
-        'Zone', host.zone.id, host.zone.display_name,
-        'Management IP', host.mgmt_address,
-        'System ObjID', host.sysobjid,
-        'Community RO/RW', host.ro_community.display_name,
-    host.rw_community.display_name,
-        'Autodiscovery', host.autodiscovery_policy.id, host.autodiscovery_policy.display_name,
-        'Created', host.created,
-        'Next Discovery', host.next_discover,
-        'Attributes', len(host.attributes), ', '.join(
-            [str(a.id)+('','(P)')[a.poll_priority] for a in host.attributes])
-        )
+                'Zone', host.zone.id, host.zone.display_name,
+                'Management IP', host.mgmt_address,
+                'System ObjID', host.sysobjid,
+                'Community RO/RW', host.ro_community.display_name,
+                host.rw_community.display_name,
+                'Autodiscovery', host.autodiscovery_policy.id,
+                host.autodiscovery_policy.display_name,
+                'Config Backup', host.config_backup_method.display_name,
+                'Created', host.created,
+                'Next Discovery', host.next_discover,
+                'Attributes', len(host.attributes), ', '.join(
+                    [str(a.id)+('', '(P)')[a.poll_priority]
+                        for a in host.attributes])
+                )
 
     def attribute_info(self):
         attributes = self._get_objects(model.Attribute, 'Attributes')

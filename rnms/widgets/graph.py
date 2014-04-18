@@ -303,20 +303,20 @@ class BaseFormat(object):
         Set the correct format for the xaxis ticks depending on
         the timespan of the supplied data series
         """
-        try:
-            minutes = (data_series[-1][0] - data_series[0][0]) /\
-                (60000)
-        except IndexError:
-            format_string = '%H:%M'
-            tick_interval = 1
-        else:
-            for min_minutes, format_string, tick_interval in TICK_INTERVALS:
-                if min_minutes > minutes:
-                    break
+        minutes = (
+            self.parent.end_time - self.parent.start_time)\
+            / 60
+        for min_minutes, format_string, tick_interval in TICK_INTERVALS:
+            if min_minutes > minutes:
+                break
+        print self.parent.end_time, self.parent.start_time, minutes
+        print format_string, min_minutes
+        print data_series
         self.parent.options['axes']['xaxis'].update({
             'renderer': twc.js_symbol('$.jqplot.DateAxisRenderer'),
             'tickOptions': {'formatString': format_string},
             'tickInterval': tick_interval * 60,
+            'min': (self.parent.start_time - tick_interval * 30) *1000
         })
 
 
@@ -342,13 +342,13 @@ class GraphWidget(JQPlotWidget):
         if self.graph_type is None:
             return None
         if self.preset_time is not None:
-            self.end_time = 'now'
-            self.start_time = '-{}min'.format(self.preset_time)
+            self.end_time = int(time.time())
+            self.start_time = int(time.time()) - self.preset_time * 60
         self._format = self._get_format()
         if self._format is None:
             return None
         self.options = self._format.get_options()
-        #self.prepare_graph_template()
+        self.prepare_graph_template()
         self.data = self._format.get_data()
         self.options['title'] = self.get_title()
         self.resources.append(dateAxisRenderer_js)

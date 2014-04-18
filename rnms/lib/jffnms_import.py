@@ -216,6 +216,7 @@ def import_event(obj):
         obj.logger.info('Events: %d added.', add_count)
     return events
 
+
 def import_host(obj):
     add_count=0
     hosts = {}
@@ -237,7 +238,7 @@ def import_host(obj):
             host.discovered = datetime.datetime.now()
             host.next_discover = host.discovered + datetime.timedelta(minutes=30)
             host.sysobjid = row[14]
-            host.config_transfer_id = row[15]
+            #host.config_backup_type_id = row[15]
 
             DBSession.add(host)
             DBSession.flush()

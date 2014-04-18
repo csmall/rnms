@@ -1,6 +1,6 @@
 <div class="ui-widget ui-widget-content ui-corner-all" dir="ltr">
   <div class="infobox-titlebar ui-widget-header ui-corner-top ui-helper-clearfix">
-    <a class="infobox-titlebar-close HeaderButton" href="javascript:void(0)" role="link" style="right: 0px;">
+    <a class="infobox-titlebar-close HeaderButton" href="javascript:void(0)" role="link" style="right: 0px;"></a>
     <span class="infobox-title">${w.title}</span>
   </div>
   <div class="infobox-body">
