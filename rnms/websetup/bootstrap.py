@@ -419,15 +419,25 @@ class BootStrapper(object):
 
     def create_trap_matches(self):
         for row in database_data.trap_matches:
-            m = model.TrapMatches()
-            (m.position, m.display_name, m.trap_oid,
+            m = model.TrapMatch()
+            (m.position, m.display_name, m.trap_oid, at_name,
                 m.attribute_command, m.attribute_parameters,
-                m.value_command, m.value_parameters,
+                values,
                 b_name, m.stop_if_match) = row
+            m.attribute_type = model.AttributeType.by_display_name(at_name)
+            if m.attribute_type is None:
+                raise ValueError(
+                    "Attribute type {} not found in Trap Match {}".format(
+                        at_name, m.display_name))
             m.backend = model.Backend.by_display_name(b_name)
             if m.backend is None:
-                raise ValueError("Backend %s not found for Trap Match %s",
-                                 b_name, m.display_name)
+                raise ValueError("Backend {} not found for Trap Match {}".
+                                 format(b_name, m.display_name))
+            for val in values:
+                mv = model.TrapMatchValue()
+                (mv.key, mv.command, mv.parameters) = val
+                m.values.append(mv)
+
             model.DBSession.add(m)
 
     def create_triggers(self):

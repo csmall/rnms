@@ -20,7 +20,7 @@
 from collections import defaultdict
 import transaction
 
-from rnms.model import DBSession, SnmpTrap, TrapMatches
+from rnms.model import DBSession, SnmpTrap, TrapMatch
 from match_trap import MatchTrap
 
 
@@ -35,8 +35,8 @@ class TrapConsolidator(object):
         """ Load configuration from Database """
         self.trap_matches = defaultdict(list)
         trap_match_count = 0
-        for trap_match in DBSession.query(TrapMatches).\
-                order_by(TrapMatches.position):
+        for trap_match in DBSession.query(TrapMatch).\
+                order_by(TrapMatch.position):
             trap_match_count += 1
             self.trap_matches[trap_match.trap_oid].append(
                 MatchTrap(trap_match))
@@ -62,16 +62,16 @@ class TrapConsolidator(object):
                     trap_match.run(trap.host, trap)
                 if error is not None:
                     self.logger.warn(
-                        'TrapMatch %s error: %s',
-                        trap_match.display_name, error)
+                        'TrapMatch error: %s',
+                        error)
                     continue
                 if attribute is not None:
                     # We have matched to this trap
                     backend_result = \
                         trap_match.backend.run(None, attribute, trap_value)
                     self.logger.debug(
-                        "A:%d %s:%s -> %s:%s",
-                        attribute.id, trap_match.display_name,
+                        "A:%d Trap:%s -> %s:%s",
+                        attribute.id,
                         str(trap_value)[:100],
                         trap_match.backend.display_name,
                         backend_result)

@@ -367,6 +367,7 @@ backends = (
     (u'Brocade FC Admin View', 'admin_status', 'down=2|up=1, 0'),
     (u'Change Interface Number', 'verify_index', ''),
     (u'Alarm OS/400', 'event', 'os400_error'),
+    (u'Alarm Configuration', 'event_always', 'configuration'),
 )
 
 poller_sets = (

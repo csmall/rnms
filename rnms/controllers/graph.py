@@ -33,32 +33,34 @@ from rnms.widgets import MainMenu
 
 logger = logging.getLogger('rnms')
 
+
 class GraphController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
     #allow_only = predicates.not_anonymous()
 
     @expose('rnms.templates.graph_index')
-    @validate(validators={'a':ForEach(validators.Int(min=1))})
+    @validate(validators={'a': ForEach(validators.Int(min=1))})
     def index(self, a=None):
         if tmpl_context.form_errors:
             self.process_form_errors()
             return {}
-        print a
         if a == []:
-            a=None
+            a = None
         return dict(page='graphs', attribute_ids=a,
                     main_menu=MainMenu())
 
     @expose('rnms.templates.widgets.graph_widget')
-    @validate(validators={'a':validators.Int(min=2), 'gt':validators.Int(min=1),
-                          'pt':validators.Int(min=1)})
-    def widget(self,a,gt,pt=None):
+    @validate(validators={'a': validators.Int(min=1),
+                          'gt': validators.Int(min=1),
+                          'pt': validators.Int(min=1)})
+    def widget(self, a, gt, pt=None):
         if tmpl_context.form_errors:
             return dict(errmsg=' '.join(
                 ['{0[1]} for {0[0]}'.format(x) for x in
                  tmpl_context.form_errors.items()]))
+
         class MyGraph(GraphWidget):
-            id = 'graph-{}-{}'.format(a,gt)
+            id = 'graph-{}-{}'.format(a, gt)
             attribute_id = a
             graph_type_id = gt
             preset_time = pt

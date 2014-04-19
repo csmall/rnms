@@ -156,8 +156,8 @@ class SNMPtrapd(RnmsEngine):
                             host_id, new_trap.trap_oid)
                     else:
                         self.logger.debug(
-                            'H:%d New Trap OID:%s',
-                            host_id, new_trap.trap_oid)
+                            'H:%d New Trap v%s OID:%s',
+                            host_id, msg_ver, new_trap.trap_oid)
                         DBSession.add(new_trap)
                         transaction.commit()
 
@@ -214,8 +214,8 @@ class SNMPtrapd(RnmsEngine):
         """
         generic_trap = pmod.apiTrapPDU.getGenericTrap(req_pdu)
         if generic_trap == 6:
-            # Enterprise trap <enterprise>.0.<specific>
-            return '{}.0.{}'.format(
+            # Enterprise trap <enterprise>.<specific>
+            return '{}.{}'.format(
                 pmod.apiTrapPDU.getEnterprise(req_pdu).prettyPrint(),
                 pmod.apiTrapPDU.getSpecificTrap(req_pdu)
                 )

@@ -121,7 +121,7 @@ class CacheBackend(object):
         else:
             event_state_name = poller_result
         if event_state_name is None:
-            return "Poller returned None, nothing done"
+            return "Event state is None, nothing done"
 
         event_state = EventState.by_name(event_state_name)
         if event_state is None:
@@ -149,7 +149,7 @@ class CacheBackend(object):
             state - optional event EventState description
             other fields copied to event
         """
-        return self._run_event(attribute, poller_result, True)
+        return self._run_event(poller_row, attribute, poller_result, True)
 
     def _run_admin_status(self, poller_row, attribute, poller_result):
         """

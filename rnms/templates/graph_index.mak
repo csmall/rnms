@@ -1,5 +1,15 @@
 <%inherit file="local:templates.master"/>
 <link rel="stylesheet" type="text/css" media="screen" href="${tg.url('/css/rnms_graph.css')}" />
+<%def name="title()">
+Graph
+</%def>
+<div class="row">
+  <div class="span12">
+    <div class="page-header">
+      <h2>Graph </h2>
+    </div>
+  </div>
+</div>
 <select id="graph_time_span" name="pt">
   <option value="">No Preset</option>
   <option value="10">Last 10 Minutes</option>

@@ -103,7 +103,7 @@ class SnmpTrapVarbind(DeclarativeBase):
             self.oid, self.value)
 
 
-class TrapMatches(DeclarativeBase):
+class TrapMatch(DeclarativeBase):
     __tablename__ = 'trap_matches'
 
     #{ Columns
@@ -113,14 +113,12 @@ class TrapMatches(DeclarativeBase):
     trap_oid = Column(Unicode(250), nullable=False, unique=True)
     attribute_command = Column(Unicode(40), nullable=False)
     attribute_parameters = Column(Unicode(250))
-    value_command = Column(Unicode(40), nullable=False)
-    value_parameters = Column(Unicode(250))
     stop_if_match = Column(Boolean, nullable=False, default=True)
     backend_id = Column(Integer, ForeignKey('backends.id'))
     backend = relationship('Backend')
 
     attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'))
-    attributetype = relationship('AttributeType')
+    attribute_type = relationship('AttributeType')
 
     @classmethod
     def by_oid(cls, trap_oid):
@@ -128,3 +126,16 @@ class TrapMatches(DeclarativeBase):
         """
         return DBSession.query(cls).\
             filter(cls.trap_oid == trap_oid).order_by(cls.position)
+
+
+class TrapMatchValue(DeclarativeBase):
+    __tablename__ = 'trap_match_values'
+
+    #{ Columns
+    trap_match_id = Column(Integer, ForeignKey('trap_matches.id'),
+                           nullable=False, primary_key=True)
+    trap_match = relationship('TrapMatch', backref='values')
+    key = Column(Unicode(40), nullable=False, primary_key=True)
+    command = Column(Unicode(40), nullable=False)
+    parameters = Column(Unicode(250))
+    #}

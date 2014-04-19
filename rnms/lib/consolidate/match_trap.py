@@ -23,17 +23,20 @@ from rnms.model import DBSession, Attribute
 from rnms.lib.backend import CacheBackend
 
 
-def make_attribute_command(command, parameters):
+def make_attribute_command(db_match):
     class AttributeCommand(object):
         """ Class that contains all attribute commands """
         _command = None
         _parameters = None
+        _attribute_type_id = None
 
-        def __init__(self, command, parameters):
-            self._command = getattr(self, 'run_'+command, None)
-            self._parameters = parameters
+        def __init__(self, db_match):
+            self._command = getattr(self, '_run_'+db_match.attribute_command)
+            self._parameters = db_match.attribute_parameters
+            self._attribute_type_id = db_match.attribute_type_id
 
         def run(self, host, trap):
+            print self._command
             if self._command is None:
                 return (None, None)
             return self._command(host, trap)
@@ -49,11 +52,11 @@ def make_attribute_command(command, parameters):
               index_oid = The OID of the VarBind that holds the index
             """
             for varbind in trap.varbinds:
-                if varbind.oid == self.attribute_parameters:
+                if varbind.oid.startswith(self._parameters):
                     return (DBSession.query(Attribute).filter(and_(
                         Attribute.host_id == host.id,
-                        Attribute.attribute_type_id == self.attribute_type_id,
-                        Attribute.index == varbind.value
+                        Attribute.attribute_type_id == self._attribute_type_id,
+                        Attribute.index == str(varbind.value)
                         )).first(), None)
             return (None, None)
 
@@ -66,11 +69,11 @@ def make_attribute_command(command, parameters):
             """
             return (DBSession.query(Attribute).filter(and_(
                 Attribute.host_id == host.id,
-                Attribute.attribute_type_id == self.attribute_type_id,
+                Attribute.attribute_type_id == self._attribute_type_id,
                 )).first(), None)
             return (None, None)
 
-    cmd = AttributeCommand(command, parameters)
+    cmd = AttributeCommand(db_match)
     return cmd.run
 
 
@@ -81,8 +84,8 @@ def make_value_command(command, parameters):
         _parameters = None
 
         def __init__(self, command, parameters):
-            self._command = getattr(self, 'run_'+command, None)
-            self.parameters = parameters
+            self._command = getattr(self, '_run_'+command, None)
+            self._parameters = parameters
 
         def run(self, host, trap):
             if self._command is None:
@@ -90,7 +93,45 @@ def make_value_command(command, parameters):
             return self._command(host, trap)
 
         ### Real run commands go here
+        def _run_dict(self, host, trap):
+            """
+            Return a dictionary of values obtained from the varbinds
+            Parameters: <key1>=<oid1>,<key2>=<oid2>,...
+            <keyX> = key for the returned dictionary
+            <oidX> = oid of varbind to use for value
+            """
+            values = {}
+            for params in self._parameters.split(','):
+                try:
+                    key, match_oid = params.split('=')
+                except ValueError:
+                    continue
+                for varbind in trap.varbinds:
+                    if varbind.oid.startswith(match_oid):
+                        values[key] = varbind.value
+                        break
+                else:
+                    values[key] = None
+            return values, None
+
         def _run_oid(self, host, trap):
+            """
+            Find the given OID and return its value
+            Parameters: <oid>|<default>
+            <oid> = OID of varbind to return
+            <default> = Optional default value if not found
+            """
+            params = self._parameters.split('|')
+            if len(params) == 2:
+                default = params[1]
+            else:
+                default = None
+            for varbind in trap.varbinds:
+                if varbind.oid.startswith(params[0]):
+                    return varbind.value, None
+            return default, None
+
+        def _run_oid_map(self, host, trap):
             """
             Parameters: <oid>|<val1>=<ret1>,...|<default ret>
             oid   = The OID of varbind holding the state
@@ -98,33 +139,32 @@ def make_value_command(command, parameters):
                       <ret1> - optional
             <default ret> If state is OID no match of previous field - otional
             """
-            params = self.parmeters('|')
-
-            state_oid = params[0]
+            params = self._parameters.split('|')
+            if len(params) < 2:
+                return None, 'Need at least 2 parameters'
+            match_oid = params[0]
+            mappings = params[1]
+            try:
+                default = params[2]
+            except IndexError:
+                default = None
 
             for varbind in trap.varbinds:
-                if varbind.oid == state_oid:
-                    if len(params) == 1:
-                        return (varbind.value, None)
-
-                    for item in params[1].split(','):
+                if varbind.oid.startswith(match_oid):
+                    for mapping in mappings.split(','):
                         try:
-                            (match, ret) = item.split('=')
+                            match, value = mapping.split('=')
                         except ValueError:
-                            pass
-                        else:
-                            if varbind.value == match:
-                                return (ret, None)
-                    else:
-                        try:
-                            return (params[2], None)
-                        except IndexError:
-                            pass
-            return (None, None)
+                            return None, 'Mapping is wrong for'.format(mapping)
+                        if varbind.value == match:
+                            return value, None
+            return default, None
 
         def _run_fixed(self, host, trap):
             """ The value is fixed in the parameters """
-            return (self.value_parameters, None)
+            return (self._parameters, None)
+    cmd = ValueCommand(command, parameters)
+    return cmd.run
 
 
 class MatchTrap(object):
@@ -134,12 +174,10 @@ class MatchTrap(object):
         )
 
     def __init__(self, db_match):
-        self._attribute_command = make_attribute_command(
-            db_match.attribute_command,
-            db_match.attribute_parameters)
-        self._value_command = make_value_command(
-            db_match.attribute_command,
-            db_match.attribute_parameters)
+        self._attribute_command = make_attribute_command(db_match)
+        self._value_commands = {
+            v.key: make_value_command(v.command, v.parameters)
+            for v in db_match.values}
         self.backend = CacheBackend(db_match.backend)
         for copy_attr in self.__copy_attrs__:
             setattr(self, copy_attr, getattr(db_match, copy_attr))
@@ -165,7 +203,11 @@ class MatchTrap(object):
         elif attribute is None:
             return (None, None, None)
 
-        value, error = self._value_command(host, trap)
-        if error is not None:
-            return (None, None, error)
-        return (attribute, value, None)
+        error = None
+        return_values = {}
+        for k, value_command in self._value_commands.items():
+            value, error = value_command(host, trap)
+            if error is not None:
+                return (None, None, error)
+            return_values[k] = value
+        return (attribute, return_values, None)

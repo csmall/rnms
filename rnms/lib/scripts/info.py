@@ -18,6 +18,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 import sys
+import datetime
 
 from rnms import model
 from rnms.lib.cmdline import RnmsCommand
@@ -43,9 +44,9 @@ class RnmsInfo(RnmsCommand):
             dest='qtype',
             type=str,
             choices=('attribute', 'atype', 'host', 'pollerset',
-                     'autodiscovery', 'sla', 'trigger'),
+                     'autodiscovery', 'sla', 'trap', 'trigger'),
             help='Choose attribute, atype, autodiscovery, host or '
-            'pollerset,sla,trigger',
+            'pollerset,sla,trap,trigger',
             metavar='<query_type>')
         self.parser.add_argument(
             action='store',
@@ -257,6 +258,47 @@ Attribute Autodiscovery can do the following:
                         print '   | {:>40} |     |'.format(row.expression[idx:idx+40])
 
         print '=' * 60
+
+    def trap_info(self):
+        """ Information about SNMP traps """
+        traps = self._get_objects(model.SnmpTrap, 'Traps')
+        if traps is None:
+            return
+        print
+        for trap in traps:
+            self.line('=')
+            print '''{:<30} | {}
+{:<30} | {}: {}
+{:<30} | {}
+{:<30} | {}'''.format(
+                'Trap', trap.id,
+                'Host', trap.host.id, trap.host.display_name,
+                'Trap OID', trap.trap_oid,
+                'Processed', trap.processed
+                )
+            self.line('-')
+            print 'Varbinds'
+            for varbind in trap.varbinds:
+                if varbind.oid == '1.3.6.1.2.1.1.3.0':
+                    try:
+                        uptime = datetime.timedelta(seconds=int(varbind.value))
+                    except (ValueError, TypeError):
+                        uptime = '???'
+                    print '{:<40} = {} ({}s)'.format(
+                        'System Uptime', uptime, varbind.value)
+                    continue
+                elif varbind.oid == '1.3.6.1.6.3.1.1.4.3.0':
+                    oid = 'Enterprise'
+                else:
+                    oid = varbind.oid
+                if varbind.value[:12] == '1.3.6.1.4.1.':
+                    ent, device = model.SNMPEnterprise.oid2name(varbind.value)
+                    value = '{} - {} ({})'.format(
+                        ent, device, varbind.value)
+                else:
+                    value = varbind.value
+
+                print '{:<40} = {}'.format(oid, value)
 
     def trigger_info(self):
         """ Information about the triggers """
