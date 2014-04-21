@@ -3,7 +3,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2012,2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,9 +23,13 @@
  FillerBase objects, that are used in the admin system.  For objects outside
  the admin system, put them into the structures file.
 """
+from markupsafe import Markup
 import tg
+from tg.i18n import lazy_ugettext as l_
+from tgext.admin.layouts import BootstrapAdminTableFiller
 
 from rnms import model
+from rnms.widgets.button import Button
 from structures import base_table as bt
 
 
@@ -35,35 +39,39 @@ def click(model_name, mod_id, name):
         name)
 
 
+class TableFiller(BootstrapAdminTableFiller):
+    def __actions__(self, obj):
+        # This is from tgext.admin.widgets
+        primary_fields = self.__provider__.get_primary_fields(self.__entity__)
+        pklist = '/'.join(map(lambda x: str(getattr(obj, x)), primary_fields))
+        actions = Markup('''
+    <a href="%(pklist)s/edit" class="btn btn-primary">
+        <span class="glyphicon glyphicon-pencil"></span>
+    </a>
+    <div class="hidden-lg hidden-md">&nbsp;</div>
+    <form method="POST" action="%(pklist)s" style="display: inline">
+        <input type="hidden" name="_method" value="DELETE" />
+        <button type="submit" class="btn btn-danger"
+         onclick="return confirm('%(msg)s')">
+            <span class="glyphicon glyphicon-trash"></span>
+        </button>
+    </form>
+''' % dict(msg=l_('Are you sure?'),
+           pklist=pklist))
+
+        try:
+            return actions + self.extra_actions(obj)
+        except AttributeError:
+            return actions
+
+
 class base_table(bt):
     @property
-    def __url__(self):
+    def i__url__(self):
         url = tg.request.path_url
         if url[-1] == '/':
             url = url[:-1]
         return url + '.json'
-
-    def action_buttons(self, obj):
-        """ Returns primary fields and default buttons as a list """
-        primary_fields = self.__provider__.get_primary_fields(self.__entity__)
-        pklist = '/'.join(map(lambda x: str(getattr(obj, x)), primary_fields))
-        buttons = [
-            ('<a class="delete-confirm btn btn-mini btn-primary"'
-             'href="{0}/edit">'
-             '<i title="Edit" class="icon-pencil icon-white"></i></a>').
-            format(pklist, ),
-            ('<a class="delete-confirm btn btn-mini btn-danger href="{0}"'
-             'onclick="del_confirm({0})">'
-             '<i title="Delete" class="icon-trash icon-white">'
-             '</i></a>').format(pklist)
-        ]
-        return buttons
-
-    def __actions__(self, obj):
-        return ''.join(
-            ['<div class="action_buttons">'] +
-            self.action_buttons(obj) +
-            ['</div>'])
 
 
 class attribute(base_table):
@@ -167,12 +175,14 @@ class group(base_table):
 
 
 class host(base_table):
-    __grid_id__ = 'hosts-grid'
     __entity__ = model.Host
     __limit_fields__ = ('id', 'display_name', 'zone', 'mgmt_address',
                         )
 
-    def action_buttons(self, obj):
+    def extra_actions(self, obj):
+        return Button(
+            tg.url('/admin/attributes/', {'h': obj.id}),
+            'list', 'info')
         return [
             ('<a class="btn btn-mini btn-info" href="{0}">'
              '<i title="Show Attributes for host" '
@@ -182,7 +192,7 @@ class host(base_table):
              '<i title="Discover Attributes" '
              'class="icon-eye-open icon-white"></i></a>').
             format(tg.url('/hosts/discover/{0}'.format(obj.id))),
-        ] + super(host, self).action_buttons(obj)
+        ]
 
 
 class logfile(base_table):

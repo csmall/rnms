@@ -1,28 +1,32 @@
 
 
 # Turbogears imports
-from tg import expose, url, request, tmpl_context
+from tg import expose, url, tmpl_context
 from tg.decorators import with_trailing_slash
 
-from tgext.admin.config import AdminConfig, CrudRestControllerConfig
+from tgext.admin.tgadminconfig import BootstrapTGAdminConfig
+from tgext.admin.config import CrudRestControllerConfig
 from tgext.crud.controller import CrudRestController
 
 # third party imports
 
 from rnms.lib.states import state_name
-from rnms.lib.table import jqGridTableBase, jqGridTableFiller
-from rnms.lib import admin_structures as st
+from rnms.lib import admin_tables as at
+from rnms.model import ConfigBackupMethod
+
+from sprox.tablebase import TableBase
+from sprox.fillerbase import FillerBase
 
 
 class MyCrudRestController(CrudRestController):
-    pagination_enabled = False
+    #pagination_enabled = False
     title = 'Rosenberg NMS Admin'
 
     @with_trailing_slash
     @expose('mako:rnms.templates.admin.get_all')
     @expose('json:')
-    def get_all(self, *args, **kw):
-        if request.response_type == 'application/json':
+    def DONTget_all(self, *args, **kw):
+        if requeat.response_type == 'application/json':
             values = self.table_filler.get_value(*args, **kw)
             return dict(value_list=values)
         postdata = {}
@@ -35,7 +39,7 @@ class MyCrudRestController(CrudRestController):
 
     @expose(inherit=True)
     @expose('mako:rnms.templates.admin.edit')
-    def edit(self, *args, **kw):
+    def DONTedit(self, *args, **kw):
         return super(MyCrudRestController, self).edit(*args, **kw)
 
 
@@ -43,22 +47,22 @@ class MyCrudRestControllerConfig(CrudRestControllerConfig):
     defaultCrudRestController = MyCrudRestController
 
 
-class MyAdminConfig(AdminConfig):
+class MyAdminConfig(BootstrapTGAdminConfig):
     default_index_template = 'mako:rnms.templates.admin_top'
 #    include_left_menu = False
 
     class attribute(MyCrudRestControllerConfig):
-        class table_type(st.attribute, jqGridTableBase):
+        class table_type(at.attribute, TableBase):
             pass
 
-        class table_filler_type(st.attribute, jqGridTableFiller):
+        class table_filler_type(at.attribute, FillerBase):
             pass
 
     class attributetype(MyCrudRestControllerConfig):
-        class table_type(st.attribute_type, jqGridTableBase):
+        class table_type(at.attribute_type, TableBase):
             pass
 
-        class table_filler_type(st.attribute_type, jqGridTableFiller):
+        class table_filler_type(at.attribute_type, FillerBase):
             def default_poller_set(self, obj):
                 return '<a href="{}/{}/edit">{}</a>'.format(
                     url('/admin/pollersets'),
@@ -66,102 +70,102 @@ class MyAdminConfig(AdminConfig):
                     obj.default_poller_set.display_name)
 
     class attributetyperrd(MyCrudRestControllerConfig):
-        class table_type(st.attribute_type_rrd, jqGridTableBase):
+        class table_type(at.attribute_type_rrd, TableBase):
             pass
 
-        class table_filler_type(st.attribute_type_rrd, jqGridTableFiller):
+        class table_filler_type(at.attribute_type_rrd, FillerBase):
             pass
 
     class autodiscoverypolicy(MyCrudRestControllerConfig):
-        class table_type(st.autodiscovery_policy, jqGridTableBase):
+        class table_type(at.autodiscovery_policy, TableBase):
             pass
 
-        class table_filler_type(st.autodiscovery_policy, jqGridTableFiller):
+        class table_filler_type(at.autodiscovery_policy, FillerBase):
             pass
 
     class backend(MyCrudRestControllerConfig):
-        class table_type(st.backend, jqGridTableBase):
+        class table_type(at.backend, TableBase):
             pass
 
-        class table_filler_type(st.backend, jqGridTableFiller):
+        class table_filler_type(at.backend, FillerBase):
             pass
 
     class eventstate(MyCrudRestControllerConfig):
-        class table_type(st.event_state, jqGridTableBase):
+        class table_type(at.event_state, TableBase):
             pass
 
-        class table_filler_type(st.event_state, jqGridTableFiller):
+        class table_filler_type(at.event_state, FillerBase):
             def internal_state(self, obj):
                 return state_name(obj.internal_state).capitalize()
 
     class eventtype(MyCrudRestControllerConfig):
-        class table_type(st.event_type, jqGridTableBase):
+        class table_type(at.event_type, TableBase):
             __column_widths__ = {'id': 30, 'display_name': 250}
 
-        class table_filler_type(st.event_type, jqGridTableFiller):
+        class table_filler_type(at.event_type, FillerBase):
             pass
 
     class graphtype(MyCrudRestControllerConfig):
-        class table_type(st.graph_type, jqGridTableBase):
+        class table_type(at.graph_type, TableBase):
             __column_widths__ = {'id': 20, 'display_name': 50}
 
-        class table_filler_type(st.graph_type, jqGridTableFiller):
+        class table_filler_type(at.graph_type, FillerBase):
             pass
 
     class graphtypeline(MyCrudRestControllerConfig):
-        class table_type(st.graph_type_line, jqGridTableBase):
+        class table_type(at.graph_type_line, TableBase):
             pass
 
-        class table_filler_type(st.graph_type_line, jqGridTableFiller):
+        class table_filler_type(at.graph_type_line, FillerBase):
             pass
 
     class group(MyCrudRestControllerConfig):
-        class table_type(st.group, jqGridTableBase):
+        class table_type(at.group, TableBase):
             __column_widths__ = {'group_id': 30, 'display_name': 250}
 
-        class table_filler_type(st.group, jqGridTableFiller):
+        class table_filler_type(at.group, FillerBase):
             pass
 
     class host(MyCrudRestControllerConfig):
-        class table_type(st.host, jqGridTableBase):
+        class table_type(at.host, TableBase):
             __column_widths__ = {'id': 20}
 
-        class table_filler_type(st.host, jqGridTableFiller):
+        class table_filler_type(at.host, at.TableFiller):
             pass
 
     class logfile(MyCrudRestControllerConfig):
-        class table_type(st.logfile, jqGridTableBase):
+        class table_type(at.logfile, TableBase):
             pass
 
-        class table_filler_type(st.logfile, jqGridTableFiller):
+        class table_filler_type(at.logfile, FillerBase):
             pass
 
     class logmatchset(MyCrudRestControllerConfig):
-        class table_type(st.logmatchset, jqGridTableBase):
+        class table_type(at.logmatchset, TableBase):
             pass
 
-        class table_filler_type(st.logmatchset, jqGridTableFiller):
+        class table_filler_type(at.logmatchset, FillerBase):
             pass
 
     class logmatchrow(MyCrudRestControllerConfig):
-        class table_type(st.logmatchrow, jqGridTableBase):
+        class table_type(at.logmatchrow, TableBase):
             pass
 
-        class table_filler_type(st.logmatchrow, jqGridTableFiller):
+        class table_filler_type(at.logmatchrow, FillerBase):
             pass
 
     class poller(MyCrudRestControllerConfig):
-        class table_type(st.poller, jqGridTableBase):
+        class table_type(at.poller, TableBase):
             pass
 
-        class table_filler_type(st.poller, jqGridTableFiller):
+        class table_filler_type(at.poller, FillerBase):
             pass
 
     class pollerset(MyCrudRestControllerConfig):
-        class table_type(st.poller_set, jqGridTableBase):
+        class table_type(at.poller_set, TableBase):
             pass
 
-        class table_filler_type(st.poller_set, jqGridTableFiller):
+        class table_filler_type(at.poller_set, FillerBase):
             def attribute_type(self, obj):
                 return '<a href="{}/{}/edit">{}</a>'.format(
                     url('/admin/attributetypes'),
@@ -169,31 +173,41 @@ class MyAdminConfig(AdminConfig):
                     obj.attribute_type.display_name)
 
     class pollerrow(MyCrudRestControllerConfig):
-        class table_type(st.poller_row, jqGridTableBase):
+        class table_type(at.poller_row, TableBase):
             pass
 
-        class table_filler_type(st.poller_row, jqGridTableFiller):
+        class table_filler_type(at.poller_row, FillerBase):
             pass
 
     class severity(MyCrudRestControllerConfig):
-        class table_type(st.severity, jqGridTableBase):
+        class table_type(at.severity, TableBase):
             __column_widths__ = {'id': 30}
 
-        class table_filler_type(st.severity, jqGridTableFiller):
+        class table_filler_type(at.severity, FillerBase):
             def fgcolor(self, obj):
                 return '<div style="color: #{0}; background-color: #{1};">' + \
                     '{0}</div>'.format(obj.fgcolor, obj.bgcolor)
 
     class user(MyCrudRestControllerConfig):
-        class table_type(st.user, jqGridTableBase):
+        class table_type(at.user, TableBase):
             __column_widths__ = {'user_id': 30, 'created': 150}
 
-        class table_filler_type(st.user, jqGridTableFiller):
+        class table_filler_type(at.user, FillerBase):
             pass
 
     class zone(MyCrudRestControllerConfig):
-        class table_type(st.zone, jqGridTableBase):
+        class table_type(at.zone, TableBase):
             pass
 
-        class table_filler_type(st.zone, jqGridTableFiller):
+        class table_filler_type(at.zone, FillerBase):
             pass
+
+    class configbackupmethod(MyCrudRestControllerConfig):
+
+        class table_type(TableBase):
+            __entity__ = ConfigBackupMethod
+            __headers__ = {
+                'id': 'ID',
+                'display_name': 'Backup Method',
+                'plugin_name': 'Plugin',
+                }

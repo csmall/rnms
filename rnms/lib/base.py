@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 
 """The base Controller API."""
+from tg import TGController, tmpl_context
+#from tg.render import render
+from tg import request
+#from tg.i18n import ugettext as _, ungettext
+
+#import rnms.model as model
+
+# Rnms specific imports
 from formencode import validators, Invalid
-
-from tg import TGController, tmpl_context, flash, request
-from tw2.jqplugins.ui import set_ui_theme_name
-
+from tg import flash
 from rnms.model import DBSession
+
 __all__ = ['BaseController', 'BaseGridController']
 
 VARIABLE_NAMES = {
@@ -41,7 +47,7 @@ class BaseController(TGController):
         """Invoke the Controller"""
         # TGController.__call__ dispatches to the Controller method
         # the request is routed to.
-        set_ui_theme_name('start')
+#        set_ui_theme_name('start')
 
         request.identity = request.environ.get('repoze.who.identity')
         tmpl_context.identity = request.identity

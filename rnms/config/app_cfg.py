@@ -19,11 +19,20 @@ from tg.configuration import AppConfig
 
 import rnms
 from rnms import model
-from rnms.lib import app_globals, helpers 
+from rnms.lib import app_globals, helpers
 
 
 base_config = AppConfig()
 base_config.renderers = []
+
+# True to prevent dispatcher from striping extensions
+# For example /socket.io would be served by "socket_io" method instead of "socket"
+base_config.disable_request_extensions = False
+
+# Set None to disable escaping punctuation characters to "_" when dispatching methods.
+# Set to a function to provide custom escaping.
+base_config.dispatch_path_translator = True 
+
 base_config.prefer_toscawidgets2 = True
 
 base_config.package = rnms
@@ -38,14 +47,15 @@ base_config.renderers.append('json')
 #Set the default renderer
 base_config.default_renderer = 'mako'
 base_config.renderers.append('mako')
+
 #Configure the base SQLALchemy Setup
 base_config.use_sqlalchemy = True
 base_config.model = rnms.model
 base_config.DBSession = rnms.model.DBSession
 # Configure the authentication backend
 
-# YOU MUST CHANGE THIS VALUE IN PRODUCTION TO SECURE YOUR APP 
-base_config.sa_auth.cookie_secret = "ChangeME" 
+# YOU MUST CHANGE THIS VALUE IN PRODUCTION TO SECURE YOUR APP
+base_config.sa_auth.cookie_secret = "ChangeME"
 
 base_config.auth_backend = 'sqlalchemy'
 
@@ -54,18 +64,25 @@ base_config.sa_auth.user_class = model.User
 
 from tg.configuration.auth import TGAuthMetadata
 
+
 #This tells to TurboGears how to retrieve the data for your user
 class ApplicationAuthMetadata(TGAuthMetadata):
     def __init__(self, sa_auth):
         self.sa_auth = sa_auth
+
     def authenticate(self, environ, identity):
-        user = self.sa_auth.dbsession.query(self.sa_auth.user_class).filter_by(user_name=identity['login']).first()
+        user = self.sa_auth.dbsession.query(self.sa_auth.user_class).\
+            filter_by(user_name=identity['login']).first()
         if user and user.validate_password(identity['password']):
             return identity['login']
+
     def get_user(self, identity, userid):
-        return self.sa_auth.dbsession.query(self.sa_auth.user_class).filter_by(user_name=userid).first()
+        return self.sa_auth.dbsession.query(self.sa_auth.user_class).\
+            filter_by(user_name=userid).first()
+
     def get_groups(self, identity, userid):
         return [g.group_name for g in identity['user'].groups]
+
     def get_permissions(self, identity, userid):
         return [p.permission_name for p in identity['user'].permissions]
 

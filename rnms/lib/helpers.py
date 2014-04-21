@@ -2,15 +2,14 @@
 
 """WebHelpers used in Rosenberg-NMS."""
 
-from webhelpers import html
+from markupsafe import Markup
 from datetime import datetime
 
-def current_year():
-  now = datetime.now()
-  return now.strftime('%Y')
 
-def icon(icon_name, white=False):
-    if (white):
-        return html.literal('<i class="icon-%s icon-white"></i>' % icon_name)
-    else:
-        return html.literal('<i class="icon-%s"></i>' % icon_name)
+def current_year():
+    now = datetime.now()
+    return now.strftime('%Y')
+
+
+def icon(icon_name):
+    return Markup('<i class="glyphicon glyphicon-%s"></i>' % icon_name)
