@@ -34,12 +34,13 @@ from structures import base_table as bt
 
 
 def click(model_name, mod_id, name):
-    return '<a href="{}">{}</a>'.format(
+    return Markup('<a href="{}">{}</a>'.format(
         tg.url('/admin/{}/{}/edit'.format(model_name, mod_id)),
-        name)
+        name))
 
 
 class TableFiller(BootstrapAdminTableFiller):
+
     def __actions__(self, obj):
         # This is from tgext.admin.widgets
         primary_fields = self.__provider__.get_primary_fields(self.__entity__)
@@ -59,10 +60,13 @@ class TableFiller(BootstrapAdminTableFiller):
 ''' % dict(msg=l_('Are you sure?'),
            pklist=pklist))
 
-        try:
+        if hasattr(self, 'extra_actions'):
             return actions + self.extra_actions(obj)
-        except AttributeError:
-            return actions
+        return actions
+
+    def host(self, obj):
+        """ Format host """
+        return click('hosts', obj.host_id, obj.host.display_name)
 
 
 class base_table(bt):
@@ -180,9 +184,12 @@ class host(base_table):
                         )
 
     def extra_actions(self, obj):
-        return Button(
-            tg.url('/admin/attributes/', {'h': obj.id}),
-            'list', 'info')
+        return Button(tg.url('/admin/attributes/', {'host_id': obj.id}),
+                      'list', 'info',
+                      tooltip='Show all Attributes for this host') +\
+            Button(tg.url('/hosts/discover/'+str(obj.id)),
+                   'eye-open', 'info',
+                   tooltip='Discover Attributes for this host')
         return [
             ('<a class="btn btn-mini btn-info" href="{0}">'
              '<i title="Show Attributes for host" '

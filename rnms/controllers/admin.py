@@ -1,8 +1,7 @@
 
 
 # Turbogears imports
-from tg import expose, url, tmpl_context
-from tg.decorators import with_trailing_slash
+from tg import url
 
 from tgext.admin.tgadminconfig import BootstrapTGAdminConfig
 from tgext.admin.config import CrudRestControllerConfig
@@ -22,47 +21,27 @@ class MyCrudRestController(CrudRestController):
     #pagination_enabled = False
     title = 'Rosenberg NMS Admin'
 
-    @with_trailing_slash
-    @expose('mako:rnms.templates.admin.get_all')
-    @expose('json:')
-    def DONTget_all(self, *args, **kw):
-        if requeat.response_type == 'application/json':
-            values = self.table_filler.get_value(*args, **kw)
-            return dict(value_list=values)
-        postdata = {}
-        for key in ('a', 'at', 'gt', 'h', 'ps', 'z'):
-            if key in kw:
-                postdata[key] = kw[key]
-
-        tmpl_context.widget = self.table
-        return dict(model=self.model.__name__, griddata=postdata)
-
-    @expose(inherit=True)
-    @expose('mako:rnms.templates.admin.edit')
-    def DONTedit(self, *args, **kw):
-        return super(MyCrudRestController, self).edit(*args, **kw)
-
 
 class MyCrudRestControllerConfig(CrudRestControllerConfig):
     defaultCrudRestController = MyCrudRestController
 
 
 class MyAdminConfig(BootstrapTGAdminConfig):
-    default_index_template = 'mako:rnms.templates.admin_top'
-#    include_left_menu = False
+    #default_index_template = 'mako:rnms.templates.admin_top'
+    #include_left_menu = False
 
     class attribute(MyCrudRestControllerConfig):
         class table_type(at.attribute, TableBase):
-            pass
+            __xml_fields__ = ('host',)
 
-        class table_filler_type(at.attribute, FillerBase):
+        class table_filler_type(at.attribute, at.TableFiller):
             pass
 
     class attributetype(MyCrudRestControllerConfig):
         class table_type(at.attribute_type, TableBase):
             pass
 
-        class table_filler_type(at.attribute_type, FillerBase):
+        class table_filler_type(at.attribute_type, at.TableFiller):
             def default_poller_set(self, obj):
                 return '<a href="{}/{}/edit">{}</a>'.format(
                     url('/admin/pollersets'),

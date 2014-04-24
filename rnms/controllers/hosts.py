@@ -55,9 +55,20 @@ class HostsController(BaseGridController):
         else:
             griddata = {}
 
-        w = HostGrid()
+        #w = HostGrid()
+        from sprox.tablebase import TableBase
+        from sprox.fillerbase import FillerBase
+        class Foo(TableBase):
+            __model__ = Host
+        class FooFill(FillerBase):
+            __model__ = Host
+
+        r = FooFill(DBSession)
+        print r.get_value()
+
+
         return dict(page='host', main_menu=MainMenu,
-                    w=w, griddata=griddata)
+                    w=Foo(value=FooFill(DBSession).get_value()), griddata=griddata)
 
     @expose('json')
     def griddata(self, **kw):
