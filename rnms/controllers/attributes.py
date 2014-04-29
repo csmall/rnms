@@ -92,6 +92,7 @@ class AttributesController(BaseGridController):
         return dict(page='attribute', main_menu=MainMenu,
                     grid_data={'a': a},
                     attribute=attribute,
+                    attribute_id=a,
                     detailsbox=detailsbox, eventsgrid=events_grid,
                     more_url=more_url,
                     graphbox=graphbox)

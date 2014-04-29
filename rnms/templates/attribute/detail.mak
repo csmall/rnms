@@ -6,33 +6,49 @@
 %if attribute is UNDEFINED:
 Rosenberg NMS: Unknown Attribute
 %else:
-Rosenberg NMS: Attribute ${attribute.display_name}
+Rosenberg NMS: ${attribute.host.display_name} -  ${attribute.display_name}
 %endif
 </%def>
 %if attribute is not UNDEFINED:
 <div class="row">
-  <div class="span12">
+  <div class="col-xs-12">
     <div class="page-header">
-      <h2>Attribute: ${attribute.display_name}</h5>
+      <h2>${attribute.host.display_name} -  ${attribute.display_name}</h5>
     </div>
   </div>
 </div>
 <div class="row">
-  <div class="span6">
+  <div class="col-xs-12 col-md-6">
     ${detailsbox.display(text=capture(self.attribute_details)) | n }
   </div>
-%if graphbox is not None:
-	<div class="span6">
-%if more_url != UNDEFINED:
-  <a href="${more_url}" class="btn btn-primary">More</a>
-%endif
-    ${graphbox.display() | n }
-  </a></div>
-%endif
+  <div class="col-xs-12 col-md-6">
+    <div class="row">
+      <div class="col-md-10">
+        Showing
+        <select id='graph_choose_graphtype' name='gt' ></select>
+	for
+        <select id="graph_time_span" name="pt">
+          <%include file="local:templates.widgets.time_select"/>
+        </select>
+      </div>
+      <div class="col-md-2">
+      <a href="${tg.url('/graphs',{'a':attribute_id})}">
+	  <button type="button" class="btn btn-primary">
+	  <span class="glyphicon glyphicon-signal"></span> Graphs
+	  </button>
+	</a>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+      <div id="resulting_graphs"></div>
+      </div>
+    </div>
+  </div>
 </div>
 <div class="row">
-  <div class="span12">
-  ${eventsgrid.display(postdata=grid_data) | n}
+  <div class="col-xs-12">
+    ${eventsgrid.display(postdata=grid_data) | n}
   </div>
 </div>
 
@@ -50,4 +66,23 @@ Rosenberg NMS: Attribute ${attribute.display_name}
   </dl>
   </div>
 %endif
+<script>
+function load_graph(graph_type_id) {
+  $("#resulting_graphs").load(
+    "${tg.url('/graphs/widget/')}"+${attribute_id}+"/"+graph_type_id+"?pt="+$("#graph_time_span").val());
+}
 
+$(function() {
+  $('#btn-change-graph').popover();
+  $('#graph_choose_graphtype').load(
+    "${tg.url('/graphs/types_option')}",
+    $.param({a:${attribute_id}},true),
+    function(event){load_graph($(this).val())});
+  $('#graph_choose_graphtype option').live('click',function(event){
+    load_graph($(this).val());
+  });
+
+});
+</script>
+<%def name="graph_change_popover()">
+</%def>

@@ -11,14 +11,7 @@ Graph
   </div>
 </div>
 <select id="graph_time_span" name="pt">
-  <option value="">No Preset</option>
-  <option value="10">Last 10 Minutes</option>
-  <option value="30">Last Half Hour</option>
-  <option value="60">Last  Hour</option>
-  <option value="720">Last Half Day</option>
-  <option value="1440">Last Day</option>
-  <option value="10080">Last Week</option>
-  <option value="43200">Last Month</option>
+ <%include file="local:templates.widgets.time_select"/>
 </select>
 <div id="graphChooserPane">
 %if attribute_ids is None:
@@ -40,6 +33,8 @@ Graph
   <div id="resulting_graphs"></div>
 </div>
 <script type="text/javascript">
+window.onload=
+function() {
 %if attribute_ids is None:
 $('#graphChooserControl').change(
 function(event){
@@ -94,5 +89,6 @@ $("#graph_time_span").change(function(event){
   var now = parseInt((new Date).getTime()/1000);
   $(this).attr({'data-start-time':now, 'data-end-time':now-$(this).val()})
   })
+  }
 </script>
 <div id="target"></div>

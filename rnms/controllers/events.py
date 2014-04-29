@@ -59,6 +59,7 @@ class EventsController(BaseGridController):
         else:
             griddata = {}
         w = EventGrid()
+
         return dict(page='event', main_menu=MainMenu,
                     w=w, griddata=griddata)
 

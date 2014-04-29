@@ -17,7 +17,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
+import os
+import tempfile
 
+from tg import config
 from rnms import model
 from rnms.lib.engine import RnmsEngine
 from rnms.lib.gettid import gettid
@@ -40,6 +43,8 @@ import plugins
 
 
 class Backuper(RnmsEngine):
+    _TFTP_PREFIX = 'config'
+    _TFTP_SUFFIX = '.txt'
     NEED_CLIENTS = ('snmp',)
     host_ids = None
     current_host = None
@@ -132,3 +137,25 @@ class Backuper(RnmsEngine):
             self.current_host.done()
             return
         self.current_host.done()
+
+    def create_tftp_file(self, host):
+        """ Creates an empty file for the TFTP server to use
+        Requires the tftp_dir config entry
+        """
+        try:
+            tftp_dir = config['tftp_dir']
+        except KeyError:
+            self.logger.error('H:%d - TFTP directory not defined in config',
+                              host.id)
+            return None
+        if not os.path.isdir(tftp_dir):
+            self.logger.error('H:%d - TFTP directory %s is not a directory.',
+                              host.id, tftp_dir)
+            return None
+        tftp_file = tempfile.mkstemp(
+            dir=tftp_dir,
+            prefix=self._TFTP_PREFIX+str(host.id),
+            suffix=self._TFTP_SUFFIX)
+        os.close(tftp_file[0])
+        os.chmod(tftp_file[1], 0777)
+        return tftp_file[1]

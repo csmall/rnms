@@ -7,6 +7,7 @@ from tg import request
 #from tg.i18n import ugettext as _, ungettext
 
 #import rnms.model as model
+from tw2.jqplugins.ui import set_ui_theme_name
 
 # Rnms specific imports
 from formencode import validators, Invalid
@@ -47,7 +48,7 @@ class BaseController(TGController):
         """Invoke the Controller"""
         # TGController.__call__ dispatches to the Controller method
         # the request is routed to.
-#        set_ui_theme_name('start')
+        set_ui_theme_name('hot-sneaks')
 
         request.identity = request.environ.get('repoze.who.identity')
         tmpl_context.identity = request.identity

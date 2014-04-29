@@ -1,7 +1,7 @@
 <%inherit file="local:templates.master"/>
 <link rel="stylesheet" type="text/css" media="screen" href="${tg.url('/css/rnms_graph.css')}" />
 <div class="row">
-  <div class="span12">
+  <div class="col-xs-12">
   ${selectionbox.display() | n}
   </div>
 </div>
@@ -9,7 +9,7 @@
 %if loop.even:
 <div class="row">
 %endif
-  <div class="span6">
+  <div class="col-xs-12 col-md-6">
 ${gw.display() | n}
   </div>
 %if loop.odd or loop.last and loop.even:

@@ -63,35 +63,40 @@ class cisco_cc(ConfigBackupPlugin):
         parent.snmp_engine.set(req)
         return True
 
-    def cb_destroy(self, value, error, **kw):
+    def cb_destroy(self, value, error, parent, host, copy_id, **kw):
         if error is not None:
-            kw['parent'].parent_callback(kw['host'].id, False)
+            parent.parent_callback(host.id, False)
             return
-        kw['parent'].logger.debug('H:%d - Destroy function ok', kw['host'].id)
+        parent.logger.debug('H:%d - Destroy function ok', host.id)
+        tftp_file = parent.create_tftp_file(host)
+        if tftp_file is None:
+            parent.parent_callback(host.id, False)
+            return
         req = SNMPSetRequest(
-            kw['host'], kw['host'].rw_community, self.cb_start,
-            copy_id=kw['copy_id'], parent=kw['parent'])
-        req.set_int(CC_COPY_ENTRY+(KEY_PROTO, kw['copy_id']), VAL_TFTP)
-        req.set_int(CC_COPY_ENTRY+(KEY_SOURCE_FILETYPE, kw['copy_id']),
+            host, host.rw_community, self.cb_start,
+            copy_id=copy_id, parent=parent, tftp_file=tftp_file)
+        req.set_int(CC_COPY_ENTRY+(KEY_PROTO, copy_id), VAL_TFTP)
+        req.set_int(CC_COPY_ENTRY+(KEY_SOURCE_FILETYPE, copy_id),
                     VAL_RUNNING)
-        req.set_int(CC_COPY_ENTRY+(KEY_DEST_FILETYPE, kw['copy_id']),
+        req.set_int(CC_COPY_ENTRY+(KEY_DEST_FILETYPE, copy_id),
                     VAL_NETWORK)
-        req.set_ipaddr(CC_COPY_ENTRY+(KEY_SERVER_ADDR, kw['copy_id']),
+        req.set_ipaddr(CC_COPY_ENTRY+(KEY_SERVER_ADDR, copy_id),
                        '172.16.242.1')
-        req.set_str(CC_COPY_ENTRY+(KEY_DEST_FILENAME, kw['copy_id']), 'foo')
-        req.set_int(CC_COPY_ENTRY+(KEY_ROW_STATUS, kw['copy_id']),
+        req.set_str(CC_COPY_ENTRY+(KEY_DEST_FILENAME, copy_id),
+                    tftp_file)
+        req.set_int(CC_COPY_ENTRY+(KEY_ROW_STATUS, copy_id),
                     VAL_CREATEANDGO)
-        if kw['parent'].snmp_engine.set(req) is False:
-            kw['parent'].start_callback(
-                kw['host'],
+        if parent.snmp_engine.set(req) is False:
+            parent.start_callback(
+                host,
                 'Error sending SNMP set')
 
     def cb_start(self, value, error, **kw):
         if error is not None:
             kw['parent'].start_callback(kw['host'], error)
             return
-        kw['parent'].logger.debug('H:%d - Transfer command sent',
-                                  kw['host'].id)
+        kw['parent'].logger.debug('H:%d - Transfer command sent, file:%s',
+                                  kw['host'].id, kw['tftp_file'])
         kw['parent'].snmp_engine.get_int(
             kw['host'],
             CC_COPY_ENTRY+(KEY_ROW_STATUS, kw['copy_id']),

@@ -48,9 +48,11 @@ class jqGridGrid(jqGridWidget):
               'column_widths', 'default_column_width', 'url_args',
               'default_sort', 'default_sort_order')
     options = {
+        'altRows': True,
+        'altclass': 'altrows',
         'datatype': 'json',
         'autowidth': True,
-        'imgpath': 'scripts/jqGrid/themes/green/images',
+        #'imgpath': 'scripts/jqGrid/themes/green/images',
         'jsonReader': {
             'repeatitems': False,
             'id': 0,

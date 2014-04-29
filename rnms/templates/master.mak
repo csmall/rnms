@@ -13,7 +13,8 @@
     ${self.content_wrapper()}
   </div>
     ${self.footer()}
-  <script src="${tg.url('/javascript/jquery.min.js')}"></script>
+
+  <script>window.jQuery || document.write("<script src=\"${tg.url('/javascript/jquery.min.js')}\">\x3C/script>");</script>
   <script src="${tg.url('/javascript/bootstrap.min.js')}"></script>
 </body>
 
@@ -44,6 +45,7 @@
   <footer class="footer hidden-xs hidden-sm">
     <p>Copyright &copy; Rosenberg NMS Authors ${h.current_year()}</p>
   </footer>
+    <link rel="stylesheet" type="text/css" media="screen" href="${tg.url('/css/rnms.css')}" />
 </%def>
 
 <%def name="main_menu()">
@@ -72,6 +74,15 @@
 	      <li><a href="${tg.url('/hosts/map', {'events':1})}">Map &amp; Events</a></li>
 	      <li><a href="${tg.url('/hosts/map',{'alarmed':1})}">Map (Alarmed)</a></li>
 	      <li><a href="${tg.url('/hosts/map',{'alarmed':1,'events':1})}">Map &amp; Events (Alarmed)</a></li>
+	    </ul>
+	  </li>
+          <li class="${('', 'active ')[page=='attributes']}dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#" >Attributes<b class="caret"></b></a>
+	    <ul class="dropdown-menu" role="menu">
+	      <li><a href="${tg.url('/attributes')}">List</a></li>
+	      <li><a href="${tg.url('/attributes/map')}">Map</a></li>
+	      <li><a href="${tg.url('/attributes/map', {'events':1})}">Map &amp; Events</a></li>
+	      <li><a href="${tg.url('/attributes/map',{'alarmed':1})}">Map (Alarmed)</a></li>
+	      <li><a href="${tg.url('/attributes/map',{'alarmed':1,'events':1})}">Map &amp; Events (Alarmed)</a></li>
 	    </ul>
 	  </li>
         <li class="${('', 'active')[page=='events']}"><a href="${tg.url('/events')}">Events</a></li>

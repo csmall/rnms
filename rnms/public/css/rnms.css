@@ -166,3 +166,11 @@ td.operators > select {
 footer a {
     color: rgba(128,128,128,0.5);
 }
+
+.altrows {
+    background-color: #dddddc;
+}
+
+.altrows td {
+    background-color: inherit;
+}
