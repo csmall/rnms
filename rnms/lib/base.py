@@ -8,6 +8,7 @@ from tg import request
 
 #import rnms.model as model
 from tw2.jqplugins.ui import set_ui_theme_name
+from tw2.jquery import jquery_js
 
 # Rnms specific imports
 from formencode import validators, Invalid
@@ -49,6 +50,7 @@ class BaseController(TGController):
         # TGController.__call__ dispatches to the Controller method
         # the request is routed to.
         set_ui_theme_name('hot-sneaks')
+        jquery_js.inject()
 
         request.identity = request.environ.get('repoze.who.identity')
         tmpl_context.identity = request.identity

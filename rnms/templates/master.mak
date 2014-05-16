@@ -14,7 +14,6 @@
   </div>
     ${self.footer()}
 
-  <script>window.jQuery || document.write("<script src=\"${tg.url('/javascript/jquery.min.js')}\">\x3C/script>");</script>
   <script src="${tg.url('/javascript/bootstrap.min.js')}"></script>
 </body>
 
