@@ -1,6 +1,12 @@
 [paste.app_factory]
 main = rnms.config.middleware:make_app
 
+[rnms.commands]
+trapd = rnms.command.trapd:Trapd
+sla = rnms.command.sla:Sla
+jimport = rnms.command.jffimport:JffnmsImport
+show = rnms.command.show:Show
+
 [gearbox.plugins]
 turbogears-devtools = tg.devtools
 
@@ -12,6 +18,7 @@ rnms_trapd = rnms.lib.scripts.trapd:main
 rnms_info = rnms.lib.scripts.info:main
 rnms_jffimport = rnms.lib.scripts.jffimport:main
 rnmsd = rnms.lib.scripts.rnmsd:main
+rnms = rnms.command.main:main
 rnms_cbackup = rnms.lib.scripts.config_backup:main
 rnms_adisc = rnms.lib.scripts.att_discovery:main
 

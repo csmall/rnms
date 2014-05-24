@@ -42,7 +42,7 @@ trap_matches = (
         'Reachable',  # FIXME - should be a Juniper CPU
         'first', '', (
             ('state', 'fixed', 'alert'),
-            ('user', 'oid', '1.3.6.1.4.1.2636.3.18.1.7.1.5')
+            ('user', 'oid', '1.3.6.1.4.1.2636.3.18.1.7.1.5'),
             ('source', 'oid_map',
              '1.3.6.1.4.1.2636.3.18.1.7.1.4|2=cli,3=junoscript,'
              '5=snmp,6=button,7=autoinstall|unknown')

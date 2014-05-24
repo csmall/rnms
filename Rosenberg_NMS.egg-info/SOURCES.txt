@@ -11,6 +11,14 @@ Rosenberg_NMS.egg-info/paster_plugins.txt
 Rosenberg_NMS.egg-info/requires.txt
 Rosenberg_NMS.egg-info/top_level.txt
 rnms/__init__.py
+rnms/command/__init__.py
+rnms/command/base.py
+rnms/command/jffimport.py
+rnms/command/list.py
+rnms/command/main.py
+rnms/command/show.py
+rnms/command/sla.py
+rnms/command/trapd.py
 rnms/config/__init__.py
 rnms/config/app_cfg.py
 rnms/config/environment.py
@@ -28,7 +36,7 @@ rnms/controllers/template.py
 rnms/controllers/zones.py
 rnms/i18n/ru/LC_MESSAGES/rnms.po
 rnms/lib/__init__.py
-rnms/lib/admin_structures.py
+rnms/lib/admin_tables.py
 rnms/lib/app_globals.py
 rnms/lib/att_discover.py
 rnms/lib/backend.py
@@ -112,8 +120,6 @@ rnms/lib/scripts/info.py
 rnms/lib/scripts/jffimport.py
 rnms/lib/scripts/poller.py
 rnms/lib/scripts/rnmsd.py
-rnms/lib/scripts/sla_analyzer.py
-rnms/lib/scripts/trapd.py
 rnms/lib/snmp/__init__.py
 rnms/lib/snmp/engine.py
 rnms/lib/snmp/request.py
@@ -154,6 +160,10 @@ rnms/public/css/map.css
 rnms/public/css/rnms.css
 rnms/public/css/rnms_graph.css
 rnms/public/css/style.css
+rnms/public/fonts/glyphicons-halflings-regular.eot
+rnms/public/fonts/glyphicons-halflings-regular.svg
+rnms/public/fonts/glyphicons-halflings-regular.ttf
+rnms/public/fonts/glyphicons-halflings-regular.woff
 rnms/public/images/glyphicons-halflings-white.png
 rnms/public/images/glyphicons-halflings.png
 rnms/public/images/turbogears_logo.png
@@ -161,7 +171,9 @@ rnms/public/images/turbogears_logo_big.png
 rnms/public/images/under_the_hood_blue.png
 rnms/public/javascript/bootstrap.js
 rnms/public/javascript/bootstrap.min.js
+rnms/public/javascript/graphchooser.js
 rnms/public/javascript/jquery.js
+rnms/public/javascript/jquery.min.js
 rnms/templates/__init__.py
 rnms/templates/__init__.pyc
 rnms/templates/about.mak
@@ -183,6 +195,7 @@ rnms/templates/index.mak
 rnms/templates/layout.mak
 rnms/templates/login.mak
 rnms/templates/master.mak
+rnms/templates/master.mak.old
 rnms/templates/myadmintemplate.mak
 rnms/templates/simple_mako.mak
 rnms/templates/test.mak
@@ -225,6 +238,7 @@ rnms/templates/widgets/infobox.mak
 rnms/templates/widgets/main_menu.mak
 rnms/templates/widgets/map.mak
 rnms/templates/widgets/select.mak
+rnms/templates/widgets/time_select.mak
 rnms/tests/__init__.py
 rnms/tests/att_discovery/__init__.py
 rnms/tests/att_discovery/test_alteon.py
@@ -298,6 +312,7 @@ rnms/websetup/database_data/snmp_enterprise.py
 rnms/widgets/__init__.py
 rnms/widgets/attribute.py
 rnms/widgets/base.py
+rnms/widgets/button.py
 rnms/widgets/event.py
 rnms/widgets/graph.py
 rnms/widgets/host.py

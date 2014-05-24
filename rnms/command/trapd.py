@@ -1,9 +1,8 @@
-
 # -*- coding: utf-8 -*-
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,24 +17,16 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-import sys
+from cliff.command import Command
 
-from rnms import model
-from rnms.lib.cmdline import RnmsCommand
 from rnms.lib.snmptrapd import SNMPtrapd
 
-class RnmsTrapd(RnmsCommand):
-    """
-    Provides information about the various objects in rnms
-    """
 
-    def real_command(self):
-        trapd = SNMPtrapd(bind_port=self.options.bind_port)
-        trapd.run()
-    
-    def standard_options(self):
-        super(RnmsTrapd, self).standard_options()
-        self.parser.add_argument(
+class Trapd(Command):
+
+    def get_parser(self, prog_name):
+        parser = super(Trapd, self).get_parser(prog_name)
+        parser.add_argument(
             '-P', '--port',
             action='store',
             dest='bind_port',
@@ -44,10 +35,8 @@ class RnmsTrapd(RnmsCommand):
             default=6162,
             metavar='PORT'
         )
+        return parser
 
-def main():
-    td = RnmsTrapd('trapd')
-    return td.run()
-
-if __name__ == '__main__':
-    sys.exit(main())
+    def take_action(self, parsed_args):
+        trapd = SNMPtrapd(bind_port=parsed_args.bind_port)
+        trapd.run()

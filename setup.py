@@ -83,6 +83,7 @@ setup(
             'turbogears-devtools = tg.devtools'
         ],
         'console_scripts': [
+            'rnms = rnms.command.main:main',
             'rnmsd = rnms.lib.scripts.rnmsd:main',
             'rnms_adisc = rnms.lib.scripts.att_discovery:main',
             'rnms_cons = rnms.lib.scripts.consolidate:main',
@@ -92,7 +93,13 @@ setup(
             'rnms_cbackup = rnms.lib.scripts.config_backup:main',
             'rnms_trapd = rnms.lib.scripts.trapd:main',
             'rnms_sla = rnms.lib.scripts.sla_analyzer:main',
-        ]
+        ],
+        'rnms.commands': [
+            'show = rnms.command.show:Show',
+            'sla = rnms.command.sla:Sla',
+            'trapd = rnms.command.trapd:Trapd',
+            'jimport = rnms.command.jffimport:JffnmsImport',
+        ],
     },
     dependency_links=[
         "http://tg.gy/230"

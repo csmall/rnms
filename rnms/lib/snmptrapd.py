@@ -165,7 +165,7 @@ class SNMPtrapd(RnmsEngine):
         clean_time = time.time() - CACHE_SECONDS
         for key, cache in self.host_cache.items():
             if cache[1] < clean_time:
-                self.logger.debug('delete cache {}'.format(cache[0]))
+                self.logger.debug('H:%d Deleting host from cache.', key)
                 del (self.host_cache[key])
 
         clean_time = time.time() - TRAP_DUPLICATE_SECONDS
