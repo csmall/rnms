@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,22 +17,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-import sys
 import transaction
+from cliff.command import Command
 
-from rnms.lib.cmdline import RnmsCommand
 from rnms.lib.consolidate import Consolidator
 
-class RnmsConsCmd(RnmsCommand):
 
-    def real_command(self):
+class ConsCommand(Command):
+    def take_action(self, parsed_args):
         con = Consolidator()
         con.consolidate()
         transaction.commit()
-    
-def main():
-    pollc = RnmsConsCmd('consolidate')
-    return pollc.run()
-
-if __name__ == '__main__':
-    sys.exit(main())

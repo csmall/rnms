@@ -19,49 +19,42 @@
 #
 import sys
 import transaction
+from cliff.command import Command
 
-from rnms.lib.cmdline import RnmsCommand
 from rnms.lib.poller import Poller
 
 
-class RnmsPollCmd(RnmsCommand):
-
-    def real_command(self):
-        host_ids = None
-        if self.options.hosts is not None:
-            host_ids = self.options.hosts.split(',')
-
-        att_ids = None
-        if self.options.attributes is not None:
-            att_ids = self.options.attributes.split(',')
-
-        poller = Poller(attribute_ids=att_ids, host_ids=host_ids)
-        poller.main_loop()
-        transaction.commit()
-
-    def standard_options(self):
-        super(RnmsPollCmd, self).standard_options()
-        self.parser.add_argument(
+class PollCommand(Command):
+    def get_parser(self, prog_name):
+        parser = super(PollCommand, self).get_parser(prog_name)
+        parser.add_argument(
             '-H', '--host',
             action='store',
             dest='hosts',
             type=str,
             help='Limit polling to given host IDs',
             metavar='HID,...'
-        )
-        self.parser.add_argument(
+            )
+        parser.add_argument(
             '-a', '--attribute',
             action='store',
             dest='attributes',
             type=str,
             help='Limit polling to given Attribute IDs',
             metavar='AID,...'
-        )
+            )
+        return parser
 
+    def take_action(self, parsed_args):
+        if parsed_args.hosts is not None:
+            host_ids = parsed_args.hosts.split(',')
+        else:
+            host_ids = None
+        if parsed_args.attributes is not None:
+            att_ids = parsed_args.attributes.split(',')
+        else:
+            att_ids = None
 
-def main():
-    pollc = RnmsPollCmd('att_disc')
-    return pollc.run()
-
-if __name__ == '__main__':
-    sys.exit(main())
+        poller = Poller(attribute_ids=att_ids, host_ids=host_ids)
+        poller.main_loop()
+        transaction.commit()

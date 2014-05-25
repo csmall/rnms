@@ -12,10 +12,14 @@ Rosenberg_NMS.egg-info/requires.txt
 Rosenberg_NMS.egg-info/top_level.txt
 rnms/__init__.py
 rnms/command/__init__.py
+rnms/command/att_discover.py
 rnms/command/base.py
+rnms/command/config_backup.py
+rnms/command/consolidate.py
 rnms/command/jffimport.py
 rnms/command/list.py
 rnms/command/main.py
+rnms/command/poller.py
 rnms/command/show.py
 rnms/command/sla.py
 rnms/command/trapd.py
@@ -113,12 +117,9 @@ rnms/lib/poller/plugins/snmp.py
 rnms/lib/poller/plugins/tcp.py
 rnms/lib/poller/plugins/verify_index.py
 rnms/lib/scripts/__init__.py
-rnms/lib/scripts/att_discovery.py
 rnms/lib/scripts/config_backup.py
-rnms/lib/scripts/consolidate.py
 rnms/lib/scripts/info.py
 rnms/lib/scripts/jffimport.py
-rnms/lib/scripts/poller.py
 rnms/lib/scripts/rnmsd.py
 rnms/lib/snmp/__init__.py
 rnms/lib/snmp/engine.py

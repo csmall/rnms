@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,63 +17,57 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-import sys
 import transaction
+from cliff.command import Command
 
-from rnms.lib.cmdline import RnmsCommand
 from rnms.lib.att_discover import AttDiscover
 
-class RnmsAttd(RnmsCommand):
 
-    def real_command(self):
-        host_ids = None
-        if self.options.hosts is not None:
-            host_ids = self.options.hosts.split(',')
-
-        atype_ids = None
-        if self.options.atypes is not None:
-            atype_ids = self.options.atypes.split(',')
-
-        autodiscovery = AttDiscover(force=self.options.force,
-                                    print_only=self.options.print_only,
-                                   do_once=True)
-        autodiscovery.discover(limit_hosts=host_ids, limit_atypes=atype_ids)
-        transaction.commit()
-    
-    def standard_options(self):
-        super(RnmsAttd, self).standard_options()
-        self.parser.add_argument(
+class AdiscCommand(Command):
+    def get_parser(self, prog_name):
+        parser = super(AdiscCommand, self).get_parser(prog_name)
+        parser.add_argument(
             '-H', '--host',
             action='store',
             dest='hosts',
             type=str,
-            help='Limit Attribute discovery to given host IDs',
+            help='Limit SLA analysis to given host IDs',
             metavar='HID,...'
-        )
-        self.parser.add_argument(
+            )
+        parser.add_argument(
             '-t', '--atype',
             action='store',
             dest='atypes',
             type=str,
             help='Limit Attribute discovery to given Attribute Type IDs',
             metavar='TID,...'
-        )
-        self.parser.add_argument(
+            )
+        parser.add_argument(
             '-f', '--force',
             action='store_true',
             dest='force',
             help='Force Attribute Type discoveries',
         )
-        self.parser.add_argument(
+        parser.add_argument(
             '-n', '--dry-run',
             action='store_true',
             dest='print_only',
             help='Dry run - do not modify the database',
         )
+        return parser
 
-def main():
-    attd = RnmsAttd('att_disc')
-    return attd.run()
-
-if __name__ == '__main__':
-    sys.exit(main())
+    def take_action(self, parsed_args):
+        if parsed_args.hosts is not None:
+            host_ids = parsed_args.hosts.split(',')
+        else:
+            host_ids = None
+        if parsed_args.atypes is not None:
+            atype_ids = parsed_args.atypes.split(',')
+        else:
+            atype_ids = None
+        ad = AttDiscover(
+            force=parsed_args.force,
+            print_only=parsed_args.print_only,
+            do_once=True)
+        ad.discover(limit_hosts=host_ids, limit_atypes=atype_ids)
+        transaction.commit()

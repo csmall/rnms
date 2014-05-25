@@ -22,39 +22,30 @@ Configuration backup script
   This script will backup the various supported devices
   and store updated configurations in the database
 """
-import sys
 import transaction
+from cliff.command import Command
 
-from rnms.lib.cmdline import RnmsCommand
 from rnms.lib.config_backup import Backuper
 
 
-class BackupCmd(RnmsCommand):
-
-    def real_command(self):
-        host_ids = None
-        if self.options.hosts is not None:
-            host_ids = self.options.hosts.split(',')
-
-        backuper = Backuper(host_ids=host_ids)
-        backuper.main_loop()
-        transaction.commit()
-
-    def standard_options(self):
-        super(BackupCmd, self).standard_options()
-        self.parser.add_argument(
+class CbackupCommand(Command):
+    def get_parser(self, prog_name):
+        parser = super(CbackupCommand, self).get_parser(prog_name)
+        parser.add_argument(
             '-H', '--host',
             action='store',
             dest='hosts',
             type=str,
             help='Backup these hosts only',
             metavar='HID,...'
-        )
+            )
+        return parser
 
-
-def main():
-    backupc = BackupCmd('backup')
-    return backupc.run()
-
-if __name__ == '__main__':
-    sys.exit(main())
+    def take_action(self, parsed_args):
+        if parsed_args.hosts is not None:
+            host_ids = parsed_args.hosts.split(',')
+        else:
+            host_ids = None
+        backuper = Backuper(host_ids=host_ids)
+        backuper.main_loop()
+        transaction.commit()

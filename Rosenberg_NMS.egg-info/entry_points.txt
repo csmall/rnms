@@ -2,23 +2,21 @@
 main = rnms.config.middleware:make_app
 
 [rnms.commands]
-trapd = rnms.command.trapd:Trapd
-sla = rnms.command.sla:Sla
-jimport = rnms.command.jffimport:JffnmsImport
+cons = rnms.command.consolidate:ConsCommand
 show = rnms.command.show:Show
+cbackup = rnms.command.config_backup:CbackupCommand
+trapd = rnms.command.trapd:Trapd
+adisc = rnms.command.att_discover:AdiscCommand
+jimport = rnms.command.jffimport:JffnmsImport
+poll = rnms.command.poller:PollCommand
+sla = rnms.command.sla:Sla
 
 [gearbox.plugins]
 turbogears-devtools = tg.devtools
 
 [console_scripts]
-rnms_poller = rnms.lib.scripts.poller:main
-rnms_cons = rnms.lib.scripts.consolidate:main
-rnms_sla = rnms.lib.scripts.sla_analyzer:main
-rnms_trapd = rnms.lib.scripts.trapd:main
-rnms_info = rnms.lib.scripts.info:main
-rnms_jffimport = rnms.lib.scripts.jffimport:main
-rnmsd = rnms.lib.scripts.rnmsd:main
 rnms = rnms.command.main:main
+rnms_poller = rnms.lib.scripts.poller:main
 rnms_cbackup = rnms.lib.scripts.config_backup:main
-rnms_adisc = rnms.lib.scripts.att_discovery:main
+rnmsd = rnms.lib.scripts.rnmsd:main
 
