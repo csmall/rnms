@@ -2,6 +2,7 @@
 main = rnms.config.middleware:make_app
 
 [rnms.commands]
+daemon = rnms.command.daemon:DaemonCommand
 cons = rnms.command.consolidate:ConsCommand
 show = rnms.command.show:Show
 cbackup = rnms.command.config_backup:CbackupCommand
@@ -16,7 +17,5 @@ turbogears-devtools = tg.devtools
 
 [console_scripts]
 rnms = rnms.command.main:main
-rnms_poller = rnms.lib.scripts.poller:main
-rnms_cbackup = rnms.lib.scripts.config_backup:main
 rnmsd = rnms.lib.scripts.rnmsd:main
 

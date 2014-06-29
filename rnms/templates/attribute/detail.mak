@@ -65,7 +65,6 @@ Rosenberg NMS: ${attribute.host.display_name} -  ${attribute.display_name}
 </%def>
   </dl>
   </div>
-%endif
 <script>
 function load_graph(graph_type_id) {
   $("#resulting_graphs").load(
@@ -84,5 +83,6 @@ $(function() {
 
 });
 </script>
+%endif
 <%def name="graph_change_popover()">
 </%def>

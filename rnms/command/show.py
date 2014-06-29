@@ -1,3 +1,23 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of the Rosenberg NMS
+#
+# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>
+#
+import datetime
 
 from cliff.command import Command
 from rnms import model
@@ -128,16 +148,16 @@ Attribute Autodiscovery can do the following:
 {:<30} | {}
 {:<30} | {}
             '''.format(
-                    ' - is a Loopback', policy.skip_loopback,
-                    ' - is Oper Down', policy.check_state,
-                    ' - has no address', policy.check_address,
-                    ' - set the PollerSet', policy.set_poller,
-                    ' - add new attributes', policy.permit_add,
-                    ' - disable missing attributes', policy.permit_disable,
-                    ' - delete missing attributes ', policy.permit_delete,
-                    ' - alert on missing attributes', policy.alert_delete,
-                    ' - modify attribute fields', policy.permit_modify,
-                )
+                ' - is a Loopback', policy.skip_loopback,
+                ' - is Oper Down', policy.check_state,
+                ' - has no address', policy.check_address,
+                ' - set the PollerSet', policy.set_poller,
+                ' - add new attributes', policy.permit_add,
+                ' - disable missing attributes', policy.permit_disable,
+                ' - delete missing attributes ', policy.permit_delete,
+                ' - alert on missing attributes', policy.alert_delete,
+                ' - modify attribute fields', policy.permit_modify,
+            )
 
     def _parse_sysobjid(self, sysobjid):
         if sysobjid is None or sysobjid == '':
@@ -202,19 +222,20 @@ Attribute Autodiscovery can do the following:
             print '{:<30} | {}: {}'.format('SLA', sla.id, sla.display_name)
             self.line('-')
             print '''{:<30} | {}: {}
-{:<30} | {}% '''.format( 'Attribute Type', sla.attribute_type_id, at_name,
-        'Threshold', sla.threshold,
-        )
+{:<30} | {}% '''.format(
+                'Attribute Type', sla.attribute_type_id, at_name,
+                'Threshold', sla.threshold,
+                )
             self.line('-')
             print 'Rules\nPos| {:>40} | Oper| Limit'.format('Expression')
             self.line('-')
             for row in sla.sla_rows:
                 print '{:<3}| {:>40} | {:>3} | {:<8}'.format(
-                        row.position, 
-                        row.expression[:40], row.oper, row.limit
-                        )
+                    row.position,
+                    row.expression[:40], row.oper, row.limit
+                    )
                 expr_len = len(row.expression)
-                for idx in range(40,256,40):
+                for idx in range(40, 256, 40):
                     if expr_len > idx:
                         print '   | {:>40} |     |'.format(
                             row.expression[idx:idx+40])
@@ -272,10 +293,12 @@ Attribute Autodiscovery can do the following:
             self.line('=')
             print '''{:<30} | {}: {}
 {:<30} | {}
-{:<30} | {} - {}'''.format('Trigger', trigger.id, trigger.display_name,
-        'Match Type', trigger.match_type_name().capitalize(),
-        'Email: Owner - Users', trigger.email_owner, trigger.email_users,
-        )
+{:<30} | {} - {}'''.format(
+                'Trigger', trigger.id, trigger.display_name,
+                'Match Type', trigger.match_type_name().capitalize(),
+                'Email: Owner - Users', trigger.email_owner,
+                trigger.email_users,
+                )
             self.line('-')
             print 'Rules'
             for rule in trigger.rules:

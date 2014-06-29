@@ -54,8 +54,6 @@ class AttributeMap(MapWidget):
     host_id = None
     alarmed_only = False
 
-    state_data = twc.Param()
-
     def attribute_state(self, attribute):
         """ Returns the attribute state which is used for seveity class
         and description box. Returns
@@ -209,8 +207,6 @@ class AttributeSummary(twc.Widget):
 
     id = 'attribute-summary'
     template = 'rnms.templates.widgets.attribute_summary'
-
-    host_id = twc.Param('Limit Attributes by this host id')
 
     def prepare(self):
         self.url = url

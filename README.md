@@ -31,3 +31,7 @@ going.  I've recently also had (and fixed) a bug that took the program to
 
 The Admin screens are the Turbogears default largely which means they're
 about as useful as a database dump.
+
+Installation
+------------
+apt-get install python-dev libzmq3-dev libmysqlclient-dev librrd-dev libpq-dev

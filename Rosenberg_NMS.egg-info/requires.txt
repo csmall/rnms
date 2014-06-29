@@ -1,4 +1,4 @@
-TurboGears2 >= 2.2.2
+TurboGears2 >= 2.3.2
 Babel
 Genshi
 Mako
@@ -7,12 +7,11 @@ sqlalchemy
 alembic
 repoze.who
 tw2.forms
-tgext.admin >= 0.5.1
+tgext.admin >= 0.6.1
 tw2.jqplugins.jqgrid
 tw2.jqplugins.jqplot
 pysnmp
 psycopg2
 python-rrdtool
 mysql-python
-pyparsing < 2.0.0
 pyzmq

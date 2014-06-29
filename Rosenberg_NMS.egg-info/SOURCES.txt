@@ -16,6 +16,7 @@ rnms/command/att_discover.py
 rnms/command/base.py
 rnms/command/config_backup.py
 rnms/command/consolidate.py
+rnms/command/daemon.py
 rnms/command/jffimport.py
 rnms/command/list.py
 rnms/command/main.py
@@ -46,6 +47,7 @@ rnms/lib/att_discover.py
 rnms/lib/backend.py
 rnms/lib/base.py
 rnms/lib/cmdline.py
+rnms/lib/daemon.py
 rnms/lib/engine.py
 rnms/lib/genericset.py
 rnms/lib/gettid.py
@@ -117,9 +119,7 @@ rnms/lib/poller/plugins/snmp.py
 rnms/lib/poller/plugins/tcp.py
 rnms/lib/poller/plugins/verify_index.py
 rnms/lib/scripts/__init__.py
-rnms/lib/scripts/config_backup.py
 rnms/lib/scripts/info.py
-rnms/lib/scripts/jffimport.py
 rnms/lib/scripts/rnmsd.py
 rnms/lib/snmp/__init__.py
 rnms/lib/snmp/engine.py

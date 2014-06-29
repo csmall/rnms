@@ -23,14 +23,16 @@ except ImportError:
     use_setuptools()
     from setuptools import setup, find_packages
 
-testpkgs=['WebTest >= 1.2.3',
-               'nose',
-               'coverage',
-               'wsgiref',
-               'mock',
-               ]
-install_requires=[
-    "TurboGears2 >= 2.2.2",
+testpkgs = ['WebTest >= 1.2.3',
+            'nose',
+            'coverage',
+            'gearbox',
+            'wsgiref',
+            'mock',
+            ]
+
+install_requires = [
+    "TurboGears2 >= 2.3.2",
     "Babel",
     "Genshi",
     "Mako",
@@ -39,7 +41,7 @@ install_requires=[
     "alembic",
     "repoze.who",
     "tw2.forms",
-    "tgext.admin >= 0.5.1",
+    "tgext.admin >= 0.6.1",
     # Rosenberg NMS specific stuff follows
     "tw2.jqplugins.jqgrid",
     "tw2.jqplugins.jqplot",
@@ -47,13 +49,13 @@ install_requires=[
     "psycopg2",
     "python-rrdtool",
     "mysql-python",
-    "pyparsing < 2.0.0",
+#    "pyparsing < 2.0.0",
     "pyzmq"
     ]
 
 setup(
     name='Rosenberg-NMS',
-    version='0.0.0',
+    version='0.1',
     description='',
     author='Craig Small',
     author_email='csmall@enc.com.au',
@@ -70,11 +72,6 @@ setup(
             ('templates/**.mako', 'mako', None),
             ('public/**', 'ignore', None)]},
 
-   setup_requires=["PasteScript >= 1.7"],
-   paster_plugins=['PasteScript', 'TurboGears2', 'tg.devtools'],
-#    packages=find_packages(exclude=['ez_setup']),
-#    include_package_data=True,
-
     entry_points={
         'paste.app_factory': [
             'main = rnms.config.middleware:make_app'
@@ -85,13 +82,12 @@ setup(
         'console_scripts': [
             'rnms = rnms.command.main:main',
             'rnmsd = rnms.lib.scripts.rnmsd:main',
-            'rnms_poller = rnms.lib.scripts.poller:main',
-            'rnms_cbackup = rnms.lib.scripts.config_backup:main',
         ],
         'rnms.commands': [
             'adisc = rnms.command.att_discover:AdiscCommand',
             'cbackup = rnms.command.config_backup:CbackupCommand',
             'cons = rnms.command.consolidate:ConsCommand',
+            'daemon = rnms.command.daemon:DaemonCommand',
             'jimport = rnms.command.jffimport:JffnmsImport',
             'poll = rnms.command.poller:PollCommand',
             'sla = rnms.command.sla:Sla',
@@ -99,15 +95,5 @@ setup(
             'trapd = rnms.command.trapd:Trapd',
         ],
     },
-    dependency_links=[
-        "http://tg.gy/230"
-        ],
     zip_safe=False
 )
-
-
-#    [paste.app_install]
-#    main = pylons.util:PylonsInstaller
-#
-#    [nose.plugins]
-#    pylons = pylons.test:PylonsPlugin
