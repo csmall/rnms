@@ -43,15 +43,17 @@ class jqGridGrid(jqGridWidget):
     height = None
     default_sort = None
     default_sort_order = None
+    toolbar_items = ''
 
     params = ('id', 'scroll', 'height', 'caption', 'columns',
               'column_widths', 'default_column_width', 'url_args',
               'default_sort', 'default_sort_order')
     options = {
-        'altRows': True,
-        'altclass': 'altrows',
+        'altRows': False,
+#        'altclass': 'altrows',
         'datatype': 'json',
         'autowidth': True,
+        'toolbar': (True, 'top'),
         #'imgpath': 'scripts/jqGrid/themes/green/images',
         'jsonReader': {
             'repeatitems': False,

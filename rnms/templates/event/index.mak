@@ -5,11 +5,6 @@
 Rosenberg NMS: Event List
 </%def>
 %if w != UNDEFINED:
-<div= class="row">
-  <div class="md-xs-12">
-    <button id="refresh-button" type="button" class="btn btn-primary btn-lrg active" data-toggle="button">
-      <span class="glyphicon glyphicon-refresh"></span> Refresh
-    </button>
 <div class="row">
   <div class="span12">
     ${w.display(postdata=griddata)| n}
@@ -23,9 +18,12 @@ function reloadGrid() { grid.setGridParam({datatype: 'json'}).trigger('reloadGri
 function setGridInterval() { gridUpdateInterval = setInterval('reloadGrid()', 10000); }
 $(function(){
     setGridInterval();
+    $("#t_events-grid").append("${w.toolbar_items|n}");
     datePick = function(elem) { jQuery(elem).datepicker();}
     $("#refresh-button").toggle(
-        function(event){clearInterval(gridUpdateInterval);},
-        function(event){reloadGrid(); setGridInterval();})
+        function(event){$(this).removeClass("btn-success").addClass("btn-danger"); clearInterval(gridUpdateInterval);},
+        function(event){$(this).removeClass("btn-danger").addClass("btn-success"); reloadGrid(); setGridInterval();});
+    $("#tb-search").click(
+        function(event){$("#events-grid").jqGrid('searchGrid');});
 });
 </script>

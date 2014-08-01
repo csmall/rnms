@@ -99,22 +99,41 @@ class event(base_table):
     __entity__ = model.Event
     __hide_primary_field__ = True
     __omit_fields__ = ('__actions__',)
-    __limit_fields__ = ('id', 'created', 'host', 'attribute',
+    __limit_fields__ = ('id', 'created', 'acknowledged', 'host', 'attribute',
                         'event_type', 'description')
-    __column_widths__ = {'created': 140, 'event_type': 100, 'description': 500}
+    __column_widths__ = {'created': 140, 'event_type': 100, 'description': 500,
+                         'acknowledged': 40}
     __default_sort_order__ = 'desc'
+    __headers__ = {
+        'acknowledged': 'Ack',
+        }
+
+    def acknowledged(self, obj):
+        if obj.acknowledged:
+            icon_type = 'ok'
+            div_type = 'success'
+        else:
+            icon_type = 'exclamation-sign'
+            div_type = 'danger'
+        return '<div class="btn btn-xs btn-{}">\
+                <span class="glyphicon glyphicon-{}"></span>\
+                </div>'.format(div_type, icon_type)
 
     def host(self, obj):
         if obj.host is None:
             return ''
-        return '<a href="{}">{}</a>'.format(
+        return '''\
+<div class="severity{} event_type_td"><a href="{}">{}</a></div>'''.format(
+            obj.event_state.severity_id,
             url('/hosts/{}'.format(obj.host_id)),
             obj.host.display_name)
 
     def attribute(self, obj):
         if obj.attribute is None:
             return ''
-        return '<a href="{}">{}</a>'.format(
+        return '''\
+<div class="severity{} event_type_td"><a href="{}">{}</a></div>'''.format(
+            obj.event_state.severity_id,
             url('/attributes/{}'.format(obj.attribute_id)),
             obj.attribute.display_name)
 
@@ -131,4 +150,6 @@ class event(base_table):
             return event_type
 
     def description(self, obj):
-        return obj.text()
+        return '<div class="severity{} event_type_td">{}</div>'.format(
+            obj.event_state.severity_id,
+            obj.text())

@@ -28,3 +28,13 @@ class EventGrid(structures.event, jqGridTableBase):
     __url__ = '/events/griddata'
     __grid_id__ = 'events-grid'
     __caption__ = 'Events'
+    toolbar_items = '''\
+<div class=\\"btn-group btn-group-xs\\">\
+<button id=\\"tb-search\\" type=\\"button\\" class=\\"btn btn-default\\">\
+<span class=\\"glyphicon glyphicon-search\\">\
+</span> Search</button>\
+<button id=\\"refresh-button\\" type=\\"button\\" class=\\"btn btn-success\\">\
+<span class=\\"glyphicon glyphicon-refresh\\">\
+</span> Reload</button>\
+</div>\
+'''
