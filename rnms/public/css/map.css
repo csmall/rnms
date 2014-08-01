@@ -1,9 +1,14 @@
 
+.fullwidth {
+    width: 100%;
+}
+
 .amap1 {
     margin: 0px 0px 0px 0px;
 	float: left;
     background: #200020;
     padding: 10px;
+    width: 100%;
 }
 
 .amap2 {
@@ -11,6 +16,7 @@
     border: 3px double #cccccc;
     border-radius: 5px 5px 5px 5px;
     padding: 20px;
+    width: 100%;
 }
 
 .mapheader {
@@ -47,4 +53,9 @@ ul.maplist {
     font-size: 10px;
     overflow: hidden;
     text-align: center;
+}
+
+.maptip-title {
+    font-weight: bold;
+    text-decoration: underline;
 }

@@ -9,7 +9,7 @@
 </head>
 <body class="${self.body_class()}">
     ${self.main_menu()}
-  <div class="container">
+  <div class="container fullwidth">
     ${self.content_wrapper()}
   </div>
     ${self.footer()}
@@ -58,13 +58,14 @@
         <span class="icon-bar"></span>
       </button>
       <a class="navbar-brand" href="${tg.url('/')}">
-        ${getattr(tmpl_context, 'project_name', 'iturbogears2')}
+        ${getattr(tmpl_context, 'project_name', 'turbogears2')}
       </a>
     </div>
 
     <div class="collapse navbar-collapse" id="navbar-content">
       <ul class="nav navbar-nav">
         % if request.identity:
+	<li>${request.identity['repoze.who.userid']} - </li>
         <li class="${('', 'active')[page=='index']}"><a href="${tg.url('/')}">Overview</a></li>
           <li class="${('', 'active ')[page=='hosts']}dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#" >Hosts<b class="caret"></b></a>
 	    <ul class="dropdown-menu" role="menu">
@@ -84,7 +85,9 @@
 	      <li><a href="${tg.url('/attributes/map',{'alarmed':1,'events':1})}">Map &amp; Events (Alarmed)</a></li>
 	    </ul>
 	  </li>
+        %if 'manage' in request.identity['permissions']:
         <li class="${('', 'active')[page=='events']}"><a href="${tg.url('/events')}">Events</a></li>
+	%endif
         <li class="${('', 'active')[page=='about']}"><a href="${tg.url('/about')}">About</a></li>
         % endif
       </ul>
@@ -95,7 +98,9 @@
         <li><a href="${tg.url('/login')}">Login</a></li>
       % else:
         <li><a href="${tg.url('/logout_handler')}">Logout</a></li>
+        % if 'manage' in request.identity['permissions']:
         <li><a href="${tg.url('/admin')}">Admin</a></li>
+        %endif
       % endif
       </ul>
     % endif

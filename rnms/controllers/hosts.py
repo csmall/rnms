@@ -40,9 +40,7 @@ from rnms.widgets.attribute import MiniAttributeGrid, DiscoveredAttsGrid
 
 
 class HostsController(BaseGridController):
-    #Uncomment this line if your controller requires an authenticated user
-    allow_only = predicates.not_anonymous()
-    #allow_only = permissions.host_ro
+    allow_only = permissions.host_ro
 
     @expose('rnms.templates.host.index')
     @validate(validators={'z': validators.Int(min=1)})

@@ -6,6 +6,7 @@ from tg import url
 from tgext.admin.tgadminconfig import BootstrapTGAdminConfig
 from tgext.admin.config import CrudRestControllerConfig
 from tgext.crud.controller import CrudRestController
+from tg.predicates import has_permission
 
 # third party imports
 
@@ -20,6 +21,8 @@ from sprox.fillerbase import FillerBase
 class MyCrudRestController(CrudRestController):
     #pagination_enabled = False
     title = 'Rosenberg NMS Admin'
+    allow_only = has_permission('manage')
+
 
 
 class MyCrudRestControllerConfig(CrudRestControllerConfig):
@@ -167,7 +170,7 @@ class MyAdminConfig(BootstrapTGAdminConfig):
                 return '<div style="color: #{0}; background-color: #{1};">' + \
                     '{0}</div>'.format(obj.fgcolor, obj.bgcolor)
 
-    class user(MyCrudRestControllerConfig):
+    class iuser(MyCrudRestControllerConfig):
         class table_type(at.user, TableBase):
             __column_widths__ = {'user_id': 30, 'created': 150}
 

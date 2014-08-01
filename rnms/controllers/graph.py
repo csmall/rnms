@@ -2,7 +2,7 @@
 #
 # This file is part of the Rosenberg NMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 import logging
 
 # turbogears imports
-from tg import validate, expose, tmpl_context
+from tg import validate, expose, tmpl_context, predicates
 from formencode import validators, ForEach
 
 # project specific imports
@@ -36,7 +36,7 @@ logger = logging.getLogger('rnms')
 
 class GraphController(BaseController):
     #Uncomment this line if your controller requires an authenticated user
-    #allow_only = predicates.not_anonymous()
+    allow_only = predicates.not_anonymous()
 
     @expose('rnms.templates.graph_index')
     @validate(validators={'a': ForEach(validators.Int(min=1))})
@@ -70,12 +70,12 @@ class GraphController(BaseController):
     @expose('rnms.templates.widgets.select')
     def types_option(self, a=None):
         if a is not None and type(a) is not list:
-            a=[a]
+            a = [a]
         att_ids = [int(x) for x in a]
-        atype = DBSession.query(GraphType.id, GraphType.display_name, 
-                               GraphType.attribute_type_id).\
-                filter(GraphType.attribute_type_id.in_(
-                    DBSession.query(Attribute.attribute_type_id).\
-                    filter(Attribute.id.in_(att_ids))
-                ))
+        atype = DBSession.query(GraphType.id, GraphType.display_name,
+                                GraphType.attribute_type_id).\
+            filter(GraphType.attribute_type_id.in_(
+                   DBSession.query(Attribute.attribute_type_id).
+                   filter(Attribute.id.in_(att_ids))
+                   ))
         return dict(data_name='atype', items=atype.all())

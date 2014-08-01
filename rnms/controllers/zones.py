@@ -21,7 +21,7 @@
 """ Zone controller """
 
 # turbogears imports
-from tg import expose#, validate, flash,tmpl_context, url
+from tg import expose
 #from tg.decorators import require
 
 # third party imports
@@ -31,20 +31,23 @@ from tg import expose#, validate, flash,tmpl_context, url
 
 # project specific imports
 from rnms.lib import structures
-#from rnms.lib import permissions
+from rnms.lib import permissions
 from rnms.lib.base import BaseGridController
 from rnms.lib.table import jqGridTableFiller
 from rnms.model import DBSession, Zone
 from rnms.widgets import MainMenu, ZoneGrid
 
+
 class ZonesController(BaseGridController):
+
+    allow_only = permissions.host_ro
 
     @expose('rnms.templates.zone_index')
     def index(self):
         zone_grid = ZoneGrid()
         return dict(page='host', main_menu=MainMenu,
                     zone_grid=zone_grid)
-    
+
     @expose('json')
     def griddata(self, *args, **kw):
         class TableFiller(structures.zone, jqGridTableFiller):
@@ -57,4 +60,3 @@ class ZonesController(BaseGridController):
         zones = DBSession.query(Zone.id, Zone.display_name).all()
         zones.insert(0, ('', '-- Choose Zone --'))
         return dict(items=zones)
-

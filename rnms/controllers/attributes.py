@@ -97,7 +97,7 @@ class AttributesController(BaseGridController):
                     more_url=more_url,
                     graphbox=graphbox)
 
-    @expose('rnms.templates.map.attribute')
+    @expose('rnms.templates.attribute.map')
     @validate(validators={
         'h': validators.Int(min=1),
         'events': validators.Bool(),
@@ -132,57 +132,6 @@ class AttributesController(BaseGridController):
         return super(AttributesController, self).griddata(
             AttFiller,
             {'h': validators.Int(min=1)}, **kw)
-
-    @expose('json')
-    @validate(validators={
-        'h': validators.Int(),
-        'page': validators.Int(),
-        'rows': validators.Int(),
-        'sidx': validators.String(),
-        'sord': validators.String(),
-        '_search': validators.String(),
-        'searchOper': validators.String(),
-        'searchField': validators.String(),
-        'searchString': validators.String()})
-    def griddata_old(self, page, rows, sidx, sord, _search='false',
-                     searchOper='', searchField='', searchString='', h=None,
-                     **kw):
-        conditions = []
-        if tmpl_context.form_errors:
-            return dict(errors={
-                k: str(v) for k, v in tmpl_context.form_errors.items()})
-        if h is not None:
-            conditions.append(Attribute.host_id == int(h))
-        qry = DBSession.query(Attribute).\
-            join(Attribute.attribute_type,
-                 Attribute.host).filter(and_(*conditions))
-        colnames = (
-            ('host', Host.display_name),
-            ('display_name', Attribute.display_name),
-            ('attribute_type', AttributeType.display_name),
-            ('description', None),
-            ('oper_state', None),
-            ('admin_state', None),
-        )
-        result_count, qry = json_query(
-            qry, colnames, page, rows, sidx, sord, _search == 'true',
-            searchOper, searchField, searchString)
-        records = [{'id': rw.id,
-                    'cell': (
-                        '<a href="{}">{}</a>'.format(
-                            url('/hosts/'+str(rw.host.id)),
-                            rw.host.display_name),
-                        '<a href="{}">{}</a>'.format(
-                            url('/attributes/'+str(rw.id)),
-                            rw.display_name),
-                        rw.attribute_type.display_name,
-                        rw.description(),
-                        rw.oper_state,
-                        rw.admin_state_name()
-                    )} for rw in qry]
-        return dict(page='attribute', main_menu=MainMenu,
-                    total=result_count,
-                    records=result_count, rows=records)
 
     @expose('rnms.templates.widget')
     def statuspie(self):
