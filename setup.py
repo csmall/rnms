@@ -49,14 +49,17 @@ install_requires = [
     "psycopg2",
     "python-rrdtool",
     "mysql-python",
-#    "pyparsing < 2.0.0",
     "pyzmq"
     ]
 
 setup(
     name='Rosenberg-NMS',
     version='0.1',
-    description='',
+    description='''\
+Rosenberg NMS is a Network Management System which is able to poll your
+network equipment such as routers, switches and services. With this
+information it can report on device state and graph parameters from the device.
+''',
     author='Craig Small',
     author_email='csmall@enc.com.au',
     url='http://rnms.org/',
@@ -65,12 +68,15 @@ setup(
     test_suite='nose.collector',
     tests_require=testpkgs,
     package_data={'rnms': ['i18n/*/LC_MESSAGES/*.mo',
-                                 'templates/*/*',
-                                 'public/*/*']},
+                           'templates/*/*',
+                           'public/*/*']},
+    keywords=[
+        'turbogears2.application'
+    ],
     message_extractors={'rnms': [
-            ('**.py', 'python', None),
-            ('templates/**.mako', 'mako', None),
-            ('public/**', 'ignore', None)]},
+        ('**.py', 'python', None),
+        ('templates/**.mako', 'mako', None),
+        ('public/**', 'ignore', None)]},
 
     entry_points={
         'paste.app_factory': [
