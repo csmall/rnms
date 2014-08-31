@@ -4,6 +4,9 @@
 from tg import url
 
 from tgext.admin.tgadminconfig import BootstrapTGAdminConfig
+from tgext.admin.widgets import BoostrapAdminTableBase as TableBase
+# from tgext.admin.widgets import BootstrapAdminTableFiller as TableFiller
+from tgext.admin.layouts import BootstrapAdminLayout
 from tgext.admin.config import CrudRestControllerConfig
 from tgext.crud.controller import CrudRestController
 from tg.predicates import has_permission
@@ -12,17 +15,22 @@ from tg.predicates import has_permission
 
 from rnms.lib.states import state_name
 from rnms.lib import admin_tables as at
+from rnms.lib.admin_tables import TableFiller, click
 from rnms.model import ConfigBackupMethod
+from rnms.widgets.button import Button
 
-from sprox.tablebase import TableBase
-from sprox.fillerbase import FillerBase
+
+class MyAdminLayout(BootstrapAdminLayout):
+    crud_templates = {
+        'get_all': ['mako:rnms.templates.admin.get_all', ],
+        'edit': ['mako:rnms.templates.admin.edit', ],
+        'new': ['mako:rnms.templates.admin.new', ],
+        }
 
 
 class MyCrudRestController(CrudRestController):
-    #pagination_enabled = False
     title = 'Rosenberg NMS Admin'
     allow_only = has_permission('manage')
-
 
 
 class MyCrudRestControllerConfig(CrudRestControllerConfig):
@@ -30,21 +38,52 @@ class MyCrudRestControllerConfig(CrudRestControllerConfig):
 
 
 class MyAdminConfig(BootstrapTGAdminConfig):
-    #default_index_template = 'mako:rnms.templates.admin_top'
-    #include_left_menu = False
+    layout = MyAdminLayout
 
     class attribute(MyCrudRestControllerConfig):
         class table_type(at.attribute, TableBase):
             __xml_fields__ = ('host',)
 
         class table_filler_type(at.attribute, at.TableFiller):
+            def extra_actions(self, obj):
+                return Button(
+                    url('/admin/attributefields/',
+                        {'attribute_id': obj.id}),
+                    'list', 'info',
+                    tooltip='Show fields')
+
+    class attributefield(MyCrudRestControllerConfig):
+        class table_type(at.attribute_field, TableBase):
+            __xml_fields__ = ('attribute',)
+            __headers__ = {
+                'id': 'ID', 'attribute': 'Attribute',
+                'attribute_type_field': 'Field Name',
+                'value': 'Field Value'
+                }
+
+        class table_filler_type(at.attribute_field, TableFiller):
+            def attribute(self, obj):
+                return click('attributes', obj.attribute_id,
+                             obj.attribute.display_name)
             pass
 
     class attributetype(MyCrudRestControllerConfig):
         class table_type(at.attribute_type, TableBase):
-            pass
+            __xml_fields__ = ('default_poller_set')
 
-        class table_filler_type(at.attribute_type, at.TableFiller):
+        class table_filler_type(at.attribute_type, TableFiller):
+            def extra_actions(self, obj):
+                return Button(
+                    url('/admin/attributetypefields',
+                        {'attribute_type_id': obj.id}),
+                    'list', 'info',
+                    tooltip='Show Fields for this Attribute Type') +\
+                    Button(
+                    url('/admin/attributetyperrds',
+                        {'attribute_type_id': obj.id}),
+                    'signal', 'info',
+                    tooltip='Show RRDs for this Attribute Type')
+
             def default_poller_set(self, obj):
                 return '<a href="{}/{}/edit">{}</a>'.format(
                     url('/admin/pollersets'),
@@ -55,28 +94,25 @@ class MyAdminConfig(BootstrapTGAdminConfig):
         class table_type(at.attribute_type_rrd, TableBase):
             pass
 
-        class table_filler_type(at.attribute_type_rrd, FillerBase):
+        class table_filler_type(at.attribute_type_rrd, TableFiller):
             pass
 
     class autodiscoverypolicy(MyCrudRestControllerConfig):
         class table_type(at.autodiscovery_policy, TableBase):
             pass
 
-        class table_filler_type(at.autodiscovery_policy, FillerBase):
+        class table_filler_type(at.autodiscovery_policy, TableFiller):
             pass
 
     class backend(MyCrudRestControllerConfig):
         class table_type(at.backend, TableBase):
             pass
 
-        class table_filler_type(at.backend, FillerBase):
-            pass
-
     class eventstate(MyCrudRestControllerConfig):
         class table_type(at.event_state, TableBase):
             pass
 
-        class table_filler_type(at.event_state, FillerBase):
+        class table_filler_type(at.event_state, TableFiller):
             def internal_state(self, obj):
                 return state_name(obj.internal_state).capitalize()
 
@@ -84,28 +120,36 @@ class MyAdminConfig(BootstrapTGAdminConfig):
         class table_type(at.event_type, TableBase):
             __column_widths__ = {'id': 30, 'display_name': 250}
 
-        class table_filler_type(at.event_type, FillerBase):
+        class table_filler_type(at.event_type, TableFiller):
             pass
 
     class graphtype(MyCrudRestControllerConfig):
         class table_type(at.graph_type, TableBase):
             __column_widths__ = {'id': 20, 'display_name': 50}
 
-        class table_filler_type(at.graph_type, FillerBase):
-            pass
+        class table_filler_type(at.graph_type, TableFiller):
+            def extra_actions(self, obj):
+                return Button(url('/admin/graphtypelines/',
+                                  {'graph_type_id': obj.id}),
+                              'list', 'info',
+                              tooltip='Show Lines') +\
+                    Button(url('/admin/attributetyperrds/',
+                               {'attribute_type_id': obj.attribute_type_id}),
+                           'signal', 'info',
+                           tooltip='Show RRDs')
 
     class graphtypeline(MyCrudRestControllerConfig):
         class table_type(at.graph_type_line, TableBase):
             pass
 
-        class table_filler_type(at.graph_type_line, FillerBase):
+        class table_filler_type(at.graph_type_line, TableFiller):
             pass
 
     class group(MyCrudRestControllerConfig):
         class table_type(at.group, TableBase):
             __column_widths__ = {'group_id': 30, 'display_name': 250}
 
-        class table_filler_type(at.group, FillerBase):
+        class table_filler_type(at.group, TableFiller):
             pass
 
     class host(MyCrudRestControllerConfig):
@@ -119,35 +163,49 @@ class MyAdminConfig(BootstrapTGAdminConfig):
         class table_type(at.logfile, TableBase):
             pass
 
-        class table_filler_type(at.logfile, FillerBase):
+        class table_filler_type(at.logfile, TableFiller):
             pass
 
     class logmatchset(MyCrudRestControllerConfig):
         class table_type(at.logmatchset, TableBase):
             pass
 
-        class table_filler_type(at.logmatchset, FillerBase):
+        class table_filler_type(at.logmatchset, TableFiller):
             pass
 
     class logmatchrow(MyCrudRestControllerConfig):
         class table_type(at.logmatchrow, TableBase):
             pass
 
-        class table_filler_type(at.logmatchrow, FillerBase):
+        class table_filler_type(at.logmatchrow, TableFiller):
+            pass
+
+    class permission(MyCrudRestControllerConfig):
+        class table_type(at.permission, TableBase):
+            pass
+
+        class table_filler_type(at.permission, TableFiller):
             pass
 
     class poller(MyCrudRestControllerConfig):
         class table_type(at.poller, TableBase):
             pass
 
-        class table_filler_type(at.poller, FillerBase):
+        class table_filler_type(at.poller, TableFiller):
             pass
 
     class pollerset(MyCrudRestControllerConfig):
         class table_type(at.poller_set, TableBase):
-            pass
+            __xml_fields__ = ('attribute_type',)
 
-        class table_filler_type(at.poller_set, FillerBase):
+        class table_filler_type(at.poller_set, TableFiller):
+            def extra_actions(self, obj):
+                return Button(
+                    url('/admin/pollerrows',
+                        {'poller_set_id': obj.id}),
+                    'list', 'info',
+                    tooltip='Show rows for this Poller Set')
+
             def attribute_type(self, obj):
                 return '<a href="{}/{}/edit">{}</a>'.format(
                     url('/admin/attributetypes'),
@@ -156,32 +214,78 @@ class MyAdminConfig(BootstrapTGAdminConfig):
 
     class pollerrow(MyCrudRestControllerConfig):
         class table_type(at.poller_row, TableBase):
-            pass
+            __xml_fields__ = ('poller_set', 'poller', 'backend')
 
-        class table_filler_type(at.poller_row, FillerBase):
+        class table_filler_type(at.poller_row, TableFiller):
             pass
+            def poller_set(self, obj):
+                return click('pollersets', obj.poller_set_id,
+                             obj.poller_set.display_name)
+
+            def poller(self, obj):
+                return click('pollers', obj.poller_id,
+                             obj.poller.display_name)
+
+            def backend(self, obj):
+                return click('backends', obj.backend_id,
+                             obj.backend.display_name)
 
     class severity(MyCrudRestControllerConfig):
         class table_type(at.severity, TableBase):
             __column_widths__ = {'id': 30}
 
-        class table_filler_type(at.severity, FillerBase):
+        class table_filler_type(at.severity, TableFiller):
             def fgcolor(self, obj):
                 return '<div style="color: #{0}; background-color: #{1};">' + \
                     '{0}</div>'.format(obj.fgcolor, obj.bgcolor)
 
-    class iuser(MyCrudRestControllerConfig):
-        class table_type(at.user, TableBase):
-            __column_widths__ = {'user_id': 30, 'created': 150}
-
-        class table_filler_type(at.user, FillerBase):
+    class snmpdevice(MyCrudRestControllerConfig):
+        class table_type(at.snmp_device, TableBase):
             pass
+
+        class table_filler_type(at.snmp_device, TableFiller):
+            def oid(self, obj):
+                return 'ent.{}.{}{}'.format(
+                    obj.enterprise_id, 'X.' * obj.enterprise.device_offset,
+                    obj.oid)
+
+    class snmpenterprise(MyCrudRestControllerConfig):
+        class table_type(at.snmp_enterprise, TableBase):
+            pass
+
+        class table_filler_type(at.snmp_enterprise, TableFiller):
+            pass
+
+    class trigger(MyCrudRestControllerConfig):
+        class table_type(at.trigger, TableBase):
+            __headers__ = {'id': 'ID', 'display_name': 'Trigger Name',
+                           'email_owner': 'Email Owner',
+                           'email_users': 'Email Users',
+                           }
+
+        class table_filler_type(at.trigger, TableFiller):
+            pass
+    class user(MyCrudRestControllerConfig):
+        class table_type(at.user, TableBase):
+            __headers__ = {
+                'user_id': 'ID', 'display_name': 'Name',
+                'user_name': 'Username', 'created': 'Created'}
+
+        class table_filler_type(at.user, TableFiller):
+            def groups(self, obj):
+                if len(obj.groups) == 0:
+                    return ''
+                return ''.join(
+                    ['<a href="{}">{}</a>'.format(
+                        url('/admin/groups/{}/edit'.format(g.group_id)),
+                        g.group_name)
+                        for g in obj.groups])
 
     class zone(MyCrudRestControllerConfig):
         class table_type(at.zone, TableBase):
             pass
 
-        class table_filler_type(at.zone, FillerBase):
+        class table_filler_type(at.zone, TableFiller):
             pass
 
     class configbackupmethod(MyCrudRestControllerConfig):

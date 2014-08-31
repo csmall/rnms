@@ -43,23 +43,7 @@ class TableFiller(BootstrapAdminTableFiller):
 
     def __actions__(self, obj):
         # This is from tgext.admin.widgets
-        primary_fields = self.__provider__.get_primary_fields(self.__entity__)
-        pklist = '/'.join(map(lambda x: str(getattr(obj, x)), primary_fields))
-        actions = Markup('''
-    <a href="%(pklist)s/edit" class="btn btn-primary">
-        <span class="glyphicon glyphicon-pencil"></span>
-    </a>
-    <div class="hidden-lg hidden-md">&nbsp;</div>
-    <form method="POST" action="%(pklist)s" style="display: inline">
-        <input type="hidden" name="_method" value="DELETE" />
-        <button type="submit" class="btn btn-danger"
-         onclick="return confirm('%(msg)s')">
-            <span class="glyphicon glyphicon-trash"></span>
-        </button>
-    </form>
-''' % dict(msg=l_('Are you sure?'),
-           pklist=pklist))
-
+        actions = super(TableFiller, self).__actions__(obj)
         if hasattr(self, 'extra_actions'):
             return actions + self.extra_actions(obj)
         return actions
@@ -79,22 +63,24 @@ class base_table(bt):
 
 
 class attribute(base_table):
-    __grid_id__ = 'attributes-grid'
     __entity__ = model.Attribute
     __limit_fields__ = ('id', 'host', 'attribute_type', 'display_name',)
 
 
+class attribute_field(base_table):
+    __entity__ = model.AttributeField
+    __limit_fields__ = ('id', 'attribute', 'attribute_type_field', 'value')
+
+
 class attribute_type(base_table):
-    __grid_id__ = 'attribute_types-grid'
     __entity__ = model.AttributeType
     __limit_fields__ = (
         'id', 'display_name', 'ad_validate', 'ad_enabled',
-        'ad_command', 'ad_parameters', 'default_poller_set')
+        'default_poller_set')
     __headers__ = {
         'id': 'ID',  'display_name': 'Attribute Type',
         'ad_validate': 'Validate in A/D', 'ad_enabled': 'A/D Enabled',
-        'ad_command': 'Discovery Command',
-        'ad_parameters': 'Discovery Parameters',
+        'default_poller_set': 'Default Poller Set',
         }
 
     def action_buttons(self, obj):
@@ -112,8 +98,8 @@ class attribute_type(base_table):
 
 
 class attribute_type_rrd(base_table):
-    __grid_id__ = 'attribute_type_rrds-grid'
     __entity__ = model.AttributeTypeRRD
+    __limit_fields__ = ('id', 'attribute_type', 'position', 'display_name')
 
 
 class autodiscovery_policy(base_table):
@@ -143,23 +129,9 @@ class event_type(base_table):
 
 
 class graph_type(base_table):
-    __grid_id__ = 'graph_type-grid'
     __entity__ = model.GraphType
     __limit_fields__ = ('id', 'display_name', 'attribute_type',
                         'template')
-
-    def action_buttons(self, obj):
-        return [
-            ('<a class="btn btn-mini btn-info" href="{0}">'
-             '<i title="Show Lines" '
-             'class="icon-list icon-white"></i></a>').
-            format(tg.url('/admin/graphtypelines/', {'gt': obj.id})),
-            ('<a class="btn btn-mini btn-info" href="{0}">'
-             '<i title="Show RRDs" '
-             'class="icon-folder-close icon-white"></i></a>').
-            format(tg.url('/admin/attributetyperrds/',
-                          {'at': obj.attribute_type_id})),
-        ] + super(graph_type, self).action_buttons(obj)
 
 
 class graph_type_line(base_table):
@@ -228,8 +200,11 @@ class logmatchrow(base_table):
                          'position': 20, 'event_type': 50}
 
 
+class permission(base_table):
+    pass
+
+
 class poller(base_table):
-    __grid_id__ = 'pollers-grid'
     __entity__ = model.Poller
     __limit_fields__ = ('id', 'display_name', 'command', 'field', 'parameters')
     __headers__ = {'id': 'ID', 'display_name': 'Poller Name'}
@@ -237,7 +212,6 @@ class poller(base_table):
 
 
 class poller_set(base_table):
-    __grid_id__ = 'pollersets-grid'
     __entity__ = model.PollerSet
     __limit_fields__ = ('id', 'display_name', 'attribute_type')
     __headers__ = {'id': 'ID', 'display_name': 'Poller Set Name',
@@ -255,18 +229,9 @@ class poller_set(base_table):
 
 
 class poller_row(base_table):
-    __grid_id__ = 'pollerrows-grid'
     __entity__ = model.PollerRow
     __limit_fields__ = ('position', 'poller_set', 'poller', 'backend')
     __default_sort__ = 'position'
-
-    def poller_set(self, obj):
-        return click('pollersets', obj.poller_set_id,
-                     obj.poller_set.display_name)
-
-    def poller(self, obj):
-        return click('pollers', obj.poller_id,
-                     obj.poller.display_name)
 
 
 class severity(base_table):
@@ -277,11 +242,33 @@ class severity(base_table):
                    'fgcolor': 'Foreground', 'bgcolor': 'Background'}
 
 
+class snmp_device(base_table):
+    __entity__ = model.SNMPDevice
+    __limit_fields__ = ('id', 'enterprise', 'display_name', 'oid')
+
+
+class snmp_enterprise(base_table):
+    __entity__ = model.SNMPEnterprise
+    __limit_fields__ = ('id', 'display_name')
+    __headers__ = {'id': 'ID', 'display_name': 'Enterprise Name'}
+
+    def extra_actions(self, obj):
+        return Markup('''
+    <a href="/admin/snmpdevices/?enterprise_id={}" class="btn btn-primary"
+       title="Show Devices for {} Enterprise">
+      <span class="glyphicon glyphicon-list"></span>
+    </a>'''.format(obj.id, obj.display_name))
+
+
+class trigger(base_table):
+    __limit_fields__ = ('id', 'display_name', 'email_owner', 'email_users')
+
+
 class user(base_table):
-    __grid_id__ = 'users-grid'
     __entity__ = model.User
+    __xml_fields__ = ('groups',)
     __limit_fields__ = ('user_id', 'display_name', 'user_name',
-                        'created',)
+                        'created', 'groups')
 
 
 class zone(base_table):

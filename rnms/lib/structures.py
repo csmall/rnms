@@ -36,6 +36,12 @@ class base_table(object):
         'user': 'Owner',
     }
 
+    def __init__(self, *args, **kw):
+        if not hasattr(self, '__entity__') or self.__entity__ is None:
+            model_name = self.__class__.__bases__[0].__name__.capitalize()
+            setattr(self, '__entity__', getattr(model, model_name))
+        super(base_table, self).__init__(*args, **kw)
+
     def created(self, obj):
         return obj.created.strftime('%Y-%b-%d %H:%M:%S')
 

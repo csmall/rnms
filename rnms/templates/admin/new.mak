@@ -16,7 +16,7 @@ ${tmpl_context.title} - ${model}
     </div>
 
     <div class="col-md-10">
-      <h1 class="page-header">Edit ${model}</h1>
+      <h1 class="page-header">New ${model}</h1>
       ${tmpl_context.widget(value=value, action='./') | n}
     </div>
   </div>

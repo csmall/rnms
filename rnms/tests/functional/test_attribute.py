@@ -20,13 +20,15 @@ class TestAttributeController(TestController):
 
     def test_index_hostid_neg(self):
         """ Attribute index with negative Host ID """
-        self.check_response('/attributes?h=-1',
-            ( 'Please enter a number that is 1 or greater for Host ID'))
+        self.check_response(
+            '/attributes?h=-1',
+            ('Please enter a number that is 1 or greater for Host ID'))
 
     def test_index_hostid_notnum(self):
         """ Attribute index with non-numeric Host ID """
-        self.check_response('/attributes?h=xyz',
-            ( 'Please enter an integer value for Host ID'))
+        self.check_response(
+            '/attributes?h=xyz',
+            ('Please enter an integer value for Host ID'))
 
     def test_details_id_ok(self):
         """ Attribute detail page with valid ID """
@@ -35,33 +37,39 @@ class TestAttributeController(TestController):
 
     def test_details_id_neg(self):
         """ Attribute Details with negative ID """
-        self.check_response('/attributes/-1',
-            ( 'Please enter a number that is 1 or greater for Attribute ID',))
+        self.check_response(
+            '/attributes/-1',
+            ('Please enter a number that is 1 or greater for Attribute ID',))
 
     def test_details_nonnum_id(self):
         """ Attribute Details with non-numeric ID """
-        self.check_response('/attributes/xyz',
-            ( 'Please enter an integer value for Attribute ID',))
+        self.check_response(
+            '/attributes/xyz',
+            ('Please enter an integer value for Attribute ID',))
 
     def test_map_hostid_none(self):
         """ Attribute Map with no Host ID """
-        self.check_response('/attributes/map',
-            ('Attribute Map',))
+        self.check_response(
+            '/attributes/map',
+            ('<p><b>No items found</b></p>',))
 
     def test_map_hostid__ok(self):
         """ Attribute Map with ok Host ID """
-        self.check_response('/attributes/map?h=1',
-            ('Attribute Map',))
+        self.check_response(
+            '/attributes/map?h=1',
+            ('<p><b>No items found</b></p>',))
 
     def test_map_hostid_neg(self):
         """ Attribute Map with negative Host ID """
-        self.check_response('/attributes/map?h=-1',
-            ( 'Please enter a number that is 1 or greater for Host ID',))
+        self.check_response(
+            '/attributes/map?h=-1',
+            ('Please enter a number that is 1 or greater for Host ID',))
 
     def test_map_hostid_notnum(self):
         """ Attribute Map with not-numeric Host ID """
-        self.check_response('/attributes/map?h=abc',
-            ( 'Please enter an integer value for Host ID',))
+        self.check_response(
+            '/attributes/map?h=abc',
+            ('Please enter an integer value for Host ID',))
 
     def test_griddata_none(self):
         """ Attribute griddata with no ID """
