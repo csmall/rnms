@@ -31,6 +31,8 @@ permissions = (
     (u'AdminRW', u'Read/Write Access to remaining models'),
 )
 groups = (
+    (u'NoAdmin', u'No Administration',
+     []),
     (u'User View', u'Users that can view Users',
      (u'manage', u'UserRO',)),
     (u'User Admin', u'Users that can edit Edits',

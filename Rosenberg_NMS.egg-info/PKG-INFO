@@ -1,10 +1,14 @@
 Metadata-Version: 1.0
 Name: Rosenberg-NMS
 Version: 0.1dev
-Summary: UNKNOWN
+Summary: Rosenberg NMS is a Network Management System which is able to poll your
+network equipment such as routers, switches and services. With this
+information it can report on device state and graph parameters from the device.
+
 Home-page: http://rnms.org/
 Author: Craig Small
 Author-email: csmall@enc.com.au
 License: UNKNOWN
 Description: UNKNOWN
+Keywords: turbogears2.application
 Platform: UNKNOWN

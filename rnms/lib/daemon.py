@@ -23,7 +23,7 @@ Rosenberg
 Daemonizing code comes from
 http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 """
-import logging
+import os
 import threading
 import sys
 
@@ -50,7 +50,8 @@ class RnmsDaemon(object):
     threads = None
     __set_pidfile__ = False
 
-    def __init__(self):
+    def __init__(self, log):
+        self.log = log
         self.zmq_context = zmq.Context()
         self.zmq_poller = zmq.Poller()
         self.control_socket = zmqmessage.control_server(self.zmq_context)
@@ -60,9 +61,9 @@ class RnmsDaemon(object):
 
     def run(self, parsed_args):
         """ The entry point for the RNMS daemon """
-        if not parsed_args.no_daemon:
+        if not parsed_args.foreground:
             self.daemonize()
-        self.create_pidfile(parsed_args.pid_file)
+        self.create_pidfile()
 
         self._create_info_socket()
 
@@ -100,7 +101,7 @@ class RnmsDaemon(object):
                 if ret_val is not None:
                     return ret_val
             except KeyboardInterrupt:
-                self.logger.debug('User Interrupt Pressed, shutting down')
+                self.log.debug('User Interrupt Pressed, shutting down')
                 self._shutdown()
 
     def _shutdown(self):
@@ -114,7 +115,7 @@ class RnmsDaemon(object):
         try:
             events = dict(self.zmq_poller.poll(self.timeout*1000))
         except zmq.error.ZMQError as err:
-            self.logger.info("ZMQ Error: {}\n".format(
+            self.log.info("ZMQ Error: {}\n".format(
                 err.message))
             return True
         for sock, event in events.items():
@@ -122,7 +123,7 @@ class RnmsDaemon(object):
                 self.handle_info_read()
                 continue
             # Unhandled socket?!
-            self.logger.critical('Unhandled event from zmq poller')
+            self.log.critical('Unhandled event from zmq poller')
             self._shutdown()
             return False
         return True
@@ -136,15 +137,15 @@ class RnmsDaemon(object):
                 if self.end_threads:
                     waiting_threads.append(tname)
             elif not self.end_threads:
-                self.logger.critical('Thread %s has died.', tname)
+                self.log.critical('Thread %s has died.', tname)
                 self._shutdown()
                 return -1
         if self.end_threads:
             if waiting_threads == []:
-                self.logger.debug('All threads finished, exiting')
+                self.log.debug('All threads finished, exiting')
                 return 0
             else:
-                self.logger.debug('Waiting for threads {}'.
+                self.log.debug('Waiting for threads {}'.
                                   format(', '.join(waiting_threads)))
         return None
 
@@ -161,15 +162,90 @@ class RnmsDaemon(object):
         try:
             port_num = int(config['info_port'])
         except (KeyError, ValueError):
-            self.logger.critical("Configuration doesn't have key 'info_port'")
+            self.log.critical("Configuration doesn't have key 'info_port'")
             sys.exit(1)
         self.info_socket = self.zmq_context.socket(zmq.REP)
         self.info_socket.bind('tcp://127.0.0.1:{}'.format(port_num))
         self.zmq_poller.register(self.info_socket, zmq.POLLIN)
 
+    def daemonize(self):
+        """ Daemonize the process """
+        try:
+            pid = os.fork()
+            if pid > 0:
+                # exit first parent
+                sys.exit(0)
+        except OSError, e:
+            sys.syserr.write("fork #1 failed: {} ({})\n".
+                             format(e.errno, e.strerror))
+
+        #  Decouple from parent environment
+        os.chdir("/")
+        os.setsid()
+        os.umask(0)
+
+        # Do second fork
+        try:
+            pid = os.fork()
+            if pid > 0:
+                # Exit from the second parent
+                sys.exit(0)
+        except OSError, e:
+            sys.stderr.write("fork #2 failed: {} ({})\n".format(
+                e.errno, e.strerror))
+
+        # redirect standard file descriptors
+        sys.stdout.flush()
+        sys.stderr.flush()
+        si = file("/dev/null", "r")
+        so = file("/dev/null", "a+")
+        se = file("/dev/null", "a+")
+        os.dup2(si.fileno(), sys.stdin.fileno())
+        os.dup2(so.fileno(), sys.stdout.fileno())
+        os.dup2(se.fileno(), sys.stderr.fileno())
+
+    def create_pidfile(self):
+        """ Create and check for PID file """
+        pidfile = config['rnmsd_pid_file']
+        piddir = os.path.dirname(pidfile)
+        if not os.path.isdir(piddir):
+            self.log.error(
+                'Exiting, pidfile directory %s doesn\'t exist',
+                piddir)
+            sys.exit(1)
+            return
+        try:
+            pf = file(pidfile)
+            pid = int(pf.read().strip())
+            pf.close()
+        except IOError:
+            pid = None
+
+        if pid:
+            self.log.error(
+                'Exiting, self.pidfile %s already exists for process %d',
+                pidfile, pid)
+            sys.exit(1)
+            return
+
+        try:
+            pf = open(pidfile, 'w+')
+            pf.write("{}\n".format(os.getpid()))
+        except IOError as err:
+            self.log.error(
+                "Unable to write self.pidfile %s: %s\n",
+                pidfile, err)
+            sys.exit(1)
+            return
+
+    def del_pidfile(self):
+        """ Delete our self.pidfile """
+        pidfile = config['rnmsd_pid_file']
+        os.remove(pidfile)
+
 
 def main():
-    rnmsd = Rnmsd(__name__)
+    rnmsd = RnmsDaemon(__name__)
     return rnmsd.run()
 
 if __name__ == '__main__':

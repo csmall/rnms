@@ -15,7 +15,11 @@ sla = rnms.command.sla:Sla
 [gearbox.plugins]
 turbogears-devtools = tg.devtools
 
+[rnmsd.commands]
+start = rnms.command.daemon.start:StartCommand
+stop = rnms.command.daemon.stop:StopCommand
+
 [console_scripts]
 rnms = rnms.command.main:main
-rnmsd = rnms.lib.scripts.rnmsd:main
+rnmsd = rnms.command.daemon.main:main
 

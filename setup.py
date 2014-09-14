@@ -87,7 +87,8 @@ information it can report on device state and graph parameters from the device.
         ],
         'console_scripts': [
             'rnms = rnms.command.main:main',
-            'rnmsd = rnms.lib.scripts.rnmsd:main',
+            'rnmsd = rnms.command.daemon.main:main',
+            # 'rnmsd = rnms.lib.scripts.rnmsd:main',
         ],
         'rnms.commands': [
             'adisc = rnms.command.att_discover:AdiscCommand',
@@ -99,6 +100,10 @@ information it can report on device state and graph parameters from the device.
             'sla = rnms.command.sla:Sla',
             'show = rnms.command.show:Show',
             'trapd = rnms.command.trapd:Trapd',
+        ],
+        'rnmsd.commands': [
+            'start = rnms.command.daemon.start:StartCommand',
+            'stop = rnms.command.daemon.stop:StopCommand',
         ],
     },
     zip_safe=False
