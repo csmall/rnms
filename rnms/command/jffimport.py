@@ -27,6 +27,7 @@ from rnms.lib.jffnms_import import JffnmsImporter
 
 
 class JffnmsImport(Command):
+    """ Import database from a JFFNMS instance """
     def get_parser(self, prog_name):
         parser = super(JffnmsImport, self).get_parser(prog_name)
         parser.add_argument(

@@ -1,25 +1,25 @@
-[paste.app_factory]
-main = rnms.config.middleware:make_app
-
-[rnms.commands]
-daemon = rnms.command.daemon:DaemonCommand
-cons = rnms.command.consolidate:ConsCommand
-show = rnms.command.show:Show
-cbackup = rnms.command.config_backup:CbackupCommand
-trapd = rnms.command.trapd:Trapd
-adisc = rnms.command.att_discover:AdiscCommand
-jimport = rnms.command.jffimport:JffnmsImport
-poll = rnms.command.poller:PollCommand
-sla = rnms.command.sla:Sla
+[console_scripts]
+rnms = rnms.command.main:main
+rnmsd = rnms.command.daemon.main:main
 
 [gearbox.plugins]
 turbogears-devtools = tg.devtools
 
+[paste.app_factory]
+main = rnms.config.middleware:make_app
+
+[rnms.commands]
+adisc = rnms.command.att_discover:AdiscCommand
+cbackup = rnms.command.config_backup:CbackupCommand
+cons = rnms.command.consolidate:ConsCommand
+jimport = rnms.command.jffimport:JffnmsImport
+list = rnms.command.list:List
+poll = rnms.command.poller:PollCommand
+show = rnms.command.show:Show
+sla = rnms.command.sla:Sla
+trapd = rnms.command.trapd:Trapd
+
 [rnmsd.commands]
 start = rnms.command.daemon.start:StartCommand
 stop = rnms.command.daemon.stop:StopCommand
-
-[console_scripts]
-rnms = rnms.command.main:main
-rnmsd = rnms.command.daemon.main:main
 

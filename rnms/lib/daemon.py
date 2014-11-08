@@ -85,9 +85,9 @@ class RnmsDaemon(object):
 
         self.att_discover = AttDiscover(zmq_context=self.zmq_context,
                                         do_once=False)
-        #self.threads['att_discover'] = threading.Thread(
-        #target=self.att_discover.discover, name='att_discover')
-        #self.threads['att_discover'].start()
+        # self.threads['att_discover'] = threading.Thread(
+        # target=self.att_discover.discover, name='att_discover')
+        # self.threads['att_discover'].start()
 
         # main loop
         self.snmptrapd = SNMPtrapd(zmq_context=self.zmq_context)
@@ -143,10 +143,11 @@ class RnmsDaemon(object):
         if self.end_threads:
             if waiting_threads == []:
                 self.log.debug('All threads finished, exiting')
+                self.del_pidfile()
                 return 0
             else:
                 self.log.debug('Waiting for threads {}'.
-                                  format(', '.join(waiting_threads)))
+                               format(', '.join(waiting_threads)))
         return None
 
     def handle_info_read(self):
@@ -223,7 +224,7 @@ class RnmsDaemon(object):
 
         if pid:
             self.log.error(
-                'Exiting, self.pidfile %s already exists for process %d',
+                'Exiting, pidfile %s already exists for process %d',
                 pidfile, pid)
             sys.exit(1)
             return

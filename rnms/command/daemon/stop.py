@@ -21,5 +21,6 @@ from cliff.command import Command
 
 
 class StopCommand(Command):
+    """ Stop the RNMS backend daemon """
     def take_action(self, parsed_args):
         self.log.debug('hi stop action')

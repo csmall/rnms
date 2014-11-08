@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#quickstarted Options:
+# quickstarted Options:
 #
 # sqlalchemy: True
 # auth:       sqlalchemy
@@ -7,12 +7,12 @@
 #
 #
 
-#This is just a work-around for a Python2.7 issue causing
-#interpreter crash at exit when trying to log an info message.
-#try:
+# This is just a work-around for a Python2.7 issue causing
+# interpreter crash at exit when trying to log an info message.
+# try:
 #    import logging
 #    import multiprocessing
-#except:
+# except:
 #    pass
 
 
@@ -94,8 +94,8 @@ information it can report on device state and graph parameters from the device.
             'adisc = rnms.command.att_discover:AdiscCommand',
             'cbackup = rnms.command.config_backup:CbackupCommand',
             'cons = rnms.command.consolidate:ConsCommand',
-            'daemon = rnms.command.daemon:DaemonCommand',
             'jimport = rnms.command.jffimport:JffnmsImport',
+            'list = rnms.command.list:List',
             'poll = rnms.command.poller:PollCommand',
             'sla = rnms.command.sla:Sla',
             'show = rnms.command.show:Show',

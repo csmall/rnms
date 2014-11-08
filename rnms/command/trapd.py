@@ -23,6 +23,7 @@ from rnms.lib.snmptrapd import SNMPtrapd
 
 
 class Trapd(Command):
+    """ Start SNMP trap daemon """
 
     def get_parser(self, prog_name):
         parser = super(Trapd, self).get_parser(prog_name)

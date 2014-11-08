@@ -29,6 +29,7 @@ from rnms.lib.config_backup import Backuper
 
 
 class CbackupCommand(Command):
+    """ Backup hosts configuration """
     def get_parser(self, prog_name):
         parser = super(CbackupCommand, self).get_parser(prog_name)
         parser.add_argument(

@@ -24,6 +24,7 @@ from rnms.lib.att_discover import AttDiscover
 
 
 class AdiscCommand(Command):
+    """ Discover attributes on hosts """
     def get_parser(self, prog_name):
         parser = super(AdiscCommand, self).get_parser(prog_name)
         parser.add_argument(

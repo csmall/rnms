@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-import sys
 import transaction
 from cliff.command import Command
 
@@ -25,6 +24,7 @@ from rnms.lib.poller import Poller
 
 
 class PollCommand(Command):
+    """ Run poller to gather status and counters on Attributes """
     def get_parser(self, prog_name):
         parser = super(PollCommand, self).get_parser(prog_name)
         parser.add_argument(

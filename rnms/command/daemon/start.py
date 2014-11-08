@@ -24,6 +24,7 @@ from rnms.lib.daemon import RnmsDaemon
 
 
 class StartCommand(Command):
+    """ Start the RNMS backend daemon """
     log = logging.getLogger(__name__)
 
     def get_parser(self, prog_name):

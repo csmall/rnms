@@ -20,6 +20,7 @@
 import os
 import sys
 import logging
+import logging.config as logging_config
 
 from paste.deploy import appconfig
 from cliff.app import App
@@ -71,7 +72,7 @@ class RnmsDaemon(App):
                 "Error setting up config file \"{}\": {}\n".format(
                     err.filename, err.strerror))
             sys.exit(1)
-        logging.config.fileConfig(config_file, dict(__file__=config_file,
+        logging_config.fileConfig(config_file, dict(__file__=config_file,
                                   here=os.path.dirname(config_file)))
         load_environment(conf.global_conf, conf.local_conf)
 

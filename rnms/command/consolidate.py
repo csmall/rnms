@@ -24,6 +24,7 @@ from rnms.lib.consolidate import Consolidator
 
 
 class ConsCommand(Command):
+    """ Run Consolidator """
     def take_action(self, parsed_args):
         con = Consolidator()
         con.consolidate()
