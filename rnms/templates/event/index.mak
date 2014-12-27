@@ -10,7 +10,6 @@ Rosenberg NMS: Event List
     ${w.display(postdata=griddata)| n}
   </div>
 </div>
-%endif
 <script>
 var gridUpdateInterval = null;
 var grid = $("#events-grid");
@@ -27,3 +26,4 @@ $(function(){
         function(event){$("#events-grid").jqGrid('searchGrid');});
 });
 </script>
+%endif
