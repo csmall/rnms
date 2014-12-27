@@ -21,5 +21,6 @@ trapd = rnms.command.trapd:Trapd
 
 [rnmsd.commands]
 start = rnms.command.daemon.start:StartCommand
+status = rnms.command.daemon.status:StatusCommand
 stop = rnms.command.daemon.stop:StopCommand
 

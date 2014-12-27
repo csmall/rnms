@@ -41,3 +41,4 @@ class StartCommand(Command):
     def take_action(self, parsed_args):
         daemon = RnmsDaemon(self.log)
         daemon.run(parsed_args)
+        print 'retur from daemon run'

@@ -27,6 +27,7 @@ rnms/command/trapd.py
 rnms/command/daemon/__init__.py
 rnms/command/daemon/main.py
 rnms/command/daemon/start.py
+rnms/command/daemon/status.py
 rnms/command/daemon/stop.py
 rnms/config/__init__.py
 rnms/config/app_cfg.py

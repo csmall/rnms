@@ -104,6 +104,7 @@ information it can report on device state and graph parameters from the device.
         'rnmsd.commands': [
             'start = rnms.command.daemon.start:StartCommand',
             'stop = rnms.command.daemon.stop:StopCommand',
+            'status = rnms.command.daemon.status:StatusCommand',
         ],
     },
     zip_safe=False
