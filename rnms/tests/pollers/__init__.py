@@ -48,13 +48,12 @@ class PollerTest(object):
 
         testdb_attribute = mock.MagicMock(spec=model.Attribute)
         testdb_attribute.host = mock.MagicMock(spec_set=model.Host)
+        testdb_attribute.display_name = 'test attribute'
         self.test_attribute = CacheAttribute(testdb_attribute)
         self.test_attribute.id = self.test_attribute_id
         self.test_attribute.host_id = self.test_host_id
         self.test_attribute.host = self.test_host
         self.test_attribute.index = 1
-        #self.test_attribute.attribute_type.id = 1
-        #self.test_attribute.attribute_type = self.test_att_type
 
         self.test_poller_row = mock.MagicMock(spec=model.PollerRow)
 
@@ -79,6 +78,10 @@ class PollerTest(object):
             return self.test_attribute_fields[fname]
         except:
             return None
+
+    def set_poller_buffer(self, values):
+        """ Set the contents of the poller buffer """
+        self.poller_buffer = values
 
     def set_attribute_fields(self, fields):
         self.test_attribute_fields = fields
@@ -166,7 +169,6 @@ class PollerTest(object):
         eq_(called_vars[0].oids[0]['oid'], oid)
         eq_(called_vars[0].oids[0]['callback'], cb_func)
         eq_(called_vars[0].oids[0]['value'], value)
-        #_with(self.test_host,oid, cb_func, **self.test_kwargs)
 
     def assert_tcp_client_called(self, port, send_str, max_bytes, cb_fun):
         assert(self.use_tcpclient)

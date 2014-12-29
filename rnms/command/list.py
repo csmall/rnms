@@ -101,6 +101,19 @@ class List(Lister):
                 )for a in attributes)
         )
 
+    def attributetypes_info(self, parsed_args):
+        conditions = []
+        attribute_types = model.DBSession.query(model.AttributeType).\
+            filter(and_(*conditions)).\
+            order_by(model.AttributeType.id)
+        return(
+            ('ID', 'Name', 'Command'),
+            ((
+                a.id, a.display_name,
+                a.ad_command,
+                )for a in attribute_types)
+        )
+
     def hosts_info(self, parsed_args):
         conditions = self._create_conditions(
             parsed_args, (
