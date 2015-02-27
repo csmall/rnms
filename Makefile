@@ -10,6 +10,6 @@ check:
 	nosetests
 
 coverage:
-	nosetests --quiet --with-coverage --cover-package Rosenberg-NMS
+	nosetests --quiet --with-coverage --cover-package RoseNMS
 
 

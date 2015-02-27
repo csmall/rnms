@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Unit and functional test suite for rnms."""
+"""Unit and functional test suite for RoseNMS."""
 
 from os import getcwd
 

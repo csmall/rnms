@@ -27,7 +27,7 @@ class TestRootController(TestController):
     def test_about(self):
         """ About information page is working correctly """
         self.check_response('/about',
-                            ('About Rosenberg NMS',))
+                            ('About RoseNMS',))
 
     def test_environ(self):
         """Displaying the wsgi environ works"""

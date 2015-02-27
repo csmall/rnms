@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""WSGI middleware initialization for the Rosenberg-NMS application."""
+"""WSGI middleware initialization for the RoseNMS application."""
 
 from rnms.config.app_cfg import base_config
 from rnms.config.environment import load_environment
@@ -14,18 +14,18 @@ make_base_app = base_config.setup_tg_wsgi_app(load_environment)
 
 def make_app(global_conf, full_stack=True, **app_conf):
     """
-    Set Rosenberg-NMS up with the settings found in the PasteDeploy configuration
+    Set RoseNMS up with the settings found in the PasteDeploy configuration
     file used.
     
-    :param global_conf: The global settings for Rosenberg-NMS (those
+    :param global_conf: The global settings for RoseNMS (those
         defined under the ``[DEFAULT]`` section).
     :type global_conf: dict
     :param full_stack: Should the whole TG2 stack be set up?
     :type full_stack: str or bool
-    :return: The Rosenberg-NMS application with all the relevant middleware
+    :return: The RoseNMS application with all the relevant middleware
         loaded.
     
-    This is the PasteDeploy factory for the Rosenberg-NMS application.
+    This is the PasteDeploy factory for the RoseNMS application.
     
     ``app_conf`` contains all the application-specific settings (those defined
     under ``[app:main]``.

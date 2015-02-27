@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # -*- coding: utf-8 -*-
-"""Test suite for attribute discovery """
 import types
 
 import mock
@@ -179,7 +178,7 @@ class AttDiscTest(object):
             self.test_host_ip, port, sendstr, maxbytes, cb_fun,
             dobj=self.dobj, host=self.test_host,
             att_type=self.test_att_type)
-""" Rosenbergs set of attribute discovery plugins"""
+""" RoseNMS set of attribute discovery plugins"""
 
 # Make sure you list any new plugins below
 from alteon import discover_alteon_realservers, discover_alteon_realservices, discover_alteon_virtualservers

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the Rosenberg NMS
+# This file is part of the RoseNMS
 #
 # Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
 #

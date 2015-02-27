@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the Rosenberg NMS
+# This file is part of the RoseNMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2015 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-""" Test suite for the Host model in Rosenberg"""
+""" Test suite for the Host model in RoseNMS"""
 from nose.tools import eq_, assert_true, assert_false
 
 from rnms import model

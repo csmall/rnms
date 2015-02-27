@@ -1,16 +1,16 @@
 Installation
 ============
-There are many ways you can setup Rosenberg.  No single way is "correct"
+There are many ways you can setup RoseNMS.  No single way is "correct"
 but there are often pitfalls depending on your particular setup.  This
-section describes one way of install Rosenberg.
+section describes one way of install RoseNMS.
 
-Rosenberg is basically a WSGI_ interface enabled program.  If you understand
-how these sort of programs work, you are free to install Rosenberg any
+RoseNMS is basically a WSGI_ interface enabled program.  If you understand
+how these sort of programs work, you are free to install RoseNMS any
 way you like, using your standard setup.
 
 For the rest of us, I'll assume you have:
 
-* the Rosenberb_NMS egg, which contains the program;
+* the RoseNMS egg, which contains the program;
 * a working apache server with modwsgi installed;
 * virtualenv_ which makes virtual environments and dependencies.
 
@@ -20,10 +20,10 @@ important thing is not to mix them up.
 
 * Baseline - This is where the python interpreter and the system files are
   kept. We will use /usr/local/pythonenv/BASELINE
-* Rosenberg environment - Additional packages that Rosenberg needs to run
+* RoseNMS environment - Additional packages that RoseNMS needs to run
   will be installed here. This is the location of the specific virtualenv
-  we will use. For the document lets call it /usr/local/pythonenv/Rosenberg_NMS
-* Rosenberg home - Location of the Rosenberg files, such as a sqlite database
+  we will use. For the document lets call it /usr/local/pythonenv/RoseNMS_NMS
+* RoseNMS home - Location of the RoseNMS files, such as a sqlite database
   or the rrd files, we will use /home/rosenberg
 
 So, now to make the various directories, part of this comes from the
@@ -51,11 +51,11 @@ files. You will need to tell it this with a configuration parameter
 code-block::
   WSGIPythonHome /usr/local/pythonenv/BASELINE
 
-Rosenberg Environment
+RoseNMS Environment
 ---------------------
-The Rosenberg Environment is made almost the same way and will be located
+The RoseNMS Environment is made almost the same way and will be located
 at /usr/local/pythonenv/rnms. It is best to install TurboGears first as
-it pulls in the right sort of dependencies, then install Rosenberg.
+it pulls in the right sort of dependencies, then install RoseNMS.
 
 .. code-block:: bash
 
@@ -71,11 +71,11 @@ it pulls in the right sort of dependencies, then install Rosenberg.
   (rnms)$ easy_install -i http://tg.gy/current Turbogears2
   (lots of lines of install as things happen!)
 
-  (rnms)$ easy_install /tmp/Rosenberg_NMS-0.0.0dev-py2.7.egg
+  (rnms)$ easy_install /tmp/RoseNMS_NMS-0.0.0dev-py2.7.egg
 
 There will be an awful lot of work going on when you try to install
-Rosenberg as easy_install will go off and download all the dependent
-packages that are required for Rosenberg to run correctly.
+RoseNMS as easy_install will go off and download all the dependent
+packages that are required for RoseNMS to run correctly.
 
 Apache Configuration
 --------------------

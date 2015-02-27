@@ -4,9 +4,9 @@
 
 <%def name="title()">
 %if attribute is UNDEFINED:
-Rosenberg NMS: Unknown Attribute
+RoseNMS: Unknown Attribute
 %else:
-Rosenberg NMS: ${attribute.host.display_name} -  ${attribute.display_name}
+RoseNMS: ${attribute.host.display_name} -  ${attribute.display_name}
 %endif
 </%def>
 %if attribute is not UNDEFINED:

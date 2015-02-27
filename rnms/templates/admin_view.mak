@@ -1,6 +1,6 @@
 <%inherit file="local:templates.master"/>
 <%def name="title()">
-Rosenberg NMS Admin:
+RoseNMS Admin:
 </%def>
 <div class="row">
 <%include file="local:templates.admin_menu"/>

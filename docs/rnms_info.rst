@@ -8,7 +8,7 @@ SYNOPSYS
 
 DESCRIPTION
 ===========
-**rnms_info** is a tool to query the database on various models that Rosenberg NMS
+**rnms_info** is a tool to query the database on various models that RoseNMS
 contains.  These queries are meant to assist administrators in troubleshooting,
 for example working out what Host a particular Attribute belongs to.
 
@@ -64,6 +64,6 @@ the above attributes host, you would query host 5.
 
 SEE ALSO
 ========
-* `Rosenberg NMS Documentation <http://rosenberg-nms.readthedocs.org/en/latest/>`_
+* `RoseNMS Documentation <http://rosenberg-nms.readthedocs.org/en/latest/>`_
 * **rnms_poller** (1)
 * **rnmsd** (1)

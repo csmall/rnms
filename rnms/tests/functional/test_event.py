@@ -10,14 +10,14 @@ class TestEventController(TestController):
         """ The event index page is working """
         self.check_response('/events',
                             ('"url": "/events/griddata"',
-                             'Rosenberg NMS: Event List'))
+                             'RoseNMS: Event List'))
 
     def test_index_attid_ok(self):
         """ The event index page is working with good attribute """
         self.check_response('/events?a=1',
                             ('"url": "/events/griddata"',
                              '"postData": {"a": 1}',
-                             'Rosenberg NMS: Event List'))
+                             'RoseNMS: Event List'))
 
     def test_index_attid_neg(self):
         """ The event index page with negative number """
@@ -37,7 +37,7 @@ class TestEventController(TestController):
             '/events?h=1',
             ('"url": "/events/griddata"',
              '"postData": {"h": 1}',
-             'Rosenberg NMS: Event List'))
+             'RoseNMS: Event List'))
 
     def test_index_hostid_neg(self):
         """ The event index page with negative host id """

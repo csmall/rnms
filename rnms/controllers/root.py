@@ -31,7 +31,7 @@ __all__ = ['RootController']
 
 class RootController(BaseController):
     """
-    The root controller for the Rosenberg-NMS application.
+    The root controller for the RoseNMS application.
 
     All the other controllers and WSGI applications should be mounted on this
     controller. For example::
@@ -49,7 +49,7 @@ class RootController(BaseController):
 
     error = ErrorController()
 
-    """ Rosenberg NMS Specific controllers below """
+    """ RoseNMS Specific controllers below """
     attributes = AttributesController()
     events = EventsController()
     graphs = GraphController()

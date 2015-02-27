@@ -2,7 +2,7 @@
 SNMP Traps
 ==========
 SNMP traps are messages that are sent from SNMP Agents, such as routers or
-servers to a SNMP Manager, such as Rosenberg NMS.
+servers to a SNMP Manager, such as RoseNMS.
 
 For the purposes of how they are handled, a trap has the following fields:
 
@@ -33,9 +33,9 @@ there is only one forwarded.  The disadvantage is that if there is a down trap a
 then very soon after an up trap and they use the same OID the second
 one won't be processed.
 
-How Rosenberg NMS treats traps
+How RoseNMS treats traps
 ------------------------------
-Rosenberg NMS assumes that a particular trap (identified by a trap OID)
+RoseNMS assumes that a particular trap (identified by a trap OID)
 is for a specific Attribute Type. For example the ifDown traps describe
 something happening to a physical interface, while a temperature alarm
 trap is connected to either a sensor or perhaps the element (e.g. CPU).

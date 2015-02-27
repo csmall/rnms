@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Rosenberg NMS documentation build configuration file, created by
+# RoseNMS documentation build configuration file, created by
 # sphinx-quickstart on Thu Nov 29 22:23:50 2012.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -41,7 +41,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Rosenberg NMS'
+project = u'RoseNMS'
 copyright = u'2012-2013 Craig Small'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -165,7 +165,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'RosenbergNMSdoc'
+htmlhelp_basename = 'RoseNMSdoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -184,7 +184,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'RosenbergNMS.tex', u'Rosenberg NMS Documentation',
+  ('index', 'RoseNMS.tex', u'RoseNMS Documentation',
    u'Craig Small', 'manual'),
 ]
 
@@ -214,9 +214,9 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('rnmsd', 'rnmsd', u'Rosenberg NMS Documentation',
+    ('rnmsd', 'rnmsd', u'RoseNMS Documentation',
      [u'Craig Small'], 1),
-    ('rnms_info', 'rnms_info', u'Rosenberg NMS Documentation',
+    ('rnms_info', 'rnms_info', u'RoseNMS Documentation',
      [u'Craig Small'], 1),
 ]
 
@@ -230,8 +230,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'RosenbergNMS', u'Rosenberg NMS Documentation',
-   u'Craig Small', 'RosenbergNMS', 'One line description of project.',
+  ('index', 'RoseNMS', u'RoseNMS Documentation',
+   u'Craig Small', 'RoseNMS', 'One line description of project.',
    'Miscellaneous'),
 ]
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Setup the Rosenberg-NMS application"""
+"""Setup the RoseNMS application"""
 
 import logging
 

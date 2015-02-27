@@ -2,11 +2,8 @@
 
 """The base Controller API."""
 from tg import TGController, tmpl_context
-#from tg.render import render
 from tg import request
-#from tg.i18n import ugettext as _, ungettext
 
-#import rnms.model as model
 from tw2.jqplugins.ui import set_ui_theme_name
 from tw2.jquery import jquery_js
 
@@ -49,7 +46,7 @@ class BaseController(TGController):
         """Invoke the Controller"""
         # TGController.__call__ dispatches to the Controller method
         # the request is routed to.
-        set_ui_theme_name('hot-sneaks')
+        set_ui_theme_name('start')
         jquery_js.inject()
 
         request.identity = request.environ.get('repoze.who.identity')

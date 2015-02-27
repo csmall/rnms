@@ -1,7 +1,7 @@
 <%inherit file="local:templates.master"/>
 
 <%def name="title()">
-Rosenberg NMS: Zone List
+RoseNMS: Zone List
 </%def>
 %if zone_grid != UNDEFINED:
 	<div class="row">

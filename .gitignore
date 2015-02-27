@@ -15,7 +15,15 @@ apache
 # Installer logs
 pip-log.txt
 
+# Other configs
+development2.ini
+uat.ini
+uat_verb.ini
+
 # Unit test / coverage reports
 .coverage
 .tox
 cover/
+
+# Test/trial stuff
+[a-z]*test*.py

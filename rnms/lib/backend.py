@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the Rosenberg NMS
+# This file is part of the RoseNMS
 #
-# Copyright (C) 2012-2014 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2015 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -110,7 +110,7 @@ class CacheBackend(object):
             try:
                 event_fields['info'] = poller_result[1]
             except IndexError:
-                pass  # no additional info
+                event_fields['info'] = ''
         elif type(poller_result) is dict:
             try:
                 event_state_name = poller_result['state']

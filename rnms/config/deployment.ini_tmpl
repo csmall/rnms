@@ -1,5 +1,5 @@
 #
-# Rosenberg-NMS - TurboGears configuration
+# RoseNMS - TurboGears configuration
 #
 # The %(here)s variable will be replaced with the parent directory of this file
 #
@@ -21,7 +21,7 @@ port = 8080
 cookie_secret = ${app_instance_secret}
 
 [app:main]
-use = egg:Rosenberg-NMS
+use = egg:RoseNMS
 full_stack = true
 cache_dir = %(here)s/data
 beaker.session.key = rnms

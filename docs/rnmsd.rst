@@ -8,7 +8,7 @@ SYNOPSYS
 
 DESCRIPTION
 ===========
-**rnmsd** is the main Rosenberg NMS daemon.  This main program spawns off
+**rnmsd** is the main RoseNMS daemon.  This main program spawns off
 several threads to take care of the back-end of the NMS systems. For
 most installations, starting this program is all that is required.
 The threads are
@@ -31,6 +31,6 @@ OPTIONS
 
 SEE ALSO
 ========
-* `Rosenberg NMS Documentation <http://rosenberg-nms.readthedocs.org/en/latest/>`_
+* `RoseNMS Documentation <http://rosenberg-nms.readthedocs.org/en/latest/>`_
 * **rnms_poller** (1)
 * **rnms_info** (1)

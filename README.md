@@ -1,6 +1,6 @@
-Rosenberg NMS
+RoseNMS
 =============
-Rosenberg NMS (rnms) is, as the name implies, a Network Management System.
+RoseNMS (rnms) is, as the name implies, a Network Management System.
 What this means is rnms is a piece of software that gathers information
 on devices out on a network and tries to meaningfully interpret them to 
 make monitoring and managment simpler.

@@ -1,4 +1,4 @@
-""" Rosenbergs set of poller plugins"""
+""" RoseNMS set of poller plugins"""
 
 # Make sure you list any new plugins below
 from apache import poll_apache

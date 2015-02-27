@@ -1,6 +1,6 @@
 <%inherit file="local:templates.master"/>
 <%def name="title()">
-Rosenberg NMS
+RoseNMS
 </%def>
   <div class="row">
     <div class="span8 hidden-phone hidden-tablet">

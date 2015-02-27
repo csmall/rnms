@@ -2,14 +2,14 @@
 *********************
 Users and Permissions
 *********************
-Rosenberg uses the repoze.what method of authorization which is based upon
+RoseNMS uses the repoze.what method of authorization which is based upon
 three sets of models.
 
 Users
 =====
 The first model is the User. This is usually a person although it can be 
 a role.  A User has a username and a password and the combination of these
-permits access to Rosenberg.  All Attributes within the system are owned
+permits access to RoseNMS.  All Attributes within the system are owned
 by a User, which can provide them with a limited read-only access to the
 state of the Attribute.
 
@@ -20,7 +20,7 @@ Permissions
 ===========
 For each method within each controller the second model called a Permission
 is used to determine access. The following permissions are defined for
-Rosenberg:
+RoseNMS:
 
 =======  ===============================================
  Name    Description
@@ -33,7 +33,7 @@ AdminRO  Read-Only Access to remaining models
 AdminRW  Read/Write Access to remaining models
 =======  ===============================================
 
-There is likely to me more Permissions created in future versions of Rosenberg
+There is likely to me more Permissions created in future versions of RoseNMS
 depending on user feedback.
 
 Groups
@@ -46,7 +46,7 @@ between a Group and a Permission is many-to-many, different Groups can
 have the same Permision assigned to them.
 
 There are several pre-defined Groups within a standard installation
-of Rosenberg.
+of RoseNMS.
 
 =============   =======================
 Group Name      Permissions
@@ -62,4 +62,4 @@ System Admin    UserRW, HostRW, AdminRW
 
 .. rubric:: Footnotes
 
-.. [#f1] In JFFNMS users (which had admin access) and clients (which owned the interface) were separate models, they are combined in Rosenberg.
+.. [#f1] In JFFNMS users (which had admin access) and clients (which owned the interface) were separate models, they are combined in RoseNMS.

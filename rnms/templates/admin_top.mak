@@ -2,7 +2,7 @@
 <%namespace name="menu_items" file="local:templates.admin.menu_items"/>
 
 <%def name="title()">
-Rosenberg NMS Admin:
+RoseNMS Admin:
 </%def>
 <%def name="body_class()">tundra</%def>
 <%def name="meta()">
@@ -15,7 +15,7 @@ Rosenberg NMS Admin:
     </div>
     <div class="span8 hidden-phone hidden-tablet">
       <div class="well">
-        <h1>Rosenberg Administration</h1>
+        <h1>RoseNMS Administration</h1>
 	<p>Choose from the left set of menus the items you want to edit, delete
 	or change.
 	</p>

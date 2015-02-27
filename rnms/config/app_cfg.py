@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Global configuration file for TG2-specific settings in Rosenberg-NMS.
+Global configuration file for TG2-specific settings in RoseNMS.
 
 This file complements development/deployment.ini.
 

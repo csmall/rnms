@@ -30,7 +30,7 @@ server may have several websites owned by different users.
 
 Attributes
 ----------
-An Attribute is one of the major models that is used in Rosenberg NMS.
+An Attribute is one of the major models that is used in RoseNMS.
 It is effectively something that you want to monitor or track within
 a Host.  Attributes will have RRD values to update or a status to track
 or perhaps both these options.

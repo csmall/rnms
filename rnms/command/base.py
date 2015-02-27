@@ -3,7 +3,7 @@ class BaseCommand(object):
     """ Base Object for Rnms specific functions """
 
     def get_rnms_arguments(self, parser):
-        """ Adds the standard arguments for all RNMS commands """
+        """ Adds the standard arguments for all RoseNMS commands """
         parser.add_argument(
             '-c', '--config',
             action='store',

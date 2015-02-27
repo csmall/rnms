@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""WebHelpers used in Rosenberg-NMS."""
+"""WebHelpers used in RoseNMS."""
 
 from markupsafe import Markup
 from datetime import datetime

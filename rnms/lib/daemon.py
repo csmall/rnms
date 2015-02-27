@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the Rosenberg NMS
+# This file is part of the RoseNMS
 #
-# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2015 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 #
 """
 Module for the master daemon that runs all the sub-processes for
-Rosenberg
+RoseNMS
 Daemonizing code comes from
 http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 """
@@ -41,7 +41,7 @@ from rnms.lib import zmqmessage
 
 class RnmsDaemon(object):
     """
-    Master object for the Rosenberg NMS daemon. This daemon is responsible
+    Master object for the RoseNMS daemon. This daemon is responsible
     for starting other sub-threads either continuously or at particular times.
     """
     enable_poller = True

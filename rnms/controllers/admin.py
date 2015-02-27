@@ -29,7 +29,7 @@ class MyAdminLayout(BootstrapAdminLayout):
 
 
 class MyCrudRestController(CrudRestController):
-    title = 'Rosenberg NMS Admin'
+    title = 'RoseNMS Admin'
     allow_only = has_permission('manage')
 
 

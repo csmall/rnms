@@ -42,12 +42,29 @@
 
 <%def name="footer()">
   <footer class="footer hidden-xs hidden-sm">
-    <p>Copyright &copy; Rosenberg NMS Authors ${h.current_year()}</p>
+    <p>Copyright &copy; RoseNMS Authors ${h.current_year()}</p>
   </footer>
     <link rel="stylesheet" type="text/css" media="screen" href="${tg.url('/css/rnms.css')}" />
 </%def>
 
 <%def name="main_menu()">
+  <div class="rnms-header">
+      <a href="${tg.url('/')}">RoseNMS</a>
+    % if tg.auth_stack_enabled:
+      <ul class="inav navbar-nav navbar-right">
+      % if not request.identity:
+        <li><a href="${tg.url('/login')}">Login</a></li>
+      % else:
+      <li>Logged in as: ${request.identity['repoze.who.userid']} - </li>
+        <li><a href="${tg.url('/logout_handler')}">Logout</a></li>
+        % if 'manage' in request.identity['permissions']:
+        <li><a href="${tg.url('/admin')}">Admin</a></li>
+        %endif
+      % endif
+      </ul>
+    % endif
+  </div>
+
   <!-- Navbar -->
   <nav class="ui-widget-header navbar navbar-default">
     <div class="navbar-header">
@@ -57,15 +74,11 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="${tg.url('/')}">
-        ${getattr(tmpl_context, 'project_name', 'turbogears2')}
-      </a>
     </div>
 
     <div class="collapse navbar-collapse" id="navbar-content">
       <ul class="nav navbar-nav">
         % if request.identity:
-	<li>${request.identity['repoze.who.userid']} - </li>
         <li class="${('', 'active')[page=='index']}"><a href="${tg.url('/')}">Overview</a></li>
           <li class="${('', 'active ')[page=='hosts']}dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#" >Hosts<b class="caret"></b></a>
 	    <ul class="dropdown-menu" role="menu">
@@ -92,18 +105,6 @@
         % endif
       </ul>
 
-    % if tg.auth_stack_enabled:
-      <ul class="nav navbar-nav navbar-right">
-      % if not request.identity:
-        <li><a href="${tg.url('/login')}">Login</a></li>
-      % else:
-        <li><a href="${tg.url('/logout_handler')}">Logout</a></li>
-        % if 'manage' in request.identity['permissions']:
-        <li><a href="${tg.url('/admin')}">Admin</a></li>
-        %endif
-      % endif
-      </ul>
-    % endif
     </div>
   </nav>
 </%def>

@@ -42,7 +42,7 @@ install_requires = [
     "repoze.who",
     "tw2.forms",
     "tgext.admin >= 0.6.1",
-    # Rosenberg NMS specific stuff follows
+    # RoseNMS specific stuff follows
     "tw2.jqplugins.jqgrid",
     "tw2.jqplugins.jqplot",
     "pysnmp",
@@ -53,10 +53,10 @@ install_requires = [
     ]
 
 setup(
-    name='Rosenberg-NMS',
+    name='RoseNMS',
     version='0.1',
     description='''\
-Rosenberg NMS is a Network Management System which is able to poll your
+RosenNMS is a Network Management System which is able to poll your
 network equipment such as routers, switches and services. With this
 information it can report on device state and graph parameters from the device.
 ''',

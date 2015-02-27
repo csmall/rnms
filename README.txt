@@ -1,12 +1,12 @@
-This file is for you to describe the Rosenberg-NMS application. Typically
+This file is for you to describe the RoseNMS application. Typically
 you would include information such as the information below:
 
 Installation and Setup
 ======================
 
-Install ``Rosenberg-NMS`` using the setup.py script::
+Install ``RoseNMS`` using the setup.py script::
 
-    $ cd Rosenberg-NMS
+    $ cd RoseNMS
     $ python setup.py install
 
 Create the project database for any model classes defined::

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the Rosenberg NMS
+# This file is part of the RoseNMS
 #
-# Copyright (C) 2012.2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2015 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

@@ -1,16 +1,16 @@
 <%inherit file="local:templates.master"/>
 
 <%def name="title()">
-About Rosenberg NMS
+About RoseNMS
 </%def>
 
     <div class="row">
       <div class="col-md-12">
         <div class="page-header">
-          <h2>About Rosenberg NMS</h2>
+          <h2>About RoseNMS</h2>
         </div>
         <p>
-          Rosenberg Network Management System is a piece of Free Software that
+          RoseNMS is a piece of Free Software that
           can monitor your network devices and servers. While based upon
           JFFNMS it has been completely re-written in python.
           The software would
@@ -27,17 +27,17 @@ not be possible without some contributing projects, including:
       <div class="col-md-6">
        <h3>Copyright</h3>
        <p>
-         Rosenberg NMS is Copyright &copy; 2011,2012,2013,2014 Craig Small. This program is based upon the JFFNMS project
+         RoseNMS is Copyright &copy; 2011,2012,2013,2014 Craig Small. This program is based upon the JFFNMS project
 	 which was largely the work of Javier Szyszlican.
        </p>
       </div>
       <div class="col-md-6">
-       <h3>About Rosenberg</h3>
+       <h3>About RoseNMS</h3>
        <p>
+         Originally RoseNMS was called Rosenberg NMS and was named after
          Rosenberg's Heath Monitor is a large lizard found in Australia.
-         While the programing language is a python, this program is a lizard.
-         You can also use a program named after a Heath Monitor to 
-         Health Monitor your computer network.
+	 The name was shorted in 2015 to just RoseNMS which is a lot easier
+	 to say and type.
        </p>
      </div>
    </div>

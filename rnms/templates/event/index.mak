@@ -2,7 +2,7 @@
 <link rel="stylesheet" type="text/css" media="screen" href="${tg.url('/events/severitycss')}" />
 
 <%def name="title()">
-Rosenberg NMS: Event List
+RoseNMS: Event List
 </%def>
 %if w != UNDEFINED:
 <div class="row">

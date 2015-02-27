@@ -9,7 +9,7 @@ __all__ = ['TemplateController']
 
 class TemplateController(BaseController):
     """
-    The fallback controller for Rosenberg-NMS.
+    The fallback controller for RoseNMS.
     
     By default, the final controller tried to fulfill the request
     when no other routes match. It may be used to display a template

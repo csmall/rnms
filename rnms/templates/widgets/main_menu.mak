@@ -1,7 +1,7 @@
   <div class="navbar">
     <div class="navbar-inner">
       <div class="container">
-        <div class="brand">Rosenberg NMS</div>
+        <div class="brand">RoseNMS</div>
         <ul class="nav nav-pills">
           <li class="${('', 'active')[w.page=='index']}"><a href="${w.tg.url('/')}">Overview</a></li>
 %if w.permissions['host']:

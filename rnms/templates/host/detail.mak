@@ -4,9 +4,9 @@
 
 <%def name="title()">
 % if host is UNDEFINED:
-Rosenberg NMS: Undefined Host
+RoseNMS: Undefined Host
 % else:
-Rosenberg NMS: Host ${host.display_name}
+RoseNMS: Host ${host.display_name}
 % endif
 </%def>
 

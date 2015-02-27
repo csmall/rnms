@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of the Rosenberg NMS
+# This file is part of the RoseNMS
 #
-# Copyright (C) 2014 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2014-2015 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ class RnmsApp(App):
 
     def __init__(self):
         super(RnmsApp, self).__init__(
-            description='Rosenberg NMS app',
+            description='RoseNMS app',
             version='0.1',
             command_manager=CommandManager('rnms.commands'),
         )
