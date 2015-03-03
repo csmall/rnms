@@ -1,7 +1,7 @@
 Metadata-Version: 1.0
 Name: RoseNMS
 Version: 0.1dev-r0
-Summary: RoseNMS is a Network Management System which is able to poll your
+Summary: RosenNMS is a Network Management System which is able to poll your
 network equipment such as routers, switches and services. With this
 information it can report on device state and graph parameters from the device.
 

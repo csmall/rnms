@@ -1,5 +1,4 @@
-This file is for you to describe the RoseNMS application. Typically
-you would include information such as the information below:
+                          README for RoseNMS
 
 Installation and Setup
 ======================
@@ -7,18 +6,24 @@ Installation and Setup
 Install ``RoseNMS`` using the setup.py script::
 
     $ cd RoseNMS
-    $ python setup.py install
+    $ python setup.py develop
 
 Create the project database for any model classes defined::
 
-    $ paster setup-app development.ini
+    $ gearbox setup-app
+
+Optionally, if you need to import the JFFNMS configuration in::
+
+    $ rnms jimport -c development.ini
+rnms will use /etc/jffnms for the configuration directory, add the
+option --jconf <your dir> for a different location.
 
 Start the paste http server::
 
-    $ paster serve development.ini
+    $ gearbox serve
 
 While developing you may want the server to reload after changes in package files (or its dependencies) are saved. This can be achieved easily by adding the --reload option::
 
-    $ paster serve --reload development.ini
+    $ gearbox serve --reload --debug
 
 Then you are ready to go.

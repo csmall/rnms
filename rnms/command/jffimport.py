@@ -37,7 +37,7 @@ class JffnmsImport(Command):
             help='Do not insert records into database',
         )
         parser.add_argument(
-            '--jffnms-conf',
+            '--jconf',
             action='store',
             dest='jffnms_conf',
             help='Directory where JFFNMS configuration file is',
@@ -49,7 +49,7 @@ class JffnmsImport(Command):
     def take_action(self, parsed_args):
         if not os.path.isdir(parsed_args.jffnms_conf):
             raise RuntimeError(
-                "\"{}\" is not a directory, check your --jffnms_conf setting".
+                "\"{}\" is not a directory, check your --jconf setting".
                 format(parsed_args.jffnms_conf))
 
         jconf = JffnmsConfig()
