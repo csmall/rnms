@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2012,2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2015 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -190,7 +190,7 @@ class SLAanalyzer(RnmsEngine):
 
     def __init__(self, attribute_ids=None, host_ids=None,
                  zmq_context=None, do_once=True):
-        super(SLAanalyzer, self).__init__('slaa', zmq_context)
+        super(SLAanalyzer, self).__init__('rnms.sla', zmq_context)
 
         self.attribute_ids = attribute_ids
         self.host_ids = host_ids

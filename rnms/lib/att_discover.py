@@ -115,7 +115,7 @@ class AttDiscover(BaseDiscover, RnmsEngine):
 
     def __init__(self, attribute_ids=None, host_ids=None, print_only=True,
                  force=False, zmq_context=None, do_once=True):
-        super(AttDiscover, self).__init__('adisc', zmq_context)
+        super(AttDiscover, self).__init__('rnms.adisc', zmq_context)
         self._active_hosts = {}
         self._waiting_hosts = []
         self._force = force
@@ -141,7 +141,6 @@ class AttDiscover(BaseDiscover, RnmsEngine):
                 self._activate_hosts(self.max_active_hosts - num_active_hosts)
 
             # Check through all the engines and sockets
-            #host_count = len(self._active_hosts)
             if not self.poll():
                 return
             self._check_active_hosts()

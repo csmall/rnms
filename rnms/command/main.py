@@ -20,6 +20,7 @@
 import os
 import sys
 import logging
+import logging.config as logging_config
 
 from paste.deploy import appconfig
 from cliff.app import App
@@ -33,7 +34,7 @@ class RnmsApp(App):
 
     def __init__(self):
         super(RnmsApp, self).__init__(
-            description='RoseNMS app',
+            description='RNMS app',
             version='0.1',
             command_manager=CommandManager('rnms.commands'),
         )
@@ -52,18 +53,30 @@ class RnmsApp(App):
 
     def initialize_app(self, argv):
         self._get_config()
-        self.log.debug('initialize_app')
 
     def prepare_to_run_command(self, cmd):
-        self.log.debug('prepare_to_run_command %s', cmd.__class__.__name__)
+        pass
+        # self.log.debug('prepare_to_run_command %s', cmd.__class__.__name__)
 
     def clean_up(self, cmd, result, err):
-        self.log.debug('clean_up %s', cmd.__class__.__name__)
+        # self.log.debug('clean_up %s', cmd.__class__.__name__)
         if err:
             self.log.debug('got an error: %s', err)
 
+    def _config_logging(self, config_file):
+        logging_config.fileConfig(
+                config_file,
+                dict(__file__=config_file,
+                     here=os.path.dirname(config_file)))
+        logging_level = {0: logging.WARNING,
+                         1: logging.INFO,
+                         2: logging.DEBUG,
+                         }.get(self.options.verbose_level, logging.DEBUG)
+        self.log.setLevel(logging_level)
+
     def _get_config(self):
         config_file = os.path.abspath(self.options.config)
+        self._config_logging(config_file)
         try:
             conf = appconfig('config:' + config_file)
         except IOError as err:
