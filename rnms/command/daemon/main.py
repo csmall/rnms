@@ -30,7 +30,7 @@ from rnms.config.environment import load_environment
 
 
 class RnmsDaemon(App):
-    log = logging.getLogger(__name__)
+    log = logging.getLogger('rnms')
 
     def __init__(self):
         super(RnmsDaemon, self).__init__(
@@ -53,18 +53,31 @@ class RnmsDaemon(App):
 
     def initialize_app(self, argv):
         self._get_config()
-        self.log.debug('initialize_app')
+        # self.log.debug('initialize_app')
 
     def prepare_to_run_command(self, cmd):
-        self.log.debug('prepare_to_run_command %s', cmd.__class__.__name__)
+        pass
+    # self.log.debug('prepare_to_run_command %s', cmd.__class__.__name__)
 
     def clean_up(self, cmd, result, err):
-        self.log.debug('clean_up %s', cmd.__class__.__name__)
+        # self.log.debug('clean_up %s', cmd.__class__.__name__)
         if err:
             self.log.debug('got an error: %s', err)
 
+    def _config_logging(self, config_file):
+        logging_config.fileConfig(
+                config_file,
+                dict(__file__=config_file,
+                     here=os.path.dirname(config_file)))
+        logging_level = {0: logging.WARNING,
+                         1: logging.INFO,
+                         2: logging.DEBUG,
+                         }.get(self.options.verbose_level, logging.DEBUG)
+        self.log.setLevel(logging_level)
+
     def _get_config(self):
         config_file = os.path.abspath(self.options.config)
+        self._config_logging(config_file)
         try:
             conf = appconfig('config:' + config_file)
         except IOError as err:
@@ -72,8 +85,6 @@ class RnmsDaemon(App):
                 "Error setting up config file \"{}\": {}\n".format(
                     err.filename, err.strerror))
             sys.exit(1)
-        logging_config.fileConfig(config_file, dict(__file__=config_file,
-                                  here=os.path.dirname(config_file)))
         load_environment(conf.global_conf, conf.local_conf)
 
 

@@ -25,6 +25,7 @@ import logging
 import datetime
 import zmq
 
+from rnms.model import DBSession
 from rnms.lib import zmqcore, zmqmessage
 from rnms.lib.nmapclient import NmapClient
 from rnms.lib.ntpclient import NTPClient
@@ -90,7 +91,6 @@ class RnmsEngine(object):
         """
         frames = socket.recv_multipart()
         if frames[0] == zmqmessage.IPC_END:
-            self.logger.debug("Shutting down")
             self.end_thread = True
 
     def have_working_workers(self):
@@ -108,11 +108,12 @@ class RnmsEngine(object):
         """
         sleep_seconds = (wake_time - datetime.datetime.now()).total_seconds()
         while not self.end_thread and sleep_seconds > 0.0:
-            #self.logger.debug('sleep secs %d',sleep_seconds)
             if not self.zmq_core.poll(sleep_seconds):
                 return False
             sleep_seconds = (wake_time -
                              datetime.datetime.now()).total_seconds()
+        if self.end_thread:
+            self.shutdown_engine()
         return not self.end_thread
 
     def wait_for_workers(self):
@@ -130,3 +131,10 @@ class RnmsEngine(object):
                 return
             wait_seconds = (finish_wait -
                             datetime.datetime.now()).total_seconds()
+
+    def shutdown_engine(self):
+        """
+        Method that is called if we shutting down
+        """
+        self.logger.info('Shutting down')
+        DBSession.close()

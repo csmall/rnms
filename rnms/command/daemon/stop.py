@@ -17,10 +17,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
+import logging
+
 from cliff.command import Command
 
 
 class StopCommand(Command):
     """ Stop the RNMS backend daemon """
+    log = logging.getLogger(__name__)
+
     def take_action(self, parsed_args):
         self.log.debug('hi stop action')

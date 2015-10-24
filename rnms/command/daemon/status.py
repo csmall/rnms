@@ -19,6 +19,7 @@
 #
 import os
 import errno
+import logging
 
 from cliff.command import Command
 
@@ -27,22 +28,25 @@ from tg import config
 
 class StatusCommand(Command):
     """ Show the status of the rnms daemon """
+    log = logging.getLogger(__name__)
+
     def take_action(self, parsed_args):
         pidfile = config['rnmsd_pid_file']
         try:
             pf = file(pidfile)
             pid = int(pf.read().strip())
             pf.close()
-        except IOError:
-            print 'Error reading pidfile'
+        except IOError as e:
+            self.log.debug(
+                    "PID file \"%s\" not found: %s",
+                    pidfile, e.message)
+            print 'Rnmsd is NOT running - no pidfile found'
             return
 
         if self._check_proc_alive(pid):
-            daemon_status = 'running'
+            print 'Rnms is running - pid {}'.format(pid)
         else:
-            daemon_status = 'died'
-
-        print 'Daemon pid is {} and it is {}'.format(pid, daemon_status)
+            print 'Rnms is NOT running - stale pid {}'.format(pid)
 
     def _check_proc_alive(self, pid):
         """ Returns true if the process is alive """

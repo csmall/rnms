@@ -64,7 +64,7 @@ class Poller(RnmsEngine):
 
     def __init__(self, attribute_ids=None, host_ids=None, zmq_context=None,
                  do_once=True):
-        super(Poller, self).__init__('poller', zmq_context)
+        super(Poller, self).__init__('rnms.poll', zmq_context)
         self.next_find_attribute = datetime.datetime.min
 
         self.rrd_client = RRDClient(self.zmq_context, self.zmq_core)

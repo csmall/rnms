@@ -77,7 +77,7 @@ class SNMPtrapd(RnmsEngine):
     trap_cache = None
 
     def __init__(self, zmq_context=None, bind_port=6162):
-        super(SNMPtrapd, self).__init__('trapd', zmq_context)
+        super(SNMPtrapd, self).__init__('rnms.trapd', zmq_context)
         self.dispatcher = SNMPtrap_dispatcher(self.zmq_core, socket.AF_INET6,
                                               '', bind_port, self.recv_trap)
         self.host_cache = {}
