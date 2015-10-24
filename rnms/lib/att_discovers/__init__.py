@@ -181,7 +181,6 @@ class AttDiscTest(object):
 """ RoseNMS set of attribute discovery plugins"""
 
 # Make sure you list any new plugins below
-from alteon import discover_alteon_realservers, discover_alteon_realservices, discover_alteon_virtualservers
 from apache import discover_apache
 from apc import discover_apc
 from bgp import discover_bgp_peers
