@@ -149,7 +149,7 @@ class JffnmsImporter(object):
                 att.host_id = self.host_id(row[3])
                 att.index = self.get_interface_index(row[0])
                 att.user_id = self.user_id(row[4])
-                #FIXME poll group
+                #  FIXME poll group
                 att.make_sound = bool(row[7])
                 # show_rootmap is visible and admin_state
                 if row[8] == 0:
@@ -316,7 +316,7 @@ class JffnmsImporter(object):
                 host.next_discover = host.discovered + \
                     datetime.timedelta(minutes=30)
                 host.sysobjid = row[14]
-                #host.config_backup_type_id = row[15]
+                # host.config_backup_type_id = row[15]
 
                 DBSession.add(host)
                 DBSession.flush()

@@ -4,7 +4,7 @@
 from tg import url
 
 from tgext.admin.tgadminconfig import BootstrapTGAdminConfig
-from tgext.admin.widgets import BoostrapAdminTableBase as TableBase
+from tgext.admin.widgets import BootstrapAdminTableBase as TableBase
 # from tgext.admin.widgets import BootstrapAdminTableFiller as TableFiller
 from tgext.admin.layouts import BootstrapAdminLayout
 from tgext.admin.config import CrudRestControllerConfig

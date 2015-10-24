@@ -14,6 +14,7 @@ apache
 
 # Installer logs
 pip-log.txt
+rnms.log
 
 # Other configs
 development2.ini

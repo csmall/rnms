@@ -24,8 +24,8 @@ graph_types = (
     #Cisco MAC Accounting | Accounted Bytes | cisco_mac_bytes
     #Cisco MAC Accounting | Accounted Packets | cisco_mac_packets
 
-    ('Apache', (
-        ('CPU Load', u'', 'area', '', (
+    (u'Apache', (
+        (u'CPU Load', u'', 'area', '', (
             ('cplo', '', 'CPU Load', '%.3lf'),
         )),
         (u'Hits', u'Hits', 'area', '', (
@@ -42,31 +42,31 @@ graph_types = (
             ('iw', '', 'Idle Workers', '%6d'),
         )),
     )),
-    ('APC', (
+    (u'APC', (
         (u'Battery Temperature', 'Deg', 'area', '', (
             ('temperature', '', 'Temperature', '%4.0f'),
         )),
-        ('Load/Capacity', '%', 'area', '', (
+        (u'Load/Capacity', '%', 'area', '', (
             ('capacity', '', 'Battery Capacity', '%6.2f %%'),
             ('load', '', 'Output Load', '%6.2f %%'),
         )),
-        ('Voltages', 'V', 'lines', '', (
+        (u'Voltages', 'V', 'lines', '', (
             ('in_voltage', '', 'Input Voltage',  '%5.0f VAC'),
             ('out_voltage', '', 'Output Voltage',  '%5.0f VAC'),
         )),
-        ('Time Remaining', 'Minutes', 'area', '', (
+        (u'Time Remaining', 'Minutes', 'area', '', (
             ('time_remaining', '', 'Time Remaining', '%5.0f mins'),
         )),
     )),
-    ('Applications', (
-        ('Threads', 'Threads', 'area', '', (
+    (u'Applications', (
+        (u'Threads', 'Threads', 'area', '', (
             ('current_instances', '', 'Threads', '%5.0f'),
         )),
-        ('Memory', 'Bytes', 'area', '', (
+        (u'Memory', 'Bytes', 'area', '', (
             ('used_memory', '', 'Memory', '%6.2f %sB'),
         )),
     )),
-    ('BGP Neighbors', (
+    (u'BGP Neighbors', (
         (u'Updates', 'Updates', 'inout', '', (
             ('bgpin', '300,*', 'Inbound Updates in 5 mins', '%4.0f %s'),
             ('bgpout', '300,*', 'Outbound Updates in 5 mins', '%4.0f %s'),
@@ -76,7 +76,7 @@ graph_types = (
             ('advertised_routes', '', 'Advertised Routes', '%6.2f %s'),
         )),
     )),
-    ('Brocade FC Ports', (
+    (u'Brocade FC Ports', (
         (u'Traffic', 'bps', 'inout', '', (
             ('rx_words', '32,*', 'Inbound', '%6.2f %sbps'),
             ('tx_words', '32,*', 'Outbound', '%6.2f %sbps'),
@@ -86,17 +86,17 @@ graph_types = (
             ('tx_frames', '', 'Outbound', '%6.2f %sFps'),
         )),
     )),
-    ('Brocade Sensors', (
+    (u'Brocade Sensors', (
         (u'Sensor Value', '$unit', 'area', '', (
             ('sensor_value', '', '$measure', '%5.0f'),
         )),
     )),
-    ('Cisco 802.11X Device', (
+    (u'Cisco 802.11X Device', (
         (u'Associated Devices', 'Clients', 'area', '', (
             ('associated', '', 'Associated Clients', '%3.0f'),
         )),
     )),
-    ('Cisco System Info', (
+    (u'Cisco System Info', (
         (u'CPU Load', '%', 'area', '', (
             ('cpu', '', 'CPU Utilization', '%4.0f %%'),
         )),
@@ -105,12 +105,12 @@ graph_types = (
             ('mem_free', '', 'Free Memory', '%6.2f %sB'),
         )),
     )),
-    ('Cisco Temperature', (
+    (u'Cisco Temperature', (
         (u'Temperature', 'deg', 'area', '', (
             ('temperature', '', 'Temperature', '%5.0f'),
         )),
     )),
-    ('Cisco SA Agent', (
+    (u'Cisco SA Agent', (
         (u'Round Trip Latency', 'msec', 'area', '', (
             ('rt_latency', '', 'Round-Trip Latency', '%5.0f msec'),
         )),
@@ -124,7 +124,7 @@ graph_types = (
         )),
     )),
 
-    ('Linux/Unix System Info', (
+    (u'Linux/Unix System Info', (
         (u'CPU Usage', '%', 'stackedarea', 'rigid upper-limit=100', (
             ('cpu_user_ticks', '$cpu_num,/', 'User Time', '%6.2f %%'),
             ('cpu_nice_ticks', '$cpu_num,/', 'Nice Time', '%6.2f %%'),
@@ -148,7 +148,7 @@ graph_types = (
             ('tcp_passive', '300,*', 'Incoming Connections', '%8.0lf'),
         )),
     )),
-    ('Mitsubishi UPS Input Line', (
+    (u'Mitsubishi UPS Input Line', (
         (u'Voltage', 'V', 'area', '', (
             ('voltage', '', 'Voltage', '%3.0f'),
         )),
@@ -156,7 +156,7 @@ graph_types = (
             ('current', '', 'Current', '%6.2f %sAmp'),
         )),
     )),
-    ('Mitsubishi UPS Output Line', (
+    (u'Mitsubishi UPS Output Line', (
         (u'Voltage', 'V', 'area', '', (
             ('voltage', '', 'Voltage', '%3.0f'),
         )),
@@ -164,7 +164,7 @@ graph_types = (
             ('current', '', 'Current', '%6.2f %sAmp'),
         )),
     )),
-    ('Physical Interfaces', (
+    (u'Physical Interfaces', (
         (u'Traffic', u'bps', 'inout', '', (
             ('input', '8,*', 'Inbound', '%6.2f %sbps'),
             ('output', '8,*', 'Outbound', '%6.2f %sbps'),
@@ -178,7 +178,7 @@ graph_types = (
             ('outputerrors', '', 'Output Errors', '%6.2f %sEps'),
         )),
     )),
-    ('Reachable', (
+    (u'Reachable', (
         (u'Packet Loss', '%', 'area', '', (
             ('packetloss', '', 'Packet Loss', '%5.0f %%'),
         )),
@@ -186,27 +186,27 @@ graph_types = (
             ('rtt', '', 'Round Trip Time', '%5.0f ms'),
         )),
     )),
-    ('Sensors', (
+    (u'Sensors', (
         (u'Sensor Value', '$unit', 'area', '', (
             ('value', '${multiplier},*', '$measure', '%6.2f %s${units}'),
         )),
     )),
-    ('Storage', (
+    (u'Storage', (
         (u'Used Storage', 'Bytes', 'mtuarea', '', (
             ('block_size', '', 'Free Storage', '%6.2f %sB'),
             ('total_blocks', '', 'Total Storage', '%6.2f %sB'),
             ('used_blocks', '', 'Used Storage', '%6.2f %sB'),
         )),
     )),
-    ('TCP Ports', (
+    (u'TCP Ports', (
         (u'Established Connections',  'Connections', 'lines', '', (
             ('tcp_established', '', 'Established Connections', '%8.0lf'),
         )),
-        ('Connection Delay', 'Seconds', 'lines', '', (
+        (u'Connection Delay', 'Seconds', 'lines', '', (
             ('conn_delay', '', 'Connection Delay', '%6.2f %ssec'),
         )),
     )),
-    ('UPS', (
+    (u'UPS', (
         (u'Batttery Temperature', 'Deg', 'area', '', (
             ('temperature', '', 'Temperature', '%5.0f'),
         )),
@@ -217,7 +217,7 @@ graph_types = (
             ('charge_remaining', '', 'Charge Remaining', '%3.0f %%'),
         )),
     )),
-    ('UPS Input Line', (
+    (u'UPS Input Line', (
         (u'Voltage', 'V', 'area', '', (
             ('voltage', '', 'Voltage', '%3.0f'),
         )),
@@ -225,7 +225,7 @@ graph_types = (
             ('current', '', 'Current', '%6.2f %sAmp'),
         )),
     )),
-    ('UPS Output Line', (
+    (u'UPS Output Line', (
         (u'Voltage', 'V', 'area', '', (
             ('voltage', '', 'Voltage', '%4.0f V'),
         )),
@@ -233,7 +233,7 @@ graph_types = (
             ('current', '', 'Current', '%6.2f %sAmp'),
         )),
     )),
-    ('Windows System Info', (
+    (u'Windows System Info', (
         (u'CPU Load', '%', 'area', '', (
             ('cpu', '', 'CPU Utilization', '%6.2f %%'),
         )),

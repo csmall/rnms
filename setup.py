@@ -9,12 +9,14 @@
 
 # This is just a work-around for a Python2.7 issue causing
 # interpreter crash at exit when trying to log an info message.
-# try:
-#    import logging
-#    import multiprocessing
-# except:
-#    pass
+try:
+    import logging
+    import multiprocessing
+except:
+    pass
 
+import sys
+py_version = sys.version_info[:2]
 
 try:
     from setuptools import setup, find_packages
@@ -32,8 +34,8 @@ testpkgs = ['WebTest >= 1.2.3',
             ]
 
 install_requires = [
-    "TurboGears2 >= 2.3.2",
-    "Babel",
+    "TurboGears2 >= 2.3.7",
+    "Beaker",
     "Genshi",
     "Mako",
     "zope.sqlalchemy >= 0.4",
@@ -42,6 +44,7 @@ install_requires = [
     "repoze.who",
     "tw2.forms",
     "tgext.admin >= 0.6.1",
+    "WebHelpers2",
     # RoseNMS specific stuff follows
     "tw2.jqplugins.jqgrid",
     "tw2.jqplugins.jqplot",
@@ -51,6 +54,10 @@ install_requires = [
     "mysql-python",
     "pyzmq"
     ]
+
+if py_version != (3, 2):
+    # Babel not available on 3.2
+    install_requires.append("Babel")
 
 setup(
     name='RoseNMS',

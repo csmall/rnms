@@ -26,20 +26,20 @@ snmp_communities = (
 )
 
 trap_matches = (
-    (0, 'ifTable Link Down', '1.3.6.1.6.3.1.1.5.3',
-        'Physical Interfaces',
-        'match_index', '1.3.6.1.2.1.2.2.1.1.5', (
+    (0, u'ifTable Link Down', '1.3.6.1.6.3.1.1.5.3',
+        u'Physical Interfaces',
+        u'match_index', u'1.3.6.1.2.1.2.2.1.1.5', (
             ('state', 'fixed', 'down'),
         ),
         u'Alarm Verify Operational', False),
-    (0, 'ifTable Link Up', '1.3.6.1.6.3.1.1.5.4',
-        'Physical Interfaces',
-        'match_index', '1.3.6.1.2.1.2.2.1.1.5', (
+    (0, u'ifTable Link Up', '1.3.6.1.6.3.1.1.5.4',
+        u'Physical Interfaces',
+        u'match_index', u'1.3.6.1.2.1.2.2.1.1.5', (
             ('state', 'fixed', 'down'),
         ),
         u'Alarm Verify Operational', False),
-    (0, 'Juniper Config Change', '1.3.6.1.4.1.2636.4.5.1',
-        'Reachable',  # FIXME - should be a Juniper CPU
+    (0, u'Juniper Config Change', '1.3.6.1.4.1.2636.4.5.1',
+        u'Reachable',  # FIXME - should be a Juniper CPU
         'first', '', (
             ('state', 'fixed', 'alert'),
             ('user', 'oid', '1.3.6.1.4.1.2636.3.18.1.7.1.5'),

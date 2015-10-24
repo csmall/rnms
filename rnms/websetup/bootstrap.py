@@ -68,7 +68,6 @@ def bootstrap(command, conf, vars):
 
     b = BootStrapper()
     b.create()
-    #b.validate()
     try:
 
         # SNMP Enterprises
@@ -95,8 +94,9 @@ class BootStrapper(object):
         'config_backup_methods', 'event_types',
         'logmatches', 'snmp_communities',
         'attribute_types', 'graph_types', 'slas',
-        'pollers', 'backends', 'poller_sets',
-        'trap_matches', 'triggers'
+        'pollers', 'backends',
+        'trap_matches', 'triggers',
+        'poller_sets',
         )
 
     def __init__(self):
@@ -111,12 +111,11 @@ class BootStrapper(object):
         except IntegrityError as errmsg:
             transaction.abort()
             logger.error('Problem creating %s: %s', msg, errmsg)
-            #import traceback
-            #print traceback.format_exc()
             exit()
 
     def create(self):
         for m in self.models:
+            print 'Creating table {}'.format(m)
             func = getattr(self, 'create_{}'.format(m))
             func()
             self._commit(m)
@@ -327,6 +326,7 @@ class BootStrapper(object):
             poller_row_pos = 0
             for poller_row in poller_rows:
                 pr = model.PollerRow()
+                pr.poller_set = ps
                 pr.poller = model.Poller.by_display_name(poller_row[0])
                 if pr.poller is None:
                     raise ValueError(

@@ -19,8 +19,8 @@
 #
 #
 """ Database fields for attribute related models """
-#showable 2=1, 0 1=1, 1 0=0, 0
-#RRD Types = 1:gauge, 2:counter, 3:absolute
+# showable 2=1, 0 1=1, 1 0=0, 0
+# RRD Types = 1:gauge, 2:counter, 3:absolute
 DS_GAUGE = 1
 DS_COUNTER = 2
 DS_ABSOLUTE = 3
@@ -35,13 +35,13 @@ attribute_types = (
         'tcp_ports', '500, 600-1024', False, True,
         u'TCP/IP Port', '', '',
         'LAST', 103680, True, True, '', (
-            ('Port Number', 'port', False, True, True, True, False,
+            (u'Port Number', 'port', False, True, True, True, False,
                 '0', '', ''),
-            ('Check Content', 'check_content', False, True, False, True, False,
+            (u'Check Content', 'check_content', False, True, False, True, False,
                 '0', '', ''),
-            ('Check Content URL', 'check_url', False, True, True, False, True,
+            (u'Check Content URL', 'check_url', False, True, True, False, True,
                 '', '', ''),
-            ('Check Content RegExp', 'check_regexp', False, True, False, True,
+            (u'Check Content RegExp', 'check_regexp', False, True, False, True,
                 False, '', '', '')
         ), (
             (u'Established Connections', 'tcp_established', 0, 0, 10000, 0),
@@ -51,15 +51,15 @@ attribute_types = (
         'host_information', 'cisco, 9.1, 9.5', True, True,
         u'Cisco Router', '', '',
         'AVERAGE', 103680, False, False, 'ent.9', (
-            ('Number of Processors', 'cpu_num', False, True, True, True, False,
+            (u'Number of Processors', 'cpu_num', False, True, True, True, False,
                 '1', '', ''),
-            ('CPU Usage Threshold', 'cpu_threshold', False, True, False, True,
+            (u'CPU Usage Threshold', 'cpu_threshold', False, True, False, True,
                 False, '60', '', ''),
-            ('System Name', 'name', True, True, True, True, False,
+            (u'System Name', 'name', True, True, True, True, False,
                 '', '', ''),
-            ('Location', 'location', True, True, True, True, False,
+            (u'Location', 'location', True, True, True, True, False,
                 '', '', ''),
-            ('Contact', 'contact', True, True, True, True, False, '', '', ''),
+            (u'Contact', 'contact', True, True, True, True, False, '', '', ''),
         ), (
             (u'CPU', 'cpu', 0, 0, 100, ''),
             (u'Mem Used', 'mem_used', 0, 0, 100000000000, ''),
@@ -70,23 +70,23 @@ attribute_types = (
             (u'TCP Passive', 'tcp_passive', 1, 0, 10000000, ''),
             (u'TCP Established', 'tcp_established', 1, 0, 10000000, ''),
         )),
-    ('Physical Interfaces',
+    (u'Physical Interfaces',
         'snmp_interfaces', '', True, True,
         u'SNMP Interface', '', '',
         'AVERAGE', 103680, True, False, '.', (
-            ('IP Address', 'address', True, True, True, True, False, False,
+            (u'IP Address', 'address', True, True, True, True, False, False,
                 '', ''),
-            ('IP Mask', 'mask', False, True, True, True, False, '', '', ''),
-            ('Peer Address', 'peer', False, True, True, True, False,
+            (u'IP Mask', 'mask', False, True, True, True, False, '', '', ''),
+            (u'Peer Address', 'peer', False, True, True, True, False,
                 '', '', ''),
-            ('Speed', 'speed', False, True, True, True, False, 1, '', ''),
-            ('Percentile', 'percentile', False, True, False, True, False,
+            (u'Speed', 'speed', False, True, True, True, False, 1, '', ''),
+            (u'Percentile', 'percentile', False, True, False, True, False,
              '', '', ''),
-            ('Flip In Out in Graphs', 'flipinout', False, True, True, True,
+            (u'Flip In Out in Graphs', 'flipinout', False, True, True, True,
                 False, 0, '', ''),
-            ('Pings to Send', 'pings', False, True, True, True, False,
+            (u'Pings to Send', 'pings', False, True, True, True, False,
                 50, '', ''),
-            ('Fixed Admin Status', 'fixed_admin_status', False, True, True,
+            (u'Fixed Admin Status', 'fixed_admin_status', False, True, True,
                 True, False, 0, '', '')
         ), (
             (u'Input Bytes', 'input', 1, 0, 0, 'speed'),
@@ -99,15 +99,15 @@ attribute_types = (
             (u'Output Packets', 'outpackets', 1, 0, 0, 'speed'),
             (u'Drops', 'drops', 1, 0, 0, 'speed'),
         )),
-    ('BGP Neighbors',
+    (u'BGP Neighbors',
         'bgp_peers', '', True, True,
         u'BGP Neighbor', '', '',
         'AVERAGE', 103680, False, False, '.', (
-            ('Local IP', 'local', True, True, True, False, True,
+            (u'Local IP', 'local', True, True, True, False, True,
                 False, '', ''),
-            ('Remote IP', 'remote', False, True, True, False, False,
+            (u'Remote IP', 'remote', False, True, True, False, False,
                 False, '', ''),
-            ('Autonomous System', 'asn', True, True, True, False, True,
+            (u'Autonomous System', 'asn', True, True, True, False, True,
                 False, '', ''),
         ), (
             (u'BGP In Updates', 'bgpin', 1, 0, 10000000, ''),
@@ -120,11 +120,11 @@ attribute_types = (
         'storage', '', True, True,
         u'Storage Device', '', '',
         'AVERAGE', 103680, False, False, '.', (
-            ('Disk Type', 'storage_type', True, True, True, False, False,
+            (u'Disk Type', 'storage_type', True, True, True, False, False,
                 False, '', ''),
-            ('Size (bytes)', 'size', True, True, True, True, False,
+            (u'Size (bytes)', 'size', True, True, True, True, False,
                 False, '', ''),
-            ('Usage Threshold', 'usage_threshold', False, True, False, True,
+            (u'Usage Threshold', 'usage_threshold', False, True, False, True,
                 False, 80, '', ''),
         ), (
             (u'Storage Block Size', 'block_size', 0, 0, 0, 'size'),
@@ -207,7 +207,7 @@ attribute_types = (
             (u'TCP Passive', 'tcp_passive', 1, 0, 10000, ''),
             (u'TCP Established', 'tcp_established', 1, 0, 10000, ''),
         )),
-    ('Applications',
+    (u'Applications',
         'hostmib_apps', '', True, False,
         u'HostMIB Application', '', '',
         'AVERAGE', 103680, False, False, '.', (
@@ -220,7 +220,7 @@ attribute_types = (
             (u'Current Instances', 'current_instances', 0, 0, 99999, ''),
             (u'Used Memory', 'used_memory', 0, 0, 9999999, ''),
         )),
-    ('Cisco Power Supply',
+    (u'Cisco Power Supply',
         'cisco_envmib', 'PowerSupply, 5.1.2, 5.1.3', True, True,
         u'Cisco Power Supply', '', '',
         'AVERAGE', 103680, True, False, 'ent.9', (
@@ -229,7 +229,7 @@ attribute_types = (
         ), (
             ()
         )),
-    ('Cisco Temperature',
+    (u'Cisco Temperature',
         'cisco_envmib', 'Temperature, 3.1.2, 3.1.6', True, True,
         u'Cisco Temperature', '', '',
         'AVERAGE', 103680, False, False, 'ent.9', (
@@ -238,7 +238,7 @@ attribute_types = (
         ), (
             (u'Temperature', 'temperature', 0, 0, 100, ''),
         )),
-    ('Cisco Voltage',
+    (u'Cisco Voltage',
         'cisco_envmib', 'Voltage, 2.1.2, 2.1.7', True, True,
         u'Cisco Voltage', '', '',
         'AVERAGE', 103680, False, False, 'ent.9', (
@@ -247,7 +247,7 @@ attribute_types = (
         ), (
             ()
         )),
-    ('Cisco SA Agent',
+    (u'Cisco SA Agent',
         'cisco_saagent', '', True, True,
         u'Cisco SA Agent', '', '',
         'AVERAGE', 103680, False, False, 'ent.9', (
@@ -259,7 +259,7 @@ attribute_types = (
             (u'Forward Packetloss', 'forward_packetloss', 0, 0, 100, ''),
             (u'Backward Packetloss', 'backward_packetloss', 0, 0, 100, ''),
         )),
-    ('Reachable',
+    (u'Reachable',
         'reachability', '', True, True,
         u'Reachability', '', '',
         'AVERAGE', 103680, False, False, '', (
@@ -273,11 +273,11 @@ attribute_types = (
             (u'RTT', 'rtt', 0, 0, 10000, ''),
             (u'Packetloss', 'packetloss', 0, 0, 1000, ''),
         )),
-    ('NTP',
+    (u'NTP',
         'ntp_client', '', False, True,
         u'NTP', '', '',
         'AVERAGE', 103680, False, False, '', (), ()),
-    ('Compaq Physical Drives',
+    (u'Compaq Physical Drives',
         'cpqmib', 'phydrv', False, True,
         u'Compaq Physical Drive', '', '',
         'AVERAGE', 103680, True, False, '.', (
@@ -290,7 +290,7 @@ attribute_types = (
         ), (
             ()
         )),
-    ('Compaq Fans',
+    (u'Compaq Fans',
         'cpqmib', 'fans', False, True,
         u'Compaq Fan', '', '',
         'AVERAGE', 103680, False, False, '.', (
@@ -303,7 +303,7 @@ attribute_types = (
         ), (
             ()
         )),
-    ('Compaq Temperature',
+    (u'Compaq Temperature',
         'cpqmib', 'temperature', False, True,
         u'Compaq Temperature', '', '',
         'AVERAGE', 103680, False, False, '.', (
@@ -316,7 +316,7 @@ attribute_types = (
         ), (
             (u'Temperature', 'temperature', 0, 0, 1000, ''),
         )),
-    ('IIS Webserver Information',
+    (u'IIS Webserver Information',
         'snmp_simple', '1.3.6.1.4.1.311.1.7.3.1.1.0|IIS Information',
         False, True,
         u'IIS Info', '', '',
@@ -328,7 +328,7 @@ attribute_types = (
             (u'Total Gets', 'tg', 1, 0, 100000000, ''),
             (u'Total Posts', 'tp', 1, 0, 100000000, ''),
         )),
-    ('Apache',
+    (u'Apache',
         'apache', '', False, True,
         u'Apache', '', '',
         'AVERAGE', 103680, False, False, '', (
@@ -341,7 +341,7 @@ attribute_types = (
             (u'Busy Workers', 'bw', 0, 0, 1000, ''),
             (u'Idle Workers', 'iw', 0, 0, 1000, ''),
         )),
-    ('APC',
+    (u'APC',
         'apc', '', True, True,
         u'APC', '', '',
         'AVERAGE', 103680, False, False, 'ent.318', (
@@ -354,7 +354,7 @@ attribute_types = (
             (u'Time Remaining', 'time_remaining', 0, 0, 100000000, ''),
             (u'Temperature', 'temperature', 0, 0, 200, ''),
         )),
-    ('Alteon Real Server',
+    (u'Alteon Real Server',
         'alteon_realservers', '', True, True,
         u'Alteon Real Server', '', '',
         'AVERAGE', 103680, False, False, 'ent.1872', (
@@ -369,7 +369,7 @@ attribute_types = (
             (u'Failures', 'failures', 1, 0, 10000, ''),
             (u'Octets', 'octets', 1, 0, 100000000, ''),
         )),
-    ('Alteon Virtual Server',
+    (u'Alteon Virtual Server',
         'alteon_virtualservers', '', False, True,
         u'Alteon Virtual Server', '', '',
         'AVERAGE', 103680, False, False, 'ent.1872', (
@@ -380,7 +380,7 @@ attribute_types = (
             (u'Current Sessions', 'current_sessions', 0, 0, 20000, ''),
             (u'Octets', 'octets', 1, 0, 100000000, ''),
         )),
-    ('Alteon Real Services',
+    (u'Alteon Real Services',
         'alteon_realservices', '', False, True,
         u'Alteon Real Services', '', '',
         'AVERAGE', 103680, False, False, 'ent.1872', (
@@ -395,7 +395,7 @@ attribute_types = (
         ), (
             (u'Response Time', 'response_time', 0, 0, 10000, ''),
         )),
-    ('Alteon System Info',
+    (u'Alteon System Info',
         'host_information', 'enterprises.1872', True, True,
         u'Alteon System Info', '', '',
         'AVERAGE', 103680, False, False, 'ent.1872', (
@@ -420,7 +420,7 @@ attribute_types = (
             (u'CPU B 4 sec', 'cpub_4sec', 0, 0, 1000, ''),
             (u'CPU B 64 sec', 'cpub_64sec', 0, 0, 1000, ''),
         )),
-    ('Brocade Sensors',
+    (u'Brocade Sensors',
         'brocade_sensors', '', False, False,
         u'Brocade Sensors', '', '',
         'AVERAGE', 103680, False, False, 'ent.1588', (
@@ -429,7 +429,7 @@ attribute_types = (
         ), (
             (u'Sensor Value', 'sensor_value', 0, 0, 30000000, ''),
         )),
-    ('Brocade FC Ports',
+    (u'Brocade FC Ports',
         'brocade_fcports', '', False, False,
         u'Brocade FC Ports', '', '',
         'AVERAGE', 103680, False, False, 'ent.1588', (
@@ -441,7 +441,7 @@ attribute_types = (
             (u'Tx Frames', 'tx_frames', 1, 0, 100000000, ''),
             (u'Rx Words', 'rx_frames', 1, 0, 100000000, ''),
         )),
-    ('UPS',
+    (u'UPS',
         'ups', '', True, True,
         u'UPS', '', '',
         'AVERAGE', 103680, False, False, '.', (
@@ -454,7 +454,7 @@ attribute_types = (
             (u'Minutes Remaining', 'minutes_remaining', 0, 0, 10000200, ''),
             (u'Charge Remaining', 'charge_remaining', 0, 0, 10000200, ''),
         )),
-    ('UPS Input Line',
+    (u'UPS Input Line',
         'ups_lines', '1.3.6.1.2.1.33.1|in|0', False, True,
         u'UPS Input Line', '', '',
         'AVERAGE', 103680, False, False, '.', (
@@ -462,7 +462,7 @@ attribute_types = (
             (u'Voltage', 'voltage', 0, 0, 500, ''),
             (u'Current', 'current', 0, 0, 500, ''),
         )),
-    ('UPS Output Line',
+    (u'UPS Output Line',
         'ups_lines', '1.3.6.1.2.1.33.1|out|0', False, True,
         u'UPS Output Line', '', '',
         'AVERAGE', 103680, False, False, '.', (
@@ -471,7 +471,7 @@ attribute_types = (
             (u'Current', 'current', 0, 0, 500, ''),
             (u'Load', 'load', 0, 0, 100, ''),
         )),
-    ('Mitsubishi UPS Input Line',
+    (u'Mitsubishi UPS Input Line',
         'ups_lines', '1.3.6.1.4.1.13891.101|in|1', False, True,
         u'Mitsubishi UPS Input Line', '', '',
         'AVERAGE', 103680, False, False, '.', (
@@ -480,7 +480,7 @@ attribute_types = (
             (u'Current', 'current', 0, 0, 500, ''),
             (u'Power', 'power', 0, 0, 100000, ''),
         )),
-    ('Mitsubishi UPS Output Line',
+    (u'Mitsubishi UPS Output Line',
         'ups_lines', '1.3.6.1.4.1.13891.101|out|1', False, True,
         u'Mitsubishi UPS Output Line', '', '',
         'AVERAGE', 103680, False, False, '.', (
@@ -490,7 +490,7 @@ attribute_types = (
             (u'Power', 'power', 0, 0, 100000, ''),
             (u'Load', 'load', 0, 0, 100, ''),
         )),
-    ('Cisco PIX',
+    (u'Cisco PIX',
         'pix_connections', '', True, True,
         u'PIX Connection Stat', '', '',
         'AVERAGE', 103680, False,  False, 'ent.9', (
@@ -498,7 +498,7 @@ attribute_types = (
         ), (
             (u'Connections', 'pix_connections', DS_GAUGE, 0, 1000000, ''),
         )),
-    ('Cisco NAT',
+    (u'Cisco NAT',
         'snmp_simple', '.1.3.6.1.4.1.9.10.77.1.2.1.0|NAT', False, True,
         u'Cisco NAT', '', '',
         'AVERAGE', 103680, False, False, 'ent.9', (
@@ -526,7 +526,7 @@ attribute_types = (
             (u'Active Binds', 'active_binds', DS_GAUGE,
                 0, 100000, ''),
         )),
-    ('Sensors',
+    (u'Sensors',
         'sensors', '', True, True,
         u'Sensors', '', '',
         'AVERAGE', 103680, False, False, '.', (
@@ -542,7 +542,7 @@ attribute_types = (
         ), (
             (u'Value', 'value', 0, -100000, 100000, ''),
         )),
-    ('OS/400 System Info',
+    (u'OS/400 System Info',
         'snmp_simple', '.1.3.6.1.4.1.2.6.4.5.1.0|OS400', True, True,
         u'OS/400 Host', '', '',
         'AVERAGE', 103680, False, False, '.', (
@@ -551,7 +551,7 @@ attribute_types = (
         ), (
             (u'CPU Usage', 'cpu400', DS_GAUGE, 0, 100000, ''),
         )),
-    ('Dell Chassis',
+    (u'Dell Chassis',
         'snmp_simple', '.1.3.6.1.4.1.674.10892.1.200.10.1.2.1|Chassis status',
         True, True,
         u'Dell Chassis', '', '',
@@ -566,12 +566,12 @@ attribute_types = (
             (u'Fan #6 RPM', 'fan6', DS_GAUGE, 0, 100000, ''),
             (u'Fan #7 RPM', 'fan7', DS_GAUGE, 0, 100000, ''),
         )),
-    ('Generic FC Ports',
+    (u'Generic FC Ports',
         'fc_ports', '', True, False,
         u'Fibre Channel Interface', '', '',
         'AVERAGE', 103680, False, False, '.',
         (), ()),  # FIXME
-    ('Cisco 802.11X Device',
+    (u'Cisco 802.11X Device',
         'snmp_simple', '.1.3.6.1.4.1.9.9.273.1.1.2.1.1.1|Cisco AP',
         False, True,
         u'Cisco 802.11X Device', '', '',
@@ -579,7 +579,7 @@ attribute_types = (
         ), (
             (u'Associated', 'associated', 0, 0, 2100, ''),
         )),
-    ('Compaq Power Supply',
+    (u'Compaq Power Supply',
         'cpqmib', 'powersupply', False, True,
         u'Compaq Power Supply', '', '',
         'AVERAGE', 103680, False, False, '.', (

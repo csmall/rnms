@@ -22,7 +22,7 @@ from sqlalchemy import Column
 from sqlalchemy.types import Integer, Unicode, String, SmallInteger
 
 from pysnmp.proto import api
-from pysnmp.entity.rfc3413.oneliner.auth import CommunityData, UsmUserData
+from pysnmp.hlapi import CommunityData, UsmUserData
 from pysnmp.entity import config
 
 from rnms.model import DeclarativeBase, DBSession

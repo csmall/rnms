@@ -38,7 +38,7 @@ logmatch_default_rows = (
     (u'WebOS <slb>: No services are available for Virtual Server\d+:(\S+)',
         False, None, 1, 'down', 'alteon_vserver', None),
     (u'UPS: ((^.)+)\. (.+)$',
-        False, None, 'UPS', None, 'environment', (('info', 1), )),
+        False, None, u'UPS', None, 'environment', (('info', 1), )),
     (u'WebOS <slb>: real server (\S+) operational',
         False, None, 1, 'up', 'alteon_rserver', None),
     (u'WebOS <slb>: cannot contact real server (\S+)',
