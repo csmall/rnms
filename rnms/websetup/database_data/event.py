@@ -21,7 +21,7 @@
 """This file contains the database entries that are used for intially filling
 the database"""
 from rnms.lib import states
-#Name, priority, down snd, up snd, int state, color
+# Name, priority, down snd, up snd, int state, color
 event_states = (
     (u'down', 10, 'down.wav', 'up.wav', states.STATE_DOWN, u'Down'),
     (u'up', 100, '', '', states.STATE_UP, u'Up'),
@@ -120,14 +120,6 @@ event_types = (
         True, 0, True),
     (u'APC Status', 'apc_status', u'$attribute is $state $info',
         True, 0, True),
-    (u'Alteon RServer', 'alteon_rserver', u'Real Server $attribute is $state',
-        True, 0, True),
-    (u'Alteon Service', 'alteon_service',
-        u'Real Service $attribute is $state $info',
-        True, 0, True),
-    (u'Alteon VServer', 'alteon_vserver',
-        u'Virtual Server $attribute is $state $info',
-        False, 0, True),
     (u'Brocade FC Port', 'brocade_fcport',
         u'$attribute $state ($info)',
         True, 0, True),

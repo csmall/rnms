@@ -24,7 +24,6 @@ config_backup_methods = (
     (u'Cisco IOS, > 12.0 (CONFIG-COPY-MIB)', u'cisco_cc'),
     (u'Cisco IOS, < 12.0 (SYS-MIB)', u'cisco_sys'),
     (u'Cisco CatOS (STACK-MIB)', u'cisco_catos'),
-    (u'Alteon WebOS Switches (DANGEROUS)', u'alteon_webos'),
 )
 
 autodiscovery_policies = (
