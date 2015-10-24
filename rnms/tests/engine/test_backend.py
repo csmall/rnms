@@ -72,9 +72,11 @@ class TestCacheBackend(object):
         """ Backend event_always works correctly """
         self.obj.set_command('event_always')
         self.obj._run_event = mock.Mock(return_value="Hello, World!")
-        self.obj._run_event.assert_run_once_with('hh')
         eq_(self.obj.run(self.test_poller_row, self.test_attribute, 'up'),
             "Hello, World!")
+        self.obj._run_event.assert_called_once_with(
+                self.test_poller_row,
+                self.test_attribute, 'up', True)
 
     def test_admin_nochange(self):
         """ admin_status backend doesnt change if same """

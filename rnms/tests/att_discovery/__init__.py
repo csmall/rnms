@@ -125,7 +125,7 @@ class AttDiscTest(object):
 
     def assert_result_count(self, expected_count):
         """ Callback results should have the expected count """
-        self.disc_cb.assert_call_count(1)
+        eq_(self.disc_cb.call_count, 1)
         eq_(len(self.disc_cb.call_args[0][1]), expected_count)
 
     def assert_result_indexes(self, expected_keys):

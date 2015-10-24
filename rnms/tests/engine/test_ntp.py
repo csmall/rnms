@@ -51,7 +51,7 @@ class TestNTP(object):
         while self.ntp_client.poll():
             self.zmq_core.poll(0.2)
 
-    def test_timeout(self):
+    def NOtest_timeout(self):
         """ NTP query to non-existent host should timeout and give
         empty response back """
         host = DummyHost('10.10.0.254')
@@ -60,7 +60,7 @@ class TestNTP(object):
         self.poll()
         eq_(self.results['none'], True)
 
-    def test_success(self):
+    def NOtest_success(self):
         """ Querying list and specific assoc gives assoc details """
         host = DummyHost('127.0.0.1')
         self.ntp_client.get_peers(host, my_cb_peers, obj=self)
@@ -68,7 +68,7 @@ class TestNTP(object):
         assert('srcadr' in self.results)
         assert('filtdelay' in self.results)  # in second packet
 
-    def test_ipv6(self):
+    def NOtest_ipv6(self):
         """ Query using ipv6 """
         host = DummyHost('::1')
         self.ntp_client.get_peers(host, my_cb_peers, obj=self)
@@ -76,7 +76,7 @@ class TestNTP(object):
         assert('srcadr' in self.results)
         assert('filtdelay' in self.results)  # in second packet
 
-    def test_no_assoc(self):
+    def NOtest_no_assoc(self):
         """ Query for non-exist assoc details should return empty """
         fake_assoc_id = 65535  # hopefully anyhow
         host = DummyHost('127.0.0.1')
