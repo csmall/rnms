@@ -30,7 +30,7 @@ from rnms.config.environment import load_environment
 
 
 class RnmsApp(App):
-    log = logging.getLogger(__name__)
+    log = logging.getLogger('rnms')
 
     def __init__(self):
         super(RnmsApp, self).__init__(
@@ -76,7 +76,6 @@ class RnmsApp(App):
 
     def _get_config(self):
         config_file = os.path.abspath(self.options.config)
-        self._config_logging(config_file)
         try:
             conf = appconfig('config:' + config_file)
         except IOError as err:
@@ -84,6 +83,7 @@ class RnmsApp(App):
                 "Error setting up config file \"{}\": {}\n".format(
                     err.filename, err.strerror))
             sys.exit(1)
+        self._config_logging(config_file)
         load_environment(conf.global_conf, conf.local_conf)
 
 

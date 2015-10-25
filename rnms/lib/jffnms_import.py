@@ -145,8 +145,7 @@ class JffnmsImporter(object):
                 interfaces.poll=pollers_groups.id ORDER BY interfaces.id''')
             for row in result:
                 att = model.Attribute()
-                att.display_name = row[2]
-                att.host_id = self.host_id(row[3])
+                att.display_name = unicode(row[2])
                 att.index = self.get_interface_index(row[0])
                 att.user_id = self.user_id(row[4])
                 #  FIXME poll group
@@ -166,6 +165,8 @@ class JffnmsImporter(object):
                     filter(model.AttributeType.display_name ==
                            unicode(row[15])).first()
 
+                model.DBSession.add(att)
+                model.DBSession.flush()
                 if row[16] == 'SNMP Interface HC':
                     att.poller_set = DBSession.query(model.PollerSet).\
                         filter(model.PollerSet.display_name ==
@@ -174,11 +175,12 @@ class JffnmsImporter(object):
                     att.poller_set = DBSession.query(model.PollerSet).\
                         filter(model.PollerSet.display_name ==
                                unicode(row[16])).first()
+                att.host_id = self.host_id(row[3])
                 if att.poller_set is None:
                     self.log.info(
                         'PollerSet %s not found for %s, using default.',
                         row[16], att.display_name)
-                sla = model.Sla.by_display_name(row[17])
+                sla = model.Sla.by_display_name(unicode(row[17]))
                 if sla is None:
                     self.log.info(
                         'SLA %s not found for %s using default.',
@@ -188,10 +190,9 @@ class JffnmsImporter(object):
                     att.sla_id = sla.id
 
                 att.state = up_state
-                model.DBSession.add(att)
+                model.DBSession.flush()
                 if att.attribute_type is not None:
                     field_count += self.import_attribute_field(att, row[0])
-                model.DBSession.flush()
                 attributes[row[0]] = att.id
                 attribute_count += 1
         except IntegrityError as errmsg:
@@ -220,7 +221,7 @@ class JffnmsImporter(object):
                 pass
             else:
                 af = model.AttributeField()
-                af.attribute_id = attribute.id
+                af.attribute = attribute
                 af.attribute_type_field = field
                 af.value = row[0]
                 model.DBSession.add(af)

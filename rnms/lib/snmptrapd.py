@@ -29,7 +29,7 @@ from pysnmp.proto import api
 
 from rnms.lib import zmqcore
 from rnms.lib.engine import RnmsEngine
-from rnms.lib.gettid import gettid
+from rnms.lib.pid import gettid
 from rnms.model import DBSession, Host, SnmpTrap
 
 SNMP_TRAP_OID = \

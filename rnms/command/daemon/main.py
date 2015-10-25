@@ -77,7 +77,6 @@ class RnmsDaemon(App):
 
     def _get_config(self):
         config_file = os.path.abspath(self.options.config)
-        self._config_logging(config_file)
         try:
             conf = appconfig('config:' + config_file)
         except IOError as err:
@@ -85,6 +84,7 @@ class RnmsDaemon(App):
                 "Error setting up config file \"{}\": {}\n".format(
                     err.filename, err.strerror))
             sys.exit(1)
+        self._config_logging(config_file)
         load_environment(conf.global_conf, conf.local_conf)
 
 

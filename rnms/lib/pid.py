@@ -19,6 +19,7 @@
 #
 import ctypes
 import os
+import errno
 
 SYS_gettid = 186
 
@@ -27,10 +28,26 @@ try:
 except:
     libc = None
 
+
 def gettid():
-    if libc != None:
+    """
+    Return the thread ID if possible, otherwise return the PID
+    """
+    if libc is not None:
         try:
             return libc.syscall(SYS_gettid)
         except:
             pass
     return os.getpid()
+
+
+def check_proc_alive(pid):
+    """
+    Return True if the process with the given PID is alive
+    """
+    try:
+        os.kill(pid, 0)
+    except OSError as err:
+        if err.errno == errno.ESRCH:
+            return False
+    return True

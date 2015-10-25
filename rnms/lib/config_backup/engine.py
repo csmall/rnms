@@ -23,7 +23,7 @@ import tempfile
 from tg import config
 from rnms import model
 from rnms.lib.engine import RnmsEngine
-from rnms.lib.gettid import gettid
+from rnms.lib.pid import gettid
 from backup_model import CacheConfigHost
 import plugins
 """

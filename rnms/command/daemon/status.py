@@ -17,13 +17,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-import os
-import errno
 import logging
 
 from cliff.command import Command
 
 from tg import config
+from rnms.lib.pid import check_proc_alive
 
 
 class StatusCommand(Command):
@@ -43,16 +42,7 @@ class StatusCommand(Command):
             print 'Rnmsd is NOT running - no pidfile found'
             return
 
-        if self._check_proc_alive(pid):
+        if check_proc_alive(pid):
             print 'Rnms is running - pid {}'.format(pid)
         else:
             print 'Rnms is NOT running - stale pid {}'.format(pid)
-
-    def _check_proc_alive(self, pid):
-        """ Returns true if the process is alive """
-        try:
-            os.kill(pid, 0)
-        except OSError as err:
-            if err.errno == errno.ESRCH:
-                return False
-        return True

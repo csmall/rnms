@@ -29,7 +29,7 @@ from rnms.lib.engine import RnmsEngine
 from rnms.lib.snmp import SNMPRequest
 from plugins.snmp import parse_oid, cb_snmp_counter, split_oid
 from rnms.lib.rrdworker import RRDClient
-from rnms.lib.gettid import gettid
+from rnms.lib.pid import gettid
 from rnms.lib.backend import CacheBackend
 
 #from poller_model import CachePoller, CacheHost, CacheAttribute

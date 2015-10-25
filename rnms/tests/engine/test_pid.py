@@ -20,7 +20,7 @@
 """ Test suite for gettid function """
 from nose.tools import assert_greater, assert_is_instance
 
-from rnms.lib.gettid import gettid
+from rnms.lib.pid import gettid
 
 
 class TestGetTID(object):

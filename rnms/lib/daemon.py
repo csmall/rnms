@@ -31,6 +31,7 @@ import zmq
 
 from tg import config
 
+from rnms.lib.pid import check_proc_alive
 from rnms.lib.poller import Poller
 from rnms.lib.consolidate import Consolidator
 from rnms.lib.sla_analyzer import SLAanalyzer
@@ -223,11 +224,17 @@ class RnmsDaemon(object):
             pid = None
 
         if pid:
-            self.log.error(
-                'Exiting, pidfile %s already exists for process %d',
-                pidfile, pid)
-            sys.exit(1)
-            return
+            if check_proc_alive(pid):
+                self.log.error(
+                        'Exiting, pidfile %s already exists for'
+                        'running process %d',
+                        pidfile, pid)
+                sys.exit(1)
+                return
+            self.log.info(
+                    'Stale pidfile %s exists, deleting.',
+                    pidfile)
+            self.del_pidfile()
 
         try:
             pf = open(pidfile, 'w+')
