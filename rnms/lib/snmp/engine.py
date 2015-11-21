@@ -105,7 +105,7 @@ class SNMPEngine(object):
         req.set_many()
         req.set_replyall(True)
         for oid in oids:
-            req.add_oid(oid, cb_func, **kw)
+            req.add_oid(oid, callback=cb_func, **kw)
         return self.get(req)
 
     def get_table(self, snmphost, oids, cb_func, with_oid=None, **kw):
