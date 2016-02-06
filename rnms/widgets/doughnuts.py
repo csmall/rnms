@@ -21,7 +21,7 @@ import tw2.core as twc
 from sqlalchemy import and_
 
 from rnms.lib.resources import chart_min_js
-from rnms.lib import states
+from rnms.lib.states import State
 from rnms.model import DBSession, Attribute
 
 __all__ = ['DoughnutGraph', 'AttributeStateDoughnut']
@@ -58,8 +58,7 @@ class AttributeStateDoughnut(DoughnutGraph):
     """
     Doughnut graph showing attributes
     """
-    graph_colors = ["#468847", "#F89406", "#B94A48", "#999999",
-                    "#3887AD", "#222222"]
+    graph_colors = State.hex_colors()
     label_title = 'State'
     value_title = 'Attributes'
     host_id = twc.Param('Optional host ID to filter attributes', default=None)
@@ -67,15 +66,9 @@ class AttributeStateDoughnut(DoughnutGraph):
     def prepare(self):
         conditions = []
         self.graph_data = []
-        mystates = (['Up', states.STATE_UP], ['Alert', states.STATE_ALERT],
-                    ('Down', states.STATE_DOWN),
-                    ('Admin Down', states.STATE_ADMIN_DOWN),
-                    ('Testing', states.STATE_TESTING),
-                    ('Unknown', states.STATE_UNKNOWN),
-                    )
         if self.host_id is not None:
             conditions.append(Attribute.host_id == self.host_id)
-        for label, match in mystates:
+        for match, label in State.NAMES.items():
             self.graph_data.append(
                     (label,
                      DBSession.query(Attribute).

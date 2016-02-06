@@ -65,7 +65,7 @@ class RootController(BaseController):
 
         class EventChartPanel(PanelTile):
             title = "Events in last 24 hours"
-            fillrow = True
+            fullwidth = True
 
             class EventChart(LineChart):
                 data_url = lurl('/events/hourly.json')

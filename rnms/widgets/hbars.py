@@ -20,9 +20,8 @@
 from sqlalchemy import and_, func
 import tw2.core as twc
 from rnms.model import DBSession, Attribute, EventState
-from rnms.lib import states
+from rnms.lib.states import State
 
-import logging
 
 class HBarGraph(twc.Widget):
     """
@@ -48,7 +47,7 @@ class HBarAttributeStatus(HBarGraph):
             hostid_filter = [Attribute.host_id == self.host_id]
         admin_down = DBSession.query(func.count(Attribute.id)).\
             filter(and_(*(
-                hostid_filter + [Attribute.admin_state == states.STATE_DOWN]
+                hostid_filter + [Attribute.admin_state == State.DOWN]
             ))).first()
         attribute_count += int(admin_down[0])
 
@@ -56,7 +55,7 @@ class HBarAttributeStatus(HBarGraph):
             EventState.internal_state, func.count(Attribute.id)).\
             join(Attribute).filter(and_(
                 *(hostid_filter +
-                  [Attribute.admin_state != states.STATE_DOWN]))).\
+                  [Attribute.admin_state != State.DOWN]))).\
             group_by(EventState.internal_state)
         tmp_states = {}
         for att in db_states:
@@ -64,8 +63,8 @@ class HBarAttributeStatus(HBarGraph):
             attribute_count += att[1]
 
         self.graph_data = []
-        for state_val, label in states.STATE_NAMES.items():
-            if state_val == states.STATE_ADMIN_DOWN:
+        for state_val, label in State.NAMES.items():
+            if state_val == State.ADMIN_DOWN:
                 self.graph_data.append((
                     label.capitalize(),
                     admin_down[0]*100/attribute_count,

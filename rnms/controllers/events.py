@@ -22,11 +22,11 @@
 from formencode import validators
 
 # turbogears imports
-from tg import expose, tmpl_context, validate, url
+from tg import expose, tmpl_context, validate
 
 # third party imports
 from tg.predicates import has_permission
-from sqlalchemy import extract, func, and_
+from sqlalchemy import extract, func
 
 # project specific imports
 from rnms.lib.base import BaseTableController
@@ -34,6 +34,7 @@ from rnms.model import DBSession, Severity, EventType, Event, EventState
 from rnms.widgets import PanelTile, EventTable
 from rnms.lib.table import jqGridTableFiller
 from rnms.lib import structures
+from rnms.lib.states import State
 
 default_colors = ["#468847", "#F89406", "#B94A48", "#999999",
                   "#3887AD", "#222222"]
@@ -106,7 +107,7 @@ class EventsController(BaseTableController):
         hours = range(this_hour+1, 24) + range(0, this_hour+1)
         datasets = []
 
-        for event_state in range(1,6):
+        for event_state in State._STATES:
             rows = DBSession.query(extract('hour', Event.created),
                                    func.count(1)).\
                 group_by(extract('hour', Event.created)).\
@@ -121,6 +122,7 @@ class EventsController(BaseTableController):
                 except KeyError:
                     dataset_data.append(0)
             datasets.append({
+                'event_state': event_state,
                 'label': event_state,
                 'data': dataset_data
                 })
@@ -129,9 +131,10 @@ class EventsController(BaseTableController):
                 'datasets': datasets,
                     }
         for idx, d in enumerate(data['datasets']):
-            d['fillColor'] = default_colors[idx],
-            d['strokeColor'] = default_colors[idx],
-            d['pointColor'] = default_colors[idx],
+            rgb_color = State(d['event_state']).rgb_color_str()
+            d['fillColor'] = 'rgba({}, 0.31)'.format(rgb_color)
+            d['strokeColor'] = 'rgba({}, 0.7)'.format(rgb_color)
+            d['pointColor'] = 'rgba({}, 0.7)'.format(rgb_color)
             d['pointStrokeColor'] = '#fff'
             d['pointHighlightFill'] = '#fff'
         return data

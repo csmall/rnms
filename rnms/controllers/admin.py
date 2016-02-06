@@ -13,7 +13,6 @@ from tg.predicates import has_permission
 
 # third party imports
 
-from rnms.lib.states import state_name
 from rnms.lib import admin_tables as at
 from rnms.lib.admin_tables import TableFiller, click
 from rnms.model import ConfigBackupMethod
@@ -114,7 +113,7 @@ class MyAdminConfig(BootstrapTGAdminConfig):
 
         class table_filler_type(at.event_state, TableFiller):
             def internal_state(self, obj):
-                return state_name(obj.internal_state).capitalize()
+                return 'FIXME!!'  # state_name(obj.internal_state).capitalize()
 
     class eventtype(MyCrudRestControllerConfig):
         class table_type(at.event_type, TableBase):
