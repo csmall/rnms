@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2013-2015 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,7 +35,6 @@ logger = logging.getLogger('rnms')
 
 
 class GraphController(BaseController):
-    #Uncomment this line if your controller requires an authenticated user
     allow_only = predicates.not_anonymous()
 
     @expose('rnms.templates.graph_index')
@@ -79,3 +78,33 @@ class GraphController(BaseController):
                    filter(Attribute.id.in_(att_ids))
                    ))
         return dict(data_name='atype', items=atype.all())
+
+    @expose('json')
+    @validate(validators={'a': validators.Int(min=1),
+                          'gt': validators.Int(min=1),
+                          'pt': validators.Int(min=1)})
+    def linedata(self, a, gt, pt=None, **kw):
+        """
+        JSON encoded data for the Line Chart
+        """
+        if tmpl_context.form_errors:
+            return dict(errmsg=' '.join(
+                ['{0[1]} for {0[0]}'.format(x) for x in
+                 tmpl_context.form_errors.items()]))
+        data = {
+            'labels': ["XXXJanuary", "February", "March", "April", "May", "June",
+                       "July"],
+            'legendTemplate': 'hi',
+            'datasets': [
+                {
+                    'label': 'First',
+                    'data': [31, 74, 6, 39, 20, 85, 7]
+                }, {
+                    'label': 'Second',
+                    'data': [82, 23, 66, 9, 99, 4, 2]
+                }]
+            }
+        for d in data['datasets']:
+            d['pointStrokeColor'] = '#fff'
+            d['pointHighlightFill'] = '#fff'
+        return data

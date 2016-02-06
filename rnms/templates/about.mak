@@ -1,8 +1,5 @@
 <%inherit file="local:templates.master"/>
-
-<%def name="title()">
-About RoseNMS
-</%def>
+${about_tile.display() | n}
 
     <div class="row">
       <div class="col-md-12">

@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2014 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,10 +21,19 @@ from tg import url
 from rnms import model
 
 wanted_stats = (
-        ('Events', model.Event, 'events'),
+        ('Alarms', model.Event.alarmed_events([]), 'alarms'),
+        ('Zones', model.Zone, 'zones'),
         ('Hosts', model.Host, 'hosts'),
+        ('Events', model.Event, 'events'),
         ('Attributes', model.Attribute, 'attributes'),
         )
+
+
 def get_overall_statistics():
-    """ Return a list of statistics """
-    return [ (m[0], model.DBSession.query(m[1]).count(), url(m[2])) for m in wanted_stats]
+    """ Return a dictionary of statistics """
+    return {
+            'alarms': model.Event.alarmed_events([]).count(),
+            'zones': model.DBSession.query(model.Zone).count(),
+            'hosts': model.DBSession.query(model.Host).count(),
+            'attributes': model.DBSession.query(model.Attribute).count(),
+            }

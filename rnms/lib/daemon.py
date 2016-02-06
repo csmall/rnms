@@ -31,13 +31,13 @@ import zmq
 
 from tg import config
 
-from rnms.lib.pid import check_proc_alive
+from rnms.lib.pid import check_proc_alive, gettid
 from rnms.lib.poller import Poller
 from rnms.lib.consolidate import Consolidator
 from rnms.lib.sla_analyzer import SLAanalyzer
 from rnms.lib.att_discover import AttDiscover
 from rnms.lib.snmptrapd import SNMPtrapd
-from rnms.lib import zmqmessage
+from rnms.lib import zmqmessage, zmqcore
 
 
 class RnmsDaemon(object):
@@ -53,9 +53,6 @@ class RnmsDaemon(object):
 
     def __init__(self, log):
         self.log = log
-        self.zmq_context = zmq.Context()
-        self.zmq_poller = zmq.Poller()
-        self.control_socket = zmqmessage.control_server(self.zmq_context)
         self.threads = {}
         self.end_threads = False
         self.timeout = 10
@@ -64,12 +61,17 @@ class RnmsDaemon(object):
         """ The entry point for the RNMS daemon """
         if not parsed_args.foreground:
             self.daemonize()
+        self.zmq_core = zmqcore.ZmqCore()
+        self.zmq_context = zmq.Context()
+        self.control_socket = zmqmessage.control_server(self.zmq_context)
         self.create_pidfile()
 
         self._create_info_socket()
 
         self.poller = Poller(zmq_context=self.zmq_context, do_once=False)
-        self.threads['poller'] = threading.Thread(target=self.poller.main_loop)
+        self.threads['poller'] = threading.Thread(
+            target=self.poller.main_loop,
+            name='poller')
         self.threads['poller'].start()
 
         self.consolidator = Consolidator(zmq_context=self.zmq_context,
@@ -90,10 +92,12 @@ class RnmsDaemon(object):
         # target=self.att_discover.discover, name='att_discover')
         # self.threads['att_discover'].start()
 
-        # main loop
         self.snmptrapd = SNMPtrapd(zmq_context=self.zmq_context)
-        self.threads['snmptrapd'] = threading.Thread(target=self.snmptrapd.run)
+        self.threads['snmptrapd'] = threading.Thread(
+            target=self.snmptrapd.run,
+            name='snmptrapd')
         self.threads['snmptrapd'].start()
+        # main loop
         while True:
             try:
                 if not self._poll():
@@ -113,21 +117,7 @@ class RnmsDaemon(object):
 
     def _poll(self):
         """ Poll the ZMQ socket and handle any requests """
-        try:
-            events = dict(self.zmq_poller.poll(self.timeout*1000))
-        except zmq.error.ZMQError as err:
-            self.log.info("ZMQ Error: {}\n".format(
-                err.message))
-            return True
-        for sock, event in events.items():
-            if sock == self.info_socket:
-                self.handle_info_read()
-                continue
-            # Unhandled socket?!
-            self.log.critical('Unhandled event from zmq poller')
-            self._shutdown()
-            return False
-        return True
+        return self.zmq_core.poll(10)
 
     def _check_threads(self):
         """ Check the status of all sub-threads. Return None if
@@ -151,24 +141,24 @@ class RnmsDaemon(object):
                                format(', '.join(waiting_threads)))
         return None
 
-    def handle_info_read(self):
-        frames = self.info_socket.recv_multipart()
+    def info_callback(self, socket):
+        frames = socket.recv_multipart()
         if frames[0] == zmqmessage.IPC_INFO_REQ:
             self.info_socket.send(zmqmessage.IPC_INFO_REP, zmq.SNDMORE)
             self.info_socket.send_json(
-                {'tasks': [tname for tname in self.threads.keys()]})
+                    {'thread_count': threading.active_count(),
+                     'daemon_tid': gettid(),
+                     'tasks': [
+                         {'name': tname,
+                          'alive': tobj.isAlive(),
+                          }
+                         for tname, tobj in self.threads.items()]})
         else:
             self.error('Info socket received invalid command')
 
     def _create_info_socket(self):
-        try:
-            port_num = int(config['info_port'])
-        except (KeyError, ValueError):
-            self.log.critical("Configuration doesn't have key 'info_port'")
-            sys.exit(1)
-        self.info_socket = self.zmq_context.socket(zmq.REP)
-        self.info_socket.bind('tcp://127.0.0.1:{}'.format(port_num))
-        self.zmq_poller.register(self.info_socket, zmq.POLLIN)
+        self.info_socket = zmqmessage.info_server(self.zmq_context)
+        self.zmq_core.register_zmq(self.info_socket, self.info_callback)
 
     def daemonize(self):
         """ Daemonize the process """

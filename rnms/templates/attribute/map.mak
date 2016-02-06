@@ -5,14 +5,9 @@
     ${attribute_map.display() | n }
   </div>
 </div>
-%if eventsgrid is not None:
+%if events_panel is not None:
 <div class="row">
-  <div class="span12">
-    ${eventsgrid.display() | n }
-  </div>
+  ${events_panel.display() | n }
 </div>
-<script type="text/javascript">
-var events_grid = $("#events-grid"), intervalID=setInterval(function(){events_grid.setGridParam({datatype:'json'});events_grid.trigger('reloadGrid');},10000);
-</script>
 %endif
 %endif

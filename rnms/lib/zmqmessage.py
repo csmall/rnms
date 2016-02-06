@@ -27,6 +27,8 @@ RRD_ROUTER = 'tcp://*:5001'
 RRD_WORKER = 'tcp://localhost:5001'
 CONTROL_SERVER = 'tcp://*:5002'
 CONTROL_CLIENT = 'tcp://localhost:5002'
+INFO_SERVER = 'tcp://*:5003'
+INFO_CLIENT = 'tcp://localhost:5003'
 
 # The inter-process sockets
 CONTROL_SOCKET = 'inproc://control'
@@ -71,3 +73,33 @@ def control_client(context):
     socket.connect(CONTROL_SOCKET)
     socket.setsockopt(zmq.SUBSCRIBE, '')
     return socket
+
+
+def info_server(context):
+    """ Socket from daemon to send info """
+    socket = context.socket(zmq.REP)
+    socket.bind(INFO_SERVER)
+    return socket
+
+
+def info_client(context):
+    """ Socket to obtain info from daemon """
+    socket = context.socket(zmq.REQ)
+    socket.connect(INFO_CLIENT)
+    return socket
+
+
+def get_info(socket):
+    """ Synchronously ask for daemon info and return the dictionary
+    """
+    socket.linger = 1000
+    socket.send(IPC_INFO_REQ, zmq.NOBLOCK)
+    poller = zmq.Poller()
+    poller.register(socket, zmq.POLLIN)
+    socks = dict(poller.poll(1000))
+    if socks:
+        if socks.get(socket) == zmq.POLLIN:
+            frame = socket.recv(zmq.NOBLOCK)
+            if frame == IPC_INFO_REP:
+                return socket.recv_json(zmq.NOBLOCK)
+    return None

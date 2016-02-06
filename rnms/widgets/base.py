@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2013-2015 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2013-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,24 +23,29 @@ import tw2.core as twc
 from tw2.jqplugins.ui import jquery_ui_css
 from tw2.jquery import jquery_js
 
+
 class MapWidget(twc.Widget):
     template = 'rnms.templates.widgets.map'
 
-    def __init__(self):
+    def __init__(self, **kw):
         self.url = url
         self.map_groups = {}
-        super(MapWidget, self).__init__()
+        super(MapWidget, self).__init__(**kw)
 
     def add_item(self, group_id, group_name, group_data, new_item):
         """ Add the given item to the relevant map_group """
         try:
             self.map_groups[group_id]['items'].append(new_item)
         except KeyError:
-            self.map_groups[group_id] = {'group': group_name,
-                                         'group_fields': group_data, 'items': [new_item]}
+            self.map_groups[group_id] = {
+                'group': group_name,
+                'group_fields': group_data,
+                'items': [new_item]}
+
     def prepare(self):
         self.resources.append(jquery_js)
         super(MapWidget, self).prepare()
+
 
 class InfoBox(twc.Widget):
     id = 'infobox'
@@ -52,3 +57,17 @@ class InfoBox(twc.Widget):
         self.resources.append(jquery_ui_css)
         super(InfoBox, self).prepare()
 
+
+class Row(twc.CompoundWidget):
+    """
+    Bootstrap row element
+    """
+    template = 'rnms.templates.widgets.row'
+
+
+class Text(twc.Widget):
+    """
+    Very simple widget that just displays text.
+    The template should be defined which is the text to put put into the Widget
+    """
+    pass

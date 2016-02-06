@@ -29,24 +29,8 @@ from rnms.lib import states, structures
 from rnms.lib.table import jqGridTableBase
 
 from rnms.widgets.base import MapWidget
-from status_pie import StatusPie
 
-
-class AttributeStatusPie(StatusPie):
-    id = 'attribute-status-pie'
-
-    def prepare(self):
-        self.state_data = {}
-        down_attributes = DBSession.query(Attribute).\
-            filter(Attribute.admin_state == states.STATE_DOWN)
-        self.state_data[states.STATE_ADMIN_DOWN] = down_attributes.count()
-
-        attributes = DBSession.query(
-            func.count(Attribute.admin_state), Attribute.admin_state).\
-            group_by(Attribute.admin_state)
-        for attribute in attributes:
-            self.state_data[attribute[1]] = attribute[0]
-        super(AttributeStatusPie, self).prepare()
+__all__ = ['AttributeMap', 'AttributeDetails' ]
 
 
 class AttributeMap(MapWidget):
@@ -103,24 +87,6 @@ class AttributeMap(MapWidget):
                                'fields': att_fields,
                                })
         super(AttributeMap, self).prepare()
-
-
-class MiniAttributeGrid(structures.attribute_mini, jqGridTableBase):
-    __entity__ = Attribute
-    __grid_id__ = 'mini-attributes-grid'
-    __url__ = '/attributes/minigriddata'
-    __hide_primary_field__ = True
-    __omit_fields__ = ('__actions__',)
-    __caption__ = 'Attributes'
-    __height__ = 190
-    __scroll__ = True
-
-
-class AttributeGrid(structures.attribute, jqGridTableBase):
-    __grid_id__ = 'attributes-grid'
-    __url__ = '/attributes/griddata'
-    __omit_fields__ = ('__actions__',)
-    __caption__ = 'Attributes'
 
 
 class AttributeSelector(jqGridWidget):
@@ -242,9 +208,10 @@ class AttributeSummary(twc.Widget):
         super(AttributeSummary, self).prepare()
 
 
-class AttributeStatusBar(AttributeSummary):
-    """ Small full-sized row that shows the status of the attributes in
-    one line """
-
-    id = 'attribute-statusbar'
-    template = 'rnms.templates.widgets.attribute_statusbar'
+class AttributeDetails(twc.Widget):
+    """
+    Widget to present the details of the given Attribute
+    """
+    template = 'rnms.templates.widgets.attribute_details'
+    attribute = twc.Param('The attribute record out of the DB query')
+    extra = twc.Param('Additional data outside the DB query', default=None)

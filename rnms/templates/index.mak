@@ -1,23 +1,24 @@
 <%inherit file="local:templates.master"/>
-<div class="row">
-  <div class="span6">
-    ${statsbox.display(text=capture(self.statistics)) | n}
+<%def name="makebox(name, icon, value)">
+  <div class="animated flipInY col-md-3 col-sm-4 col-xs-4 tile_stats_count">
+    <div class="left"></div>
+    <div clas="right">
+      <span class="count_top"><i class="fa ${icon}"></i> ${name}</span>
+      <div class="count">${value}</div>
+    </div>
   </div>
-  <div class="span6">
-    ${piebox.display() | n }
-  </div>
-</div>
-<div class="row"><div class="span12">
-${status_bar.display() | }
-</div></div>
-
-<%def name="statistics()">
-<table>
-%for statrow in statrows:
-	<tr class="statrow">
-	 <td><label><a href="${statrow[2]}">${statrow[0]}</a></label></td>
-	 <td>${statrow[1]}</td>
-	</tr>
-%endfor
-</table>
 </%def>
+<div class="row tile_count">
+ ${makebox('Alarms', 'fa-warning', statrows['alarms'])}
+ ${makebox('Zones', 'fa-bullseye', statrows['zones'])}
+ ${makebox('Hosts', 'fa-cubes', statrows['hosts'])}
+ ${makebox('Attributes', 'fa-plug', statrows['attributes'])}
+</div>
+<div class="row">
+  ${eventchart_panel.display()}
+</div>
+<div class="row">
+  ${att_hbar.display() | }
+  ${doughnut.display() | }
+  ${status_panel.display() | }
+</div>

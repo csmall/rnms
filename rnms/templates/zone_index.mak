@@ -3,10 +3,8 @@
 <%def name="title()">
 RoseNMS: Zone List
 </%def>
-%if zone_grid != UNDEFINED:
-	<div class="row">
-	  <div class="span12">
-	    ${zone_grid.display() | n}
-	  </div>
-	</div>
+%if zone_panel != UNDEFINED:
+<div class="row">
+   ${zone_panel.display() | n}
+</div>
 %endif

@@ -3,13 +3,4 @@
 <%def name="title()">
 RoseNMS: Host List
 </%def>
-%if w != UNDEFINED:
-	<div class="row">
-	  <div class="span12">
-	    ${w.display(postdata=griddata) | n}
-	  </div>
-	</div>
-<script type="text/javascript">
-datePick=function(elem){$(elem).datepicker();}
-</script>
-%endif
+${hosttable.display() | n}

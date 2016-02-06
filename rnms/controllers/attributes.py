@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2012-2015 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,30 +19,27 @@
 #
 #
 """Attribute controller module"""
-from sqlalchemy import func
 
 # turbogears imports
 from tg import expose, url, validate, flash, tmpl_context, predicates, request
-
-from sqlalchemy import and_
 
 # third party imports
 from formencode import validators, ForEach
 
 # project specific imports
-from rnms.lib import states, structures, permissions
-from rnms.lib.base import BaseGridController
-from rnms.lib.jsonquery import json_query
-from rnms.model import DBSession, Attribute, AttributeType, Host
-from rnms.widgets import AttributeSummary, AttributeMap,\
-    AttributeStatusPie, AttributeGrid, EventGrid, InfoBox,\
-    MainMenu
+from rnms.lib import structures, permissions
+from rnms.lib.base import BaseTableController
+from rnms.model import DBSession, Attribute, Host
+from rnms.widgets import AttributeMap,\
+    EventTable, InfoBox,\
+    MainMenu, BootstrapTable, PanelTile,\
+    AttributeDetails, LineChart
 from rnms.widgets.graph import GraphWidget
 from rnms.lib.table import jqGridTableFiller
 
 
-class AttributesController(BaseGridController):
-    #Uncomment this line if your controller requires an authenticated user
+class AttributesController(BaseTableController):
+    # Uncomment this line if your controller requires an authenticated user
     allow_only = predicates.not_anonymous()
 
     @expose('rnms.templates.attribute.index')
@@ -52,12 +49,81 @@ class AttributesController(BaseGridController):
             self.process_form_errors()
             return dict(page='attribute', main_menu=MainMenu)
         if h is not None:
-            griddata = {'h': h}
+            table_filter = {'h': h}
         else:
-            griddata = {}
-        w = AttributeGrid()
-        return dict(page='attribute', main_menu=MainMenu,
-                    w=w, griddata=griddata)
+            table_filter = {}
+
+        class AttributeTile(PanelTile):
+            title = 'Attribute List'
+            fullwidth = True
+            fullheight = True
+
+            class AttributeTable(BootstrapTable):
+                data_url = url('/attributes/tabledata.json')
+                columns = [('id', 'ID'),
+                           ('host', 'Host'),
+                           ('display_name', 'Name'),
+                           ('attribute_type', 'Attribute Type'),
+                           ('owner', 'Owner'),
+                           ('created', 'Created')]
+                filter_params = table_filter
+                detail_url = url('/attributes/')
+        return dict(page='attribute', attributetable=AttributeTile())
+
+    @expose('json')
+    @validate(validators={
+        'h': validators.Int(min=1),
+        'offset': validators.Int(min=0),
+        'limit': validators.Int(min=1)})
+    def tabledata(self, h=None, **kw):
+        """ Provides the JSON data for the standard bootstrap table
+        """
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return {}
+
+        conditions = []
+        if h is not None:
+            conditions.append(Attribute.host_id == h)
+        table_data = self._get_tabledata(Attribute,
+                                         conditions=conditions, **kw)
+        if table_data is None:
+            return {}
+        rows = [
+                {'id': row.id,
+                 'host': row.host.display_name if row.host else '-',
+                 'display_name': row.display_name,
+                 'attribute_type': row.attribute_type.display_name if
+                 row.attribute_type else '-',
+                 'owner': row.user.display_name if row.user else '-',
+                 'created': row.created}
+                for row in table_data[1]]
+        return dict(total=table_data[0], rows=rows)
+
+    @expose('json')
+    @validate(validators={
+        'h': validators.Int(min=1),
+        'offset': validators.Int(min=0),
+        'limit': validators.Int(min=1)})
+    def namelist(self, h=None, **kw):
+        """ Provides list of attribute names for given host
+        """
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return {}
+
+        conditions = []
+        if h is not None:
+            conditions.append(Attribute.host_id == h)
+        table_data = self._get_tabledata(Attribute,
+                                         conditions=conditions, **kw)
+        if table_data is None:
+            return {}
+        rows = [
+                {'id': row.id,
+                 'display_name': row.display_name}
+                for row in table_data[1]]
+        return dict(total=table_data[0], rows=rows)
 
     @expose('rnms.templates.attribute.detail')
     @validate(validators={'a': validators.Int(min=1)})
@@ -69,9 +135,27 @@ class AttributesController(BaseGridController):
         if attribute is None:
             flash('Attribute ID#{} not found'.format(a), 'error')
             return dict(page='attribute', main_menu=MainMenu)
-        detailsbox = InfoBox()
-        detailsbox.title = 'Attribute Details'
-        events_grid = EventGrid()
+        this_attribute = attribute
+
+        class DetailsPanel(PanelTile):
+            title = 'Attribute Details'
+
+            class MyAttributeDetails(AttributeDetails):
+                attribute = this_attribute
+
+        class GraphPanel(PanelTile):
+            title = 'Graphs'
+
+            class AttributeChart(LineChart):
+                attribute_id = a
+
+        class EventsPanel(PanelTile):
+            title = 'Events for {} - {}'.format(
+                attribute.host.display_name, attribute.display_name)
+            fullwidth = True
+
+            class AttributeEvents(EventTable):
+                filter_params = {'a': a}
 
         graph_type = attribute.attribute_type.get_graph_type()
         if graph_type is None:
@@ -89,11 +173,12 @@ class AttributesController(BaseGridController):
 
             more_url = url('/graphs', {'a': a})
 
-        return dict(page='attribute', main_menu=MainMenu,
-                    grid_data={'a': a},
+        return dict(page='attribute',
                     attribute=attribute,
                     attribute_id=a,
-                    detailsbox=detailsbox, eventsgrid=events_grid,
+                    details_panel=DetailsPanel(),
+                    graph_panel=GraphPanel(),
+                    eventsgrid=EventsPanel(),
                     more_url=more_url,
                     graphbox=graphbox)
 
@@ -109,13 +194,23 @@ class AttributesController(BaseGridController):
         amap = AttributeMap()
         amap.host_id = h
         amap.alarmed_only = alarmed
-        if events is True:
-            events_grid = EventGrid()
-            events_grid.host_id = h
+        if events:
+            if h is not None:
+                table_filter = {'h': h}
+            else:
+                table_filter = {}
+
+            class HostEventTile(PanelTile):
+                title = 'Host Events'
+                fullwidth = True
+
+                class HostEventTable(EventTable):
+                    filter_params = table_filter
+            events_panel = HostEventTile()
         else:
-            events_grid = None
+            events_panel = None
         return dict(page='attribute', main_menu=MainMenu,
-                    attribute_map=amap, eventsgrid=events_grid)
+                    attribute_map=amap, events_panel=events_panel)
 
     @expose('json')
     def minigriddata(self, **kw):
@@ -132,37 +227,6 @@ class AttributesController(BaseGridController):
         return super(AttributesController, self).griddata(
             AttFiller,
             {'h': validators.Int(min=1)}, **kw)
-
-    @expose('rnms.templates.widget')
-    def statuspie(self):
-        att_states = ('up', 'alert', 'down', 'Admin Down',
-                      'testing', 'unknown')
-        att_count = {x: 0 for x in att_states}
-
-        down_attributes = DBSession.query(Attribute).\
-            filter(Attribute.admin_state == states.STATE_DOWN)
-        att_count['Admin Down'] = down_attributes.count()
-
-        attributes = DBSession.query(
-            func.count(Attribute.admin_state), Attribute.admin_state).\
-            group_by(Attribute.admin_state)
-        for attribute in attributes:
-            try:
-                state_name = states.STATE_NAMES[attribute[1]]
-            except KeyError:
-                pass
-            else:
-                att_count[state_name] = attribute[0]
-        data = [
-            [[att_name.capitalize(), cnt] for (att_name, cnt) in att_count],
-            ]
-        pie = AttributeStatusPie(data=data)
-        return dict(w=pie)
-
-    @expose('rnms.templates.widget')
-    def att_summary(self):
-        w = AttributeSummary()
-        return dict(widget=w)
 
     @expose('rnms.templates.widgets.select')
     @validate(validators={'h': validators.Int(min=1), 'a':

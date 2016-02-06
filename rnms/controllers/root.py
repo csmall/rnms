@@ -3,17 +3,17 @@
 
 from tg import expose, flash, require, lurl, request, redirect, \
     tmpl_context, config, predicates
-from tg.i18n import ugettext as _, lazy_ugettext as l_
+from tg.i18n import ugettext as _
 from rnms import model
 from rnms.controllers.secure import SecureController
-#from tgext.admin.tgadminconfig import TGAdminConfig
 from tgext.admin.controller import AdminController
 from tw2.jqplugins.ui import set_ui_theme_name
 
 from rnms.controllers.admin import MyAdminConfig
-from rnms.widgets.attribute import AttributeStatusPie, AttributeStatusBar
-from rnms.widgets import MainMenu
-from rnms.widgets.base import InfoBox
+from rnms.widgets.panel_tile import PanelTile
+from rnms.widgets.hbars import HBarAttributeStatus
+from rnms.widgets.doughnuts import AttributeStateDoughnut
+from rnms.widgets import ProfileForm, MainMenu, DaemonStatus, LineChart
 from rnms.model import DBSession
 
 from rnms.lib.base import BaseController
@@ -23,9 +23,7 @@ from rnms.controllers.events import EventsController
 from rnms.controllers.graph import GraphController
 from rnms.controllers.attributes import AttributesController
 from rnms.controllers.hosts import HostsController
-from rnms.controllers.zones import ZonesController
 
-set_ui_theme_name(config['ui_theme'])
 __all__ = ['RootController']
 
 
@@ -54,7 +52,6 @@ class RootController(BaseController):
     events = EventsController()
     graphs = GraphController()
     hosts = HostsController()
-    zones = ZonesController()
 
     def _before(self, *args, **kw):
         tmpl_context.project_name = "rnms"
@@ -65,37 +62,58 @@ class RootController(BaseController):
     def index(self):
         """Handle the front-page."""
         statrows = get_overall_statistics()
-        piebox = InfoBox()
-        piebox.title = 'Attribute Status'
-        piebox.child_widget = AttributeStatusPie()
-        statsbox = InfoBox()
-        statsbox.title = 'Statistics'
-        status_bar = AttributeStatusBar()
-        return dict(page='index', main_menu=MainMenu,
-                    piebox=piebox, statsbox=statsbox,
-                    statrows=statrows, status_bar=status_bar)
 
-    @expose('rnms.templates.about')
+        class EventChartPanel(PanelTile):
+            title = "Events in last 24 hours"
+            fillrow = True
+
+            class EventChart(LineChart):
+                data_url = lurl('/events/hourly.json')
+
+        class AttributeHBarPanel(PanelTile):
+            title = "Attribute Status"
+
+            class TestGraph(HBarAttributeStatus):
+                pass
+
+        class DoughnutPanel(PanelTile):
+            title = 'Attribute State Graph'
+
+            class TestDoughnut(AttributeStateDoughnut):
+                pass
+
+        class StatusPanel(PanelTile):
+            title = 'Rose NMS Status'
+
+            class MyDaemonStatus(DaemonStatus):
+                pass
+
+        return dict(page='index', main_menu=MainMenu,
+                    att_hbar=AttributeHBarPanel(),
+                    eventchart_panel=EventChartPanel(),
+                    doughnut=DoughnutPanel(),
+                    status_panel=StatusPanel(),
+                    statrows=statrows)
+
+    @expose('rnms.templates.full_page')
     def about(self):
         """Handle the 'about' page."""
-        return dict(page='about', main_menu=MainMenu)
+        from rnms.widgets.base import Text
+
+        class AboutTile(PanelTile):
+            fullheight = True
+            fullwidth = True
+            title = 'About Rose NMS'
+
+            class AboutText(Text):
+                template = 'rnms.templates.about_text'
+
+        return dict(page_title='About Rose NMS', page_tile=AboutTile())
 
     @expose('rnms.templates.environ')
     def environ(self):
         """This method showcases TG's access to the wsgi environment."""
         return dict(page='environ', environment=request.environ)
-
-    @expose('rnms.templates.index')
-    #@require(predicates.has_permission('manage', msg=l_('Only for managers')))
-    def manage_permission_only(self, **kw):
-        """Illustrate how a page for managers only works."""
-        return dict(page='managers stuff')
-
-    @expose('rnms.templates.index')
-    @require(predicates.is_user('editor', msg=l_('Only for the editor')))
-    def editor_user_only(self, **kw):
-        """Illustrate how a page exclusive for the editor works."""
-        return dict(page='editor stuff')
 
     @expose('rnms.templates.login')
     def login(self, came_from=lurl('/')):
@@ -134,3 +152,19 @@ class RootController(BaseController):
         """
         flash(_('We hope to see you soon!'))
         redirect(came_from)
+
+    @expose('rnms.templates.full_page')
+    @require(predicates.not_anonymous())
+    def profile(self):
+        """
+        Show the users own profile
+        """
+        class ProfileTile(PanelTile):
+            title = 'Profile'
+            fullwidth = True
+
+            class MyProfile(ProfileForm):
+                pass
+
+        return dict(page='profile', page_title='profile',
+                    page_tile=ProfileTile())

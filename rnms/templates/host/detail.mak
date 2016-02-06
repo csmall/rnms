@@ -10,35 +10,23 @@ RoseNMS: Host ${host.display_name}
 % endif
 </%def>
 
-% if host is not UNDEFINED:
-<div class="row">
-  <div class="span12">
-    <div class="page-header">
-      <h2>Host ${host.display_name}</h2>
-    </div>
+<div class="page-title">
+  <div class="title_left">
+% if host is UNDEFINED:
+    <h3>Undefined Host</h3>
   </div>
 </div>
-<div class="row">
-  <div class="span6">
-    ${detailsbox.display(text=capture(self.host_details)) | n }
-  </div>
-  <div class="span6">
-    ${attributes_grid.display(postdata=grid_data) | n}
+%else:
+    <h3>Host ${host.display_name} Details</h3>
   </div>
 </div>
-
+<div class="clearfix"></div>
 <div class="row">
-  <div class="span12">
-  ${events_grid.display(postdata=grid_data) | n}
-  </div>
+${details_panel.display()}
+${attributes_panel.display() | }
+${status_panel.display() | }
 </div>
-
-<%def name="host_details()">
-    <dl class="dl-horizontal">
-      <dt>Zone</dt><dd>${host.zone.display_name}</dd>
-      <dt>State</dt><dd>${host_state}</dd>
-      <dt>Address</dt><dd>${host.mgmt_address}</dd>
-      <dt>Host Type</dt><dd>${vendor} - ${devmodel}</dd>
-    </dl>
-</%def>
+<div class="row">
+  ${events_panel.display() | n}
+</div>
 %endif

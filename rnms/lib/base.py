@@ -3,6 +3,7 @@
 """The base Controller API."""
 from tg import TGController, tmpl_context
 from tg import request
+from sqlalchemy import desc, inspect, and_
 
 from tw2.jqplugins.ui import set_ui_theme_name
 from tw2.jquery import jquery_js
@@ -12,7 +13,7 @@ from formencode import validators, Invalid
 from tg import flash
 from rnms.model import DBSession
 
-__all__ = ['BaseController', 'BaseGridController']
+__all__ = ['BaseController', 'BaseGridController', 'BaseTableController']
 
 VARIABLE_NAMES = {
     'a': 'Attribute ID',
@@ -86,3 +87,38 @@ class BaseGridController(BaseController):
             return dict(errors=form_errors)
         table_filler = filler_class(DBSession)
         return dict(value_list=table_filler.get_value(**kw))
+
+
+class BaseTableController(BaseController):
+    """
+    Base Controller that contains a method to fill the bootstrap table
+    json queries. Controllers need to add class-specific filters to
+    the conditions
+    """
+    def _get_tabledata(self, table, conditions=None, **kw):
+        query = DBSession.query(table)
+        if conditions is not None and conditions != []:
+            query = query.filter(and_(*conditions))
+        if 'sort' in kw:
+            insp = inspect(table)
+            try:
+                sort_col = insp.columns[kw['sort']]
+            except KeyError:
+                try:
+                    sort_table = insp.relationships[kw['sort']]
+                    sort_col = sort_table.table.c['display_name']
+                    query = query.join(sort_table.table)
+                except KeyError:
+                    return None
+            sort_order = kw.get('order')  # default is asc
+            if sort_order == 'desc':
+                query = query.order_by(desc(sort_col))
+            else:
+                query = query.order_by(sort_col)
+        total = query.count()
+        if 'offset' in kw:
+            query = query.offset(kw['offset'])
+        if 'limit' in kw:
+            query = query.limit(kw['limit'])
+
+        return (total, query)

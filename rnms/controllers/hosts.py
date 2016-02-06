@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2012-2015 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,25 +21,24 @@
 """ Hosts controller """
 
 # turbogears imports
-from tg import expose, validate, flash, tmpl_context, url, predicates, request
+from tg import expose, validate, flash, tmpl_context, url, request
 from tg.decorators import require
 
 # third party imports
-#from tg.i18n import ugettext as _
-#from repoze.what import predicates
 from formencode import validators
 
 # project specific imports
-from rnms.lib import structures
 from rnms.lib import permissions
-from rnms.lib.table import jqGridTableFiller, DiscoveryFiller
-from rnms.lib.base import BaseGridController
+from rnms.lib.table import DiscoveryFiller
+from rnms.lib.base import BaseTableController
 from rnms.model import DBSession, Host, Event, Attribute
-from rnms.widgets import InfoBox, MainMenu, HostMap, HostGrid, EventGrid
-from rnms.widgets.attribute import MiniAttributeGrid, DiscoveredAttsGrid
+from rnms.widgets import MainMenu, HostMap,\
+        BootstrapTable, EventTable, HostDetails, AttributeStateDoughnut
+from rnms.widgets.attribute import DiscoveredAttsGrid
+from rnms.widgets.panel_tile import PanelTile
 
 
-class HostsController(BaseGridController):
+class HostsController(BaseTableController):
     allow_only = permissions.host_ro
 
     @expose('rnms.templates.host.index')
@@ -49,25 +48,48 @@ class HostsController(BaseGridController):
             self.process_form_errors()
             return {}
         if z is not None:
-            griddata = {'z': z}
+            table_filter = {'z': z}
         else:
-            griddata = {}
+            table_filter = {}
 
-        w = HostGrid()
-        return dict(page='host', main_menu=MainMenu,
-                    w=w, griddata=griddata)
+        class HostTile(PanelTile):
+            title = 'Host List'
+            fullwidth = True
+
+            class MyTable(BootstrapTable):
+                data_url = url('/hosts/tabledata.json')
+                columns = [('id', 'ID'),
+                           ('display_name', 'Name'),
+                           ('mgmt_address', 'Management Address')]
+                filter_params = table_filter
+                detail_url = url('/hosts/')
+
+        return dict(page='host', hosttable=HostTile())
 
     @expose('json')
-    def griddata(self, **kw):
-        class HostFiller(structures.host, jqGridTableFiller):
-            pass
-        return super(HostsController, self).griddata(HostFiller, {}, **kw)
+    @validate(validators={
+        'z': validators.Int(min=1),
+        'offset': validators.Int(min=0),
+        'limit': validators.Int(min=1)})
+    def tabledata(self, **kw):
+        """ Provides the JSON data for the standard bootstrap table
+        """
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return {}
 
-    @expose('json')
-    def gridindex(self, **kw):
-        class HostFiller(structures.host_list, jqGridTableFiller):
-            pass
-        return super(HostsController, self).griddata(HostFiller, {}, **kw)
+        conditions = []
+        if kw['z'] is not None:
+            conditions.append(Host.zone_id == kw['z'])
+        table_data = self._get_tabledata(Host, conditions=conditions, **kw)
+        if table_data is None:
+            return {}
+        rows = [
+                {'id': row.id,
+                 'display_name': row.display_name,
+                 'mgmt_address': row.mgmt_address}
+                for row in table_data[1]]
+        return dict(total=table_data[0], rows=rows)
 
     @expose('json')
     @validate(validators={'h': validators.Int(min=1)})
@@ -96,19 +118,49 @@ class HostsController(BaseGridController):
         else:
             host_state = highest_alarm.event_state.display_name.capitalize()
 
-        detailsbox = InfoBox()
-        detailsbox.title = 'Host Details'
-        attributes_grid = MiniAttributeGrid()
-        events_grid = EventGrid()
-        return dict(page='host', main_menu=MainMenu,
-                    host=host, vendor=vendor, devmodel=devmodel,
-                    host_state=host_state,
-                    attributes_grid=attributes_grid,
-                    grid_data={'h': h},
-                    detailsbox=detailsbox,
-                    events_grid=events_grid)
+        thehost = host
 
-    @expose('rnms.templates.map.host')
+        class HostDetailPanel(PanelTile):
+            title = 'Host Details'
+
+            class MyHostDetails(HostDetails):
+                host = thehost
+                extra = {'host_state': host_state,
+                         'vendor': vendor,
+                         'devmodel': devmodel,
+                         }
+
+        class AttributeStatusPanel(PanelTile):
+            title = 'Attribute Status'
+
+            class AttributeStatus(AttributeStateDoughnut):
+                host_id = h
+
+        class HostEventPanel(PanelTile):
+            title = 'Events for ' + host.display_name
+            fullwidth = True
+
+            class HostEventTable(EventTable):
+                filter_params = {'h': h}
+
+        class AttributesPanel(PanelTile):
+            title = 'Host Attributes'
+
+            class AttributesTable(BootstrapTable):
+                data_url = url('/attributes/namelist.json', {'h': h})
+                detail_url = url('/attributes/')
+                columns = [('display_name', 'Name'), ]
+                sort_name = 'display_name'
+                fit_panel = True
+
+        return dict(page='host',
+                    details_panel=HostDetailPanel(),
+                    status_panel=AttributeStatusPanel(),
+                    attributes_panel=AttributesPanel(),
+                    host=host,
+                    events_panel=HostEventPanel)
+
+    @expose('rnms.templates.host.map')
     @validate(validators={
         'z': validators.Int(min=1), 'events': validators.Bool(),
         'alarmed': validators.Bool()})
@@ -119,18 +171,28 @@ class HostsController(BaseGridController):
         if tmpl_context.form_errors:
             self.process_form_errors()
             return dict(page='host', main_menu=MainMenu)
-        hmap_infobox = InfoBox()
-        hmap_infobox.title = 'Host Map'
-        hmap_infobox.child_widget = HostMap()
-        hmap_infobox.child_widget.zone_id = z
-        hmap_infobox.child_widget.alarmed_only = alarmed
+
+        class HostMapTile(PanelTile):
+            title = 'Host Map'
+            fullwidth = True
+
+            class HostMap2(HostMap):
+                zone_id = z
+                alarmed_only = (alarmed == 1)
+
         if events:
-            events_grid = EventGrid()
-            events_grid.zone_id = z
+            class HostEventTile(PanelTile):
+                title = 'Host Events'
+                fullwidth = True
+
+                class HostEventTable(EventTable):
+                    filter_params = {'z': z}
+            events_panel = HostEventTile()
         else:
-            events_grid = None
+            events_panel = None
+
         return dict(page='hosts', main_menu=MainMenu,
-                    host_map=hmap_infobox, events_grid=events_grid)
+                    host_map=HostMapTile(), events_panel=events_panel)
 
     @expose('rnms.templates.host.discover')
     @validate(validators={'h': validators.Int(min=2)})

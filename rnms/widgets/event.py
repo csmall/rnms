@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2012-2015 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,22 +19,25 @@
 #
 #
 """ Events Widgets """
+from tg import url
 
-from rnms.lib import structures
-from rnms.lib.table import jqGridTableBase
+from bootstrap_table import BootstrapTable
+
+__all__ = ['EventTable']
 
 
-class EventGrid(structures.event, jqGridTableBase):
-    __url__ = '/events/griddata'
-    __grid_id__ = 'events-grid'
-    __caption__ = 'Events'
-    toolbar_items = '''\
-<div class=\\"btn-group btn-group-xs\\">\
-<button id=\\"tb-search\\" type=\\"button\\" class=\\"btn btn-default\\">\
-<span class=\\"glyphicon glyphicon-search\\">\
-</span> Search</button>\
-<button id=\\"refresh-button\\" type=\\"button\\" class=\\"btn btn-success\\">\
-<span class=\\"glyphicon glyphicon-refresh\\">\
-</span> Reload</button>\
-</div>\
-'''
+class EventTable(BootstrapTable):
+    template = 'rnms.templates.widgets.eventtable'
+    data_url = url('/events/tabledata.json')
+    enable_search = True
+    columns = [('created', 'Date'),
+               ('severity', 'Severity'),
+               ('host', 'Host'),
+               ('attribute', 'Attribute'),
+               ('event_type', 'Type'),
+               ('description', 'Description')]
+    detail_url = url('/events/')
+    row_formatter = {'severity': 'formatSeverity'}
+    sort_column = 'created'
+    sort_asc = False
+    striped = True
