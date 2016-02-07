@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2011-2015 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ from sqlalchemy import and_
 import sqlalchemy
 
 from rnms import model
-from rnms.lib import states
+from rnms.lib.states import State
 from rnms.model import DBSession
 
 #        for oldid in (1,4,5,6,7,8,9,10,11,12):
@@ -154,9 +154,9 @@ class JffnmsImporter(object):
                 if row[8] == 0:
                     att.visible = False
                 elif row[8] == 1:
-                    att.admin_state = states.STATE_UP
+                    att.admin_state = State.UP
                 elif row[8] == 2:
-                    att.admin_state = states.STATE_DOWN
+                    att.admin_state = State.DOWN
                 att.created = datetime.datetime.fromtimestamp(row[10])
                 att.updated = datetime.datetime.fromtimestamp(row[11])
                 att.next_poll = datetime.datetime.fromtimestamp(row[12]) + \

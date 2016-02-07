@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2012-2015 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,10 +24,10 @@ import datetime
 from sqlalchemy import ForeignKey, Column, and_, desc
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import Integer, DateTime, Boolean
-#from sqlalchemy.orm import relation, backref
 
 from rnms.model import DeclarativeBase, DBSession
-from rnms.lib import states
+from rnms.lib.states import State
+
 
 class Alarm(DeclarativeBase):
     """
@@ -42,24 +42,25 @@ class Alarm(DeclarativeBase):
     """
     __tablename__ = 'alarms'
 
-    #{ Columns
+    # { Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     event_id = Column(Integer, ForeignKey('events.id'), nullable=False)
     event = relationship("Event",
-            primaryjoin="Event.id==Alarm.start_event_id")
+                         primaryjoin="Event.id==Alarm.start_event_id")
     stop_event_id = Column(Integer, ForeignKey('events.id'))
     stop_event = relationship("Event",
-            primaryjoin="Event.id==Alarm.stop_event_id")
+                              primaryjoin="Event.id==Alarm.stop_event_id")
     stop_time = Column(DateTime)
     processed = Column(Boolean, nullable=False, default=False)
     check_stop_time = Column(Boolean, nullable=False, default=False)
-    #}
+    # }
 
-    def __init__(self,event=None):
+    def __init__(self, event=None):
         if event is not None:
             self.event = event
             if event.event_type.alarm_duration > 0:
-                self.stop_time = datetime.datetime.now() + datetime.timedelta(minutes=event.event_type.alarm_duration)
+                self.stop_time = datetime.datetime.now() + datetime.timedelta(
+                    minutes=event.event_type.alarm_duration)
                 self.stop_event = event
                 self.check_stop_time = True
 
@@ -73,20 +74,20 @@ class Alarm(DeclarativeBase):
         Returns a dictionary of parameters that are used for replacing
         information.
         """
-        subs={'attribute': '', 'client':'', 'host':'', 'state':''}
+        subs = {'attribute': '', 'client': '', 'host': '', 'state': ''}
         if self.attribute is not None:
             subs['attribute'] = self.attribute.display_name
             subs['client'] = self.attribute.user.display_name
             subs['interface-description'] = ' '.join(
-                    [af.value for af in self.attribute.fields if af.attribute_type.field.description==True])
+                    [af.value for af in self.attribute.fields
+                        if af.attribute_type.field.description])
             if self.attribute.host:
                 subs['host'] = self.attribute.host.display_name
         return subs
 
-
     def set_stop(self, stop_event, event_state=None):
         """
-        Set the stop attributes for this alarm.  
+        Set the stop attributes for this alarm.
         Requires the event that stopped the alarm and an optional
         new event_state to set the alarm to.
         Processed flag is cleared for the consolidator to trigger on
@@ -100,10 +101,10 @@ class Alarm(DeclarativeBase):
         self.stop_event = stop_event
         self.check_stop_time = False
         self.processed = False
-        self.event.acknowledged=True
+        self.event.acknowledged = True
 
     @classmethod
-    def find_down(cls,attribute,event_type):
+    def find_down(cls, attribute, event_type):
         """
         Find the first down or testing alarm of the given event_type
         for this attribute.
@@ -112,8 +113,7 @@ class Alarm(DeclarativeBase):
         if attribute is None or event_type is None:
             return None
         return DBSession.query(cls).join(Event, EventState).filter(and_(
-            cls.event.attribute_id==attribute.id,
-            cls.event.event_type_id==event_type.id,
-            EventState.internal_state.in_([states.STATE_DOWN, states.STATE_TESTING]),
+            cls.event.attribute_id == attribute.id,
+            cls.event.event_type_id == event_type.id,
+            EventState.internal_state.in_([State.DOWN, State.TESTING]),
             )).order_by(desc(cls.id)).first()
-

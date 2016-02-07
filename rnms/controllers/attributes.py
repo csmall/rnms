@@ -148,6 +148,7 @@ class AttributesController(BaseTableController):
 
             class AttributeChart(LineChart):
                 attribute_id = a
+                data_url='fixme'
 
         class EventsPanel(PanelTile):
             title = 'Events for {} - {}'.format(

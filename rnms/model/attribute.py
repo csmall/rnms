@@ -26,10 +26,9 @@ from sqlalchemy.orm import relationship, subqueryload
 from sqlalchemy import ForeignKey, Column, and_, asc
 from sqlalchemy.types import Integer, Unicode, String, Boolean,\
     SmallInteger, DateTime
-#from sqlalchemy.orm import relation, backref
 
 from rnms.model import DeclarativeBase, DBSession
-from rnms.lib import states
+from rnms.lib.states import State
 from rnms.lib.parsers import fill_fields
 
 __all__ = ['Attribute', 'AttributeField', 'AttributeType',
@@ -49,7 +48,6 @@ class Attribute(DeclarativeBase):
     default_poll_interval = 5
     display_name_len = 40
 
-    #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(display_name_len))
     admin_state = Column(SmallInteger, nullable=False)  # IF-MIB
@@ -81,7 +79,6 @@ class Attribute(DeclarativeBase):
     next_sla = Column(DateTime, nullable=False, default=datetime.datetime.now)
     fields = relationship('AttributeField', backref='attribute',
                           cascade='all, delete, delete-orphan')
-    #}
 
     def __init__(self, host=None, attribute_type=None,
                  display_name=None, index=''):
@@ -89,7 +86,7 @@ class Attribute(DeclarativeBase):
         self.attribute_type = attribute_type
         self.display_name = display_name
         self.index = index
-        self.admin_state = states.STATE_UNKNOWN
+        self.admin_state = State.UNKNOWN
         self.use_iface = False
         self.user_id = 1
         self.sla_id = 1
@@ -157,7 +154,7 @@ class Attribute(DeclarativeBase):
         a.attribute_type = discovered_attribute.attribute_type
         a.display_name = discovered_attribute.display_name
         a.index = discovered_attribute.index
-        #a.use_iface = discovered_attribute.use_iface
+        # a.use_iface = discovered_attribute.use_iface
         a.admin_state = discovered_attribute.admin_state
         a.user_id = host.default_user_id
         # SLA default needed
@@ -260,13 +257,13 @@ class Attribute(DeclarativeBase):
     def admin_state_name(self):
         """ Return string representation of admin state"""
         try:
-            return states.STATE_NAMES[self.admin_state]
+            return State.NAMES[self.admin_state]
         except KeyError:
             return u"Unknown {0}".format(self.admin_state)
 
     def set_admin_state(self, state_name):
         """ Set the admin_state based upon a state_name """
-        for state, name in states.STATE_NAMES.items():
+        for state, name in State.NAMES.items():
             if state_name == name:
                 self.admin_state = state
                 return True
@@ -275,7 +272,7 @@ class Attribute(DeclarativeBase):
     def is_down(self):
         """ Return true if this attribute is down. """
         return self.state is None or\
-            self.state.internal_state == states.STATE_DOWN
+            self.state.internal_state == State.DOWN
 
     def update_poll_time(self):
         """
@@ -296,8 +293,8 @@ class Attribute(DeclarativeBase):
         Update the next time we run the SLA analysis for this attribute
         """
         self.next_sla = datetime.datetime.now() + datetime.timedelta(
-            minutes=(SLA_INTERVAL_MINUTES + (random.random()-0.5)
-                     * SLA_VARIANCE_MINUTES * 2))
+            minutes=(SLA_INTERVAL_MINUTES + (random.random()-0.5) *
+                     SLA_VARIANCE_MINUTES * 2))
 
     def set_disabled(self):
         """
@@ -306,7 +303,7 @@ class Attribute(DeclarativeBase):
         down
         """
         self.poll_enabled = False
-        self.admin_status = states.STATE_DOWN
+        self.admin_status = State.DOWN
 
     def parse_string(self, raw_string):
         """
@@ -332,7 +329,6 @@ class Attribute(DeclarativeBase):
 class AttributeField(DeclarativeBase):
     __tablename__ = 'attribute_fields'
 
-    #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     attribute_id = Column(Integer,
                           ForeignKey('attributes.id'), nullable=False)
@@ -379,7 +375,6 @@ class AttributeField(DeclarativeBase):
 class AttributeType(DeclarativeBase):
     __tablename__ = 'attribute_types'
 
-    #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(50), unique=True, nullable=False)
     ad_validate = Column(Boolean, nullable=False)
@@ -426,7 +421,6 @@ class AttributeType(DeclarativeBase):
         'AttributeTypeRRD',
         order_by='AttributeTypeRRD.position',
         backref='attribute_type', cascade='all, delete, delete-orphan')
-    #}
 
     def __init__(self, display_name=None, ad_command='none', ad_parameters=''):
         self.display_name = display_name
@@ -530,7 +524,6 @@ class AttributeType(DeclarativeBase):
 class AttributeTypeField(DeclarativeBase):
     __tablename__ = 'attribute_type_fields'
 
-    #{ Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     attribute_type_id = Column(
         Integer, ForeignKey("attribute_types.id"), nullable=False)
@@ -545,7 +538,6 @@ class AttributeTypeField(DeclarativeBase):
     default_value = Column(String(250))
     parameters = Column(String(250))
     backend = Column(String(40))
-    #}
 
     @classmethod
     def by_tag(cls, attribute_type, tag):

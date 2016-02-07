@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2012-2015 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,12 +25,11 @@ from tw2.jqplugins.jqgrid import jqGridWidget
 import tw2.core as twc
 
 from rnms.model import Attribute, DBSession, Host, EventState, Event
-from rnms.lib import states, structures
-from rnms.lib.table import jqGridTableBase
+from rnms.lib.states import State
 
 from rnms.widgets.base import MapWidget
 
-__all__ = ['AttributeMap', 'AttributeDetails' ]
+__all__ = ['AttributeMap', 'AttributeDetails']
 
 
 class AttributeMap(MapWidget):
@@ -43,7 +42,7 @@ class AttributeMap(MapWidget):
         and description box. Returns
         (class,textual)
         """
-        if attribute.admin_state == states.STATE_DOWN:
+        if attribute.admin_state == State.DOWN:
             return ('asd', 'Admin Down')
         else:
             alarm = Event.attribute_alarm(attribute.id)
@@ -58,7 +57,7 @@ class AttributeMap(MapWidget):
         if self.host_id is not None:
             conditions.append(Attribute.host_id == self.host_id)
         if self.alarmed_only:
-            conditions.append(EventState.internal_state != states.STATE_UP)
+            conditions.append(EventState.internal_state != State.UP)
         attributes = DBSession.query(Attribute).join(Host, EventState).\
             filter(and_(*conditions)).\
             order_by(asc(Host.display_name), asc(Attribute.display_name))
@@ -182,14 +181,14 @@ class AttributeSummary(twc.Widget):
 
         admin_down = DBSession.query(func.count(Attribute.id)).\
             filter(and_(*(
-                hostid_filter + [Attribute.admin_state == states.STATE_DOWN]
+                hostid_filter + [Attribute.admin_state == State.DOWN]
             ))).first()
         self.att_total = int(admin_down[0])
         db_states = DBSession.query(
             EventState.internal_state, func.count(Attribute.id)).\
             join(Attribute).filter(and_(
                 *(hostid_filter +
-                  [Attribute.admin_state != states.STATE_DOWN]))).\
+                  [Attribute.admin_state != State.DOWN]))).\
             group_by(EventState.internal_state)
         tmp_states = {}
         for att in db_states:
@@ -197,7 +196,7 @@ class AttributeSummary(twc.Widget):
             self.att_total += att[1]
 
         self.att_states = []
-        for state_val, label in states.STATE_NAMES.items():
+        for state_val, label in State.NAMES.items():
             if state_val is None:
                 self.att_states.append((label, admin_down[0]))
             else:
