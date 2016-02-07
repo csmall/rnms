@@ -69,6 +69,7 @@ class RootController(BaseController):
 
             class EventChart(LineChart):
                 data_url = lurl('/events/hourly.json')
+                show_legend = True
 
         class AttributeHBarPanel(PanelTile):
             title = "Attribute Status"

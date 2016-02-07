@@ -31,6 +31,7 @@ class LineChart(twc.Widget):
      """
     template = 'rnms.templates.widgets.line_chart'
     data_url = twc.Param('URL for fetching the JSON data for graph')
+    show_legend = twc.Param('Boolean: show the legend or not', default=False)
 
     def prepare(self):
         self.resources.append(chart_min_js)

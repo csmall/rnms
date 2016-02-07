@@ -123,7 +123,7 @@ class EventsController(BaseTableController):
                     dataset_data.append(0)
             datasets.append({
                 'event_state': event_state,
-                'label': event_state,
+                'label': State(event_state).name.capitalize(),
                 'data': dataset_data
                 })
         data = {
