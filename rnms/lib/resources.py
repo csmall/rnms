@@ -20,11 +20,11 @@
 #
 """ Resources for widgets etc """
 import tw2.core as twc
-from tg import url
+from tg import lurl
 
 """ JavaScript Resources """
-chart_min_js = twc.JSLink(link=url('/javascript/chart.min.js'))
-bootstrap_table_js = twc.JSLink(link=url('/javascript/bootstrap-table.min.js'))
+chart_min_js = twc.JSLink(link=lurl('/javascript/chart.min.js'))
+bootstrap_table_js = twc.JSLink(link=lurl('/javascript/bootstrap-table.min.js'))
 
 """ CSS Resources """
-bootstrap_table_css = twc.CSSLink(link=url('/css/bootstrap-table.min.css'))
+bootstrap_table_css = twc.CSSLink(link=lurl('/css/bootstrap-table.min.css'))

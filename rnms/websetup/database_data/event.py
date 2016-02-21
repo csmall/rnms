@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2011-2015 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,41 +20,41 @@
 #
 """This file contains the database entries that are used for intially filling
 the database"""
-from rnms.lib import states
+from rnms.lib.states import State
 # Name, priority, down snd, up snd, int state, color
 event_states = (
-    (u'down', 10, 'down.wav', 'up.wav', states.STATE_DOWN, u'Down'),
-    (u'up', 100, '', '', states.STATE_UP, u'Up'),
-    (u'alert', 60, 'boing.wav', '', states.STATE_ALERT, u'Alert'),
-    (u'testing', 40, '', '', states.STATE_TESTING, u'Testing'),
-    (u'running', 100, '', '', states.STATE_UP, u'Up'),
-    (u'not running', 20, '', '', states.STATE_DOWN, u'Down'),
-    (u'open', 100, '', '', states.STATE_UP, u'Up'),
-    (u'closed', 15, '', '', states.STATE_DOWN, u'Service'),
-    (u'error', 90, 'boing.wav', '', states.STATE_ALERT, u'Alert'),
-    (u'invalid', 30, '', '', states.STATE_DOWN, u'Service'),
-    (u'valid', 110, '', '', states.STATE_UP, u'Service'),
-    (u'reachable', 100, '', '', states.STATE_UP, u'Up'),
-    (u'unreachable', 5, '', '', states.STATE_DOWN, u'Down'),
-    (u'lowerlayerdown', 10, 'down.wav', 'up.wav', states.STATE_DOWN, u'Down'),
-    (u'synchronized', 100, '', '', states.STATE_UP, u'Information'),
-    (u'unsynchronized', 6, '', '', states.STATE_DOWN, u'Information'),
-    (u'battery normal', 100, '', '', states.STATE_UP, u'Up'),
-    (u'battery low', 4, '', '', states.STATE_DOWN, u'Alert'),
-    (u'battery unknown', 2, '', '', states.STATE_UNKNOWN, u'Unknown'),
-    (u'on battery', 3, '', '', states.STATE_DOWN, u'Alert'),
-    (u'on line', 90, '', '', states.STATE_UP, u'Up'),
-    (u'ok', 100, '', '', states.STATE_UP, u'Up'),
-    (u'out of bounds', 10, '', '', states.STATE_DOWN, u'Down'),
-    (u'unavailable', 10, 'down.wav', 'up.wav', states.STATE_DOWN, u'Down'),
-    (u'available', 100, '', '', states.STATE_UP, u'Down'),
-    (u'battery depleted', 3, '', '', states.STATE_DOWN, u'Fault'),
-    (u'other', 10, '', '', states.STATE_DOWN, u'Fault'),
-    (u'unknown', 10, '', '', states.STATE_UNKNOWN, u'Unknown'),
-    (u'noncritical', 90, '', '', states.STATE_ALERT, u'Alert'),
-    (u'critical', 10, '', '', states.STATE_DOWN, u'Down'),
-    (u'nonrecoverabl', 10, '', '', states.STATE_DOWN, u'Fault'),
-    (u'warning', 80, 'down.wav', 'up.wav', states.STATE_ALERT, u'Alert')
+    (u'down', 10, 'down.wav', 'up.wav', State.DOWN, u'Down'),
+    (u'up', 100, '', '', State.UP, u'Up'),
+    (u'alert', 60, 'boing.wav', '', State.ALERT, u'Alert'),
+    (u'testing', 40, '', '', State.TESTING, u'Testing'),
+    (u'running', 100, '', '', State.UP, u'Up'),
+    (u'not running', 20, '', '', State.DOWN, u'Down'),
+    (u'open', 100, '', '', State.UP, u'Up'),
+    (u'closed', 15, '', '', State.DOWN, u'Service'),
+    (u'error', 90, 'boing.wav', '', State.ALERT, u'Alert'),
+    (u'invalid', 30, '', '', State.DOWN, u'Service'),
+    (u'valid', 110, '', '', State.UP, u'Service'),
+    (u'reachable', 100, '', '', State.UP, u'Up'),
+    (u'unreachable', 5, '', '', State.DOWN, u'Down'),
+    (u'lowerlayerdown', 10, 'down.wav', 'up.wav', State.DOWN, u'Down'),
+    (u'synchronized', 100, '', '', State.UP, u'Information'),
+    (u'unsynchronized', 6, '', '', State.DOWN, u'Information'),
+    (u'battery normal', 100, '', '', State.UP, u'Up'),
+    (u'battery low', 4, '', '', State.DOWN, u'Alert'),
+    (u'battery unknown', 2, '', '', State.UNKNOWN, u'Unknown'),
+    (u'on battery', 3, '', '', State.DOWN, u'Alert'),
+    (u'on line', 90, '', '', State.UP, u'Up'),
+    (u'ok', 100, '', '', State.UP, u'Up'),
+    (u'out of bounds', 10, '', '', State.DOWN, u'Down'),
+    (u'unavailable', 10, 'down.wav', 'up.wav', State.DOWN, u'Down'),
+    (u'available', 100, '', '', State.UP, u'Down'),
+    (u'battery depleted', 3, '', '', State.DOWN, u'Fault'),
+    (u'other', 10, '', '', State.DOWN, u'Fault'),
+    (u'unknown', 10, '', '', State.UNKNOWN, u'Unknown'),
+    (u'noncritical', 90, '', '', State.ALERT, u'Alert'),
+    (u'critical', 10, '', '', State.DOWN, u'Down'),
+    (u'nonrecoverabl', 10, '', '', State.DOWN, u'Fault'),
+    (u'warning', 80, 'down.wav', 'up.wav', State.ALERT, u'Alert')
     )
 
 event_types = (

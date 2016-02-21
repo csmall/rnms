@@ -31,10 +31,9 @@ from rnms.lib import structures, permissions
 from rnms.lib.base import BaseTableController
 from rnms.model import DBSession, Attribute, Host
 from rnms.widgets import AttributeMap,\
-    EventTable, InfoBox,\
-    MainMenu, BootstrapTable, PanelTile,\
+    EventTable, \
+    BootstrapTable, PanelTile,\
     AttributeDetails, LineChart
-from rnms.widgets.graph import GraphWidget
 from rnms.lib.table import jqGridTableFiller
 
 
@@ -47,7 +46,7 @@ class AttributesController(BaseTableController):
     def index(self, h=None, *args, **kw):
         if tmpl_context.form_errors:
             self.process_form_errors()
-            return dict(page='attribute', main_menu=MainMenu)
+            return dict(page='attribute')
         if h is not None:
             table_filter = {'h': h}
         else:
@@ -130,11 +129,11 @@ class AttributesController(BaseTableController):
     def _default(self, a):
         if tmpl_context.form_errors:
             self.process_form_errors()
-            return dict(page='attribute', main_menu=MainMenu)
+            return dict(page='attribute')
         attribute = Attribute.by_id(a)
         if attribute is None:
             flash('Attribute ID#{} not found'.format(a), 'error')
-            return dict(page='attribute', main_menu=MainMenu)
+            return dict(page='attribute')
         this_attribute = attribute
 
         class DetailsPanel(PanelTile):
@@ -148,7 +147,9 @@ class AttributesController(BaseTableController):
 
             class AttributeChart(LineChart):
                 attribute_id = a
-                data_url='fixme'
+                gt = attribute.attribute_type.get_graph_type()
+                data_url = url('/graphs/attribute.json',
+                               {'a': a, 'gt': gt.id})
 
         class EventsPanel(PanelTile):
             title = 'Events for {} - {}'.format(
@@ -158,30 +159,13 @@ class AttributesController(BaseTableController):
             class AttributeEvents(EventTable):
                 filter_params = {'a': a}
 
-        graph_type = attribute.attribute_type.get_graph_type()
-        if graph_type is None:
-            graphbox = None
-            more_url = None
-        else:
-            class MyGraph(GraphWidget):
-                id = 'graph-{}-{}'.format(a, graph_type.id)
-                attribute_id = a
-                graph_type_id = graph_type.id
-            gw = MyGraph()
-            graphbox = InfoBox()
-            graphbox.title = graph_type.formatted_title(attribute)
-            graphbox.child_widget = gw
-
-            more_url = url('/graphs', {'a': a})
-
         return dict(page='attribute',
                     attribute=attribute,
                     attribute_id=a,
                     details_panel=DetailsPanel(),
                     graph_panel=GraphPanel(),
                     eventsgrid=EventsPanel(),
-                    more_url=more_url,
-                    graphbox=graphbox)
+                    )
 
     @expose('rnms.templates.attribute.map')
     @validate(validators={
@@ -191,7 +175,7 @@ class AttributesController(BaseTableController):
     def map(self, h=None, events=False, alarmed=False):
         if tmpl_context.form_errors:
             self.process_form_errors()
-            return dict(page='attribute', main_menu=MainMenu)
+            return dict(page='attribute')
         amap = AttributeMap()
         amap.host_id = h
         amap.alarmed_only = alarmed
@@ -210,20 +194,12 @@ class AttributesController(BaseTableController):
             events_panel = HostEventTile()
         else:
             events_panel = None
-        return dict(page='attribute', main_menu=MainMenu,
+        return dict(page='attribute',
                     attribute_map=amap, events_panel=events_panel)
 
     @expose('json')
     def minigriddata(self, **kw):
         class AttFiller(structures.attribute_mini, jqGridTableFiller):
-            pass
-        return super(AttributesController, self).griddata(
-            AttFiller,
-            {'h': validators.Int(min=1)}, **kw)
-
-    @expose('json')
-    def griddata(self, *args, **kw):
-        class AttFiller(structures.attribute, jqGridTableFiller):
             pass
         return super(AttributesController, self).griddata(
             AttFiller,

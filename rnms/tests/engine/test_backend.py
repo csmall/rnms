@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2014-2015 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2014-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ from nose.tools import eq_
 import mock
 
 from rnms import model
-from rnms.lib import states
+from rnms.lib.states import State
 from rnms.lib.backend import CacheBackend
 
 
@@ -53,7 +53,7 @@ class TestCacheBackend(object):
         """ admin_status backend sets status correctly """
         self.obj.set_command('admin_status')
         self.obj.parameters = None
-        self.test_attribute.admin_state = states.STATE_UNKNOWN
+        self.test_attribute.admin_state = State.UNKNOWN
         for newstate in ('up', 'down', 'testing'):
             eq_('Admin status set to {0}'.format(newstate),
                 self.obj.run(self.test_poller_row, self.test_attribute,
@@ -63,10 +63,10 @@ class TestCacheBackend(object):
         """ admin_status backend detects bad values """
         self.obj.set_command('admin_status')
         self.obj.parameters = None
-        self.test_attribute.admin_state = states.STATE_UP
+        self.test_attribute.admin_state = State.UP
         eq_("Bad Admin status \"foo\"",
             self.obj.run(self.test_poller_row, self.test_attribute, 'foo'))
-        eq_(self.test_attribute.admin_state, states.STATE_UP)
+        eq_(self.test_attribute.admin_state, State.UP)
 
     def test_run_event_always(self):
         """ Backend event_always works correctly """
@@ -82,6 +82,6 @@ class TestCacheBackend(object):
         """ admin_status backend doesnt change if same """
         self.obj.set_command('admin_status')
         self.obj.parameters = None
-        self.test_attribute.admin_state = states.STATE_UP
+        self.test_attribute.admin_state = State.UP
         eq_("Admin status not changed",
             self.obj.run(self.test_poller_row, self.test_attribute, 'up'))

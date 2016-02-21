@@ -1,7 +1,7 @@
 """
 Functional test suite for the Attribute controller.
 """
-from rnms.tests import TestController, jqgrid_data_url
+from rnms.tests import TestController
 
 
 class TestAttributeController(TestController):
@@ -9,14 +9,14 @@ class TestAttributeController(TestController):
     def test_index(self):
         """ The Attribute index page is working """
         self.check_response('/attributes',
-                            ('"url": "/attributes/griddata"',
+                            ('data-url="/attributes/tabledata.json"',
                              ))
 
     def test_index_hostid_ok(self):
         """ Attribute index with good Host ID """
         self.check_response('/attributes?h=1',
-                            ('"url": "/attributes/griddata"',
-                             '"postData": {"h": 1}'))
+                            ('data-url="/attributes/tabledata.json"',
+                             'params[\'h\'] = \'1\';'))
 
     def test_index_hostid_neg(self):
         """ Attribute index with negative Host ID """
@@ -53,7 +53,7 @@ class TestAttributeController(TestController):
             '/attributes/map',
             ('<p><b>No items found</b></p>',))
 
-    def test_map_hostid__ok(self):
+    def test_map_hostid_ok(self):
         """ Attribute Map with ok Host ID """
         self.check_response(
             '/attributes/map?h=1',
@@ -71,8 +71,8 @@ class TestAttributeController(TestController):
             '/attributes/map?h=abc',
             ('Please enter an integer value for Host ID',))
 
-    def test_griddata_none(self):
-        """ Attribute griddata with no ID """
+    def test_tabledata_none(self):
+        """ Attribute tabledata with no ID """
         self.check_response(
-            jqgrid_data_url('/attributes/griddata'),
-            (r'{"total": 1, "page": 1, "entries": []}',))
+            '/attributes/tabledata.json',
+            (r'{"rows": [], "total": 0}'))

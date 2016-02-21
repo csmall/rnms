@@ -32,14 +32,16 @@
         }
 
 $(document).ready(function () {
-$.getJSON("${w.data_url})}", function( data ) {
+$.getJSON("${w.data_url|n}", function( data ) {
     var ${w.id}Chart = new Chart(document.getElementById("${w.id}").getContext("2d")).Line(data, {
     responsive: true,
     maintainAspectRatio: false,
     tooltipFillColor: "rgba(51, 51, 51, 0.55)",
     legendTemplate: "${'<ul class=\\"list-inline <%=name.toLowerCase()%>-legend\\"><% for (var i=0; i<datasets.length; i++){%><li><i class=\\"fa fa-square\\" style=\\"color:<%=datasets[i].strokeColor%>\\"></i> <%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>'|n}",
     });
+%if w.show_legend:
     document.getElementById("${w.id}-legend").innerHTML = ${w.id}Chart.generateLegend();
+%endif
 });
 	});
 </script>

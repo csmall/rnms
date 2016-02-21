@@ -26,8 +26,10 @@
 	  <div class="profile">
 	    <div class="profile_pic">h</div>
 	    <div class="profile_info">
+%if request.identity:
 	      <span>Welcome,</span>
 	      <h2>${request.identity['user']}</h2>
+%endif
 	    </div>
 	  </div>
 	  <br>
@@ -55,7 +57,9 @@
 	      <li class="">
 	        <a href="javascript:;" class="user-profile dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
 		  <i class="fa fa-user"></i>
+%if request.identity:
 	          ${request.identity['user']}
+%endif
 	 	 <span class="fa fa-angle-down"></span>
 	        </a>
 	      <ul class="dropdown-menu dropdown-username animated dadeInDown pull-right">

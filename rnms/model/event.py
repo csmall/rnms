@@ -163,7 +163,7 @@ class Event(DeclarativeBase):
             cls.attribute_id == attribute_id,
             cls.event_type_id == event_type_id,
             EventState.internal_state.in_(
-                [State.STATE_DOWN, State.STATE_TESTING])
+                [State.DOWN, State.TESTING])
         ]
         if exclude_event is not None:
             conditions.append(cls.id != exclude_event)
@@ -329,29 +329,29 @@ class EventState(DeclarativeBase):
         """
         Returns true if this alarm has internal state of up.
         """
-        return (self.internal_state == State.STATE_UP)
+        return (self.internal_state == State.UP)
 
     def is_down(self):
         """
         Returns true if this alarm has internal state of down.
         """
-        return (self.internal_state == State.STATE_DOWN)
+        return (self.internal_state == State.DOWN)
 
     def is_alert(self):
         """
         Returns true if this alarm has internal state of alert.
         """
-        return (self.internal_state == State.STATE_ALERT)
+        return (self.internal_state == State.ALERT)
 
     def is_testing(self):
         """
         Returns true if this alarm has internal state of testing.
         """
-        return (self.internal_state == State.STATE_TESTING)
+        return (self.internal_state == State.TESTING)
 
     def is_downtesting(self):
         """
         Returns true if this alarm has internal state of testing or down.
         """
-        return (self.internal_state == State.STATE_DOWN or
-                self.internal_state == State.STATE_TESTING)
+        return (self.internal_state == State.DOWN or
+                self.internal_state == State.TESTING)

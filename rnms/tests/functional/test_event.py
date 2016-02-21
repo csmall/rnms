@@ -9,15 +9,15 @@ class TestEventController(TestController):
     def test_index(self):
         """ The event index page is working """
         self.check_response('/events',
-                            ('"url": "/events/griddata"',
-                             'RoseNMS: Event List'))
+                            ('data-url="/events/tabledata.json"',
+                             'Event List'))
 
     def test_index_attid_ok(self):
         """ The event index page is working with good attribute """
         self.check_response('/events?a=1',
-                            ('"url": "/events/griddata"',
-                             '"postData": {"a": 1}',
-                             'RoseNMS: Event List'))
+                            ('data-url="/events/tabledata.json"',
+                             'params[\'a\'] = \'1\';',
+                             'Event List'))
 
     def test_index_attid_neg(self):
         """ The event index page with negative number """
@@ -33,11 +33,10 @@ class TestEventController(TestController):
 
     def test_index_hostid_ok(self):
         """ The event index page is working with good host ID """
-        self.check_response(
-            '/events?h=1',
-            ('"url": "/events/griddata"',
-             '"postData": {"h": 1}',
-             'RoseNMS: Event List'))
+        self.check_response('/events?h=1',
+                            ('data-url="/events/tabledata.json"',
+                             'params[\'h\'] = \'1\';',
+                             'Event List'))
 
     def test_index_hostid_neg(self):
         """ The event index page with negative host id """

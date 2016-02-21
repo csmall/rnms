@@ -5,6 +5,8 @@
 <%def name="title()">
 RoseNMS: Event List
 </%def>
+%if eventtable != UNDEFINED:
 <div class="row">
     ${eventtable.display()| n}
 </div>
+%endif

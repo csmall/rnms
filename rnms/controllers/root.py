@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Main Controller"""
 
-from tg import expose, flash, require, lurl, request, redirect, \
+from tg import expose, flash, require, lurl, url, request, redirect, \
     tmpl_context, config, predicates
 from tg.i18n import ugettext as _
 from rnms import model
@@ -68,7 +68,7 @@ class RootController(BaseController):
             fullwidth = True
 
             class EventChart(LineChart):
-                data_url = lurl('/events/hourly.json')
+                data_url = url('/events/hourly.json')
                 show_legend = True
 
         class AttributeHBarPanel(PanelTile):

@@ -19,7 +19,7 @@
 #
 #
 """ Events Widgets """
-from tg import url
+from tg import lurl
 
 from bootstrap_table import BootstrapTable
 
@@ -28,7 +28,7 @@ __all__ = ['EventTable']
 
 class EventTable(BootstrapTable):
     template = 'rnms.templates.widgets.eventtable'
-    data_url = url('/events/tabledata.json')
+    data_url = lurl('/events/tabledata.json')
     enable_search = True
     columns = [('created', 'Date'),
                ('severity', 'Severity'),
@@ -36,7 +36,7 @@ class EventTable(BootstrapTable):
                ('attribute', 'Attribute'),
                ('event_type', 'Type'),
                ('description', 'Description')]
-    detail_url = url('/events/')
+    detail_url = lurl('/events/')
     row_formatter = {'severity': 'formatSeverity'}
     sort_column = 'created'
     sort_asc = False

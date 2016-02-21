@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2011-2015 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,30 +29,30 @@ from rnms.model import DeclarativeBase, DBSession
 class Zone(DeclarativeBase):
     __tablename__ = 'zones'
 
-    #{ Columns
+    # { Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(60), nullable=False, unique=True)
     short_name = Column(Unicode(10), nullable=False, unique=True)
     icon = Column(String(30))
-    showable = Column(Boolean,nullable=False, default=True)
-    hosts = relationship('Host', backref='zone', cascade='all,delete,delete-orphan')
-    #}
+    showable = Column(Boolean, nullable=False, default=True)
+    hosts = relationship('Host', backref='zone',
+                         cascade='all,delete,delete-orphan')
+    # }
 
     def __init__(self, display_name=False, short_name=False, icon=False):
         if display_name:
-            self.display_name=display_name
+            self.display_name = display_name
         if short_name:
             self.short_name = short_name
         if icon:
             self.icon = icon
 
-
     @classmethod
     def by_name(cls, name):
         """ Return the zone whose disply_name is ``name''."""
-        return DBSession.query(cls).filter(cls.display_name==name).first()
+        return DBSession.query(cls).filter(cls.display_name == name).first()
 
     @classmethod
     def default(cls):
         """ Return the default Zone. """
-        return DBSession.query(cls).order_by('zones.id').first()
+        return DBSession.query(cls).order_by(cls.id).first()
