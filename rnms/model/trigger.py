@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2012-2015 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,32 +22,48 @@
 import operator
 
 from sqlalchemy import ForeignKey, Column, Table
-from sqlalchemy.orm import relationship 
+from sqlalchemy.orm import relationship
 from sqlalchemy.types import Integer, Unicode, SmallInteger, Boolean
 
 from rnms.model import DeclarativeBase, DBSession, metadata
 from rnms.lib.genericset import GenericSet
 
-trigger_fields=('attribute_type', 'attribute_name', 'hour', 'event_type',
-                'duration', 'host', 'map', 'client', 'event_state')
+trigger_fields = ('attribute_type', 'attribute_name', 'hour', 'event_type',
+                  'duration', 'host', 'map', 'client', 'event_state')
 
-def oper_in(x,y):
-    return unicode(x) in y.split(',')
 
-def oper_notin(x,y):
-    return not oper_in(x,y)
+class MyOperator(object):
 
-def oper_contains(x,y):
-    return y.find(unicode(x)) >= 0
+    @classmethod
+    def in_(cls, x, y):
+        """ Return True if x is found in list y """
+        return unicode(x) in y.split(',')
 
-def oper_notcontains(x,y):
-    return not oper_contains(x,y)
+    @classmethod
+    def notin(cls, x, y):
+        """ Return True is x is not found in list y """
+        return not cls.in_(x, y)
 
-trigger_user_table = Table('trigger_users', metadata,
-    Column('trigger_id', Integer, ForeignKey('triggers.id', onupdate="CASCADE", ondelete="CASCADE")),
-    Column('user_id', Integer, ForeignKey('tg_user.user_id', onupdate="CASCADE", ondelete="CASCADE")),
+    @classmethod
+    def contains(cls, x, y):
+        """ Return true if x is found in string y """
+        return y.find(unicode(x)) >= 0
+
+    @classmethod
+    def notcontains(cls, x, y):
+        """ Return True if x is not found in string y """
+        return not cls.contains(x, y)
+
+trigger_user_table = Table(
+    'trigger_users', metadata,
+    Column('trigger_id', Integer,
+           ForeignKey('triggers.id', onupdate="CASCADE", ondelete="CASCADE")),
+    Column('user_id', Integer,
+           ForeignKey('tg_user.user_id',
+                      onupdate="CASCADE", ondelete="CASCADE")),
     Column('active', Boolean, nullable=False, default=True)
     )
+
 
 class Trigger(DeclarativeBase, GenericSet):
     """
@@ -57,7 +73,7 @@ class Trigger(DeclarativeBase, GenericSet):
     """
     __tablename__ = 'triggers'
 
-    #{ Columns
+    # { Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(40), nullable=False, unique=True)
     email_owner = Column(Boolean, nullable=False, default=False)
@@ -66,23 +82,25 @@ class Trigger(DeclarativeBase, GenericSet):
     body = Column(Unicode(500), nullable=False, default=u'')
     alarmed_only = Column(Boolean, nullable=False, default=True)
     rules = relationship('TriggerRule', order_by='TriggerRule.position')
-    users = relationship('User', secondary=trigger_user_table, backref='triggers')
-    #}
+    users = relationship('User', secondary=trigger_user_table,
+                         backref='triggers')
+    # }
 
     def __init__(self, display_name=None):
         self.display_name = display_name
         self.rows = self.rules
 
     def __repr__(self):
-        return '<Trigger name=%s rules=%d>' % (self.display_name,len(self.rules))
+        return '<Trigger name={} rules={}>'.format(
+                self.display_name, len(self.rules))
 
     def insert(self, new_pos, new_row):
         new_row.trigger = self
-        GenericSet.insert(self,new_pos, new_row)
+        GenericSet.insert(self, new_pos, new_row)
 
     def append(self, new_row):
         new_row.trigger = self
-        GenericSet.append(self,new_row)
+        GenericSet.append(self, new_row)
 
 
 class TriggerRule(DeclarativeBase):
@@ -93,7 +111,7 @@ class TriggerRule(DeclarativeBase):
     """
     __tablename__ = 'trigger_rules'
 
-    #{ Columns
+    # { Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     trigger_id = Column(Integer, ForeignKey('triggers.id'), nullable=False)
     trigger = relationship('Trigger')
@@ -103,22 +121,23 @@ class TriggerRule(DeclarativeBase):
     limit = Column(Unicode(100))
     stop = Column(Boolean, nullable=False, default=False)
     and_rule = Column(Boolean, nullable=False, default=True)
-    #}
+    # }
 
-    allowed_opers={
-            '=' : operator.eq,
+    allowed_opers = {
+            '=':  operator.eq,
             '<>': operator.ne,
-            '>' : operator.gt,
-            '<' : operator.lt,
+            '>':  operator.gt,
+            '<':  operator.lt,
             '>=': operator.ge,
             '<=': operator.le,
-            'IN': oper_in,
-            '!IN': oper_notin,
-            'C': oper_contains,
-            '!C': oper_notcontains,
+            'IN': MyOperator.in_,
+            '!IN': MyOperator.notin,
+            'C': MyOperator.contains,
+            '!C': MyOperator.notcontains,
             }
 
-    def __init__(self, trigger=None, field=None, oper=None, value=None, position=1):
+    def __init__(self, trigger=None, field=None, oper=None, value=None,
+                 position=1):
         self.trigger = trigger
         if field is not None:
             self.set_field(field)
@@ -141,7 +160,9 @@ class TriggerRule(DeclarativeBase):
         """ Convert the limits as tags into indexes """
         fname = trigger_fields[self.field]
         if fname == 'event_type':
-            self.limit = ','.join([ str(x[0]) for x in DBSession.query(EventType.id).filter(EventType.tag.in_(limits.split(','))) ])
+            self.limit = ','.join(
+                [unicode(x[0]) for x in DBSession.query(EventType.id).
+                    filter(EventType.tag.in_(limits.split(',')))])
             return
         raise ValueError('Dont have limits for {}'.format(fname))
 
@@ -151,14 +172,14 @@ class TriggerRule(DeclarativeBase):
         Returns
           rule_result = whether or not the rule matches
         """
-        if previous_result == True and self.and_rule == False:
-            return True # True OR whatever is True
+        if previous_result and not self.and_rule:
+            return True  # True OR whatever is True
 
         test_value = self._get_event_field(event)
         if test_value is None:
             return False
         this_result = self.operate(test_value)
-        if self.and_rule == True:
+        if self.and_rule is True:
             return previous_result and this_result
         else:
             return previous_result or this_result
@@ -176,11 +197,9 @@ class TriggerRule(DeclarativeBase):
         try:
             this_oper = self.allowed_opers[self.oper]
         except KeyError:
-            #logger.error('TriggerRule %s:%d has bad oper %s',self.trigger.display_name, self.position, self,oper)
             return False
         else:
-            return this_oper(x,y)
-
+            return this_oper(x, y)
 
     def _get_event_field(self, event):
         """
@@ -206,15 +225,16 @@ class TriggerRule(DeclarativeBase):
             return event.event_type_id
         if field_name == 'event_state':
             return event.event_state_id
-    
+
 
 class TriggerField(DeclarativeBase):
     __tablename__ = 'trigger_fields'
-    #{ Columns
+    # { Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     trigger_id = Column(Integer, ForeignKey('triggers.id'), nullable=False)
     trigger = relationship('Trigger', backref='fields')
-    action_field_id = Column(Integer, ForeignKey('action_fields.id'), nullable=False)
+    action_field_id = Column(Integer, ForeignKey('action_fields.id'),
+                             nullable=False)
     action_field = relationship('ActionField')
     value = Column(Unicode(100), nullable=False, default=u'')
-    #}
+    # }

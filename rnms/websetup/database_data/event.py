@@ -146,6 +146,6 @@ severities = (
 triggers = (
     (u'Interface Status Change', False, True, u'${attribute} ${state}',
      u'The attribute ${attribute} is ${state} on host ${host}.', (
-         ('event_type', '!IN', 'sla,admin', False, False),
+         ('event_type', u'!IN', 'sla,admin', False, False),
      )),
 )

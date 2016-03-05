@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2011-2015 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,26 +26,26 @@ snmp_communities = (
 )
 
 trap_matches = (
-    (0, u'ifTable Link Down', '1.3.6.1.6.3.1.1.5.3',
+    (0, u'ifTable Link Down', u'1.3.6.1.6.3.1.1.5.3',
         u'Physical Interfaces',
         u'match_index', u'1.3.6.1.2.1.2.2.1.1.5', (
-            ('state', 'fixed', 'down'),
+            (u'state', u'fixed', u'down'),
         ),
         u'Alarm Verify Operational', False),
-    (0, u'ifTable Link Up', '1.3.6.1.6.3.1.1.5.4',
+    (0, u'ifTable Link Up', u'1.3.6.1.6.3.1.1.5.4',
         u'Physical Interfaces',
         u'match_index', u'1.3.6.1.2.1.2.2.1.1.5', (
-            ('state', 'fixed', 'down'),
+            (u'state', u'fixed', u'down'),
         ),
         u'Alarm Verify Operational', False),
-    (0, u'Juniper Config Change', '1.3.6.1.4.1.2636.4.5.1',
+    (0, u'Juniper Config Change', u'1.3.6.1.4.1.2636.4.5.1',
         u'Reachable',  # FIXME - should be a Juniper CPU
-        'first', '', (
-            ('state', 'fixed', 'alert'),
-            ('user', 'oid', '1.3.6.1.4.1.2636.3.18.1.7.1.5'),
-            ('source', 'oid_map',
-             '1.3.6.1.4.1.2636.3.18.1.7.1.4|2=cli,3=junoscript,'
-             '5=snmp,6=button,7=autoinstall|unknown')
+        u'first', u'', (
+            (u'state', u'fixed', u'alert'),
+            (u'user', u'oid', u'1.3.6.1.4.1.2636.3.18.1.7.1.5'),
+            (u'source', u'oid_map',
+             u'1.3.6.1.4.1.2636.3.18.1.7.1.4|2=cli,3=junoscript,'
+             u'5=snmp,6=button,7=autoinstall|unknown')
         ),
         u'Alarm Configuration', False),
     )

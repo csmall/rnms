@@ -45,7 +45,7 @@ def bootstrap(command, conf, vars):
         u.email_address = u'manager@somedomain.com'
         u.password = u'managepass'
 
-        g = model.Group.by_group_name('System Admin')
+        g = model.Group.by_group_name(u'System Admin')
         g.users.append(u)
         model.DBSession.add(u)
 

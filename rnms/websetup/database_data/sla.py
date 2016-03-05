@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2011-2015 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,23 +21,23 @@
 """ Database entries for the SLA models """
 # name, text, atype,
 #   expression, oper, limit, show_res, show_info,show_expr
-OR_ROW = ('OR', '=', 0, False, u'', u'', u'')
+OR_ROW = ('OR', u'=', 0, False, u'', u'', u'')
 
 slas = (
     (u'Cisco Router', u'Router:', u'Cisco System Info', (
-        ('$cpu - $cpu_threshold', '>', 0, True,
+        ('$cpu - $cpu_threshold', u'>', 0, True,
             u'Usage > $cpu_threshold', u'$cpu', u'%'),
-        ('$mem_used * 100 / ($mem_used + $mem_free)', '>', 80, True,
+        ('$mem_used * 100 / ($mem_used + $mem_free)', u'>', 80, True,
             u'Memory Usage > 80%', u'$mem_used * 100 / '
             '($mem_used + $mem_free)', u'%'),
         OR_ROW
     )),
     (u'Linux/Unix CPU', u'', u'Linux/Unix System Info', (
-        ('$load_average_5', '>', 5, True,
+        ('$load_average_5', u'>', 5, True,
             u'Load Average > 5', u'$load_average_5', u''),
         ('($cpu_user_ticks + $cpu_nice_ticks + $cpu_system_ticks) * 100 / '
          '($cpu_user_ticks + $cpu_idle_ticks + $cpu_nice_ticks + '
-         '$cpu_system_ticks) - $cpu_threshold', '>', 0, True,
+         '$cpu_system_ticks) - $cpu_threshold', u'>', 0, True,
          u'Usage > $cpu_threshold%',
          u'($cpu_user_ticks + $cpu_nice_ticks + $cpu_system_ticks) * 100 / '
          '($cpu_user_ticks + $cpu_idle_ticks + $cpu_nice_ticks + '
@@ -45,23 +45,23 @@ slas = (
         OR_ROW
     )),
     (u'Windows CPU', u'', u'Windows System Info', (
-        ('$cpu', '>', 90, True,
+        ('$cpu', u'>', 90, True,
             u'CPU > 90%', u'$cpu', u'%'),
-        ('$num_procs - $proc_threshold', '>', 0, True,
+        ('$num_procs - $proc_threshold', u'>', 0, True,
             u'Processes > $proc_threshold', u'$num_procs', u'Processes'),
         OR_ROW
     )),
     (u'Physical Interface', u'Interface:', u'Physical Interfaces', (
-        ('$in * 100 / $speed', '>', 90, True,
+        ('$in * 100 / $speed', u'>', 90, True,
             u'IN > 90%', u'$in / 1000', u'kbps'),
-        ('$out * 100 / $speed', '>', 90, True,
+        ('$out * 100 / $speed', u'>', 90, True,
             u'IN > 90%', u'$out / 1000', u'kbps'),
-        ('($inerrors * 100) / ($inpackets + 1 )', '>', 10, True,
+        ('($inerrors * 100) / ($inpackets + 1 )', u'>', 10, True,
             u'IN ERR > 20%', u'($inerrors * 100) / ($inpackets + 1)',
             u'% = $inerrors Eps'),
     )),
     (u'Storage', u'Storage:', u'Storage', (
-        ('($used_blocks * 100) / $total_blocks - $usage_threshold', '>', 0,
+        ('($used_blocks * 100) / $total_blocks - $usage_threshold', u'>', 0,
             True,
             u'Used > $usage_threshold', u'($used_blocks * 100) / '
             '$total_blocks', u'%'),
