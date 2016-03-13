@@ -97,7 +97,7 @@ class RnmsEngine(object):
         """
         Returns True if we have outstanding jobs that need stuff to do
         This is not used for pollers or collectors, only backend things
-        like rrd_client
+        like tsdb_client
         """
         raise(NotImplemented)
 

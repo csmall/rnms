@@ -171,7 +171,7 @@ class BootStrapper(object):
                     default_poller_set, default_sla, default_graph,
                     at.rra_cf, at.rra_rows,
                     at.break_by_card, at.permit_manual_add,
-                    at.required_sysobjid, fields, rrds) = row
+                    at.required_sysobjid, fields, tsds) = row
             except ValueError:
                 print "problem with row", row
                 raise
@@ -192,14 +192,14 @@ class BootStrapper(object):
                 f.position = field_position
                 field_position += 1
                 at.fields.append(f)
-            rrd_position = 0
-            for rrd in rrds:
-                r = model.AttributeTypeRRD()
-                (r.display_name, r.name, r.data_source_type,
-                    r.range_min, r.range_max, r.range_max_field) = rrd
-                r.position = rrd_position
-                rrd_position += 1
-                at.rrds.append(r)
+            position = 0
+            for tsdata in tsds:
+                r = model.AttributeTypeTSData()
+                (r.display_name, r.name, data_source_type,
+                    r.range_min, r.range_max, r.range_max_field) = tsdata
+                r.position = position
+                position += 1
+                at.tsds.append(r)
 
     def fix_attribute_types(self):
         default_sla = model.Sla.by_display_name(u'No SLA')
@@ -290,17 +290,18 @@ class BootStrapper(object):
                 for graph_line in graph_lines:
                     gl = model.GraphTypeLine()
                     try:
-                        (rrd_name, gl.multiplier, gl.legend, gl.legend_unit) =\
-                            graph_line
+                        (tsdb_name, gl.multiplier, gl.legend,
+                         gl.legend_unit) = graph_line
                     except ValueError as errmsg:
                         raise ValueError(
                             '{}: Bad Graphline in graph type {}'.
                             format(errmsg, graph_line))
-                    gl.attribute_type_rrd = model.AttributeTypeRRD.by_name(
-                        attribute_type.id, rrd_name)
-                    if gl.attribute_type_rrd is None:
-                        raise ValueError('Bad RRD name {} in line {}'.format(
-                            rrd_name, graph_line))
+                    gl.attribute_type_tsdata = \
+                        model.AttributeTypeTSData.by_name(
+                            attribute_type.id, tsdb_name)
+                    if gl.attribute_type_tsdata is None:
+                        raise ValueError('Bad TSDB name {} in line {}'.format(
+                            tsdb_name, graph_line))
                     gl.position = position
                     gt.lines.append(gl)
                     position += 1

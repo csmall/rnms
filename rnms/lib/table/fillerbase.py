@@ -233,7 +233,7 @@ class DiscoveryFiller(FillerBase):
 
     def get_value(self, value=None, **kw):
         from rnms.model.host import Host
-        from rnms.lib.att_discover import SingleDiscover
+        from rnms.lib.discovery.attributes import DiscoverHostAttributes
 
         host_id = kw.pop('h', None)
         if host_id is None:
@@ -241,8 +241,8 @@ class DiscoveryFiller(FillerBase):
         host = Host.by_id(host_id)
         if host is None:
             return {}
-        sd = SingleDiscover('attdisc')
-        sd.discover(host)
+        sd = DiscoverHostAttributes(host)
+        sd.discover()
         rows = []
         for atype_id, atts in sd.combined_atts.items():
             atype_name = AttributeType.name_by_id(atype_id)
@@ -250,18 +250,14 @@ class DiscoveryFiller(FillerBase):
                 if hasattr(att, 'id'):
                     action = '<a href="{}">Edit</a>'.format(
                         url('/admin/attributes/'+str(att.id)))
-                    row_id = ''
                 else:
                     action = 'Add'
                     row_id = '{}-{}'.format(atype_id, idx)
-                rows.append({'id': row_id,
-                             'cell': (
-                                 row_id,
-                                 action,
-                                 atype_name,
-                                 idx,
-                                 att.display_name,
-                                 att.oper_state,
-                                 'desc',
-                                 )})
-        return {'records': len(rows), 'rows': rows}
+                rows.append({
+                    'action': action,
+                    'display_name': att.display_name,
+                    'admin_state': att.admin_state,
+                    'oper_state': att.oper_state,
+                    'attribute_type': atype_name,
+                    })
+        return {'totals': len(rows), 'rows': rows}

@@ -100,12 +100,13 @@ class SNMPEngine(object):
         one of the requested oid, which will return a list of
         values for that oid
         """
-        req = SNMPRequest(snmphost, snmphost.ro_community)
+        req = SNMPRequest(snmphost, snmphost.ro_community,
+                          callback=cb_func, **kw)
         req.with_oid = with_oid
         req.set_many()
         req.set_replyall(True)
         for oid in oids:
-            req.add_oid(oid, callback=cb_func, **kw)
+            req.add_oid(oid)
         return self.get(req)
 
     def get_table(self, snmphost, oids, cb_func, with_oid=None, **kw):

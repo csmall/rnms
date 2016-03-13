@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2012,2013 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,8 +23,8 @@ import zmq
 
 LOGGER_SERVER = 'tcp://*:5000'
 LOGGER_CLIENT = 'tcp://localhost:5000'
-RRD_ROUTER = 'tcp://*:5001'
-RRD_WORKER = 'tcp://localhost:5001'
+TSDB_ROUTER = 'tcp://*:5001'
+TSDB_WORKER = 'tcp://localhost:5001'
 CONTROL_SERVER = 'tcp://*:5002'
 CONTROL_CLIENT = 'tcp://localhost:5002'
 INFO_SERVER = 'tcp://*:5003'
@@ -33,7 +33,7 @@ INFO_CLIENT = 'tcp://localhost:5003'
 # The inter-process sockets
 CONTROL_SOCKET = 'inproc://control'
 LOGGER_SOCKET = 'inproc://logger'
-RRDWORKER_SOCKET = 'inproc://rrdworker'
+TSDBWORKER_SOCKET = 'inproc://tsdbworker'
 
 IPC_END = "\x01"  # Sent from main process, the sub-process will die
 INIT = "\x02"  # Child init sent to parent
@@ -43,7 +43,7 @@ IPC_INFO_REQ = '\x05'  # Info request
 IPC_INFO_REP = '\x06'  # Info reply
 
 IPC_LOG = "\x10"  # Sent to logger, log this message
-RRD_UPDATE = "\x11"  # Sent to rrdworker - rrd updates
+TSDB_UPDATE = "\x11"  # Sent to tsdbworker - updates
 
 
 # Common tasks

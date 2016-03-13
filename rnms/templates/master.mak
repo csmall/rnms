@@ -142,8 +142,49 @@
       </li>
     </ul>
   </div>
+  ${self.sidebar_admin()}
 </div>
 </%def>
+<%def name="sidebar_admin()">
+  <div class="menu_section">
+    <h3>Administration</h3>
+    <ul class="nav side-menu">
+      <li><a><i class="fa fa-users"></i> Users &amp; Customers <span class="fa fa-chevron-down"></span></a>
+        <ul class="nav child_menu" style="display: none">
+	  <li><a href="${tg.url('/')}">Customers</a></li>
+	  <li><a href="${tg.url('/admin/users')}">Users</a></li>
+	  <li><a href="${tg.url('/admin/groups')}">Groups</a></li>
+	  <li><a href="${tg.url('/')}">Trigger Users</a></li>
+	</ul>
+      </li>
+      <li><a><i class="fa fa-cubes"></i> Hosts &amp; Attributes <span class="fa fa-chevron-down"></span></a>
+        <ul class="nav child_menu" style="display: none">
+	  <li><a href="${tg.url('/admin/zones')}">Zones</a></li>
+	  <li><a href="${tg.url('/admin/hosts')}">Hosts</a></li>
+	  <li><a href="${tg.url('/admin/attributes')}">Attributes</a></li>
+	</ul>
+      </li>
+      <li><a><i class="fa fa-road"></i> Polling <span class="fa fa-chevron-down"></span></a>
+        <ul class="nav child_menu" style="display: none">
+	  <li><a href="${tg.url('/admin/autodiscoverypolicies')}">A/D Policy</a></li>
+	  <li><a href="${tg.url('/admin/attributetypes')}">Attribute Types</a></li>
+	  <li><a href="${tg.url('/admin/pollersets')}">Poller Sets</a></li>
+	  <li><a href="${tg.url('/admin/pollers')}">Pollers</a></li>
+	  <li><a href="${tg.url('/admin/backends')}">Backends</a></li>
+	</ul>
+      </li>
+      <li><a><i class="fa fa-exclamation-triangle"></i> Events<span class="fa fa-chevron-down"></span></a>
+        <ul class="nav child_menu" style="display: none">
+	  <li><a href="${tg.url('/admin/severitys')}">Severities</a></li>
+	  <li><a href="${tg.url('/admin/eventtypes')}">Event Types</a></li>
+	  <li><a href="${tg.url('/admin/logfiles')}">Log Files</a></li>
+	  <li><a href="${tg.url('/admin/logmatchsets')}">Log Match Sets</a></li>
+	</ul>
+      </li>
+    </ul>
+  </div>
+</%def>
+
 <%def name="oldmain_menu()">
   <div class="rnms-header">
       <a href="${tg.url('/')}">RoseNMS</a>

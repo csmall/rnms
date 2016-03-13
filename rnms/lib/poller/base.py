@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2012-2014 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,11 +28,10 @@ from rnms.model import DBSession
 from rnms.lib.engine import RnmsEngine
 from rnms.lib.snmp import SNMPRequest
 from plugins.snmp import parse_oid, cb_snmp_counter, split_oid
-from rnms.lib.rrdworker import RRDClient
+from rnms.lib.tsdbworker import TSDBClient
 from rnms.lib.pid import gettid
 from rnms.lib.backend import CacheBackend
 
-#from poller_model import CachePoller, CacheHost, CacheAttribute
 from poller_model import CacheAttribute, CachePoller
 """
 There are multiple timers that are used to work out when to do various
@@ -60,14 +59,14 @@ class Poller(RnmsEngine):
     forced_attributes = False
     host_ids = None
     poller_buffer = None
-    rrd_client = None
+    tsdb_client = None
 
     def __init__(self, attribute_ids=None, host_ids=None, zmq_context=None,
                  do_once=True):
         super(Poller, self).__init__('rnms.poll', zmq_context)
         self.next_find_attribute = datetime.datetime.min
 
-        self.rrd_client = RRDClient(self.zmq_context, self.zmq_core)
+        self.tsdb_client = TSDBClient(self.zmq_context, self.zmq_core)
         self.polling_attributes = {}  # The attributes we are currently polling
         self.poller_buffer = {}
         self.backends = {}
@@ -249,9 +248,6 @@ class Poller(RnmsEngine):
         patt.start_polling()
         patt.poller_row = patt.get_poller_row()
         if patt.poller_row is None:
-            #self.logger.error("A:%d - Poller could not get poller row %d:%d",
-            #                  patt.id, patt.poller_set_id,
-            #                  patt.poller_pos)
             self._finish_polling(patt)
             return
         try:
@@ -270,7 +266,7 @@ class Poller(RnmsEngine):
                 return
         if not patt.poller.run(patt.poller_row, self, patt,
                                self.poller_buffer[patt.id]):
-            #run was successful
+            # Run was successful
             self.logger.warn('A:%d - row %d Poller run failed', patt.id,
                              patt.poller_pos)
             self._finish_polling(patt)
@@ -280,28 +276,29 @@ class Poller(RnmsEngine):
         Complete all the finishing up that is required once a poller has
         run through its entire set of PollerRows
         """
-        # Update all the relevant RRD files
-        updated_rrds = []
-        rrd_fields = model.DBSession.query(model.AttributeTypeRRD).filter(
-            model.AttributeTypeRRD.attribute_type_id == patt.attribute_type_id)
-        for rrd_field in rrd_fields:
-            if rrd_field.name in self.poller_buffer[patt.id] and \
-               self.poller_buffer[patt.id][rrd_field.name] is not None:
-                updated_rrds.append('{0}:{1}'.format(
-                    rrd_field.name,
-                    rrd_field.update(
-                        patt.id,
-                        self.poller_buffer[patt.id][rrd_field.name],
-                        rrd_client=self.rrd_client)))
+        # Update all the relevant TS Data lines
+        updated_tsds = {}
+        tsds = model.DBSession.query(model.AttributeTypeTSData).filter(
+            model.AttributeTypeTSData.attribute_type_id ==
+            patt.attribute_type_id)
+        for ts_data in tsds:
+            if ts_data.name in self.poller_buffer[patt.id] and \
+               self.poller_buffer[patt.id][ts_data.name] is not None:
+                    updated_tsds[ts_data.name] =\
+                        self.poller_buffer[patt.id][ts_data.name]
+        self.tsdb_client.update(patt.id, updated_tsds)
         patt.update_poll_time()
-        #DBSession.flush()
+        # DBSession.flush()
         transaction.commit()
         del (self.poller_buffer[patt.id])
         del (self.polling_attributes[patt.id])
-        #self._run_backends(patt)
+        # self._run_backends(patt)
         self.logger.info(
-            'A:%d - Polling complete - rrds: %s',
-            patt.id, ', '.join(updated_rrds))
+            'A:%d - Polling complete - tsds: %s',
+            patt.id,
+            ', '.join(map(lambda x: '{0[0]}:{0[1]}'.format(x),
+                      updated_tsds.items()))
+            )
 
     def _run_backends(self, patt):
         """ Run all the backends for this polling attribute """
@@ -400,7 +397,7 @@ class Poller(RnmsEngine):
         the strict poller order is not maintained
         """
         skip_rows = []
-        #self.logger.debug("A#%d: multi_snmp start",patt.id)
+        # self.logger.debug("A#%d: multi_snmp start",patt.id)
         req = SNMPRequest(patt.host, patt.host.ro_community)
         for poller_row in patt.poller_set:
             if poller_row['position'] < patt.poller_row:
@@ -442,4 +439,4 @@ class Poller(RnmsEngine):
             return self.sleep(self.next_find_attribute)
 
     def have_working_workers(self):
-        return self.rrd_client.has_jobs()
+        return self.tsdb_client.has_jobs()

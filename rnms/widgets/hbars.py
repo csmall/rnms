@@ -67,6 +67,7 @@ class HBarAttributeStatus(HBarGraph):
             if state_val == State.ADMIN_DOWN:
                 self.graph_data.append((
                     label.capitalize(),
+                    0 if attribute_count == 0 else
                     admin_down[0]*100/attribute_count,
                     admin_down[0]))
             else:

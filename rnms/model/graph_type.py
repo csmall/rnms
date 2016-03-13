@@ -2,7 +2,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2011-2015 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2011-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,8 +25,14 @@ from sqlalchemy.types import Integer, Unicode, SmallInteger, String
 from rnms.model import DeclarativeBase, DBSession
 from rnms.lib.parsers import fill_fields
 
-class GraphTypeError(Exception): pass
-class GraphTypeLineError(Exception): pass
+
+class GraphTypeError(Exception):
+    pass
+
+
+class GraphTypeLineError(Exception):
+    pass
+
 
 class GraphType(DeclarativeBase):
     """
@@ -34,7 +40,7 @@ class GraphType(DeclarativeBase):
     """
     __tablename__ = 'graph_types'
 
-    #{ Columns
+    # { Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     display_name = Column(Unicode(40), nullable=False)
     attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'))
@@ -42,18 +48,21 @@ class GraphType(DeclarativeBase):
     left_label = Column(String(40), nullable=False, default='')
     template = Column(String(20), nullable=False, default='custom')
     extra_options = Column(String(200), nullable=False, default='')
-    lines = relationship('GraphTypeLine', backref='graph_type', cascade='all, delete, delete-orphan')
-    allowed_options = ('lower-limit', 'upper-limit', 'rigid', 'logarithmic', 'base', 'right-axis', 'right-axis-label')
+    lines = relationship('GraphTypeLine', backref='graph_type',
+                         cascade='all, delete, delete-orphan')
+    allowed_options = ('lower-limit', 'upper-limit', 'rigid', 'logarithmic',
+                       'base', 'right-axis', 'right-axis-label')
 
     @classmethod
     def by_id(cls, gt_id):
         """ Return the GraphType with given id"""
-        return DBSession.query(cls).filter( cls.id == gt_id).first()
+        return DBSession.query(cls).filter(cls.id == gt_id).first()
 
     @classmethod
     def by_display_name(cls, display_name):
         """ Return the GraphType with name"""
-        return DBSession.query(cls).filter( cls.display_name == display_name).first()
+        return DBSession.query(cls).filter(cls.display_name == display_name).\
+            first()
 
     def __repr__(self):
         return '<GraphType {}>'.format(self.display_name)
@@ -66,18 +75,18 @@ class GraphType(DeclarativeBase):
 
 class GraphTypeLine(DeclarativeBase):
     __tablename__ = 'graph_type_lines'
-    #{ Columns
+    # { Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     graph_type_id = Column(Integer, ForeignKey('graph_types.id'))
-    position = Column(SmallInteger, nullable=False,default=0)
-    attribute_type_rrd_id = Column(Integer,
-                    ForeignKey('attribute_type_rrds.id'), nullable=False)
-    attribute_type_rrd = relationship('AttributeTypeRRD')
+    position = Column(SmallInteger, nullable=False, default=0)
+    attribute_type_tsdata_id = Column(
+        Integer,
+        ForeignKey('attribute_type_tsdatas.id'), nullable=False)
+    attribute_type_tsdata = relationship('AttributeTypeTSData')
     multiplier = Column(String(20), nullable=False, default='')
     legend = Column(String(40), nullable=False, default='')
     legend_unit = Column(String(40), nullable=False, default='')
 
     @property
     def name(self):
-        return self.attribute_type_rrd.name
-
+        return self.attribute_type_tsdata.name

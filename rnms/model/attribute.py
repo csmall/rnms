@@ -417,9 +417,9 @@ class AttributeType(DeclarativeBase):
         'AttributeTypeField',
         order_by='AttributeTypeField.position',
         backref='attribute_type', cascade='all, delete, delete-orphan')
-    rrds = relationship(
-        'AttributeTypeRRD',
-        order_by='AttributeTypeRRD.position',
+    tsds = relationship(
+        'AttributeTypeTSData',
+        order_by='AttributeTypeTSData.position',
         backref='attribute_type', cascade='all, delete, delete-orphan')
 
     def __init__(self, display_name=None, ad_command='none', ad_parameters=''):
@@ -465,7 +465,7 @@ class AttributeType(DeclarativeBase):
         if self._match_sysobjid(host) is False:
             return False
 
-        from rnms.lib import att_discovers
+        from rnms.lib.discovery.plugins import attributes as att_discovers
         try:
             real_discover = getattr(att_discovers, 'discover_'+self.ad_command)
         except AttributeError:

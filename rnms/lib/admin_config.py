@@ -1,10 +1,30 @@
-
+# -*- coding: utf-8 -*-
+#
+# This file is part of the RoseNMS
+#
+# Copyright (C) 2012-2016 Craig Small <csmall@enc.com.au>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>
+#
 
 # Turbogears imports
 from tg import url
 
 from tgext.admin.tgadminconfig import BootstrapTGAdminConfig
-from tgext.admin.widgets import BootstrapAdminTableBase as TableBase
+from tgext.admin.widgets import BootstrapAdminTableBase as TableBase,\
+    BootstrapAdminEditableForm as EditableForm,\
+    BootstrapAdminAddRecordForm as AddRecordForm
 # from tgext.admin.widgets import BootstrapAdminTableFiller as TableFiller
 from tgext.admin.layouts import BootstrapAdminLayout
 from tgext.admin.config import CrudRestControllerConfig
@@ -16,6 +36,7 @@ from tg.predicates import has_permission
 from rnms.lib import admin_tables as at
 from rnms.lib.admin_tables import TableFiller, click
 from rnms.model import ConfigBackupMethod
+from rnms import model
 from rnms.widgets.button import Button
 
 
@@ -37,9 +58,10 @@ class MyCrudRestControllerConfig(CrudRestControllerConfig):
 
 
 class MyAdminConfig(BootstrapTGAdminConfig):
-    layout = MyAdminLayout
+    # layout = MyAdminLayout
+    include_left_menu = False
 
-    class attribute(MyCrudRestControllerConfig):
+    class attribute(CrudRestControllerConfig):
         class table_type(at.attribute, TableBase):
             __xml_fields__ = ('host',)
 
@@ -151,7 +173,23 @@ class MyAdminConfig(BootstrapTGAdminConfig):
         class table_filler_type(at.group, TableFiller):
             pass
 
-    class host(MyCrudRestControllerConfig):
+    class host(CrudRestControllerConfig):
+        class new_form_type(AddRecordForm):
+            __model__ = model.Host
+            __limit_fields__ = [
+                'id', 'mgmt_address', 'display_name', 'zone', 'tftp_server',
+                'ro_community', 'rw_community', 'trap_community',
+                'autodiscovery_policy', 'config_backup_method',
+                ]
+
+        class edit_form_type(EditableForm):
+            __model__ = model.Host
+            __limit_fields__ = [
+                'id', 'mgmt_address', 'display_name', 'zone', 'tftp_server',
+                'ro_community', 'rw_community', 'trap_community',
+                'autodiscovery_policy', 'config_backup_method',
+                ]
+
         class table_type(at.host, TableBase):
             __column_widths__ = {'id': 20}
 
@@ -216,7 +254,6 @@ class MyAdminConfig(BootstrapTGAdminConfig):
             __xml_fields__ = ('poller_set', 'poller', 'backend')
 
         class table_filler_type(at.poller_row, TableFiller):
-            pass
             def poller_set(self, obj):
                 return click('pollersets', obj.poller_set_id,
                              obj.poller_set.display_name)
@@ -264,6 +301,7 @@ class MyAdminConfig(BootstrapTGAdminConfig):
 
         class table_filler_type(at.trigger, TableFiller):
             pass
+
     class user(MyCrudRestControllerConfig):
         class table_type(at.user, TableBase):
             __headers__ = {

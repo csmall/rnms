@@ -73,7 +73,7 @@ from rnms.model.snmp_community import SnmpCommunity
 from rnms.model.host import *
 from rnms.model.logfile import Logfile, LogmatchSet, LogmatchRow, LogmatchField
 from rnms.model.poller import PollerSet, Poller, PollerRow
-from rnms.model.rrd import AttributeTypeRRD 
+from rnms.model.tsdata import AttributeTypeTSData
 from rnms.model.sla import Sla, SlaRow
 from rnms.model.zone import Zone
 from rnms.model.trigger import Trigger, TriggerRule, TriggerField

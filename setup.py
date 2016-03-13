@@ -52,7 +52,8 @@ install_requires = [
     "psycopg2",
     "python-rrdtool",
     "mysql-python",
-    "pyzmq"
+    "pyzmq",
+    "influxdb"
     ]
 
 if py_version != (3, 2):

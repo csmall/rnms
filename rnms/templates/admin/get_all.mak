@@ -1,9 +1,5 @@
 <%inherit file="local:templates.master"/>
 
-<%def name="admin_menu()">
-<%include file="local:templates.admin.menu"/>
-</%def>
-
 <%def name="title()">
 ${tmpl_context.title} - ${model} Listing
 </%def>
@@ -17,9 +13,6 @@ PAGER_ARGS = tmpl_context.make_pager_args(link=mount_point+'/',
 
 <div class="row">
     <div class="col-md-2">
-      % if hasattr(tmpl_context, 'menu_items'):
-      ${admin_menu()}
-      % endif
     </div>
 
     <div class="col-md-10">

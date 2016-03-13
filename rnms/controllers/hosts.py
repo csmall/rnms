@@ -94,7 +94,8 @@ class HostsController(BaseTableController):
     @expose('json')
     @validate(validators={'h': validators.Int(min=1)})
     @require(permissions.host_rw)
-    def griddiscover(self, **kw):
+    def tablediscover(self, **kw):
+        """ Provide the JSON data for a discovered host bootstrap table """
         if tmpl_context.form_errors:
             self.process_form_errors()
             return {}
@@ -200,11 +201,18 @@ class HostsController(BaseTableController):
         if tmpl_context.form_errors:
             self.process_form_errors()
             return dict(page='host', main_menu=MainMenu)
-        w = DiscoveredAttsGrid()
-        edit_url = url('/attributes/add_disc', {'h': h})
-        return dict(page='host', main_menu=MainMenu,
-                    w=w, edit_url=edit_url,
-                    griddata={'h': h})
+
+        class MyTable(BootstrapTable):
+            data_url = url('/hosts/tablediscover.json', {'h': h})
+            columns = [('action', 'Actions'),
+                       ('display_name', 'Name'),
+                       ('attribute_type', 'Attribute Type'),
+                       ('admin_state', 'Admin State'),
+                       ('oper_state', 'Oper State'),
+                       ]
+            detail_url = url('/hosts/')
+
+        return dict(discover_table=MyTable)
 
     @expose('rnms.templates.widgets.select')
     def option(self):

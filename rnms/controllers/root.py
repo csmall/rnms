@@ -2,14 +2,13 @@
 """Main Controller"""
 
 from tg import expose, flash, require, lurl, url, request, redirect, \
-    tmpl_context, config, predicates
+    tmpl_context, predicates
 from tg.i18n import ugettext as _
 from rnms import model
 from rnms.controllers.secure import SecureController
 from tgext.admin.controller import AdminController
-from tw2.jqplugins.ui import set_ui_theme_name
 
-from rnms.controllers.admin import MyAdminConfig
+from rnms.lib.admin_config import MyAdminConfig
 from rnms.widgets.panel_tile import PanelTile
 from rnms.widgets.hbars import HBarAttributeStatus
 from rnms.widgets.doughnuts import AttributeStateDoughnut
@@ -55,7 +54,6 @@ class RootController(BaseController):
 
     def _before(self, *args, **kw):
         tmpl_context.project_name = "rnms"
-        set_ui_theme_name(config['ui_theme'])
 
     @expose('rnms.templates.index')
     @require(predicates.not_anonymous())
