@@ -3,7 +3,7 @@
 #
 # This file is part of the RoseNMS
 #
-# Copyright (C) 2012-2015 Craig Small <csmall@enc.com.au>
+# Copyright (C) 2012-2016 Craig Small <csmall@enc.com.au>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@
 """
 from markupsafe import Markup
 import tg
-from tg.i18n import lazy_ugettext as l_
 from tgext.admin.layouts import BootstrapAdminTableFiller
 
 from rnms import model
@@ -90,15 +89,15 @@ class attribute_type(base_table):
              'class="icon-picture icon-white"></i></a>').
             format(tg.url('/admin/graphtypes/', {'at': obj.id})),
             ('<a class="btn btn-mini btn-info" href="{0}">'
-             '<i title="Show RRDs" '
+             '<i title="Show TSD" '
              'class="icon-folder-close icon-white"></i></a>').
-            format(tg.url('/admin/attributetyperrds/',
+            format(tg.url('/admin/attributetypetsdbs/',
                           {'at': obj.id})),
         ] + super(attribute_type, self).action_buttons(obj)
 
 
-class attribute_type_rrd(base_table):
-    __entity__ = model.AttributeTypeRRD
+class attribute_type_tsdb(base_table):
+    __entity__ = model.AttributeTypeTSData
     __limit_fields__ = ('id', 'attribute_type', 'position', 'display_name')
 
 
@@ -137,7 +136,7 @@ class graph_type(base_table):
 class graph_type_line(base_table):
     __grid_id__ = 'graph_type_line-grid'
     __entity__ = model.GraphTypeLine
-    __limit_fields__ = ('id', 'position', 'attribute_type_rrd',
+    __limit_fields__ = ('id', 'position', 'attribute_type_tsdb',
                         'multiplier')
     __default_sort__ = 'position'
 

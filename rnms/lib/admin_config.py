@@ -100,10 +100,10 @@ class MyAdminConfig(BootstrapTGAdminConfig):
                     'list', 'info',
                     tooltip='Show Fields for this Attribute Type') +\
                     Button(
-                    url('/admin/attributetyperrds',
+                    url('/admin/attributetypetsdbs',
                         {'attribute_type_id': obj.id}),
                     'signal', 'info',
-                    tooltip='Show RRDs for this Attribute Type')
+                    tooltip='Show TS Data for this Attribute Type')
 
             def default_poller_set(self, obj):
                 return '<a href="{}/{}/edit">{}</a>'.format(
@@ -111,11 +111,11 @@ class MyAdminConfig(BootstrapTGAdminConfig):
                     obj.default_poller_set_id,
                     obj.default_poller_set.display_name)
 
-    class attributetyperrd(MyCrudRestControllerConfig):
-        class table_type(at.attribute_type_rrd, TableBase):
+    class attributetypetsdb(MyCrudRestControllerConfig):
+        class table_type(at.attribute_type_tsdb, TableBase):
             pass
 
-        class table_filler_type(at.attribute_type_rrd, TableFiller):
+        class table_filler_type(at.attribute_type_tsdb, TableFiller):
             pass
 
     class autodiscoverypolicy(MyCrudRestControllerConfig):
@@ -154,10 +154,10 @@ class MyAdminConfig(BootstrapTGAdminConfig):
                                   {'graph_type_id': obj.id}),
                               'list', 'info',
                               tooltip='Show Lines') +\
-                    Button(url('/admin/attributetyperrds/',
+                    Button(url('/admin/attributetypetsdbs/',
                                {'attribute_type_id': obj.attribute_type_id}),
                            'signal', 'info',
-                           tooltip='Show RRDs')
+                           tooltip='Show TS Data')
 
     class graphtypeline(MyCrudRestControllerConfig):
         class table_type(at.graph_type_line, TableBase):
