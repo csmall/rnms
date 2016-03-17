@@ -186,6 +186,7 @@ class MyAdminConfig(BootstrapTGAdminConfig):
             __model__ = model.Host
             __limit_fields__ = [
                 'id', 'mgmt_address', 'display_name', 'zone', 'tftp_server',
+                'default_user',
                 'ro_community', 'rw_community', 'trap_community',
                 'autodiscovery_policy', 'config_backup_method',
                 ]

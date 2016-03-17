@@ -19,22 +19,25 @@
 #
 #
 """Attribute controller module"""
+import json
 
 # turbogears imports
-from tg import expose, url, validate, flash, tmpl_context, predicates, request
+from tg import expose, url, validate, flash, tmpl_context, predicates,\
+    request, redirect
+from tg.decorators import require
 
 # third party imports
 from formencode import validators, ForEach
 
 # project specific imports
-from rnms.lib import structures, permissions
+from rnms.lib import permissions
 from rnms.lib.base import BaseTableController
-from rnms.model import DBSession, Attribute, Host
+from rnms.model import DBSession, Attribute, Host, AttributeType
 from rnms.widgets import AttributeMap,\
     EventTable, \
     BootstrapTable, PanelTile,\
     AttributeDetails, LineChart
-from rnms.lib.table import jqGridTableFiller
+from rnms.lib.table import DiscoveryFiller
 
 
 class AttributesController(BaseTableController):
@@ -147,6 +150,7 @@ class AttributesController(BaseTableController):
 
             class AttributeChart(LineChart):
                 attribute_id = a
+                show_legend = True
                 gt = attribute.attribute_type.get_graph_type()
                 data_url = url('/graphs/attribute.json',
                                {'a': a, 'gt': gt.id})
@@ -197,14 +201,6 @@ class AttributesController(BaseTableController):
         return dict(page='attribute',
                     attribute_map=amap, events_panel=events_panel)
 
-    @expose('json')
-    def minigriddata(self, **kw):
-        class AttFiller(structures.attribute_mini, jqGridTableFiller):
-            pass
-        return super(AttributesController, self).griddata(
-            AttFiller,
-            {'h': validators.Int(min=1)}, **kw)
-
     @expose('rnms.templates.widgets.select')
     @validate(validators={'h': validators.Int(min=1), 'a':
                           ForEach(validators.Int(min=1))})
@@ -232,3 +228,73 @@ class AttributesController(BaseTableController):
                 select_from(Attribute).join(Host).filter(*conditions)
             atts = [(row[0], ' - '.join(row[2:]), row[1]) for row in rows]
         return dict(data_name='atype', items=atts)
+
+    @expose('rnms.templates.attribute.discover')
+    @validate(validators={'h': validators.Int(min=2)})
+    def discover(self, h):
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return dict(page='host')
+
+        class MyTable(BootstrapTable):
+            id = 'discover_table'
+            have_checkbox = True
+            data_url = url('/attributes/discoverdata.json', {'h': h})
+            hidden_columns = ['id', 'fields', ]
+            columns = [('display_name', 'Name'),
+                       ('attribute_type', 'Attribute Type'),
+                       ('admin_state', 'Admin State'),
+                       ('oper_state', 'Oper State'),
+                       ]
+
+        return dict(discover_table=MyTable,
+                    add_url=url('/attributes/bulk_add', {'h': h}))
+
+    @expose('json')
+    @validate(validators={'h': validators.Int(min=1)})
+    @require(permissions.host_rw)
+    def discoverdata(self, **kw):
+        """ Return the discovered Attributes for the given host in a JSON
+            format """
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return {}
+        filler = DiscoveryFiller()
+        return filler.get_value(**kw)
+
+    @expose('rnms.template.attribute.bulk_add')
+    @validate(validators={'h': validators.Int(min=2)})
+    def bulk_add(self, h, attribs):
+        """ From a discovery phase, add the following attributes """
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return {}
+
+        host = Host.by_id(h)
+        if host is None:
+            flash('Unknown Host ID {}'.format(h))
+            return {}
+
+        old_att_id = None
+        new_count = 0
+
+        decoded_attribs = json.loads(attribs)
+        for vals in decoded_attribs:
+            if old_att_id != vals['atype_id']:
+                attribute_type = AttributeType.by_id(vals['atype_id'])
+                if attribute_type is None:
+                    flash('Unknown Attribute Type ID {}'.
+                          format(vals['atype_id']),
+                          'warning')
+                    return {}
+
+            new_attribute = Attribute(
+                host=host, attribute_type=attribute_type,
+                display_name=vals['display_name'], index=vals['id'])
+            for tag, value in vals['fields'].items():
+                new_attribute.set_field(tag, value)
+            DBSession.add(new_attribute)
+            new_count += 1
+
+        flash('{} Attributes added'.format(new_count), 'success')
+        redirect('/attributes', params={'h': h})

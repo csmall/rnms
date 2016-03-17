@@ -18,11 +18,14 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 """ Time Series Data for Attribute Types """
+import time
 
 from sqlalchemy import ForeignKey, Column, and_
 from sqlalchemy.types import Integer, Unicode, String, SmallInteger, BigInteger
 
-from rnms.model import DeclarativeBase, DBSession, AttributeField, AttributeTypeField
+from rnms.model import DeclarativeBase, DBSession, AttributeField,\
+    AttributeTypeField
+from rnms.lib.tsdbworker import get_influxclient
 
 __all__ = ['AttributeTypeTSData']
 
@@ -71,3 +74,39 @@ class AttributeTypeTSData(DeclarativeBase):
         if new_max == 0:
             return 'U'
         return new_max
+
+    @classmethod
+    def fix_time(self, timestr):
+        utctime = time.mktime(
+            time.strptime(timestr.split('.')[0], "%Y-%m-%dT%H:%M:%S"))
+        mytime = utctime - time.timezone + (time.daylight * 3600)
+        return time.strftime(
+            '%H:%M',
+            time.localtime(mytime))
+
+    def fetch(self, attribute_id, start_time, end_time):
+        """ Return the values for a chart """
+        client = get_influxclient()
+        if client is None:
+            return
+
+        measurement = 'A{}'.format(attribute_id)
+        if True:  # FIXME - rate always on
+            select = 'SELECT DERIVATIVE({0},5m) AS {0} '.format(self.name)
+            groupby = ''
+        else:
+            select = 'SELECT {} '.format(self.name)
+            groupby = ''
+
+        results = client.query(
+            select +
+            'FROM {} WHERE time > {}s '.
+            format(measurement, start_time) +
+            groupby)
+        times = []
+        values = []
+        for row in results.get_points():
+            times.append(self.fix_time(row['time']))
+            values.append(row[self.name])
+
+        return (times, values)

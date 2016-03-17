@@ -31,8 +31,16 @@
 %if w.enable_search:
        data-search="true"
 %endif
+%if not w.detail_url and (w.have_checkbox or w.have_radio):
+       data-click-to-select="true"
+%endif
        >
   <thead><tr>
+%if w.have_checkbox:
+    <th data-field="state" data-checkbox="true"></th>
+%elif w.have_radio:
+    <th data-field="state" data-radio="true"></th>
+%endif
 %for col_id, col_title in w.columns:
 <%if col_id in w.row_formatter:
 	formatter=' data-formatter=\"'+w.row_formatter[col_id]+'"'
@@ -40,6 +48,9 @@ else:
 	formatter=''
 %>
     <th data-field="${col_id}" data-sortable="true"${formatter|n}>${col_title}</th>
+%endfor
+%for col_id in w.hidden_columns:
+    <th data-field="${col_id}" data-visible="false"></th>
 %endfor
   </tr>
   </thead>

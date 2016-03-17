@@ -22,19 +22,16 @@
 
 # turbogears imports
 from tg import expose, validate, flash, tmpl_context, url, request
-from tg.decorators import require
 
 # third party imports
 from formencode import validators
 
 # project specific imports
 from rnms.lib import permissions
-from rnms.lib.table import DiscoveryFiller
 from rnms.lib.base import BaseTableController
 from rnms.model import DBSession, Host, Event, Attribute
 from rnms.widgets import MainMenu, HostMap,\
         BootstrapTable, EventTable, HostDetails, AttributeStateDoughnut
-from rnms.widgets.attribute import DiscoveredAttsGrid
 from rnms.widgets.panel_tile import PanelTile
 
 
@@ -90,17 +87,6 @@ class HostsController(BaseTableController):
                  'mgmt_address': row.mgmt_address}
                 for row in table_data[1]]
         return dict(total=table_data[0], rows=rows)
-
-    @expose('json')
-    @validate(validators={'h': validators.Int(min=1)})
-    @require(permissions.host_rw)
-    def tablediscover(self, **kw):
-        """ Provide the JSON data for a discovered host bootstrap table """
-        if tmpl_context.form_errors:
-            self.process_form_errors()
-            return {}
-        filler = DiscoveryFiller()
-        return filler.get_value(**kw)
 
     @expose('rnms.templates.host.detail')
     @validate(validators={'h': validators.Int(min=1)})
@@ -194,26 +180,6 @@ class HostsController(BaseTableController):
 
         return dict(page='hosts', main_menu=MainMenu,
                     host_map=HostMapTile(), events_panel=events_panel)
-
-    @expose('rnms.templates.host.discover')
-    @validate(validators={'h': validators.Int(min=2)})
-    def discover(self, h):
-        if tmpl_context.form_errors:
-            self.process_form_errors()
-            return dict(page='host', main_menu=MainMenu)
-
-        class MyTable(BootstrapTable):
-            data_url = url('/hosts/tablediscover.json', {'h': h})
-            columns = [('action', 'Actions'),
-                       ('display_name', 'Name'),
-                       ('attribute_type', 'Attribute Type'),
-                       ('admin_state', 'Admin State'),
-                       ('oper_state', 'Oper State'),
-                       ]
-            detail_url = url('/hosts/')
-
-        return dict(discover_table=MyTable)
-
     @expose('rnms.templates.widgets.select')
     def option(self):
         """ Return a list of hosts. If user has required

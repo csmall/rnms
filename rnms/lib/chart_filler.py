@@ -23,17 +23,17 @@ class ChartFiller(object):
         """
         graph_type = GraphType.by_id(self.graph_type_id)
         datasets = []
-        for line_idx, rrd_line in enumerate(graph_type.lines):
-            rrd = rrd_line.attribute_type_rrd
-            rrd_values = rrd.fetch(self.attribute_id,
-                                   self.start_time,
-                                   self.end_time)
+        for line_idx, gt_line in enumerate(graph_type.lines):
+            ts_data = gt_line.attribute_type_tsdata
+            ts_values = ts_data.fetch(self.attribute_id,
+                                      self.start_time,
+                                      self.end_time)
             datasets.append({
-                'label': 'mylabel',
-                'data': [v[0] for v in rrd_values[2]]
+                'label': ts_data.display_name,
+                'data': ts_values[1],
                 })
         data = {
-                'labels': range(0, len(rrd_values[2])),
+                'labels': ts_values[0],
                 'datasets': datasets,
                 }
         return data

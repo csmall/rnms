@@ -252,12 +252,14 @@ class DiscoveryFiller(FillerBase):
                         url('/admin/attributes/'+str(att.id)))
                 else:
                     action = 'Add'
-                    row_id = '{}-{}'.format(atype_id, idx)
                 rows.append({
                     'action': action,
+                    'id': idx,
+                    'atype_id': atype_id,
                     'display_name': att.display_name,
                     'admin_state': att.admin_state,
                     'oper_state': att.oper_state,
                     'attribute_type': atype_name,
+                    'fields': att.fields,
                     })
         return {'totals': len(rows), 'rows': rows}

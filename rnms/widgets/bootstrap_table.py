@@ -14,6 +14,7 @@ class BootstrapTable(twc.Widget):
                  bootstrap_table_css]
 
     columns = twc.Param('List of (column, title) tuples')
+    hidden_columns = twc.Param('List of hidden column names', default=[])
     data_url = twc.Param('URL for the JSON query')
     detail_url = twc.Param('URL to go to detail pane on a row of the table',
                            default=None)
@@ -29,3 +30,7 @@ class BootstrapTable(twc.Widget):
     sort_name = twc.Param('Default sort column', default='id')
     sort_asc = twc.Param('Boolean sort ascending, set false for desc',
                          default=True)
+    have_checkbox = twc.Param('Boolean: Rows have a selection checkbox',
+                              default=False)
+    have_radio = twc.Param('Boolean: Rows have a selection radio',
+                           default=False)

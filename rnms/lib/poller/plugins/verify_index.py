@@ -145,6 +145,7 @@ def poll_verify_sensor_index(poller_buffer, **kw):
     if kw['attribute'].index == '':
         return False
     tbl_idx = AttributeField.field_value(kw['attribute'].id, 'table_index')
+    print tbl_idx
     inst_oid = base_oid + (int(tbl_idx), 1, 2,
                            int(kw['attribute'].get_field('row_index')))
 

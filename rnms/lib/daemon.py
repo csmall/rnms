@@ -35,7 +35,7 @@ from rnms.lib.pid import check_proc_alive, gettid
 from rnms.lib.poller import Poller
 from rnms.lib.consolidate import Consolidator
 from rnms.lib.sla_analyzer import SLAanalyzer
-from rnms.lib.att_discover import AttDiscover
+from rnms.lib.discovery.attributes import AttDiscover
 from rnms.lib.snmptrapd import SNMPtrapd
 from rnms.lib import zmqmessage, zmqcore
 

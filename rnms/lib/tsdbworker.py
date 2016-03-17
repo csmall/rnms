@@ -31,7 +31,16 @@ from .pid import gettid
 
 worker_threads = []
 
-__all__ = ['TSDBClient']
+__all__ = ['TSDBClient', 'get_influxclient']
+
+
+def get_influxclient():
+    try:
+        influx_dsn = config['influx_dsn']
+    except KeyError:
+        raise ValueError('Configuration is missing key: influx_dsn')
+
+    return InfluxDBClient.from_DSN(influx_dsn)
 
 
 class TSDBClient(object):
@@ -51,16 +60,10 @@ class TSDBClient(object):
         self.jobs_list = []
         self.workers_list = []
 
-        try:
-            influx_dsn = config['influx_dsn']
-        except KeyError:
-            self.logger.critical('Configuration is missing key: influx_dsn')
-            return
-
         current_workers = len(worker_threads)
         if required_workers > current_workers:
             for dummy in range(required_workers - current_workers):
-                worker = TSDBTask(context, influx_dsn)
+                worker = TSDBTask(context)
                 worker.start()
                 worker_threads.append(worker)
 
@@ -68,6 +71,8 @@ class TSDBClient(object):
         """
         Update the attribute_id with the dictionary of fields
         """
+        if fields == {}:
+            return
         self.jobs_list.append({'measurement': 'A{}'.format(attribute_id),
                                'fields': fields})
         self.waiting_jobs += 1
@@ -125,12 +130,12 @@ class TSDBTask(threading.Thread):
     """
     context = None
 
-    def __init__(self, context, influx_dsn):
+    def __init__(self, context):
         threading.Thread.__init__(self)
         self.daemon = True
         self.context = context
         self.logger = logging.getLogger('rnms.tsdbtask')
-        self.influx_client = InfluxDBClient.from_DSN(influx_dsn)
+        self.influx_client = get_influxclient()
 
     def run(self):
         """ The main loop of the TSDB update thread """
@@ -138,7 +143,7 @@ class TSDBTask(threading.Thread):
         zmqcore.set_id(socket)
         socket.connect(zmqmessage.TSDBWORKER_SOCKET)
         self.logger.info('TSDB worker started PID:{0} Database:{1._database}'.
-                         format((gettid(), self.influx_client)))
+                         format(gettid(), self.influx_client))
 
         while True:
             socket.send(zmqmessage.READY)

@@ -158,7 +158,7 @@ class host(base_table):
         return Button(tg.url('/admin/attributes/', {'host_id': obj.id}),
                       'list', 'info',
                       tooltip='Show all Attributes for this host') +\
-            Button(tg.url('/hosts/discover/'+str(obj.id)),
+            Button(tg.url('/attributes/discover/'+str(obj.id)),
                    'eye-open', 'info',
                    tooltip='Discover Attributes for this host')
         return [

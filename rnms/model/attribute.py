@@ -88,13 +88,20 @@ class Attribute(DeclarativeBase):
         self.index = index
         self.admin_state = State.UNKNOWN
         self.use_iface = False
-        self.user_id = 1
-        self.sla_id = 1
         self.make_sound = True
         self.poll_interval = 0
         self.check_status = True
         self.poll_priority = False
-        self.poller_set_id = 1
+        if attribute_type is not None:
+            self.poller_set_id = attribute_type.default_poller_set_id
+            self.sla_id = attribute_type.default_sla_id
+        else:
+            self.poller_set_id = 1
+            self.sla_id = 1
+        if host is not None:
+            self.user_id = host.default_user_id
+        else:
+            self.user_id = 1
 
     def __repr__(self):
         return '<Attribute name=%s>' % self.display_name
@@ -358,7 +365,7 @@ class AttributeField(DeclarativeBase):
             cls.attribute_id == attribute_id,
             cls.attribute_type_field_id == ftag.id).first()
         if fval is not None:
-            return fval
+            return fval[0]
         return ftag.default_value
 
     def overwritable(self):
@@ -443,6 +450,12 @@ class AttributeType(DeclarativeBase):
         """ Return AttributeType name for given ID """
         return DBSession.query(cls.display_name).select_from(cls).\
             filter(cls.id == atype_id).scalar()
+
+    @classmethod
+    def by_id(cls, attribute_id):
+        """ Return the attribute with given id"""
+        return DBSession.query(cls).filter(
+            cls.id == attribute_id).first()
 
     def autodiscover(self, dobj, host, force):
         """
