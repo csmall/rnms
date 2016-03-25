@@ -13,7 +13,7 @@ RoseNMS: ${attribute.host.display_name} -  ${attribute.display_name}
 <div class="row">
   <div class="col-xs-12">
     <div class="page-header">
-      <h2>${attribute.host.display_name} -  ${attribute.display_name}</h5>
+      <h2>${attribute.host.display_name} -  ${attribute.display_name}</h2>
     </div>
   </div>
 </div>

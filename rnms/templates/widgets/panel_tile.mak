@@ -11,7 +11,11 @@
   <div class="x_panel tile fixed_height_320">
 %endif
     <div class="x_title">
-      <h2>${w.title}</h2>
+      <h2>${w.title}
+%if w.subtitle:
+	<small>${w.subtitle}</small>
+%endif
+      </h2>
       <ul class="nav navbar-right panel_toolbox">
         <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
 	</li>

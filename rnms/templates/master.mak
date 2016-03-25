@@ -120,6 +120,7 @@
         <ul class="nav child_menu" style="display: none">
 	  <li><a href="${tg.url('/')}">Dashboard</a></li>
 	  <li><a href="${tg.url('/events')}">Events</a></li>
+	  <li><a href="${tg.url('/graphs')}">Graphs</a></li>
 	</ul>
       </li>
       <li><a><i class="fa fa-cubes"></i> Hosts <span class="fa fa-chevron-down"></span></a>

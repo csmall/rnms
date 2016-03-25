@@ -1,0 +1,2 @@
+<div id="graphs">
+</div>

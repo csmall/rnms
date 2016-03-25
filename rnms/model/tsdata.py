@@ -48,6 +48,8 @@ class AttributeTypeTSData(DeclarativeBase):
     range_min = Column(Integer)
     range_max = Column(BigInteger)
     range_max_field = Column(String(40))  # matches tag in fields
+    data_type = Column(SmallInteger, nullable=False, default=0)
+    # 0:counter, 1:gauge
     # }
 
     @classmethod
@@ -91,7 +93,7 @@ class AttributeTypeTSData(DeclarativeBase):
             return
 
         measurement = 'A{}'.format(attribute_id)
-        if True:  # FIXME - rate always on
+        if self.data_type == 0:  # FIXME - rate always on
             select = 'SELECT DERIVATIVE({0},5m) AS {0} '.format(self.name)
             groupby = ''
         else:

@@ -22,15 +22,16 @@
 import logging
 
 # turbogears imports
-from tg import validate, expose, tmpl_context, predicates
+from tg import validate, expose, tmpl_context, predicates, flash, url
 from formencode import validators, ForEach
+import tw2.core as twc
 
 # project specific imports
+from rnms.lib.resources import c3_min_js, c3_min_css, d3_min_js
 from rnms.lib.base import BaseController
 from rnms.lib.chart_filler import ChartFiller
 from rnms.model import DBSession, GraphType, Attribute
-from rnms.widgets.graph import GraphWidget
-from rnms.widgets import MainMenu
+from rnms.widgets import PanelTile, GraphSelector, C3Chart
 
 logger = logging.getLogger('rnms')
 
@@ -38,7 +39,7 @@ logger = logging.getLogger('rnms')
 class GraphController(BaseController):
     allow_only = predicates.not_anonymous()
 
-    @expose('rnms.templates.graph_index')
+    @expose('rnms.templates.graph.index')
     @validate(validators={'a': ForEach(validators.Int(min=1))})
     def index(self, a=None):
         if tmpl_context.form_errors:
@@ -46,8 +47,72 @@ class GraphController(BaseController):
             return {}
         if a == []:
             a = None
-        return dict(page='graphs', attribute_ids=a,
-                    main_menu=MainMenu())
+
+        class SelectPanel(PanelTile):
+            title = 'Graph Selection'
+            fullwidth = True
+
+            class MyGraphSelector(GraphSelector):
+                attribute_type_id = 42
+                attribute_ids = None
+                aoption_url = url('/attributes/option')
+                hoption_url = url('/hosts/option')
+                gtoption_url = url('/graphs/types_option')
+                graph_url = url('/graphs/plot')
+
+        return dict(page='graphs',
+                    select_panel=SelectPanel)
+
+    @expose('rnms.templates.graph_attribute')
+    @validate(validators={'a': validators.Int(min=1)})
+    def _default(self, a):
+        if tmpl_context.form_errors:
+            self.process_form_errors()
+            return {}
+        my_attribute = Attribute.by_id(a)
+        if my_attribute is None:
+            flash('Attribute ID#{} not found'.format(a), 'error')
+            return {}
+
+        class SelectPanel(PanelTile):
+            title = 'Select Graph'
+
+            class MyGraphSelector(GraphSelector):
+                attribute_type_id = my_attribute.attribute_type_id
+
+        class GraphPanel(PanelTile):
+            title = 'Attribute Graphs'
+            fullwidth = True
+            fullheight = True
+
+            class GraphList(twc.Widget):
+                template = 'rnms.templates.widgets.graphs'
+                resources = [c3_min_js, d3_min_js, c3_min_css]
+
+        return dict(attribute=my_attribute,
+                    select_panel=SelectPanel,
+                    graph_panel=GraphPanel)
+
+    @expose('')
+    def plot(self, a, gt, pt=None):
+        """ Return the actual HTML for a graph """
+        my_attribute = Attribute.by_id(a)
+        my_graph_type = GraphType.by_id(gt)
+
+        class MyPanel(PanelTile):
+            title = '{} - {}'.format(
+                my_attribute.host.display_name,
+                my_attribute.display_name)
+            subtitle = my_graph_type.formatted_title(my_attribute)
+            fullwidth = True
+
+            class MyChart(C3Chart):
+                id = 'graph_{}_{}'.format(a, gt)
+                attribute = my_attribute
+                graph_type = my_graph_type
+                chart_height = 200
+
+        return MyPanel().display()
 
     @expose('json')
     def attribute(self, a=None, gt=None):
@@ -58,24 +123,6 @@ class GraphController(BaseController):
             return {'error': 'error'}
         chart_filler = ChartFiller(a=a, gt=gt)
         return chart_filler.display()
-
-    @expose('rnms.templates.widgets.graph_widget')
-    @validate(validators={'a': validators.Int(min=1),
-                          'gt': validators.Int(min=1),
-                          'pt': validators.Int(min=1)})
-    def widget(self, a, gt, pt=None):
-        if tmpl_context.form_errors:
-            return dict(errmsg=' '.join(
-                ['{0[1]} for {0[0]}'.format(x) for x in
-                 tmpl_context.form_errors.items()]))
-
-        class MyGraph(GraphWidget):
-            id = 'graph-{}-{}'.format(a, gt)
-            attribute_id = a
-            graph_type_id = gt
-            preset_time = pt
-        #   return dict(page='graph', main_menu=MainMenu(), w=w)
-        return dict(w=MyGraph)
 
     @expose('rnms.templates.widgets.select')
     def types_option(self, a=None):
