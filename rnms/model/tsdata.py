@@ -81,7 +81,7 @@ class AttributeTypeTSData(DeclarativeBase):
             time.strptime(timestr.split('.')[0], "%Y-%m-%dT%H:%M:%S"))
         mytime = utctime - time.timezone + (time.daylight * 3600)
         return time.strftime(
-            '%H:%M',
+            '%Y-%m-%d %H:%M',
             time.localtime(mytime))
 
     def fetch(self, attribute_id, start_time, end_time):
@@ -108,5 +108,4 @@ class AttributeTypeTSData(DeclarativeBase):
         for row in results.get_points():
             times.append(self.fix_time(row['time']))
             values.append(row[self.name])
-
         return (times, values)

@@ -25,6 +25,14 @@ from sqlalchemy.types import Integer, Unicode, SmallInteger, String
 from rnms.model import DeclarativeBase, DBSession
 from rnms.lib.parsers import fill_fields
 
+SI_UNITS = (
+    ('T', 1e12),
+    ('G', 1e9),
+    ('M', 1e6),
+    ('k', 1e3),
+    ('', 1),
+    ('m', 0.001))
+
 
 class GraphTypeError(Exception):
     pass
@@ -70,7 +78,13 @@ class GraphType(DeclarativeBase):
     def formatted_title(self, attribute):
         """ Return the Graph Type title using variables from the given
         Attribute"""
-        return fill_fields(self.title, attribute=attribute)
+        if self.title:
+            return fill_fields(self.title, attribute=attribute)
+        return self.display_name
+
+    def line_colors(self):
+        """ Return the series of line colors """
+        return {'data1': '#0000ff', 'data2': '#00ff00'}
 
 
 class GraphTypeLine(DeclarativeBase):
@@ -90,3 +104,36 @@ class GraphTypeLine(DeclarativeBase):
     @property
     def name(self):
         return self.attribute_type_tsdata.name
+
+    def formatted_legend(self, attribute):
+        return fill_fields(self.legend, attribute=attribute)
+
+    def format_value(self, value, attribute):
+        """ Return a formatted string of the given value """
+        if value is None:
+            return ''
+        if self.legend_unit == '':
+            return str(value)
+        fmt = self.legend_unit
+        mult_pos = fmt.find('%s')
+        if mult_pos > -1:
+            si_unit, divisor = self.get_si_unit(value)
+            fmt = fmt.replace('%s', si_unit)
+            value = value/float(divisor)
+        else:
+            mult_pos = fmt.find('%S')
+            if mult_pos > -1:
+                si_unit, divisor = self.get_si_unit(value)
+                fmt = fmt.replace('%S', si_unit)
+                value = value/float(divisor)
+        fmt = fill_fields(fmt, attribute=attribute)
+        return fmt % value
+
+    def get_si_unit(self, value):
+        """ Return unit,divisor tuple for SI unit eg 2000 = k,1000 """
+        if value == '0':
+            return '', 1
+        for unit, divisor in SI_UNITS:
+            if value >= divisor:
+                return unit, divisor
+        return unit, divisor

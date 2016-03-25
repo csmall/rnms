@@ -22,24 +22,6 @@ RoseNMS: ${attribute.host.display_name} -  ${attribute.display_name}
   ${graph_panel.display()}
 </div>
 <div class="row">
-    Showing
-    <select id='graph_choose_graphtype' name='gt' ></select>
-for
-    <select id="graph_time_span" name="pt">
-      <%include file="local:templates.widgets.time_select"/>
-    </select>
-    <a href="${tg.url('/graphs',{'a':attribute_id})}">
-    <button type="button" class="btn btn-primary">
-      <span class="glyphicon glyphicon-signal"></span> Graphs
-    </button>
-    </a>
-</div>
-<div class="row">
-  <div class="col-md-12">
-  <div id="resulting_graphs"></div>
-  </div>
-</div>
-<div class="row">
     ${eventsgrid.display(postdata=grid_data) | n}
 </div>
 %endif

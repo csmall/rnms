@@ -36,7 +36,8 @@ from rnms.model import DBSession, Attribute, Host, AttributeType
 from rnms.widgets import AttributeMap,\
     EventTable, \
     BootstrapTable, PanelTile,\
-    AttributeDetails, LineChart
+    AttributeDetails
+from rnms.widgets.c3js import C3Chart
 from rnms.lib.table import DiscoveryFiller
 
 
@@ -138,6 +139,11 @@ class AttributesController(BaseTableController):
             flash('Attribute ID#{} not found'.format(a), 'error')
             return dict(page='attribute')
         this_attribute = attribute
+        this_graph_type = attribute.attribute_type.get_graph_type()
+        if this_graph_type:
+            graph_title = this_graph_type.formatted_title(this_attribute)
+        else:
+            graph_title = 'No Graph'
 
         class DetailsPanel(PanelTile):
             title = 'Attribute Details'
@@ -146,14 +152,16 @@ class AttributesController(BaseTableController):
                 attribute = this_attribute
 
         class GraphPanel(PanelTile):
-            title = 'Graphs'
+            title = graph_title
+            fullheight = True
+            fillrow = True
 
-            class AttributeChart(LineChart):
-                attribute_id = a
+            class AttributeChart(C3Chart):
+                attribute = this_attribute
                 show_legend = True
-                gt = attribute.attribute_type.get_graph_type()
-                data_url = url('/graphs/attribute.json',
-                               {'a': a, 'gt': gt.id})
+                graph_type = this_graph_type
+                attribute_id = a
+                chart_height = 200
 
         class EventsPanel(PanelTile):
             title = 'Events for {} - {}'.format(

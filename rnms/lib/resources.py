@@ -25,6 +25,9 @@ from tg import lurl
 """ JavaScript Resources """
 chart_min_js = twc.JSLink(link=lurl('/javascript/chart.min.js'))
 bootstrap_table_js = twc.JSLink(link=lurl('/javascript/bootstrap-table.min.js'))
+c3_min_js = twc.JSLink(link=lurl('/javascript/c3.min.js'))
+d3_min_js = twc.JSLink(link=lurl('/javascript/d3.min.js'))
 
 """ CSS Resources """
 bootstrap_table_css = twc.CSSLink(link=lurl('/css/bootstrap-table.min.css'))
+c3_min_css = twc.CSSLink(link=lurl('/css/c3.min.css'))
