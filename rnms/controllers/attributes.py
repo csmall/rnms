@@ -23,7 +23,7 @@ import json
 
 # turbogears imports
 from tg import expose, url, validate, flash, tmpl_context, predicates,\
-    request, redirect
+    request
 from tg.decorators import require
 
 # third party imports
@@ -249,14 +249,17 @@ class AttributesController(BaseTableController):
             have_checkbox = True
             data_url = url('/attributes/discoverdata.json', {'h': h})
             hidden_columns = ['id', 'fields', ]
-            columns = [('display_name', 'Name'),
+            columns = [('action', 'Action'),
+                       ('display_name', 'Name'),
                        ('attribute_type', 'Attribute Type'),
                        ('admin_state', 'Admin State'),
                        ('oper_state', 'Oper State'),
                        ]
 
         return dict(discover_table=MyTable,
-                    add_url=url('/attributes/bulk_add', {'h': h}))
+                    success_url=url('/attributes', {'h': h}),
+                    host_id=h,
+                    add_url=url('/attributes/bulk_add'))
 
     @expose('json')
     @validate(validators={'h': validators.Int(min=1)})
@@ -270,7 +273,7 @@ class AttributesController(BaseTableController):
         filler = DiscoveryFiller()
         return filler.get_value(**kw)
 
-    @expose('rnms.template.attribute.bulk_add')
+    @expose('json')
     @validate(validators={'h': validators.Int(min=2)})
     def bulk_add(self, h, attribs):
         """ From a discovery phase, add the following attributes """
@@ -280,22 +283,25 @@ class AttributesController(BaseTableController):
 
         host = Host.by_id(h)
         if host is None:
-            flash('Unknown Host ID {}'.format(h))
-            return {}
+            return dict(errors='Unknown Host ID {}'.format(h))
 
         old_att_id = None
         new_count = 0
 
         decoded_attribs = json.loads(attribs)
+        print decoded_attribs
         for vals in decoded_attribs:
             if old_att_id != vals['atype_id']:
                 attribute_type = AttributeType.by_id(vals['atype_id'])
                 if attribute_type is None:
-                    flash('Unknown Attribute Type ID {}'.
-                          format(vals['atype_id']),
-                          'warning')
-                    return {}
+                    return dict(errors='Unknown Attribute Type ID {}'.
+                                format(vals['atype_id']))
 
+            if Attribute.discovered_exists(host.id, attribute_type.id,
+                                           vals['id']):
+                print 'Attribute type {} ID {} exists.'.format(
+                    attribute_type.id, vals['id'])
+                continue
             new_attribute = Attribute(
                 host=host, attribute_type=attribute_type,
                 display_name=vals['display_name'], index=vals['id'])
@@ -304,5 +310,4 @@ class AttributesController(BaseTableController):
             DBSession.add(new_attribute)
             new_count += 1
 
-        flash('{} Attributes added'.format(new_count), 'success')
-        redirect('/attributes', params={'h': h})
+        return dict(status='{} Attributes added'.format(new_count))

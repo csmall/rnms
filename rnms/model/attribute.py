@@ -332,6 +332,17 @@ class Attribute(DeclarativeBase):
         else:
             self.state = att_event.event_state
 
+    @classmethod
+    def discovered_exists(cls, host_id, attribute_type_id, index):
+        """
+        Return True if this discovered item already exists
+        """
+        query = DBSession.query(cls.id).filter(and_(
+            cls.host_id == host_id,
+            cls.attribute_type_id == attribute_type_id,
+            cls.index == index)).first()
+        return query is not None
+
 
 class AttributeField(DeclarativeBase):
     __tablename__ = 'attribute_fields'
@@ -583,6 +594,9 @@ class DiscoveredAttribute(object):
         self.index = ''
         self.fields = {}
 
+    def __repr__(self):
+        return '<Discovered Attribute name={} type={}>'.format(
+            self.display_name, str(self.attribute_type))
     def set_field(self, key, value):
         self.fields[key] = value
 

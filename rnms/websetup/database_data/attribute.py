@@ -158,7 +158,7 @@ attribute_types = (
         )),
     (u'Linux/Unix System Info',
         'host_information',
-        '2021.250.10, linux, 2021.250.255, freebsd, netSnmp, 8072', True, True,
+        '2021.250.10,linux,2021.250.255,freebsd,netSnmp,8072', True, True,
         u'Linux/Unix Host', '', '',
         'AVERAGE', 103680, False, False, '.', (
             (u'Number of Processes', 'cpu_num', False, True, True, False, True,

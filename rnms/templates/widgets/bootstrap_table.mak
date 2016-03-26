@@ -2,6 +2,7 @@
        data-icon-prefix='fa'
        data-url="${w.data_url}"
        data-toggle="table"
+       data-escape="false"
 %if w.fit_panel:
        data-height="250"
        data-show-header="false"
@@ -36,10 +37,15 @@
 %endif
        >
   <thead><tr>
+<%if 'state' in w.row_formatter:
+	formatter=' data-formatter=\"'+w.row_formatter['state']+'"'
+else:
+	formatter=''
+%>
 %if w.have_checkbox:
-    <th data-field="state" data-checkbox="true"></th>
+    <th data-field="state" data-checkbox="true" ${formatter|n}></th>
 %elif w.have_radio:
-    <th data-field="state" data-radio="true"></th>
+    <th data-field="state" data-radio="true" ${formatter|n}></th>
 %endif
 %for col_id, col_title in w.columns:
 <%if col_id in w.row_formatter:

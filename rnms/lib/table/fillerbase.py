@@ -25,7 +25,7 @@ from sprox.fillerbase import TableFiller, FillerBase
 from sqlalchemy import and_, desc, not_
 from sqlalchemy.orm import RelationshipProperty
 
-from rnms.model import AttributeType
+from rnms.model import AttributeType, Attribute, DBSession
 
 from column_operators import COL_OPERATORS
 
@@ -247,11 +247,18 @@ class DiscoveryFiller(FillerBase):
         for atype_id, atts in sd.combined_atts.items():
             atype_name = AttributeType.name_by_id(atype_id)
             for idx, att in atts.items():
-                if hasattr(att, 'id'):
-                    action = '<a href="{}">Edit</a>'.format(
-                        url('/admin/attributes/'+str(att.id)))
+                existing_att = DBSession.query(Attribute).filter(and_(
+                    Attribute.host_id == host.id,
+                    Attribute.attribute_type_id == atype_id,
+                    Attribute.index == idx)).first()
+                if existing_att:
+                    action =\
+                        '''<a href={}><button type="button" class="btn
+                    btn-info btn-xs">Edit</button></a>'''.format(
+                            url('/admin/attributes/{}/edit'.format(
+                                existing_att.id)))
                 else:
-                    action = 'Add'
+                    action = ''
                 rows.append({
                     'action': action,
                     'id': idx,
@@ -262,4 +269,4 @@ class DiscoveryFiller(FillerBase):
                     'attribute_type': atype_name,
                     'fields': att.fields,
                     })
-        return {'totals': len(rows), 'rows': rows}
+        return {'totals': len(rows), 'rows': rows, 'foo': 23}
