@@ -23,8 +23,39 @@ class ChartFiller(object):
         """
         if self.graph_type.template == 'mtuarea':
             self.calc_data_mtuarea()
+        elif self.graph_type.template == 'pctarea':
+            self.calc_data_pctarea()
         else:
             self.calc_data_lines()
+
+    def calc_data_pctarea(self):
+        """ A graph that is a stacked area of percents of each item """
+        num_lines = len(self.graph_type.lines)
+        self.datasets = [['data{}'.format(idx+1)]
+                         for idx in range(0, num_lines)]
+        raw_values = [
+            line.attribute_type_tsdata.fetch(
+                self.attribute.id,
+                self.start_time,
+                self.end_time)
+            for line in self.graph_type.lines]
+        for idx in range(0, len(raw_values[0][0])):
+                total = sum([raw_values[col][1][idx]
+                             for col in range(0, num_lines)])
+                for line in range(0, num_lines):
+                    self.datasets[line].append(
+                        min(
+                            max(float(raw_values[line][1][idx])/total, 0.0),
+                            100.0))
+        self.datasets.append(['x'] + raw_values[0][0])
+        for line, gt_line in enumerate(self.graph_type.lines):
+            key = 'data{}'.format(line+1)
+            self.mins[key] = gt_line.format_value(
+                    min(self.datasets[line][1:]), self.attribute)
+            self.maxs[key] = gt_line.format_value(
+                    max(self.datasets[line][1:]), self.attribute)
+            self.lasts[key] = gt_line.format_value(
+                    self.datasets[line][1:][-1], self.attribute)
 
     def calc_data_mtuarea(self):
         (ts_mult, ts_tot, ts_used) = self.graph_type.lines

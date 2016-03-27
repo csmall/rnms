@@ -6,9 +6,11 @@
       <select id="chooseSelection" class="form-control" name="select_type">
         <option value="">-- Choose Selection Type --</option>
         <option value="host">Host</option>
+        <option value="user">User</option>
+        <option value="atype">Type</option>
       </select>
-      <label for="chooseHost" class="control-label">Host:</label>
-      <select class="form-control" id="chooseHost" name="h" disabled="disabled"></select>
+      <label id="labelSubSelection" for="chooseSubSelection" class="control-label"></label>
+      <select class="form-control" id="chooseSubSelection" disabled="disabled"></select>
 
       <label for="chooseAttribute" class="control-label">Attributes:</label>
       <select class="form-control" id="chooseAttribute" name="a" disabled="disabled" multiple="multiple"></select>
@@ -33,13 +35,31 @@ function(event){
   $('[value=""]',event.target).remove();
   var sel_name = $(this).val();
   if (sel_name == 'host') {
-    $('#chooseHost').load(
+    $('#labelSubSelection').html('Host:');
+    $('#chooseSubSelection').load(
       "${w.hoption_url}",
-      function(){ $(this).attr('disabled',false);}
+      function(){ $(this).attr('disabled',false).attr('name', 'h');}
       );
+      return;
+    }
+  if (sel_name == 'user') {
+    $('#labelSubSelection').html('User:');
+    $('#chooseSubSelection').load(
+      "${w.coption_url}",
+      function(){ $(this).attr('disabled',false).attr('name', 'u');}
+      );
+      return;
+    }
+  if (sel_name == 'atype') {
+    $('#labelSubSelection').html('Type:');
+    $('#chooseSubSelection').load(
+      "${w.atoption_url}",
+      function(){ $(this).attr('disabled',false).attr('name', 'at');}
+      );
+      return;
     }
   });
-$("#chooseHost").change(
+$("#chooseSubSelection").change(
 function(event){
   $('#chooseAttribute').load(
     "${w.aoption_url}",

@@ -55,9 +55,6 @@ class GraphController(BaseController):
             class MyGraphSelector(GraphSelector):
                 attribute_type_id = 42
                 attribute_ids = None
-                aoption_url = url('/attributes/option')
-                hoption_url = url('/hosts/option')
-                gtoption_url = url('/graphs/types_option')
                 graph_url = url('/graphs/plot')
 
         return dict(page='graphs',

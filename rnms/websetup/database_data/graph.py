@@ -125,7 +125,7 @@ graph_types = (
     )),
 
     (u'Linux/Unix System Info', (
-        (u'CPU Usage', '%', 'stackedarea', 'rigid upper-limit=100', (
+        (u'CPU Usage', '%', 'pctarea', 'rigid upper-limit=100', (
             ('cpu_user_ticks', '$cpu_num,/', 'User Time', '%6.2f %%'),
             ('cpu_nice_ticks', '$cpu_num,/', 'Nice Time', '%6.2f %%'),
             ('cpu_system_ticks', '$cpu_num,/', 'System Time', '%6.2f %%'),

@@ -126,6 +126,10 @@ class GraphTypeLine(DeclarativeBase):
                 si_unit, divisor = self.get_si_unit(value)
                 fmt = fmt.replace('%S', si_unit)
                 value = value/float(divisor)
+        # If we are showing as percent, update the value
+        pct_pos = fmt.find('%%')
+        if pct_pos > -1:
+            value *= 100
         fmt = fill_fields(fmt, attribute=attribute)
         return fmt % value
 

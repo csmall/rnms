@@ -167,3 +167,15 @@ class RootController(BaseController):
 
         return dict(page='profile', page_title='profile',
                     page_tile=ProfileTile())
+
+    @expose('rnms.templates.widgets.select')
+    def attribute_client_option(self):
+        """ Show option list of all users who own attributes """
+        users = DBSession.query(
+            model.User.user_id,
+            model.User.display_name).join(model.Attribute).distinct()
+        items = users.all()
+        items.insert(0, ('', '-- Choose Client --'))
+        return dict(items=items)
+
+

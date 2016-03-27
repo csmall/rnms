@@ -140,10 +140,6 @@ class AttributesController(BaseTableController):
             return dict(page='attribute')
         this_attribute = attribute
         this_graph_type = attribute.attribute_type.get_graph_type()
-        if this_graph_type:
-            graph_title = this_graph_type.formatted_title(this_attribute)
-        else:
-            graph_title = 'No Graph'
 
         class DetailsPanel(PanelTile):
             title = 'Attribute Details'
@@ -151,17 +147,21 @@ class AttributesController(BaseTableController):
             class MyAttributeDetails(AttributeDetails):
                 attribute = this_attribute
 
-        class GraphPanel(PanelTile):
-            title = graph_title
-            fullheight = True
-            fillrow = True
+        if this_graph_type:
+            class GraphPanel(PanelTile):
+                title = this_graph_type.formatted_title(this_attribute)
+                fullheight = True
+                fillrow = True
 
-            class AttributeChart(C3Chart):
-                attribute = this_attribute
-                show_legend = True
-                graph_type = this_graph_type
-                attribute_id = a
-                chart_height = 200
+                class AttributeChart(C3Chart):
+                    attribute = this_attribute
+                    show_legend = True
+                    graph_type = this_graph_type
+                    attribute_id = a
+                    chart_height = 200
+            graph_panel = GraphPanel()
+        else:
+            graph_panel = None
 
         class EventsPanel(PanelTile):
             title = 'Events for {} - {}'.format(
@@ -175,7 +175,7 @@ class AttributesController(BaseTableController):
                     attribute=attribute,
                     attribute_id=a,
                     details_panel=DetailsPanel(),
-                    graph_panel=GraphPanel(),
+                    graph_panel=graph_panel,
                     eventsgrid=EventsPanel(),
                     )
 
@@ -210,24 +210,52 @@ class AttributesController(BaseTableController):
                     attribute_map=amap, events_panel=events_panel)
 
     @expose('rnms.templates.widgets.select')
-    @validate(validators={'h': validators.Int(min=1), 'a':
-                          ForEach(validators.Int(min=1))})
-    def option(self, h=None, a=[], **kw):
+    def type_option(self):
+        """ Show option list of Attribute Types """
+        types = DBSession.query(
+            AttributeType.id,
+            AttributeType.display_name)
+        items = types.all()
+        items.insert(0, ('', '-- Choose Type --'))
+        return dict(items=items)
+
+    @expose('rnms.templates.widgets.select')
+    @validate(validators={
+        'h': validators.Int(min=1),
+        'a': ForEach(validators.Int(min=1)),
+        'u': validators.Int(min=1),
+        'at': validators.Int(min=1),
+        })
+    def option(self, **kw):
+        atts = []
         if not tmpl_context.form_errors:
             conditions = []
-            atts = []
             if not permissions.host_ro:
                 conditions.append(
                     Attribute.user_id == request.identity['user'].user_id
                 )
+            h = kw.get('h')
             if h is not None:
                 try:
                     conditions.append(Attribute.host_id == h)
                 except:
                     pass
+            a = kw.get('a')
             if a != []:
                 try:
                     conditions.append(Attribute.id.in_(a))
+                except:
+                    pass
+            u = kw.get('u')
+            if u is not None:
+                try:
+                    conditions.append(Attribute.user_id == u)
+                except:
+                    pass
+            at = kw.get('at')
+            if at is not None:
+                try:
+                    conditions.append(Attribute.attribute_type_id == at)
                 except:
                     pass
             rows = DBSession.query(

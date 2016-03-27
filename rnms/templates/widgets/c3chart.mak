@@ -36,7 +36,11 @@ $(function() {
       },
       y: {
         tick: {
+%if w.show_percent:
+	  format: d3.format('%')
+%else:
 	  format: d3.format('.3s')
+%endif
 	  }
         }
     }

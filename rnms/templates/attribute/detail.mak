@@ -19,7 +19,9 @@ RoseNMS: ${attribute.host.display_name} -  ${attribute.display_name}
 </div>
 <div class="row">
   ${details_panel.display()}
+%if graph_panel is not None:
   ${graph_panel.display()}
+%endif
 </div>
 <div class="row">
     ${eventsgrid.display(postdata=grid_data) | n}

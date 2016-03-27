@@ -35,6 +35,7 @@ class C3Chart(twc.Widget):
     attribute = twc.Param('Attribute to graph')
     graph_type = twc.Param('Graph type to graph')
     chart_height = twc.Param('Fixed height of chart', default=None)
+    show_percent = twc.Param('Use Percentages', default=False)
 
     def __init__(self, *args, **kw):
         self.data_groups = None
@@ -96,3 +97,12 @@ class C3Chart(twc.Widget):
         elif self.graph_type.template == 'mtuarea':
             self.data_types = '{data1: \'area-step\', data2: \'area-step\'}'
             self.data_groups = '[[\'data1\', \'data2\']]'
+        elif self.graph_type.template == 'pctarea':
+            self.show_percent = True
+            lines = len(self.graph_type.lines)
+            self.data_types = '{'+','.join(
+                ['data{}: \'area\''.format(idx+1) for idx in range(0, lines)])\
+                + '}'
+            self.data_groups = '[['+','.join(
+                ['\'data{}\''.format(idx+1) for idx in range(0, lines)])\
+                + ']]'

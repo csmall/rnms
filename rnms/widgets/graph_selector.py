@@ -18,6 +18,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
 import tw2.core as twc
+from tg import url
 
 from rnms.model import DBSession, GraphType
 from rnms.lib.resources import c3_min_js, c3_min_css, d3_min_js
@@ -34,6 +35,11 @@ class GraphSelector(twc.Widget):
         self.resources.append(c3_min_js)
         self.resources.append(d3_min_js)
         self.resources.append(c3_min_css)
+        self.aoption_url = url('/attributes/option')
+        self.hoption_url = url('/hosts/option')
+        self.coption_url = url('/attribute_client_option')
+        self.gtoption_url = url('/graphs/types_option')
+        self.atoption_url = url('/attributes/type_option')
         self.graph_types = DBSession.query(
             GraphType.id,
             GraphType.display_name).\
