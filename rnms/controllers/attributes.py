@@ -32,10 +32,11 @@ from formencode import validators, ForEach
 # project specific imports
 from rnms.lib import permissions
 from rnms.lib.base import BaseTableController
-from rnms.model import DBSession, Attribute, Host, AttributeType
+from rnms.lib.states import State
+from rnms.model import DBSession, Attribute, Host, AttributeType, EventState
 from rnms.widgets import AttributeMap,\
-    EventTable, \
-    BootstrapTable, PanelTile,\
+    EventTable, BootstrapTable,\
+    AttributeDiscoverTable, PanelTile,\
     AttributeDetails
 from rnms.widgets.c3js import C3Chart
 from rnms.lib.table import DiscoveryFiller
@@ -188,9 +189,11 @@ class AttributesController(BaseTableController):
         if tmpl_context.form_errors:
             self.process_form_errors()
             return dict(page='attribute')
-        amap = AttributeMap()
-        amap.host_id = h
-        amap.alarmed_only = alarmed
+
+        class MyMap(AttributeMap):
+            host_id = h
+            alarmed_only = alarmed
+
         if events:
             if h is not None:
                 table_filter = {'h': h}
@@ -207,7 +210,7 @@ class AttributesController(BaseTableController):
         else:
             events_panel = None
         return dict(page='attribute',
-                    attribute_map=amap, events_panel=events_panel)
+                    attribute_map=MyMap(), events_panel=events_panel)
 
     @expose('rnms.templates.widgets.select')
     def type_option(self):
@@ -272,17 +275,8 @@ class AttributesController(BaseTableController):
             self.process_form_errors()
             return dict(page='host')
 
-        class MyTable(BootstrapTable):
-            id = 'discover_table'
-            have_checkbox = True
-            data_url = url('/attributes/discoverdata.json', {'h': h})
-            hidden_columns = ['id', 'fields', ]
-            columns = [('action', 'Action'),
-                       ('display_name', 'Name'),
-                       ('attribute_type', 'Attribute Type'),
-                       ('admin_state', 'Admin State'),
-                       ('oper_state', 'Oper State'),
-                       ]
+        class MyTable(AttributeDiscoverTable):
+            host_id = h
 
         return dict(discover_table=MyTable,
                     success_url=url('/attributes', {'h': h}),
@@ -327,12 +321,20 @@ class AttributesController(BaseTableController):
 
             if Attribute.discovered_exists(host.id, attribute_type.id,
                                            vals['id']):
-                print 'Attribute type {} ID {} exists.'.format(
-                    attribute_type.id, vals['id'])
                 continue
             new_attribute = Attribute(
                 host=host, attribute_type=attribute_type,
                 display_name=vals['display_name'], index=vals['id'])
+            try:
+                admin_state = State(name=vals['admin_state'])
+            except ValueError:
+                new_attribute.admin_state = State.UNKNOWN
+            else:
+                new_attribute.admin_state = int(admin_state)
+            new_attribute.state = EventState.by_name(vals['oper_state'])
+            if new_attribute.state is None:
+                new_attribute.state = EventState.get_up()
+
             for tag, value in vals['fields'].items():
                 new_attribute.set_field(tag, value)
             DBSession.add(new_attribute)

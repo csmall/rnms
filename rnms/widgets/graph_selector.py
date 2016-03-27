@@ -20,7 +20,6 @@
 import tw2.core as twc
 from tg import url
 
-from rnms.model import DBSession, GraphType
 from rnms.lib.resources import c3_min_js, c3_min_css, d3_min_js
 
 __all__ = ['GraphSelector', ]
@@ -28,7 +27,7 @@ __all__ = ['GraphSelector', ]
 
 class GraphSelector(twc.Widget):
     template = 'rnms.templates.widgets.graph_selector'
-    attribute_type_id = twc.Param('ID# for the attribute type')
+    attribute_id = twc.Param('ID# for pre-selected widget', default=None)
     label = 'Graph Type'
 
     def prepare(self):
@@ -40,8 +39,3 @@ class GraphSelector(twc.Widget):
         self.coption_url = url('/attribute_client_option')
         self.gtoption_url = url('/graphs/types_option')
         self.atoption_url = url('/attributes/type_option')
-        self.graph_types = DBSession.query(
-            GraphType.id,
-            GraphType.display_name).\
-            filter(GraphType.attribute_type_id ==
-                   self.attribute_type_id)

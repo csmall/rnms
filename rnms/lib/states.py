@@ -67,12 +67,24 @@ class State(object):
 
     _mystate = None
 
-    def __init__(self, mystate=None):
+    def __init__(self, mystate=None, name=None):
         if mystate is not None:
             mystate = int(mystate)
             if mystate not in self._STATES:
                 raise ValueError('{} is not a valid state ID'.format(mystate))
             self._mystate = mystate
+        elif name is not None:
+            for idx, sname in self.NAMES.items():
+                if name == sname:
+                    self._mystate = idx
+                    break
+            else:
+                raise ValueError('{} is not a valid state name')
+
+    def __int__(self):
+        if self._mystate is not None:
+            return self._mystate
+        return self.UNKNOWN
 
     @property
     def name(self):

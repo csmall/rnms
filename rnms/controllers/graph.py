@@ -23,7 +23,7 @@ import logging
 
 # turbogears imports
 from tg import validate, expose, tmpl_context, predicates, flash, url
-from formencode import validators, ForEach
+from formencode import validators
 import tw2.core as twc
 
 # project specific imports
@@ -31,7 +31,7 @@ from rnms.lib.resources import c3_min_js, c3_min_css, d3_min_js
 from rnms.lib.base import BaseController
 from rnms.lib.chart_filler import ChartFiller
 from rnms.model import DBSession, GraphType, Attribute
-from rnms.widgets import PanelTile, GraphSelector, C3Chart
+from rnms.widgets import PanelTile, GraphSelector, C3Chart, TimeSelector
 
 logger = logging.getLogger('rnms')
 
@@ -40,22 +40,22 @@ class GraphController(BaseController):
     allow_only = predicates.not_anonymous()
 
     @expose('rnms.templates.graph.index')
-    @validate(validators={'a': ForEach(validators.Int(min=1))})
+    @validate(validators={'a': validators.Int(min=1)})
     def index(self, a=None):
         if tmpl_context.form_errors:
             self.process_form_errors()
             return {}
-        if a == []:
-            a = None
 
         class SelectPanel(PanelTile):
             title = 'Graph Selection'
             fullwidth = True
 
             class MyGraphSelector(GraphSelector):
-                attribute_type_id = 42
-                attribute_ids = None
                 graph_url = url('/graphs/plot')
+                attribute_id = a
+
+            class MyTimeSelector(TimeSelector):
+                pass
 
         return dict(page='graphs',
                     select_panel=SelectPanel)
@@ -108,6 +108,7 @@ class GraphController(BaseController):
                 attribute = my_attribute
                 graph_type = my_graph_type
                 chart_height = 200
+                preset_time = pt
 
         return MyPanel().display()
 

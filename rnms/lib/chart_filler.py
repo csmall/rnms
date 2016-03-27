@@ -1,13 +1,13 @@
 
 import time
+import datetime
 
 
 class ChartFiller(object):
     """
     Object to fill the JSON data
     """
-    end_time = int(time.time())
-    start_time = end_time - 3600
+    preset_time = None
 
     def __init__(self, attribute, graph_type):
         self.attribute = attribute
@@ -21,6 +21,7 @@ class ChartFiller(object):
         """
         Return the dictionary of data to make the graph
         """
+        self.calculate_times()
         if self.graph_type.template == 'mtuarea':
             self.calc_data_mtuarea()
         elif self.graph_type.template == 'pctarea':
@@ -79,7 +80,13 @@ class ChartFiller(object):
                 raw_total = totals[1][idx]
                 raw_used = raw_useds[1][idx]
             except IndexError:
-                continue  # skip this one, missing data
+                raw_total = None
+                raw_used = None
+            if raw_total is None or raw_used is None:
+                frees.append(None)
+                useds.append(None)
+                continue
+
             # FIXME multi_op operations on tsdata.multiplier
             total = raw_total * multiplier
             used = raw_used * multiplier
@@ -119,3 +126,31 @@ class ChartFiller(object):
             self.calc_data()
         return {'columns': self.datasets,
                 'mins': self.mins, 'maxs': self.maxs, 'lasts': self.lasts}
+
+    def calculate_times(self):
+        # The default 1hr
+        self.end_time = int(time.time())
+        self.start_time = self.end_time - 3600
+
+        if self.preset_time is not None:
+            try:
+                time_val = int(self.preset_time[:-1])
+            except:
+                return
+            try:
+                time_unit = self.preset_time[-1]
+            except:
+                return
+            if time_unit == 'M':
+                interval = datetime.timedelta(minutes=time_val)
+            elif time_unit == 'H':
+                interval = datetime.timedelta(hours=time_val)
+            elif time_unit == 'd':
+                interval = datetime.timedelta(days=time_val)
+            elif time_unit == 'w':
+                interval = datetime.timedelta(weeks=time_val)
+            elif time_unit == 'm':
+                interval = datetime.timedelta(days=time_val*30)
+            else:
+                return
+            self.start_time = int(self.end_time - interval.total_seconds())

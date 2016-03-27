@@ -1,5 +1,6 @@
 
-from attribute import AttributeSummary, AttributeMap, AttributeDetails
+from attribute import AttributeSummary, AttributeMap, AttributeDetails,\
+    AttributeDiscoverTable
 from base import InfoBox
 from bootstrap_table import BootstrapTable
 from c3js import C3Chart
@@ -13,6 +14,7 @@ from main_menu import MainMenu
 from panel_tile import PanelTile
 from profile_form import ProfileForm
 from graph_selector import GraphSelector
+from time_selector import TimeSelector
 
 class EventGrid():
     pass

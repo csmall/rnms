@@ -26,10 +26,12 @@ import tw2.core as twc
 
 from rnms.model import Attribute, DBSession, Host, EventState, Event
 from rnms.lib.states import State
+from rnms.lib.resources import pnotify_core_js
 
 from rnms.widgets.base import MapWidget
+from .bootstrap_table import BootstrapTable
 
-__all__ = ['AttributeMap', 'AttributeDetails']
+__all__ = ['AttributeMap', 'AttributeDetails', 'AttributeDiscoverTable']
 
 
 class AttributeMap(MapWidget):
@@ -214,3 +216,21 @@ class AttributeDetails(twc.Widget):
     template = 'rnms.templates.widgets.attribute_details'
     attribute = twc.Param('The attribute record out of the DB query')
     extra = twc.Param('Additional data outside the DB query', default=None)
+
+
+class AttributeDiscoverTable(BootstrapTable):
+    id = 'discover_table'
+    host_id = twc.Param('ID# of Host to discover')
+    have_checkbox = True
+    hidden_columns = ['id', 'fields', ]
+    columns = [('action', 'Action'),
+               ('display_name', 'Name'),
+               ('attribute_type', 'Attribute Type'),
+               ('admin_state', 'Admin State'),
+               ('oper_state', 'Oper State'),
+               ]
+
+    def prepare(self):
+        self.resources.append(pnotify_core_js)
+        self.data_url = url('/attributes/discoverdata.json',
+                            {'h': self.host_id})

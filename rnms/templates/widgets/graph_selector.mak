@@ -1,4 +1,3 @@
-<div class="row">
   <div class="col-md-4 col-sm-4 col-xs-12">
     <h2>Attribute</h2>
     <div class="form-group">
@@ -16,7 +15,7 @@
       <select class="form-control" id="chooseAttribute" name="a" disabled="disabled" multiple="multiple"></select>
     </div>
   </div>
-  <div class="col-md-6 col-sm-6 col-xs-12">
+  <div class="col-md-4 col-sm-4 col-xs-12">
     <h2>Graph Type</h2>
     <div class="form-group">
       <label for="chooseGraphType" class="control-label">Graphs:</label>
@@ -25,11 +24,15 @@
       <button id="start_graph" type="submit" class="btn btn-success" >Graph</button>
     </div>
   </div>
-</div>
 <script>
 $(function() {
   // when the document is ready
-%if w.attribute_ids is None:
+%if w.attribute_id is  not None:
+$('#chooseAttribute').load(
+  "${w.aoption_url}",
+  $.param({a:${w.attribute_id}},true),
+  function(){$(this).attr('disabled', false);});
+%endif
 $('#chooseSelection').change(
 function(event){
   $('[value=""]',event.target).remove();
@@ -67,13 +70,6 @@ function(event){
     function(){$(this).attr('disabled', false);});
     }
     );
-%else:
-var att_ids = ${w.attribute_ids};
-$('#chooseAttribute').load(
-  "${w.aoption_url}",
-  $.param({a:${w.attribute_ids}},true),
-  function(){$(this).attr('disabled', false);});
-%endif
 $("#chooseAttribute").change(
 function(event){
   $('#chooseGraphType').load(
@@ -89,11 +85,10 @@ function(event){
   var graphtype_id=$(this).val();
   $.each($("#chooseAttribute option:selected:[data-atype="+$(this).attr('data-atype')+"]"),
     function(idx, val){
-    console.debug('gt: '+graphtype_id+' a:'+$(this).val());
     my_id = 'graph-'+$(this).val()+'-'+graphtype_id;
     $("#resulting_graphs").append('<div class="row" id="'+my_id+'"></div>');
     $("#"+my_id).load(
-    "${w.graph_url}/"+$(this).val()+"/"+graphtype_id+"?pt="+$("#graph_time_span").val());
+    "${w.graph_url}/"+$(this).val()+"/"+graphtype_id+"?pt="+$("#timeSelection").val());
     });
     });
   });

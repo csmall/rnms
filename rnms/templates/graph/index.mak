@@ -14,7 +14,12 @@ RoseNMS: Graphs for ${attribute.host.display_name} -  ${attribute.display_name}
   </div>
 </div>
 <div class="row">
+%if select_panel != UNDEFINED:
 ${select_panel.display()|n}
+%endif
+%if timerange_panel != UNDEFINED:
+${timerange_panel.display()|n}
+%endif
 </div>
 <select id="graph_time_span" name="pt">
  <%include file="local:templates.widgets.time_select"/>

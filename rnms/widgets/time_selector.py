@@ -17,23 +17,11 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>
 #
-#
-""" Resources for widgets etc """
 import tw2.core as twc
-from tg import lurl
 
-""" JavaScript Resources """
-chart_min_js = twc.JSLink(link=lurl('/javascript/chart.min.js'))
-bootstrap_table_js = twc.JSLink(
-    link=lurl('/javascript/bootstrap-table.min.js'))
-c3_min_js = twc.JSLink(link=lurl('/javascript/c3.min.js'))
-d3_min_js = twc.JSLink(link=lurl('/javascript/d3.min.js'))
-pnotify_core_js = twc.JSLink(link=lurl('/javascript/notify/pnotify.core.js'))
-pnotify_buttons_js = twc.JSLink(
-    link=lurl('/javascript/notify/pnotify.buttons.js'))
-pnotify_nonblock_js = twc.JSLink(
-    link=lurl('/javascript/notify/pnotify.nonblock.js'))
+__all__ = ['TimeSelector', ]
 
-""" CSS Resources """
-bootstrap_table_css = twc.CSSLink(link=lurl('/css/bootstrap-table.min.css'))
-c3_min_css = twc.CSSLink(link=lurl('/css/c3.min.css'))
+
+class TimeSelector(twc.Widget):
+    """ Widget to provide a time range for the Graphs """
+    template = 'rnms.templates.widgets.time_selector'

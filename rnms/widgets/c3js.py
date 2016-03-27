@@ -36,6 +36,7 @@ class C3Chart(twc.Widget):
     graph_type = twc.Param('Graph type to graph')
     chart_height = twc.Param('Fixed height of chart', default=None)
     show_percent = twc.Param('Use Percentages', default=False)
+    preset_time = twc.Param('String of preset time', default=None)
 
     def __init__(self, *args, **kw):
         self.data_groups = None
@@ -73,6 +74,7 @@ class C3Chart(twc.Widget):
 
     def _fill_data(self):
         cf = ChartFiller(self.attribute, self.graph_type)
+        cf.preset_time = self.preset_time
         cf.calc_data()
         self.data_columns = json.dumps(cf.datasets)
         self.mins = json.dumps(cf.mins)

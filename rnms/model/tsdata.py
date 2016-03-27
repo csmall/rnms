@@ -79,12 +79,23 @@ class AttributeTypeTSData(DeclarativeBase):
 
     @classmethod
     def fix_time(self, timestr):
+        if timestr[-1] == 'Z':
+            timestr = timestr[:-1]
         utctime = time.mktime(
             time.strptime(timestr.split('.')[0], "%Y-%m-%dT%H:%M:%S"))
         mytime = utctime - time.timezone + (time.daylight * 3600)
         return time.strftime(
             '%Y-%m-%d %H:%M',
             time.localtime(mytime))
+
+    def calc_interval(self, start_time, end_time):
+        """ Work out the interval """
+        timespan = end_time - start_time
+        if timespan < 43200:  # 1/2 day
+            return '5m'
+        if timespan < 2419200:  # 4 weeks
+            return '1h'
+        return '1d'
 
     def fetch(self, attribute_id, start_time, end_time):
         """ Return the values for a chart """
@@ -93,18 +104,21 @@ class AttributeTypeTSData(DeclarativeBase):
             return
 
         measurement = 'A{}'.format(attribute_id)
-        if self.data_type == 0:  # FIXME - rate always on
-            select = 'SELECT DERIVATIVE({0},5m) AS {0} '.format(self.name)
-            groupby = ''
+        interval = self.calc_interval(start_time, end_time)
+        if self.data_type == 0:
+            query_str =\
+                'SELECT NON_NEGATIVE_DERIVATIVE(first({0}),{1}) AS {0} '.\
+                format(self.name, interval)
+            groupby = 'GROUP BY time({})'.format(interval)
         else:
-            select = 'SELECT {} '.format(self.name)
-            groupby = ''
+            query_str = 'SELECT first({0}) AS {0} '.format(self.name)
+            groupby = 'GROUP BY time({0})'.format(interval)
 
-        results = client.query(
-            select +
+        query_str += (
             'FROM {} WHERE time > {}s '.
             format(measurement, start_time) +
             groupby)
+        results = client.query(query_str)
         times = []
         values = []
         for row in results.get_points():

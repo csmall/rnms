@@ -15,6 +15,7 @@ $(function() {
 $('#discover_table').on('load-success.bs.table', function(e, data) { $(this).bootstrapTable('updateCell', 1, 'state', {disabled: true});}).
 on('check.bs.table', function() { $('#add_button').removeAttr('disabled');}).
 on('uncheck.bs.table',function(){ if ($(this).bootstrapTable('getSelections') == '') { $('#add_button').attr('disabled',true);}});
+new PNotify({title: 'We did it', text: 'yay for us', type: 'success'});
 });
-$('#add_button').click(function() { var selections=$.each($('#${discover_table.id}').bootstrapTable('getSelections'), function(key, vals){ delete vals['attribute_type']; delete vals['state'];}); $.post('${add_url}', 'h='+${host_id}+'&attribs='+JSON.stringify(selections), function(data, textStatus, jqXHR) { console.debug('yay'); console.debug(data);}) ;});
+$('#add_button').click(function() { var selections=$.each($('#${discover_table.id}').bootstrapTable('getSelections'), function(key, vals){ delete vals['attribute_type']; delete vals['state'];}); $.post('${add_url}', 'h='+${host_id}+'&attribs='+JSON.stringify(selections), function(data, textStatus, jqXHR) { new PNotify({title: 'Success', text: data['status'], type: 'success'});}) ;});
 </script>
