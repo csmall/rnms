@@ -13,7 +13,6 @@ from rnms.tests.models import ModelTest
 #test_attribute = mock.MagicMock(spec=model.Attribute)
 #test_attribute.attribute_type = test_attribute_type
 
-test_attribute_type_rrd = model.AttributeTypeRRD()
 test_epoch = 55689300.0
 test_epoch_str = str(test_epoch)
 test_color = 'aa00ff'

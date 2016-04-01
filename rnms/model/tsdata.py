@@ -37,6 +37,9 @@ class AttributeTypeTSData(DeclarativeBase):
     Time Series Database, such as Influx DB
     """
     __tablename__ = 'attribute_type_tsdatas'
+    __data_type_names__ = ['counter', 'gauge']
+
+    data_type = None
 
     # { Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
@@ -125,3 +128,13 @@ class AttributeTypeTSData(DeclarativeBase):
             times.append(self.fix_time(row['time']))
             values.append(row[self.name])
         return (times, values)
+
+    @property
+    def data_type_name(self):
+        """ Return the text name of this data type """
+        if self.data_type is None:
+            return 'None'
+        try:
+            return self.__data_type_names__[self.data_type]
+        except IndexError:
+            return 'Unknown: {}'.format(self.data_type)

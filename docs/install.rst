@@ -24,7 +24,7 @@ important thing is not to mix them up.
   will be installed here. This is the location of the specific virtualenv
   we will use. For the document lets call it /usr/local/pythonenv/RoseNMS_NMS
 * RoseNMS home - Location of the RoseNMS files, such as a sqlite database
-  or the rrd files, we will use /home/rosenberg
+  we will use /home/rosenberg
 
 So, now to make the various directories, part of this comes from the
 `Virtualenv support for VirtualEnvironments`_ page.

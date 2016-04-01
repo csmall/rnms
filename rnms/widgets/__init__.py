@@ -8,7 +8,6 @@ from doughnuts import DoughnutGraph, AttributeStateDoughnut
 from daemonstatus import DaemonStatus
 from line_chart import LineChart
 from event import EventTable
-from graph import GraphWidget
 from host import HostMap, HostDetails
 from main_menu import MainMenu
 from panel_tile import PanelTile

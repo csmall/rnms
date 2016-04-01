@@ -2,6 +2,8 @@
 *.swp
 .idea
 
+old
+
 # Default development database
 devdata.db
 

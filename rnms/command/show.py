@@ -202,10 +202,11 @@ Attribute Autodiscovery can do the following:
                 print '{:<3} {:<26} | tag:{}'.format(
                     field.position, field.display_name, field.tag)
             self.line('-')
-            print 'RRDtool files'
-            for rrd in atype.rrds:
+            print 'Time-Series Data'
+            for tsd in atype.tsds:
                 print '{:<3} {:<26} | {:<5} {}'.format(
-                    rrd.position, rrd.display_name, rrd.dst2str(), rrd.name)
+                    tsd.position, tsd.display_name,
+                    tsd.data_type_name, tsd.name)
 
     def sla_info(self, ids):
         """ Information about SLAs """

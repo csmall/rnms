@@ -223,16 +223,6 @@ class Attribute(DeclarativeBase):
                 return field.value
         return at_field.default_value
 
-    def get_rrd_value(self, rrd_name, start_time, end_time):
-        """
-        Return the value for the RRD with start and stop time
-        Raises KeyError if rrd_name not found
-        """
-        for at_rrd in self.attribute_type.rrds:
-            if at_rrd.name == rrd_name:
-                return at_rrd.get_average_value(self.id, start_time, end_time)
-        raise KeyError('Attribute has no RRD {}'.format(rrd_name))
-
     def description_dict(self):
         """
         Return a dictionary of the Attributes description fields
@@ -406,9 +396,6 @@ class AttributeType(DeclarativeBase):
     default_poller_set = relationship(
         'PollerSet',
         primaryjoin='PollerSet.id == AttributeType.default_poller_set_id')
-    ds_heartbeat = Column(Integer, nullable=False, default=600)
-    rra_cf = Column(String(10), nullable=False, default='AVERAGE')
-    rra_rows = Column(Integer, nullable=False, default=103680)
     default_graph_id = Column(
         Integer,
         ForeignKey('graph_types.id', use_alter=True, name='fk_atype_graph'))
@@ -597,6 +584,7 @@ class DiscoveredAttribute(object):
     def __repr__(self):
         return '<Discovered Attribute name={} type={}>'.format(
             self.display_name, str(self.attribute_type))
+
     def set_field(self, key, value):
         self.fields[key] = value
 

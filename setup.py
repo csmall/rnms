@@ -50,7 +50,6 @@ install_requires = [
     "tw2.jqplugins.jqplot",
     "pysnmp",
     "psycopg2",
-    "python-rrdtool",
     "mysql-python",
     "pyzmq",
     "influxdb"
