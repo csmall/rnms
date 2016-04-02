@@ -52,16 +52,16 @@ slas = (
         OR_ROW
     )),
     (u'Physical Interface', u'Interface:', u'Physical Interfaces', (
-        ('$in * 100 / $speed', u'>', 90, True,
-            u'IN > 90%', u'$in / 1000', u'kbps'),
-        ('$out * 100 / $speed', u'>', 90, True,
-            u'IN > 90%', u'$out / 1000', u'kbps'),
-        ('($inerrors * 100) / ($inpackets + 1 )', u'>', 10, True,
-            u'IN ERR > 20%', u'($inerrors * 100) / ($inpackets + 1)',
+        ('$input * 100 / $speed', u'>', 90, True,
+            u'IN > 90%', u'$input / 1000', u'kbps'),
+        ('$output * 100 / $speed', u'>', 90, True,
+            u'IN > 90%', u'$output / 1000', u'kbps'),
+        ('$inerrors * 100 / ($inpackets + 1 )', u'>', 10, True,
+            u'IN ERR > 20%', u'($inputerrors * 100) / ($inpackets + 1)',
             u'% = $inerrors Eps'),
     )),
     (u'Storage', u'Storage:', u'Storage', (
-        ('($used_blocks * 100) / $total_blocks - $usage_threshold', u'>', 0,
+        ('$used_blocks * 100 / $total_blocks - $usage_threshold', u'>', 0,
             True,
             u'Used > $usage_threshold', u'($used_blocks * 100) / '
             '$total_blocks', u'%'),

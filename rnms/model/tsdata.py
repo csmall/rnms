@@ -25,7 +25,7 @@ from sqlalchemy.types import Integer, Unicode, String, SmallInteger, BigInteger
 
 from rnms.model import DeclarativeBase, DBSession, AttributeField,\
     AttributeTypeField
-from rnms.lib.tsdbworker import get_influxclient
+from rnms.lib.tsdbworker import get_influxclient, InfluxDBClientError
 
 __all__ = ['AttributeTypeTSData']
 
@@ -92,15 +92,21 @@ class AttributeTypeTSData(DeclarativeBase):
             time.localtime(mytime))
 
     def calc_interval(self, start_time, end_time):
-        """ Work out the interval """
-        timespan = end_time - start_time
+        """ Work out the interval start time can either be
+        seconds since epoch or a timespan number of seconds"""
+        if start_time < 0:
+            timespan = -start_time
+        else:
+            if end_time is None:
+                end_time = time.time()
+            timespan = end_time - start_time
         if timespan < 43200:  # 1/2 day
             return '5m'
         if timespan < 2419200:  # 4 weeks
             return '1h'
         return '1d'
 
-    def fetch(self, attribute_id, start_time, end_time):
+    def fetch(self, attribute_id, start_time, end_time=None):
         """ Return the values for a chart """
         client = get_influxclient()
         if client is None:
@@ -121,7 +127,13 @@ class AttributeTypeTSData(DeclarativeBase):
             'FROM {} WHERE time > {}s '.
             format(measurement, start_time) +
             groupby)
-        results = client.query(query_str)
+        try:
+            results = client.query(query_str)
+        except InfluxDBClientError as err:
+            raise InfluxDBClientError(
+                'Problem with query: \'{}\' - {}'.format(
+                    query_str, err.message))
+
         times = []
         values = []
         for row in results.get_points():

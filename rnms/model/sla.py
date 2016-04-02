@@ -24,7 +24,6 @@ import logging
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import ForeignKey, Column
 from sqlalchemy.types import Integer, Unicode, String, SmallInteger
-#from sqlalchemy.orm import relation, backref
 
 from rnms.model import DeclarativeBase, DBSession
 from rnms.lib.genericset import GenericSet
@@ -35,16 +34,16 @@ logger = logging.getLogger('rnms')
 class Sla(DeclarativeBase, GenericSet):
     __tablename__ = 'slas'
 
-    #{ Columns
+    # { Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     attribute_type_id = Column(Integer, ForeignKey('attribute_types.id'))
     display_name = Column(Unicode(60), nullable=False, unique=True)
     event_text = Column(Unicode(60))
     threshold = Column(SmallInteger)
-    sla_rows = relationship('SlaRow',
-                            backref=backref('sla', lazy='joined'),
-                            order_by='SlaRow.position')
-    #}
+    rows = relationship('SlaRow',
+                        backref=backref('sla', lazy='joined'),
+                        order_by='SlaRow.position')
+    # }
 
     def __init__(self, display_name=None):
         if display_name is not None:
@@ -71,7 +70,7 @@ class SlaRow(DeclarativeBase):
     """
     __tablename__ = 'sla_rows'
 
-    #{ Columns
+    # { Columns
     id = Column(Integer, autoincrement=True, primary_key=True)
     sla_id = Column(Integer,
                     ForeignKey('slas.id', ondelete='CASCADE',
