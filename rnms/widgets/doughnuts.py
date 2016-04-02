@@ -22,7 +22,7 @@ from sqlalchemy import and_
 
 from rnms.lib.resources import chart_min_js
 from rnms.lib.states import State
-from rnms.model import DBSession, Attribute
+from rnms.model import DBSession, Attribute, EventState
 
 __all__ = ['DoughnutGraph', 'AttributeStateDoughnut']
 
@@ -74,5 +74,6 @@ class AttributeStateDoughnut(DoughnutGraph):
                      DBSession.query(Attribute).
                      filter(and_(*
                             conditions +
-                            [Attribute.state_id == match])).count()))
+                            [Attribute.state_id == EventState.id,
+                                EventState.internal_state == match])).count()))
         super(AttributeStateDoughnut, self).prepare()

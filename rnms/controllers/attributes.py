@@ -311,7 +311,6 @@ class AttributesController(BaseTableController):
         new_count = 0
 
         decoded_attribs = json.loads(attribs)
-        print decoded_attribs
         for vals in decoded_attribs:
             if old_att_id != vals['atype_id']:
                 attribute_type = AttributeType.by_id(vals['atype_id'])
