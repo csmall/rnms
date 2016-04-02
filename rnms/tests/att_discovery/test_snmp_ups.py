@@ -4,8 +4,8 @@
 from nose.tools import assert_true, assert_false
 
 from rnms.tests.att_discovery import AttDiscTest
-from rnms.lib.att_discovers.snmp_ups import discover_ups, cb_ups,\
-    discover_ups_lines, cb_ups_lines
+from rnms.lib.discovery.plugins.attributes.snmp_ups\
+    import discover_ups, cb_ups, discover_ups_lines, cb_ups_lines
 
 
 class TestUps(AttDiscTest):

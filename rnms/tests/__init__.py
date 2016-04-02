@@ -94,20 +94,3 @@ class TestController(object):
                 raise AssertionError('Not found:'+msg)
 
 
-JQGRID_STD_ATTRIBS={
-    '_search': False,
-    'nd': 1234567890,
-    'rows': 15,
-    'page': 1,
-    'sidx': '',
-    'sord': 'asc',}
-
-def jqgrid_data_url(base_url, attribs={}):
-    """ Return a url with the standard jqgrid attributes """
-    my_attribs = JQGRID_STD_ATTRIBS.copy()
-    my_attribs.update(attribs)
-    return '{}?{}'.format(
-        base_url,
-        '&'.join('{}={}'.format(k,v) for k,v in my_attribs.items())
-    )
-

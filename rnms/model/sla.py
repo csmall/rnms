@@ -48,7 +48,7 @@ class Sla(DeclarativeBase, GenericSet):
     def __init__(self, display_name=None):
         if display_name is not None:
             self.display_name = display_name
-        self.rows = self.sla_rows
+        self.rows = self.rows
 
     @classmethod
     def by_display_name(cls, name):

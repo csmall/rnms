@@ -3,23 +3,23 @@
 
 from rnms.tests.att_discovery import AttDiscTest
 
-from rnms.lib.att_discovers.cisco_snmp import \
+from rnms.lib.discovery.plugins.attributes.cisco_snmp import \
         discover_cisco_envmib, cb_cisco_envmib,\
         discover_cisco_saagent, cb_cisco_saagent,\
         discover_pix_connections, cb_pix_connections
 
 
 class TestCiscoEnvmib(AttDiscTest):
-    
+
     def setUp(self):
         super(TestCiscoEnvmib, self).setUp()
-        self.test_att_type.ad_parameters='namebase,1,2'
+        self.test_att_type.ad_parameters = 'namebase,1,2'
         self.test_callback_kwargs['name_base'] = 'namebase'
 
     def test_cb_none(self):
         """ Cisco Env disc callback with None has no attributes """
         self.check_callback_none(cb_cisco_envmib)
-    
+
     def test_cb_empty(self):
         """ Cisco Env disc callback with empty dict has no attributes """
         self.check_callback_empty(cb_cisco_envmib, 2)

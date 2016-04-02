@@ -4,7 +4,8 @@
 from nose.tools import assert_true, assert_false
 
 from rnms.tests.att_discovery import AttDiscTest
-from rnms.lib.att_discovers.cpqmib import discover_cpqmib,\
+from rnms.lib.discovery.plugins.attributes.cpqmib import\
+    discover_cpqmib,\
     cb_cpqmib_phydrv, cb_cpqmib_fans, cb_cpqmib_temp,\
     cb_cpqmib_ps
 

@@ -4,14 +4,18 @@ from nose.tools import eq_
 
 from rnms.tests.att_discovery import AttDiscTest
 
-from rnms.lib.att_discovers.apache import discover_apache, cb_apache
+from rnms.lib.discovery.plugins.attributes.apache \
+    import discover_apache, cb_apache
+
 
 class TestApacheDiscovery(AttDiscTest):
 
     def test_disc_ok(self):
         """ Apache discovery calles tcpclient correctly """
         eq_(discover_apache(*self.discover_args), True)
-        self.assert_get_tcp_called(80, 'GET /server-status?auto HTTP/1.1\r\nHost: {}\r\n\r\n'.format(self.test_host_ip), 40, cb_apache)
+        self.assert_get_tcp_called(
+            80, 'GET /server-status?auto HTTP/1.1\r\nHost: {}\r\n\r\n'.format(
+                self.test_host_ip), 40, cb_apache)
 
     def test_cb_none(self):
         """ Apache AD with None returns None """
@@ -21,12 +25,12 @@ class TestApacheDiscovery(AttDiscTest):
         """ Apache AD with short response returns no item """
         cb_apache(('blah', 4), None, **self.test_callback_kwargs)
         self.assert_result_count(0)
-    
+
     def test_cb_notstring(self):
         """ Apache AD with array of none returns no item """
         cb_apache((None, None), None, **self.test_callback_kwargs)
         self.assert_result_count(0)
-    
+
     def test_cb_404(self):
         """ Apache AD with short response returns no item """
         resp = 'HTTP/1.1 404 Not Found\r\nServer: foobar/1.0.0'

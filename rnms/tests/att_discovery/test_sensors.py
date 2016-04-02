@@ -4,11 +4,11 @@
 from nose.tools import assert_true
 
 from rnms.tests.att_discovery import AttDiscTest
-from rnms.lib.att_discovers.sensors import discover_sensors,\
-    cb_sensors
+from rnms.lib.discovery.plugins.attributes.sensors\
+    import discover_sensors, cb_sensors
 
 
-class TestSesnors(AttDiscTest):
+class TestSensors(AttDiscTest):
 
     def test_disc_ok(self):
         """ Disc sensors calls SNMP many """

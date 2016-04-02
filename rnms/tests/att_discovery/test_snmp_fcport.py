@@ -2,7 +2,7 @@
 """Test suite for SNMP FC ports Attribute Discovery """
 from nose.tools import assert_true
 from rnms.tests.att_discovery import AttDiscTest
-from rnms.lib.att_discovers.snmp_fcport import\
+from rnms.lib.discovery.plugins.attributes.snmp_fcport import\
     discover_fc_ports, cb_fc_ports
 
 

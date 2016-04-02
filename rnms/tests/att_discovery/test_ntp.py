@@ -5,8 +5,8 @@ import mock
 from nose.tools import assert_true
 
 from rnms.tests.att_discovery import AttDiscTest
-from rnms.lib.ntpclient import NTPClient, NTPAssoc
-from rnms.lib.att_discovers.ntp_client import \
+from rnms.lib.ntpclient import NTPClient
+from rnms.lib.discovery.plugins.attributes.ntp_client import \
     discover_ntp_client, cb_ntp_peer_list
 
 

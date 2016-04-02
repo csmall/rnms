@@ -48,11 +48,11 @@ class TestCacheSlaRow(object):
 
     def no_test_sla_row_eval(self):
         """SLA Row eval test"""
-        rrd_values = {
+        ts_data = [['1234', {
             'one': 1.0, 'two': 2, 'fifty': 50.0, 'one_hundred': 100.0,
-            'answer': 42, 'other': 58}
+            'answer': 42, 'other': 58}]]
 
-        #attrib = model.Attribute()
+        # attrib = model.Attribute()
         self.obj.limit = 50
         self.obj.oper = '='
         eval_tests = (
@@ -66,6 +66,5 @@ class TestCacheSlaRow(object):
             ('${answer} + 8', True),
             )
         for (expr, result) in eval_tests:
-            self.obj.expression = expr
-            eval_result = self.obj.eval(rrd_values)
+            eval_result = self.obj.eval(expr, ts_data)
             eq_(eval_result[0], result)

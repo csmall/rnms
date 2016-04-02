@@ -4,7 +4,7 @@ from nose.tools import eq_
 
 from rnms.tests.att_discovery import AttDiscTest
 
-from rnms.lib.att_discovers.apc import discover_apc, cb_apc
+from rnms.lib.discovery.plugins.attributes.apc import discover_apc, cb_apc
 
 
 class TestApcDiscover(AttDiscTest):
@@ -29,8 +29,8 @@ class TestApcDiscover(AttDiscTest):
         self.assert_result_count(1)
         self.assert_result_indexes(('1',))
         self.assert_result_display_names(('Test Device',))
-        self.assert_oper_state({'1':'up'})
-    
+        self.assert_oper_state({'1': 'up'})
+
     def test_cb_single_down1(self):
         """ APC discovery callback finds single item down with state 1 """
         values = ['Test Device', 'description', '1']
@@ -38,8 +38,8 @@ class TestApcDiscover(AttDiscTest):
         self.assert_result_count(1)
         self.assert_result_indexes(('1',))
         self.assert_result_display_names(('Test Device',))
-        self.assert_oper_state({'1':'down'})
-    
+        self.assert_oper_state({'1': 'down'})
+
     def test_cb_single_down3(self):
         """ APC discovery callback finds single item down with state 3 """
         values = ['Test Device', 'description', '3']
@@ -47,4 +47,4 @@ class TestApcDiscover(AttDiscTest):
         self.assert_result_count(1)
         self.assert_result_indexes(('1',))
         self.assert_result_display_names(('Test Device',))
-        self.assert_oper_state({'1':'down'})
+        self.assert_oper_state({'1': 'down'})

@@ -4,7 +4,8 @@ from nose.tools import eq_
 
 from rnms.tests.att_discovery import AttDiscTest
 
-from rnms.lib.att_discovers.bgp import discover_bgp_peers, cb_bgp_peers
+from rnms.lib.discovery.plugins.attributes.bgp\
+    import discover_bgp_peers, cb_bgp_peers
 
 
 class TestBGP(AttDiscTest):

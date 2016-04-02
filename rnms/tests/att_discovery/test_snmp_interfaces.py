@@ -4,7 +4,7 @@ from nose.tools import assert_true
 
 from rnms.tests.att_discovery import AttDiscTest
 
-from rnms.lib.att_discovers.snmp import \
+from rnms.lib.discovery.plugins.attributes.snmp import \
     discover_snmp_interfaces, cb_snmp_interfaces
 
 

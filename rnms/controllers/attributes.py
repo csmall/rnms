@@ -39,7 +39,7 @@ from rnms.widgets import AttributeMap,\
     AttributeDiscoverTable, PanelTile,\
     AttributeDetails
 from rnms.widgets.c3js import C3Chart
-from rnms.lib.table import DiscoveryFiller
+from rnms.lib.discovery import DiscoveryFiller
 
 
 class AttributesController(BaseTableController):

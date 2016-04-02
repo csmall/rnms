@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """Test suite for reachability discovery """
 import mock
-from nose.tools import assert_true, assert_false
+from nose.tools import assert_true
 
 from rnms.tests.att_discovery import AttDiscTest
-from rnms.lib.att_discovers.reachability import discover_reachability
+from rnms.lib.discovery.plugins.attributes.reachability\
+    import discover_reachability
 
 
 class TestReachability(AttDiscTest):

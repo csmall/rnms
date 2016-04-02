@@ -4,14 +4,13 @@
 from nose.tools import assert_true
 
 from rnms.tests.att_discovery import AttDiscTest
-from rnms.lib.att_discovers.host_information import \
+from rnms.lib.discovery.plugins.attributes.host_information import \
     discover_host_information, cb_match_host, cb_host_information,\
     cb_host_devtable
 
 
 class TestHostInfo(AttDiscTest):
     __ad_parameters__ = '311'
-
 
     def test_disc_ok(self):
         """ Disc hostinfo calls SNMP str """

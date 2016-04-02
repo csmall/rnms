@@ -23,6 +23,7 @@ import tw2.core as twc
 from tg import lurl
 
 """ JavaScript Resources """
+jquery_js = twc.JSLink(link=lurl('/javascript/jquery.min.js'))
 chart_min_js = twc.JSLink(link=lurl('/javascript/chart.min.js'))
 bootstrap_table_js = twc.JSLink(
     link=lurl('/javascript/bootstrap-table.min.js'))

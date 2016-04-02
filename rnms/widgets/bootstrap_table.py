@@ -10,7 +10,8 @@ class BootstrapTable(twc.Widget):
     templates
     """
     template = 'rnms.templates.widgets.bootstrap_table'
-    resources = [bootstrap_table_js,
+    resources = [
+                 bootstrap_table_js,
                  bootstrap_table_css]
 
     columns = twc.Param('List of (column, title) tuples')

@@ -30,7 +30,7 @@ from formencode import validators
 from rnms.lib import permissions
 from rnms.lib.base import BaseTableController
 from rnms.model import DBSession, Host, Event, Attribute
-from rnms.widgets import MainMenu, HostMap,\
+from rnms.widgets import HostMap,\
         BootstrapTable, EventTable, HostDetails, AttributeStateDoughnut
 from rnms.widgets.panel_tile import PanelTile
 
@@ -93,11 +93,11 @@ class HostsController(BaseTableController):
     def _default(self, h):
         if tmpl_context.form_errors:
             self.process_form_errors()
-            return dict(page='host', main_menu=MainMenu)
+            return dict(page='host')
         host = Host.by_id(h)
         if host is None:
             flash('Host ID#{} not found'.format(h), 'error')
-            return dict(page='host', main_menu=MainMenu)
+            return dict(page='host')
         vendor, devmodel = host.snmp_type()
         highest_alarm = Event.host_alarm(host.id)
         if highest_alarm is None:
@@ -157,7 +157,7 @@ class HostsController(BaseTableController):
         """
         if tmpl_context.form_errors:
             self.process_form_errors()
-            return dict(page='host', main_menu=MainMenu)
+            return dict(page='host')
 
         class HostMapTile(PanelTile):
             title = 'Host Map'
@@ -178,8 +178,9 @@ class HostsController(BaseTableController):
         else:
             events_panel = None
 
-        return dict(page='hosts', main_menu=MainMenu,
+        return dict(page='hosts',
                     host_map=HostMapTile(), events_panel=events_panel)
+
     @expose('rnms.templates.widgets.select')
     def option(self):
         """ Return a list of hosts. If user has required

@@ -12,7 +12,7 @@ from rnms.lib.admin_config import MyAdminConfig
 from rnms.widgets.panel_tile import PanelTile
 from rnms.widgets.hbars import HBarAttributeStatus
 from rnms.widgets.doughnuts import AttributeStateDoughnut
-from rnms.widgets import ProfileForm, MainMenu, DaemonStatus, LineChart
+from rnms.widgets import ProfileForm, DaemonStatus, LineChart
 from rnms.model import DBSession
 
 from rnms.lib.base import BaseController
@@ -87,7 +87,7 @@ class RootController(BaseController):
             class MyDaemonStatus(DaemonStatus):
                 pass
 
-        return dict(page='index', main_menu=MainMenu,
+        return dict(page='index',
                     att_hbar=AttributeHBarPanel(),
                     eventchart_panel=EventChartPanel(),
                     doughnut=DoughnutPanel(),
@@ -121,8 +121,7 @@ class RootController(BaseController):
         if login_counter > 0:
             flash(_('Wrong credentials'), 'warning')
         return dict(page='login', login_counter=str(login_counter),
-                    came_from=came_from,
-                    main_menu=MainMenu)
+                    came_from=came_from)
 
     @expose()
     def post_login(self, came_from=lurl('/')):
@@ -177,5 +176,3 @@ class RootController(BaseController):
         items = users.all()
         items.insert(0, ('', '-- Choose Client --'))
         return dict(items=items)
-
-

@@ -20,8 +20,6 @@
 from tg import url
 
 import tw2.core as twc
-from tw2.jqplugins.ui import jquery_ui_css
-from tw2.jquery import jquery_js
 
 
 class MapWidget(twc.Widget):
@@ -41,21 +39,6 @@ class MapWidget(twc.Widget):
                 'group': group_name,
                 'group_fields': group_data,
                 'items': [new_item]}
-
-    def prepare(self):
-        self.resources.append(jquery_js)
-        super(MapWidget, self).prepare()
-
-
-class InfoBox(twc.Widget):
-    id = 'infobox'
-    template = 'rnms.templates.widgets.infobox'
-    text = None
-    child_widget = None
-
-    def prepare(self, text=None):
-        self.resources.append(jquery_ui_css)
-        super(InfoBox, self).prepare()
 
 
 class Row(twc.CompoundWidget):

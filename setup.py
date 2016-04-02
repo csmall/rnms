@@ -34,8 +34,8 @@ testpkgs = ['WebTest >= 1.2.3',
             ]
 
 install_requires = [
-    "TurboGears2 >= 2.3.7",
-    "Beaker",
+    "TurboGears2 >= 2.3.8",
+    "Beaker >= 1.8.0",
     "Genshi",
     "Mako",
     "zope.sqlalchemy >= 0.4",
@@ -46,13 +46,12 @@ install_requires = [
     "tgext.admin >= 0.6.1",
     "WebHelpers2",
     # RoseNMS specific stuff follows
-    "tw2.jqplugins.jqgrid",
-    "tw2.jqplugins.jqplot",
     "pysnmp",
     "psycopg2",
     "mysql-python",
     "pyzmq",
-    "influxdb"
+    "influxdb",
+    "cliff"
     ]
 
 if py_version != (3, 2):

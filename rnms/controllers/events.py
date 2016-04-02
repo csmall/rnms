@@ -32,12 +32,7 @@ from sqlalchemy import extract, func
 from rnms.lib.base import BaseTableController
 from rnms.model import DBSession, Severity, EventType, Event, EventState
 from rnms.widgets import PanelTile, EventTable
-from rnms.lib.table import jqGridTableFiller
-from rnms.lib import structures
 from rnms.lib.states import State
-
-default_colors = ["#468847", "#F89406", "#B94A48", "#999999",
-                  "#3887AD", "#222222"]
 
 
 class EventsController(BaseTableController):
@@ -152,12 +147,6 @@ class EventsController(BaseTableController):
                 (s.id, s.bgcolor,
                     '%.6x' % (int(s.bgcolor, 16) & 0xfefefe >> 1))
                 for s in severities],)
-
-    @expose('json')
-    def griddata(self, **kw):
-        class EventFiller(structures.event, jqGridTableFiller):
-            pass
-        return super(EventsController, self).griddata(EventFiller, {}, **kw)
 
     @expose('rnms.templates.widgets.select')
     def type_option(self):

@@ -5,7 +5,7 @@
 %endif
 </div>
 <script>
-$(document).ready(function () {
+$(function () {
 $.getJSON("${w.data_url|n}", function( data ) {
     var ${w.id}Chart = new Chart(document.getElementById("${w.id}").getContext("2d")).Line(data, {
     responsive: true,

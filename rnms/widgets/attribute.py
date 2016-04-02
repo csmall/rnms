@@ -21,7 +21,6 @@ from tg import url, flash
 
 from sqlalchemy import and_, asc, func
 
-from tw2.jqplugins.jqgrid import jqGridWidget
 import tw2.core as twc
 
 from rnms.model import Attribute, DBSession, Host, EventState, Event
@@ -88,86 +87,6 @@ class AttributeMap(MapWidget):
                                'fields': att_fields,
                                })
         super(AttributeMap, self).prepare()
-
-
-class AttributeSelector(jqGridWidget):
-    id = 'attribute-selector'
-    host_id = None
-    options = {
-        'datatype': 'json',
-        'autowidth':    True,
-        'imgpath':      'scripts/jqGrid/themes/green/images',
-        'url':          '/attributes/gridselector',
-        'caption':      'Attributes',
-        'colNames': ('ID', 'Host', 'Attribute',),
-        'colModel': [
-            {
-                'name': 'id', 'id': 'id', 'hidden': True,
-            }, {
-                'name': 'host',
-                'id': 'host',
-                'width': 100,
-            }, {
-                'name': 'attribute',
-                'id': 'attribute',
-                'width': 100,
-            }],
-        'multiselect': True,
-    }
-
-
-class DiscoveredAttsGrid(jqGridWidget):
-    id = 'discovered-atts-grid'
-    host_id = None
-    options = {
-        'datatype':     'json',
-        'autowidth':    True,
-        'imgpath':      'scripts/jqGrid/themes/green/images',
-        'url':          '/hosts/griddiscover',
-        'caption':      'Discovered Attributes',
-        'colNames': ('ID', 'Actions', 'Type', 'Index', 'Name',
-                     'State', 'Description'),
-        'colModel': [
-            {
-                'name': 'id', 'id': 'id', 'hidden': True,
-            }, {
-                'name': '__actions__', 'align': 'center', 'width': 30,
-            }, {
-                'name': 'attribute_type',
-                'id': 'attribute_type',
-            }, {
-                'name': 'index',
-                'id': 'index',
-                'width': 55,
-            }, {
-                'name': 'display_name',
-                'id': 'display_name',
-                'width': 100,
-            }, {
-                'name': 'state',
-                'id': 'state',
-                'width': 30,
-            }, {
-                'name': 'description',
-                'id': 'description',
-                'width': 100,
-            },
-        ],
-        'viewrecords': True,
-        'grouping': True,
-        'groupingView': {
-            'groupText': ['<b>{0}</b>'],
-            'groupField': ['attribute_type', ],
-            'groupOrder': ['asc'],
-            'groupColumnShow': False,
-        },
-        'multiselect': True,
-
-    }
-
-    def iprepare(self):
-        self.options['url'] += '?h={}'.format(self.host_id)
-        super(DiscoveredAttsGrid, self).prepare()
 
 
 class AttributeSummary(twc.Widget):

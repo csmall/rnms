@@ -20,7 +20,7 @@
 import tw2.core as twc
 from tg import url
 
-from rnms.lib.resources import chart_min_js
+from rnms.lib.resources import chart_min_js, jquery_js
 
 __all__ = ['LineChart', ]
 
@@ -35,6 +35,7 @@ class LineChart(twc.Widget):
 
     def prepare(self):
         self.resources.append(chart_min_js)
+        self.resources.append(jquery_js)
 
 
 class AttributeLineChart(LineChart):
